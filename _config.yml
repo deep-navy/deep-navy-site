@@ -1,0 +1,9 @@
+title: Deep Navy
+description: Hire an autonomous AI engineering team.
+url: https://deep.navy
+permalink: pretty
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+exclude: [node_modules, package.json, package-lock.json, src]
+
