@@ -5,5 +5,4 @@ permalink: pretty
 plugins:
   - jekyll-feed
   - jekyll-sitemap
-exclude: [node_modules, package.json, package-lock.json, src]
-
+exclude: [node_modules, package.json, package-lock.json, src, vendor/bundle/]
