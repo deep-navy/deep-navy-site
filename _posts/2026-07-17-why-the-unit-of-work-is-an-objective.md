@@ -14,11 +14,11 @@ Deep Navy starts with a business objective because it creates a durable reason f
 
 “Improve onboarding” is directionally useful but operationally incomplete. A stronger objective names the population, the expected signal, and a time horizon: improve first-week activation among newly created workspaces from the current baseline toward an agreed target.
 
-That does not prove a particular feature will cause the change. It does give the team a shared place to test assumptions, record initiatives, and decide when an approach should be expanded, revised, or stopped.
+This objective structure cannot prove a particular feature caused the change. It gives the team a shared place to test assumptions, record initiatives, and decide when an approach should be expanded, revised, or stopped.
 
 ## Delivery evidence still matters
 
-Outcome orientation is not an excuse to ignore engineering quality. Issues, pull requests, checks, reviews, runtime activity, and approvals remain durable evidence of how an initiative was executed. They make the work inspectable and help separate a product hypothesis from an implementation failure.
+Outcome orientation still requires engineering quality. Issues, pull requests, checks, reviews, runtime activity, and approvals remain durable evidence of how an initiative was executed. They make the work inspectable and help separate a product hypothesis from an implementation failure.
 
 ## Cost completes the decision
 

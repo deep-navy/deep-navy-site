@@ -16,7 +16,20 @@ const revision = readFileSync(resolve(vendorRoot, "REVISION"), "utf8").trim();
 if (revision !== expectedRevision) throw new Error(`Vendored platform-protos revision ${revision || "<empty>"} does not match ${expectedRevision}.`);
 
 const manifestLines = readFileSync(resolve(vendorRoot, "MANIFEST.sha256"), "utf8").trim().split("\n");
-const required = new Set(["auth", "billing", "common", "github", "organizations", "provisioning", "repositories", "teams"].map((name) => `deepnavy/v1/${name}_pb.ts`));
+const required = new Set([
+  "activity",
+  "agents",
+  "approvals",
+  "auth",
+  "billing",
+  "common",
+  "economics",
+  "github",
+  "organizations",
+  "provisioning",
+  "repositories",
+  "teams"
+].map((name) => `deepnavy/v1/${name}_pb.ts`));
 for (const line of manifestLines) {
   const match = line.match(/^([a-f0-9]{64})  (deepnavy\/v1\/[a-z_]+_pb\.ts)$/);
   if (!match) throw new Error(`Invalid vendored descriptor manifest entry: ${line}`);

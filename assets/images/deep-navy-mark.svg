@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="28" fill="#0b2134" stroke="#79f2d2" stroke-width="2"/>
-  <path d="M14 36c9-10 18-13 37-11M18 46c10-7 20-9 32-6" fill="none" stroke="#79f2d2" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="44" cy="17" r="4" fill="#ffb36b"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64">
+  <rect width="96" height="64" fill="#02060b"/>
+  <path d="M14 8v48M14 16h10M14 32h6M14 48h14" fill="none" stroke="#79f2d2" stroke-width="2"/>
+  <text x="36" y="39" fill="#f4f7f5" font-family="ui-monospace, SFMono-Regular, monospace" font-size="20" font-weight="650">DN/</text>
 </svg>

@@ -1,19 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
-  <defs>
-    <radialGradient id="g" cx="72%" cy="20%" r="75%">
-      <stop offset="0" stop-color="#123f55"/>
-      <stop offset="1" stop-color="#06111f"/>
-    </radialGradient>
-    <pattern id="p" width="48" height="48" patternUnits="userSpaceOnUse">
-      <path d="M48 0H0V48" fill="none" stroke="#79f2d2" stroke-opacity=".08"/>
-    </pattern>
-  </defs>
-  <rect width="1200" height="630" fill="url(#g)"/>
-  <rect width="1200" height="630" fill="url(#p)"/>
-  <circle cx="1000" cy="120" r="8" fill="#ffb36b"/>
-  <circle cx="1000" cy="120" r="55" fill="none" stroke="#79f2d2" stroke-opacity=".35"/>
-  <text x="90" y="175" fill="#79f2d2" font-family="ui-monospace, monospace" font-size="24" letter-spacing="5">DEEP NAVY</text>
-  <text x="90" y="315" fill="#f4f8fb" font-family="system-ui, sans-serif" font-size="68" font-weight="700">Autonomous engineering.</text>
-  <text x="90" y="400" fill="#f4f8fb" font-family="system-ui, sans-serif" font-size="68" font-weight="700">Accountable outcomes.</text>
-  <text x="90" y="500" fill="#9eb3c2" font-family="system-ui, sans-serif" font-size="27">A coordinated AI engineering team, with visible work and measurable economics.</text>
+  <rect width="1200" height="630" fill="#02060b"/>
+  <path d="M86 72v486M86 112h34M86 260h18M86 408h28M86 518h46" fill="none" stroke="#79f2d2" stroke-width="2"/>
+  <text x="150" y="126" fill="#79f2d2" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="22" letter-spacing="4">DN/ DEEP NAVY</text>
+  <text x="150" y="282" fill="#f4f7f5" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="66" font-weight="650">Engineering work,</text>
+  <text x="150" y="364" fill="#f4f7f5" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="66" font-weight="650">on the record.</text>
+  <line x1="150" y1="438" x2="1090" y2="438" stroke="#f4f7f5" stroke-opacity=".12"/>
+  <text x="150" y="494" fill="#9aa6aa" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif" font-size="25">Objectives · GitHub delivery · Approvals · Attributed cost</text>
+  <text x="1040" y="550" fill="#9aa6aa" font-family="ui-monospace, SFMono-Regular, monospace" font-size="16">000–630</text>
 </svg>

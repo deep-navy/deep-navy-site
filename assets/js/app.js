@@ -3,7 +3,10 @@
 
   const config = window.deepNavyRuntime || {};
   const ui = {
-    environment: document.querySelector("[data-environment]"),
+    environmentFields: [...document.querySelectorAll("[data-environment]")],
+    contextOrganization: document.querySelector("[data-context-organization]"),
+    contextRepositories: document.querySelector("[data-context-repositories]"),
+    contextTeam: document.querySelector("[data-context-team]"),
     configBanner: document.querySelector("[data-config-banner]"),
     configTitle: document.querySelector("[data-config-title]"),
     configMessage: document.querySelector("[data-config-message]"),
@@ -15,6 +18,8 @@
     signIn: document.querySelector("[data-sign-in]"),
     retrySignIn: document.querySelector("[data-retry-sign-in]"),
     signOut: document.querySelector("[data-sign-out]"),
+    sessionState: document.querySelector("[data-session-state]"),
+    authenticatedNav: document.querySelector("[data-authenticated-nav]"),
     userSummary: document.querySelector("[data-user-summary]"),
     userInitial: document.querySelector("[data-user-initial]"),
     userName: document.querySelector("[data-user-name]"),
@@ -42,9 +47,30 @@
     teamForm: document.querySelector("[data-team-form]"),
     teamInput: document.querySelector("[data-team-form] input"),
     teamSubmit: document.querySelector("[data-team-form] button"),
+    teamError: document.querySelector("[data-team-error]"),
+    organizationError: document.querySelector("[data-organization-error]"),
     refresh: document.querySelector("[data-refresh]"),
     teamsEmpty: document.querySelector("[data-teams-empty]"),
     teamList: document.querySelector("[data-team-list]"),
+    progressSummary: document.querySelector("[data-progress-summary]"),
+    progressSteps: [...document.querySelectorAll("[data-progress-step]")],
+    dashboardState: document.querySelector("[data-dashboard-state]"),
+    teamSelect: document.querySelector("[data-team-select]"),
+    agentsState: document.querySelector("[data-agents-state]"),
+    agentsEmpty: document.querySelector("[data-agents-empty]"),
+    agentList: document.querySelector("[data-agent-list]"),
+    activityState: document.querySelector("[data-activity-state]"),
+    activityEmpty: document.querySelector("[data-activity-empty]"),
+    activityList: document.querySelector("[data-activity-list]"),
+    activityRetry: document.querySelector("[data-activity-retry]"),
+    economicsState: document.querySelector("[data-economics-state]"),
+    economicsMessage: document.querySelector("[data-economics-message]"),
+    economicsEmpty: document.querySelector("[data-economics-empty]"),
+    economicsMetrics: document.querySelector("[data-economics-metrics]"),
+    economicsDirectCost: document.querySelector("[data-economics-direct-cost]"),
+    economicsCreditsUsed: document.querySelector("[data-economics-credits-used]"),
+    economicsCreditsRemaining: document.querySelector("[data-economics-credits-remaining]"),
+    economicsMeasured: document.querySelector("[data-economics-measured]"),
     toast: document.querySelector("[data-toast]")
   };
 
@@ -69,7 +95,13 @@
     subscriptionManageable: false,
     teamServiceAvailable: false,
     teams: [],
-    completingGitHub: false
+    completingGitHub: false,
+    authPhase: "signed_out",
+    selectedTeamId: "",
+    workspaceGeneration: 0,
+    activityAbort: null,
+    activityEvents: [],
+    lastActivitySequence: 0n
   };
 
   const environment = stringValue(config.environment) || "local";
@@ -84,6 +116,8 @@
   const apiBaseUrl = normalizeServiceUrl(config.api_base_url);
   const organizationContract = window.deepNavyOrganizationOnboarding || null;
   const launchContract = window.deepNavyLaunchContract || null;
+  const appState = window.deepNavyAppState || null;
+  const agentRoleContract = window.DeepNavyAgentRoles || null;
   const generatedClient = window.deepNavyGeneratedClient || null;
   const platformApi = createPlatformApi();
   const provisioningTimers = new Map();
@@ -93,8 +127,31 @@
     createIdempotencyKey: () => window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18)
   });
 
-  ui.environment.textContent = environment;
+  ui.environmentFields.forEach((field) => { field.textContent = environment; });
   ui.signIn.disabled = !identity.ready;
+
+  function setAuthPhase(phase) {
+    const presentation = appState?.authPresentation
+      ? appState.authPresentation(phase, Boolean(session.accessToken))
+      : {
+          phase: session.accessToken ? "authenticated" : "signed_out",
+          authenticated: Boolean(session.accessToken),
+          signedOutVisible: !session.accessToken,
+          workspaceVisible: Boolean(session.accessToken),
+          signOutVisible: Boolean(session.accessToken),
+          userVisible: Boolean(session.accessToken),
+          sessionLabel: session.accessToken ? "Signed in" : "Signed out"
+        };
+    session.authPhase = presentation.phase;
+    document.body.dataset.authState = presentation.phase;
+    ui.signedOut.hidden = !presentation.signedOutVisible;
+    ui.authenticated.hidden = !presentation.workspaceVisible;
+    ui.authenticatedNav.hidden = !presentation.workspaceVisible;
+    ui.signOut.hidden = !presentation.signOutVisible;
+    ui.userSummary.hidden = !presentation.userVisible;
+    ui.sessionState.textContent = presentation.sessionLabel;
+    ui.signIn.disabled = presentation.phase === "authenticating" || !identity.ready;
+  }
 
   function stringValue(value) {
     return typeof value === "string" ? value.trim() : "";
@@ -175,7 +232,7 @@
     if (!apiBaseUrl) missing.push("platform API origin");
 
     if (missing.length === 0) {
-      setBanner(ui.configBanner, ui.configTitle, ui.configMessage, "success", "Environment configured", `${environment} has public identity and API coordinates. Each onboarding step still requires a successful server response.`);
+      ui.configBanner.hidden = true;
     } else if (identity.ready) {
       setBanner(ui.configBanner, ui.configTitle, ui.configMessage, "warning", "Identity ready; platform services pending", `Missing ${missing.join(", ")}. You can sign in, but server-backed onboarding remains unavailable until deployment configuration is complete.`);
     } else {
@@ -214,6 +271,7 @@
       return;
     }
 
+    setAuthPhase("authenticating");
     ui.signIn.disabled = true;
     ui.retrySignIn.disabled = true;
     try {
@@ -244,6 +302,7 @@
       }).toString();
       window.location.assign(authorizeUrl.toString());
     } catch {
+      setAuthPhase("signed_out");
       showAuthError("Could not start sign-in", "The browser could not prepare a secure PKCE transaction. No credentials were sent. Try again in a current browser.");
       ui.signIn.disabled = !identity.ready;
       ui.retrySignIn.disabled = !identity.ready;
@@ -251,6 +310,7 @@
   }
 
   async function completeCallback(params) {
+    setAuthPhase("authenticating");
     const authorizationError = params.get("error");
     if (authorizationError) {
       clearOAuthTransaction();
@@ -440,9 +500,7 @@
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "error", title, message);
     ui.retrySignIn.hidden = false;
     ui.retrySignIn.disabled = !identity.ready;
-    ui.signedOut.hidden = false;
-    ui.authenticated.hidden = true;
-    ui.signOut.hidden = true;
+    setAuthPhase("signed_out");
   }
 
   function hideAuthError() {
@@ -451,10 +509,8 @@
   }
 
   function showAuthenticated() {
-    ui.signedOut.hidden = true;
-    ui.authenticated.hidden = false;
-    ui.signOut.hidden = false;
-    ui.userSummary.hidden = false;
+    setAuthPhase("authenticated");
+    updateProgressStep("identity", "complete", "Authenticated");
     const name = stringValue(session.claims.name) || stringValue(session.claims.preferred_username) || stringValue(session.claims.email) || "Signed-in user";
     const login = stringValue(session.claims.preferred_username) || stringValue(session.claims.email);
     ui.userName.textContent = name;
@@ -536,11 +592,13 @@
     ui.organizationSelectInput.disabled = true;
     ui.organizationSelectSubmit.disabled = true;
     ui.profileRetry.hidden = true;
+    setFieldError(ui.organizationError, "");
   }
 
   async function renderOrganizationState(state) {
     resetOrganizationControls();
     session.organizationId = "";
+    ui.contextOrganization.textContent = "Not selected";
     ui.organizationDependent.hidden = true;
 
     if (state.kind === "needs_bootstrap") {
@@ -549,7 +607,7 @@
       ui.organizationBootstrapInput.disabled = false;
       ui.organizationBootstrapSubmit.disabled = false;
       ui.organizationBootstrapInput.focus();
-      setAllStepsUnavailable("Create your organization before continuing with GitHub, billing, or teams.");
+      setAllStepsUnavailable("Create your organization before continuing with GitHub, billing, or teams.", "blocked");
       return;
     }
 
@@ -565,7 +623,7 @@
       ui.organizationSelectForm.hidden = false;
       ui.organizationSelectInput.disabled = false;
       ui.organizationSelectSubmit.disabled = false;
-      setAllStepsUnavailable("Select an authorized organization before continuing with GitHub, billing, or teams.");
+      setAllStepsUnavailable("Select an authorized organization before continuing with GitHub, billing, or teams.", "blocked");
       return;
     }
 
@@ -574,6 +632,7 @@
     if (!organizationId) throw new organizationContract.ContractError("The ready organization has no ID.");
     session.organizationId = organizationId;
     const organizationName = stringValue(state.organization.name) || "your organization";
+    ui.contextOrganization.textContent = organizationName;
     setStep("organization", "complete", "Ready", `${organizationName} is the current server-confirmed organization for this session.`);
     ui.organizationDependent.hidden = false;
     if (readGitHubCompletion()) await completePendingGitHubInstallation();
@@ -648,6 +707,7 @@
   async function bootstrapOrganization(event) {
     event.preventDefault();
     const name = stringValue(new FormData(ui.organizationBootstrapForm).get("organizationName"));
+    setFieldError(ui.organizationError, "");
     ui.organizationBootstrapInput.disabled = true;
     ui.organizationBootstrapSubmit.disabled = true;
     ui.organizationBootstrapSubmit.textContent = "Creating…";
@@ -658,7 +718,9 @@
       await renderOrganizationState(state);
       toast("The API confirmed your organization and owner membership.", "success");
     } catch (error) {
-      setStep("organization", "error", "Not confirmed", organizationErrorMessage(error, "The API did not confirm organization creation. No completion state was assumed; retrying the same name is safe."));
+      const message = organizationErrorMessage(error, "The API did not confirm organization creation. No completion state was assumed; retrying the same name is safe.");
+      setStep("organization", "error", "Not confirmed", message);
+      setFieldError(ui.organizationError, message);
       ui.organizationBootstrapForm.hidden = false;
       ui.organizationBootstrapInput.disabled = false;
       ui.organizationBootstrapSubmit.disabled = false;
@@ -706,12 +768,20 @@
     await renderGitHubResult(githubResult);
     updateTeamAction();
     reconcileBillingReturn();
+    await refreshSelectedTeam();
     ui.refresh.disabled = false;
   }
 
   async function renderGitHubResult(result) {
     if (result.status === "fulfilled") {
       const installation = result.value.installation;
+      if (installation && stringValue(installation.organizationId) !== session.organizationId) {
+        session.githubInstalled = false;
+        setStep("github", "error", "Invalid response", "The GitHub service returned an installation outside the current organization scope. No connection was displayed.");
+        ui.githubAction.disabled = true;
+        resetRepositoryAccess("Repository access cannot be checked until the GitHub installation scope is valid.", "error");
+        return;
+      }
       session.githubInstalled = Boolean(launchContract?.githubInstallationActive(installation));
       if (session.githubInstalled) {
         const account = stringValue(installation.accountLogin) || stringValue(installation.account_login) || "selected GitHub account";
@@ -747,6 +817,7 @@
     session.repositoryServiceAvailable = false;
     ui.repositoryForm.hidden = true;
     ui.repositoryList.replaceChildren();
+    ui.contextRepositories.textContent = "Not loaded";
     setStep("repositories", stateValue, stateValue === "error" ? "Unavailable" : "Blocked", message);
   }
 
@@ -789,13 +860,21 @@
       return;
     }
     try {
+      const rawRepositories = Array.isArray(repositoriesResult.value) ? repositoriesResult.value : [];
+      const selection = selectionResult.status === "fulfilled" ? selectionResult.value.selection : null;
+      if (rawRepositories.some((repository) => stringValue(repository?.organizationId) !== session.organizationId)) {
+        throw new launchContract.LaunchContractError("The repository service returned a resource outside the current organization scope.");
+      }
+      if (selection && stringValue(selection.organizationId) !== session.organizationId) {
+        throw new launchContract.LaunchContractError("The repository service returned a selection outside the current organization scope.");
+      }
       session.repositoryServiceAvailable = true;
-      session.repositories = launchContract.accessibleRepositories(repositoriesResult.value).sort((left, right) => {
+      session.repositories = launchContract.accessibleRepositories(rawRepositories).sort((left, right) => {
         const leftName = `${stringValue(left.owner)}/${stringValue(left.name)}`;
         const rightName = `${stringValue(right.owner)}/${stringValue(right.name)}`;
         return leftName.localeCompare(rightName);
       });
-      session.repositorySelection = selectionResult.status === "fulfilled" ? selectionResult.value.selection : null;
+      session.repositorySelection = selection;
       renderRepositoryAccess();
       updateTeamAction();
     } catch {
@@ -835,10 +914,13 @@
 
     if (session.repositorySelectionReady) {
       const count = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? session.repositories.length : selected.size;
+      ui.contextRepositories.textContent = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? `${count} accessible` : `${count} selected`;
       setStep("repositories", "complete", "Selected", `${count} accessible ${count === 1 ? "repository is" : "repositories are"} authorized for team provisioning.`);
     } else if (session.repositories.length === 0) {
+      ui.contextRepositories.textContent = "No accessible repositories";
       setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
     } else {
+      ui.contextRepositories.textContent = "Selection required";
       setStep("repositories", "action", "Needs action", "Choose the accessible repositories that Deep Navy may use, then save the server-side selection.");
     }
   }
@@ -866,14 +948,20 @@
     session.billingPlan = null;
     session.billingPlanError = "";
     ui.planSummary.hidden = true;
-    if (result.status !== "fulfilled" || !result.value.plan?.id) {
+    const expectedPlanId = stringValue(config.plan_id) || "founding-team";
+    const plan = result.status === "fulfilled" ? result.value.plan : null;
+    const state = typeof plan?.state === "number"
+      ? plan.state
+      : stringValue(plan?.state).replace(/^BILLING_PLAN_STATE_/, "");
+    const active = state === 1 || state === "ACTIVE";
+    if (result.status !== "fulfilled" || stringValue(plan?.id) !== expectedPlanId || !active) {
       session.billingPlanError = result.status === "rejected"
         ? apiErrorMessage(result.reason, "The launch billing plan is not available.")
-        : "The billing service did not return the configured launch plan.";
+        : "The billing service did not return the configured active launch plan.";
       return;
     }
     session.billingPlanAvailable = true;
-    session.billingPlan = result.value.plan;
+    session.billingPlan = plan;
     ui.planName.textContent = stringValue(session.billingPlan.name) || stringValue(session.billingPlan.id);
     ui.planPrice.textContent = formatMoney(session.billingPlan.recurringPrice, session.billingPlan.interval);
     ui.planCredits.textContent = formatCredits(session.billingPlan.includedCreditMicros);
@@ -898,6 +986,14 @@
   function renderSubscriptionResult(result) {
     if (result.status === "fulfilled") {
       const subscription = result.value.subscription;
+      if (subscription && stringValue(subscription.organizationId) !== session.organizationId) {
+        session.subscription = null;
+        session.subscriptionManageable = false;
+        session.subscriptionActive = false;
+        setStep("subscription", "error", "Invalid response", "The billing service returned a subscription outside the current organization scope. No billing state was displayed.");
+        ui.subscriptionAction.disabled = true;
+        return;
+      }
       if (result.value.plan?.id) renderBillingPlanResult({ status: "fulfilled", value: { plan: result.value.plan } });
       const status = subscriptionStatusLabel(subscription);
       session.subscription = subscription || null;
@@ -964,15 +1060,27 @@
 
   function renderTeamsResult(result) {
     if (result.status === "fulfilled") {
+      const teams = Array.isArray(result.value.teams) ? result.value.teams : [];
+      const invalid = teams.some((team) => !stringValue(team?.id) || stringValue(team.organizationId) !== session.organizationId);
+      if (invalid) {
+        session.teamServiceAvailable = false;
+        session.teams = [];
+        renderTeamList();
+        renderTeamSelector();
+        setStep("team", "error", "Invalid response", "The team service returned a resource outside the current organization scope. No team data was displayed.");
+        return;
+      }
       session.teamServiceAvailable = true;
-      session.teams = Array.isArray(result.value.teams) ? result.value.teams : [];
+      session.teams = teams;
       renderTeamList();
+      renderTeamSelector();
       session.teams.forEach((team) => startProvisioningPolling(team));
       return;
     }
     session.teamServiceAvailable = false;
     session.teams = [];
     renderTeamList();
+    renderTeamSelector();
     setStep("team", "error", "Unavailable", apiErrorMessage(result.reason, "The team service is not ready. No team state was assumed."));
   }
 
@@ -1004,8 +1112,9 @@
     ui.teamSubmit.disabled = !ready;
   }
 
-  function setAllStepsUnavailable(message) {
-    ["github", "repositories", "subscription", "team"].forEach((name) => setStep(name, "error", "Unavailable", message));
+  function setAllStepsUnavailable(message, stateValue = "error") {
+    const label = stateValue === "blocked" ? "Waiting" : "Unavailable";
+    ["github", "repositories", "subscription", "team"].forEach((name) => setStep(name, stateValue, label, message));
     ui.githubAction.disabled = true;
     ui.repositorySave.disabled = true;
     ui.repositoryRefresh.disabled = true;
@@ -1019,8 +1128,30 @@
     const card = document.querySelector(`[data-step="${name}"]`);
     if (!card) return;
     card.dataset.state = stateValue;
+    card.setAttribute("aria-busy", stateValue === "loading" ? "true" : "false");
     card.querySelector("[data-step-state]").textContent = label;
     card.querySelector("[data-step-message]").textContent = message;
+    updateProgressStep(name, stateValue, label);
+  }
+
+  function updateProgressStep(name, stateValue, label) {
+    const step = ui.progressSteps.find((candidate) => candidate.dataset.progressStep === name);
+    if (!step) return;
+    step.dataset.state = stateValue;
+    const detail = step.querySelector("small");
+    if (detail) detail.textContent = label;
+    renderProgressSummary();
+  }
+
+  function renderProgressSummary() {
+    if (!ui.progressSummary) return;
+    const states = Object.fromEntries(ui.progressSteps.map((step) => [step.dataset.progressStep, step.dataset.state]));
+    const summary = appState?.progressSummary
+      ? appState.progressSummary(states)
+      : { completed: Object.values(states).filter((stateValue) => stateValue === "complete").length, total: ui.progressSteps.length };
+    ui.progressSummary.textContent = summary.completed === summary.total
+      ? "Setup complete · team workspace ready"
+      : `${summary.completed} of ${summary.total} steps complete`;
   }
 
   function renderTeamList() {
@@ -1049,6 +1180,341 @@
       row.append(copy, status);
       ui.teamList.append(row);
     });
+  }
+
+  function renderTeamSelector(preferredId = "") {
+    const previous = stringValue(preferredId) || session.selectedTeamId;
+    ui.teamSelect.replaceChildren();
+    if (!session.teams.length) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "No teams available";
+      ui.teamSelect.append(option);
+      ui.teamSelect.disabled = true;
+      session.selectedTeamId = "";
+      ui.contextTeam.textContent = "Not selected";
+      resetWorkspaceViews("Complete setup to create the first server-confirmed team.");
+      return;
+    }
+
+    session.teams.forEach((team) => {
+      const option = document.createElement("option");
+      option.value = stringValue(team.id);
+      const lifecycle = lifecycleLabel(team.state) || "created";
+      option.textContent = `${stringValue(team.name) || "Unnamed team"} · ${lifecycle}`;
+      ui.teamSelect.append(option);
+    });
+    const selected = session.teams.find((team) => team.id === previous) || session.teams[0];
+    session.selectedTeamId = stringValue(selected?.id);
+    ui.contextTeam.textContent = stringValue(selected?.name) || session.selectedTeamId;
+    ui.teamSelect.value = session.selectedTeamId;
+    ui.teamSelect.disabled = false;
+    renderSelectedTeamSummary();
+  }
+
+  function selectedTeam() {
+    return session.teams.find((team) => stringValue(team.id) === session.selectedTeamId) || null;
+  }
+
+  function renderSelectedTeamSummary() {
+    const team = selectedTeam();
+    if (!team) {
+      ui.contextTeam.textContent = "Not selected";
+      ui.dashboardState.textContent = "Select a server-confirmed team to load its live workspace.";
+      return;
+    }
+    const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
+    const state = provisioning.label || lifecycleLabel(team.state) || "created";
+    ui.contextTeam.textContent = stringValue(team.name) || stringValue(team.id);
+    ui.dashboardState.textContent = `${stringValue(team.name) || "Selected team"} is ${state}. Workspace data below comes from versioned services.`;
+  }
+
+  async function refreshSelectedTeam() {
+    const team = selectedTeam();
+    const generation = ++session.workspaceGeneration;
+    stopActivityStream();
+    if (!team) {
+      resetWorkspaceViews("Complete setup to create the first server-confirmed team.");
+      return;
+    }
+
+    renderSelectedTeamSummary();
+    resetAgentView("Loading the server-confirmed team roster.", "Loading", "loading");
+    resetEconomicsView("Loading the measured economics summary for this team.", "Loading", "loading");
+    resetActivityView("Connecting to the team’s normalized activity stream.", "Connecting", "loading");
+    startActivityStream(team.id, generation);
+
+    const [agentsResult, economicsResult] = await Promise.allSettled([
+      apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
+      apiRequest("economics", { scopeType: "team", scopeId: team.id })
+    ]);
+    if (generation !== session.workspaceGeneration || team.id !== session.selectedTeamId) return;
+    renderAgentsResult(agentsResult, team.id);
+    renderEconomicsResult(economicsResult, team.id);
+  }
+
+  function resetWorkspaceViews(message) {
+    session.workspaceGeneration += 1;
+    stopActivityStream();
+    ui.dashboardState.textContent = message;
+    resetAgentView(message, "Waiting");
+    resetEconomicsView(message, "Waiting");
+    resetActivityView(message, "Waiting");
+  }
+
+  function setEmptyState(element, title, message) {
+    if (!element) return;
+    const heading = element.querySelector("strong");
+    const copy = element.querySelector("p");
+    if (heading) heading.textContent = title;
+    if (copy) copy.textContent = message;
+  }
+
+  function setSourceState(element, label, tone = "") {
+    element.textContent = label;
+    if (tone) element.dataset.tone = tone;
+    else delete element.dataset.tone;
+  }
+
+  function resetAgentView(message, label, tone = "") {
+    ui.agentList.replaceChildren();
+    ui.agentList.hidden = true;
+    ui.agentsEmpty.hidden = false;
+    setEmptyState(ui.agentsEmpty, label === "Loading" ? "Loading team roster" : "No roster loaded", message);
+    setSourceState(ui.agentsState, label, tone);
+  }
+
+  function renderAgentsResult(result, teamId) {
+    if (result.status === "rejected") {
+      const message = apiErrorMessage(result.reason, "The AgentService is unavailable. No roster was assumed.");
+      resetAgentView(message, "Unavailable", "error");
+      return;
+    }
+    const agents = Array.isArray(result.value.agents) ? result.value.agents : [];
+    if (agents.some((agent) => !stringValue(agent?.id) || stringValue(agent.teamId) !== stringValue(teamId))) {
+      resetAgentView("The AgentService returned a roster outside the selected team scope. No agents were displayed.", "Invalid response", "error");
+      return;
+    }
+    ui.agentList.replaceChildren();
+    if (!agents.length) {
+      resetAgentView("The service returned no agents for this team. Provisioning may still be in progress.", "Empty");
+      return;
+    }
+    const resolvedRoles = agents.map((agent) => agentRoleContract?.canonicalAgentRole?.(agent.role) || null);
+    const roleKeys = resolvedRoles.map((role) => role?.key).filter(Boolean);
+    if (resolvedRoles.some((role) => !role) || new Set(roleKeys).size !== roleKeys.length || agents.length > 6) {
+      resetAgentView("The AgentService returned a role outside the canonical six-role runtime contract. No roster was displayed.", "Invalid response", "error");
+      return;
+    }
+    agents.forEach((agent, index) => {
+      const canonicalRole = resolvedRoles[index];
+      const row = document.createElement("div");
+      row.className = "agent-row";
+      const ordinal = document.createElement("span");
+      ordinal.className = "agent-ordinal";
+      ordinal.textContent = canonicalRole.code;
+      ordinal.setAttribute("aria-hidden", "true");
+      const copy = document.createElement("div");
+      const name = document.createElement("strong");
+      const role = document.createElement("small");
+      name.textContent = canonicalRole.label;
+      role.textContent = `${stringValue(agent.id)} · ${lifecycleLabel(agent.state) || "state not reported"}`;
+      copy.append(name, role);
+      const heartbeat = document.createElement("time");
+      const date = timestampDate(agent.lastHeartbeatAt);
+      heartbeat.textContent = date ? relativeTime(date) : "No heartbeat";
+      if (date) heartbeat.dateTime = date.toISOString();
+      row.append(ordinal, copy, heartbeat);
+      ui.agentList.append(row);
+    });
+    ui.agentsEmpty.hidden = true;
+    ui.agentList.hidden = false;
+    setSourceState(ui.agentsState, agents.length === 6 ? "6/6 roles" : `${agents.length}/6 provisioning`, agents.length === 6 ? "success" : "loading");
+  }
+
+  function agentRoleLabel(value) {
+    return agentRoleContract?.canonicalAgentRole?.(value)?.label || "Unspecified agent role";
+  }
+
+  function resetEconomicsView(message, label, tone = "") {
+    ui.economicsMetrics.hidden = true;
+    ui.economicsMeasured.hidden = true;
+    ui.economicsEmpty.hidden = false;
+    setEmptyState(ui.economicsEmpty, label === "Loading" ? "Loading economics" : "No economics summary loaded", message);
+    ui.economicsMessage.textContent = message;
+    setSourceState(ui.economicsState, label, tone);
+  }
+
+  function renderEconomicsResult(result, teamId) {
+    if (result.status === "rejected") {
+      resetEconomicsView(apiErrorMessage(result.reason, "The EconomicsService is unavailable."), "Unavailable", "error");
+      return;
+    }
+    const economics = result.value.economics;
+    if (!economics || stringValue(economics.scopeType).toLowerCase() !== "team" || stringValue(economics.scopeId) !== stringValue(teamId)) {
+      resetEconomicsView("The economics service did not return a matching team-scoped summary. No metrics were displayed.", "Invalid response", "error");
+      return;
+    }
+    ui.economicsDirectCost.textContent = formatCanonicalMoney(economics.directCost);
+    ui.economicsCreditsUsed.textContent = formatCreditMicros(economics.creditsUsedMicros);
+    ui.economicsCreditsRemaining.textContent = formatCreditMicros(economics.creditsRemainingMicros);
+    const measured = timestampDate(economics.measuredAt);
+    ui.economicsMeasured.textContent = measured ? `Measured ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(measured)}.` : "Measurement time was not reported.";
+    ui.economicsMessage.textContent = "Team-scoped cost and credit balances from the economics ledger.";
+    ui.economicsEmpty.hidden = true;
+    ui.economicsMetrics.hidden = false;
+    ui.economicsMeasured.hidden = false;
+    setSourceState(ui.economicsState, "Measured", "success");
+  }
+
+  function formatCanonicalMoney(money) {
+    if (!money) return "Not reported";
+    const currency = stringValue(money.currencyCode) || "USD";
+    try {
+      const units = typeof money.units === "bigint" ? money.units : BigInt(money.units || 0);
+      const nanos = Number(money.nanos || 0);
+      const numericUnits = Number(units);
+      if (!Number.isSafeInteger(numericUnits) || !Number.isInteger(nanos)) return `${units.toString()} ${currency}`;
+      return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(numericUnits + nanos / 1_000_000_000);
+    } catch {
+      return "Not reported";
+    }
+  }
+
+  function formatCreditMicros(value) {
+    try {
+      const micros = typeof value === "bigint" ? value : BigInt(value || 0);
+      const negative = micros < 0n;
+      const absolute = negative ? -micros : micros;
+      const whole = absolute / 1_000_000n;
+      const fraction = (absolute % 1_000_000n).toString().padStart(6, "0").replace(/0+$/, "");
+      return `${negative ? "−" : ""}${new Intl.NumberFormat().format(whole)}${fraction ? `.${fraction}` : ""}`;
+    } catch {
+      return "Not reported";
+    }
+  }
+
+  function resetActivityView(message, label, tone = "") {
+    session.activityEvents = [];
+    session.lastActivitySequence = 0n;
+    ui.activityList.replaceChildren();
+    ui.activityList.hidden = true;
+    ui.activityEmpty.hidden = false;
+    setEmptyState(ui.activityEmpty, label === "Connecting" ? "Connecting to activity" : "No activity loaded", message);
+    setSourceState(ui.activityState, label, tone);
+    ui.activityRetry.hidden = true;
+  }
+
+  function stopActivityStream() {
+    if (session.activityAbort) session.activityAbort.abort();
+    session.activityAbort = null;
+  }
+
+  async function startActivityStream(teamId, generation = session.workspaceGeneration) {
+    stopActivityStream();
+    if (!teamId || typeof platformApi?.streamTeamActivity !== "function") {
+      resetActivityView("The generated ActivityService client is not available in this deployment.", "Unavailable", "error");
+      return;
+    }
+    const controller = new AbortController();
+    session.activityAbort = controller;
+    setSourceState(ui.activityState, "Connecting", "loading");
+    setEmptyState(ui.activityEmpty, "Connecting to activity", "Waiting for the server to replay customer-safe events and open the live stream.");
+    ui.activityRetry.hidden = true;
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    try {
+      for await (const response of platformApi.streamTeamActivity({ teamId, afterSequence: session.lastActivitySequence }, {
+        accessToken: session.accessToken,
+        requestId,
+        signal: controller.signal
+      })) {
+        if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || controller.signal.aborted) return;
+        const event = response?.event;
+        if (!event) continue;
+        if (stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("The activity service returned an event outside the selected team scope", 0, "invalid_response", requestId);
+        appendActivityEvent(event);
+        setSourceState(ui.activityState, "Live", "success");
+      }
+      if (!controller.signal.aborted && generation === session.workspaceGeneration) {
+        setSourceState(ui.activityState, "Stream ended", "error");
+        ui.activityRetry.hidden = false;
+      }
+    } catch (error) {
+      if (controller.signal.aborted || generation !== session.workspaceGeneration) return;
+      const normalized = error?.name === "PlatformClientError"
+        ? new ApiError(stringValue(error.message), Number(error.status || 0), stringValue(error.code), stringValue(error.requestId) || requestId)
+        : error;
+      const message = apiErrorMessage(normalized, "Live activity is unavailable.");
+      setSourceState(ui.activityState, "Unavailable", "error");
+      if (!session.activityEvents.length) {
+        ui.activityEmpty.hidden = false;
+        setEmptyState(ui.activityEmpty, "Activity unavailable", message);
+      }
+      ui.activityRetry.hidden = false;
+    } finally {
+      if (session.activityAbort === controller) session.activityAbort = null;
+    }
+  }
+
+  function appendActivityEvent(event) {
+    const sequence = typeof event.sequence === "bigint" ? event.sequence : BigInt(event.sequence || 0);
+    if (sequence > session.lastActivitySequence) session.lastActivitySequence = sequence;
+    session.activityEvents.push(event);
+    if (session.activityEvents.length > 80) {
+      session.activityEvents.shift();
+      ui.activityList.firstElementChild?.remove();
+    }
+    const item = document.createElement("li");
+    item.className = "customer-activity-item";
+    const roleMark = document.createElement("span");
+    roleMark.className = "agent-ordinal";
+    roleMark.textContent = agentRoleContract?.canonicalAgentRole?.(event.agentRole)?.code || "—";
+    roleMark.setAttribute("aria-hidden", "true");
+    const copy = document.createElement("div");
+    const title = document.createElement("strong");
+    const summary = document.createElement("p");
+    const meta = document.createElement("div");
+    meta.className = "customer-activity-meta";
+    const type = stringValue(event.type).replaceAll("_", " ").replaceAll(".", " · ");
+    title.textContent = type ? capitalize(type) : "Activity recorded";
+    summary.textContent = stringValue(event.safeSummary) || "The service recorded a customer-safe event without a summary.";
+    [agentRoleLabel(event.agentRole), stringValue(event.status), sequence > 0n ? `Event ${sequence.toString()}` : ""].filter(Boolean).forEach((value) => {
+      const span = document.createElement("span");
+      span.textContent = value;
+      meta.append(span);
+    });
+    copy.append(title, summary, meta);
+    const time = document.createElement("time");
+    const date = timestampDate(event.occurredAt);
+    time.textContent = date ? relativeTime(date) : "Time not reported";
+    if (date) time.dateTime = date.toISOString();
+    item.append(roleMark, copy, time);
+    ui.activityList.append(item);
+    ui.activityEmpty.hidden = true;
+    ui.activityList.hidden = false;
+  }
+
+  function timestampDate(timestamp) {
+    if (!timestamp) return null;
+    try {
+      const seconds = typeof timestamp.seconds === "bigint" ? timestamp.seconds : BigInt(timestamp.seconds || 0);
+      const milliseconds = Number(seconds) * 1000 + Math.floor(Number(timestamp.nanos || 0) / 1_000_000);
+      const date = new Date(milliseconds);
+      return Number.isNaN(date.getTime()) ? null : date;
+    } catch {
+      return null;
+    }
+  }
+
+  function relativeTime(date) {
+    const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+    if (Math.abs(deltaSeconds) < 60) return formatter.format(deltaSeconds, "second");
+    const minutes = Math.round(deltaSeconds / 60);
+    if (Math.abs(minutes) < 60) return formatter.format(minutes, "minute");
+    const hours = Math.round(minutes / 60);
+    if (Math.abs(hours) < 24) return formatter.format(hours, "hour");
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
   }
 
   function capitalize(value) {
@@ -1091,16 +1557,23 @@
       } catch (error) {
         if (!(error instanceof ApiError) || !["unimplemented", "not_configured"].includes(error.code)) throw error;
         const response = await apiRequest("team", { id: teamId });
-        if (response.team) Object.assign(team, response.team);
+        if (response.team) {
+          if (stringValue(response.team.id) !== stringValue(teamId) || stringValue(response.team.organizationId) !== session.organizationId) {
+            throw new ApiError("The team service returned a resource outside the selected organization scope", 0, "invalid_response", "");
+          }
+          Object.assign(team, response.team);
+        }
         status = response.team?.provisioning;
       }
       if (status) team.provisioning = status;
       team._pollingMessage = "";
       renderTeamList();
+      if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
       if (!launchContract.provisioningTerminal(team.provisioning || {})) startProvisioningPolling(team, 5000);
     } catch (error) {
       team._pollingMessage = apiErrorMessage(error, "Provisioning status is temporarily unavailable. Use Refresh status to retry.");
       renderTeamList();
+      if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
       if (isRetryableApiError(error)) startProvisioningPolling(team, 10000);
     }
   }
@@ -1155,7 +1628,7 @@
         idempotencyKey: pending.idempotencyKey,
         authorizationCode: pending.authorizationCode
       });
-      if (!launchContract.githubInstallationActive(result.installation)) {
+      if (stringValue(result.installation?.organizationId) !== session.organizationId || !launchContract.githubInstallationActive(result.installation)) {
         throw new ApiError("The API did not confirm an active GitHub installation", 0, "invalid_response", "");
       }
       session.githubInstalled = true;
@@ -1192,7 +1665,10 @@
         expectedVersion: session.repositorySelection?.version || "0"
       });
       const result = await apiRequest("update_repository_selection", payload);
-      if (!result.selection) throw new ApiError("Repository service did not return the saved selection", 0, "invalid_response", "");
+      if (!result.selection || stringValue(result.selection.organizationId) !== session.organizationId) throw new ApiError("Repository service did not return a saved selection in the current organization scope", 0, "invalid_response", "");
+      if (Array.isArray(result.repositories) && result.repositories.some((repository) => stringValue(repository?.organizationId) !== session.organizationId)) {
+        throw new ApiError("Repository service returned a resource outside the current organization scope", 0, "invalid_response", "");
+      }
       session.repositorySelection = result.selection;
       if (Array.isArray(result.repositories) && result.repositories.length) session.repositories = launchContract.accessibleRepositories(result.repositories);
       mutationKeys.clear("repositorySelection");
@@ -1255,8 +1731,9 @@
   async function createTeam(event) {
     event.preventDefault();
     const name = stringValue(new FormData(ui.teamForm).get("teamName"));
+    setFieldError(ui.teamError, "");
     if (name.length < 2 || name.length > 80) {
-      toast("Enter a team name between 2 and 80 characters.", "error");
+      setFieldError(ui.teamError, "Enter a team name between 2 and 80 characters.");
       ui.teamInput.focus();
       return;
     }
@@ -1266,7 +1743,9 @@
       subscriptionActive: session.subscriptionActive
     });
     if (missing.length) {
-      toast(`Complete ${missing.join(", ")} before team creation.`, "error");
+      const message = `Complete ${missing.join(", ")} before team creation.`;
+      setFieldError(ui.teamError, message);
+      toast(message, "error");
       return;
     }
     ui.teamInput.disabled = true;
@@ -1275,18 +1754,22 @@
     try {
       const fingerprint = `${session.organizationId}:${name.toLowerCase()}`;
       const result = await apiRequest("create_team", { organizationId: session.organizationId, name, idempotencyKey: mutationKeys.for("createTeam", fingerprint) });
-      if (!result.team?.id) throw new ApiError("Team service did not return a created resource", 0, "invalid_response", "");
+      if (!result.team?.id || stringValue(result.team.organizationId) !== session.organizationId) throw new ApiError("Team service did not return a resource in the current organization scope", 0, "invalid_response", "");
       mutationKeys.clear("createTeam");
       session.teamServiceAvailable = true;
       session.teams = [result.team, ...session.teams];
       renderTeamList();
+      renderTeamSelector(result.team.id);
       startProvisioningPolling(result.team);
       updateTeamAction();
       ui.teamForm.reset();
       const provisioning = launchContract.provisioningPresentation(result.team.provisioning || {});
       toast(`Team “${stringValue(result.team.name) || name}” was created by the API${provisioning.state ? ` and provisioning is ${provisioning.label}` : "; provisioning status is pending"}.`, "success");
+      await refreshSelectedTeam();
     } catch (error) {
-      toast(apiErrorMessage(error, "The team was not confirmed as created. It is safe to retry; the request uses an idempotency key."), "error");
+      const message = apiErrorMessage(error, "The team was not confirmed as created. It is safe to retry; the request uses an idempotency key.");
+      setFieldError(ui.teamError, message);
+      toast(message, "error");
       if (error instanceof ApiError && error.code === "failed_precondition") await refreshOnboarding();
       updateTeamAction();
     } finally {
@@ -1302,13 +1785,25 @@
     toast.timer = window.setTimeout(() => { ui.toast.hidden = true; }, 9000);
   }
 
+  function setFieldError(element, message) {
+    if (!element) return;
+    element.textContent = stringValue(message);
+    element.hidden = !element.textContent;
+  }
+
   function signOut() {
     stopProvisioningPolling();
+    stopActivityStream();
     session.accessToken = "";
     session.idToken = "";
     session.claims = {};
     session.user = null;
     session.organizationId = "";
+    session.selectedTeamId = "";
+    ui.contextOrganization.textContent = "Not selected";
+    ui.contextRepositories.textContent = "Not loaded";
+    ui.contextTeam.textContent = "Not selected";
+    setAuthPhase("signed_out");
     clearOAuthTransaction();
     clearGitHubFlow();
     storageRemove(billingReturnStorageKey);
@@ -1335,11 +1830,24 @@
   ui.subscriptionAction.addEventListener("click", startBillingAction);
   ui.teamForm.addEventListener("submit", createTeam);
   ui.refresh.addEventListener("click", refreshOnboarding);
+  ui.teamSelect.addEventListener("change", () => {
+    session.selectedTeamId = stringValue(ui.teamSelect.value);
+    refreshSelectedTeam();
+  });
+  ui.activityRetry.addEventListener("click", () => {
+    const team = selectedTeam();
+    if (team) startActivityStream(team.id, session.workspaceGeneration);
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") session.teams.forEach((team) => startProvisioningPolling(team, 250));
   });
-  window.addEventListener("beforeunload", stopProvisioningPolling);
+  window.addEventListener("beforeunload", () => {
+    stopProvisioningPolling();
+    stopActivityStream();
+  });
 
+  setAuthPhase("signed_out");
+  renderProgressSummary();
   renderConfiguration();
   const initialQuery = typeof window.deepNavyInitialQuery === "string" ? window.deepNavyInitialQuery : window.location.search;
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }

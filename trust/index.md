@@ -1,20 +1,129 @@
 ---
-title: Trust Center
-description: Review Deep Navy's current security posture, planned controls, data handling principles, deployment model, and responsible disclosure contact.
+title: Trust Status
+description: Review the current implementation, deployment, and assurance status of Deep Navy security and data-handling controls.
 updated: 2026-07-17
+hide_cta: true
 ---
 
-<section class="page-hero"><div class="shell"><span class="eyebrow">Trust center</span><h1>Current posture, without the compliance theater.</h1><p>This page distinguishes implemented architecture, deployment-dependent controls, and future assurance work. It will evolve as the service reaches general availability.</p><div class="page-meta"><span>Early access</span><span>Last reviewed July 17, 2026</span></div></div></section>
+<section class="page-hero">
+  <div class="shell">
+    <span class="eyebrow">Trust status / early access</span>
+    <h1>Current control and assurance status.</h1>
+    <p>Each row states what can be verified in the customer application, what remains dependent on the active deployment, and what has not been completed.</p>
+    <div class="page-meta">
+      <span>Owner: Deep Navy</span>
+      <span>Last reviewed: 2026-07-17</span>
+      <span>Security: <a href="mailto:security@deep.navy">security@deep.navy</a></span>
+      <span>Privacy: <a href="mailto:privacy@deep.navy">privacy@deep.navy</a></span>
+    </div>
+  </div>
+</section>
 
-<section class="content-section"><div class="shell content-grid"><header><span class="eyebrow">Control status</span><h2>What is true today.</h2></header><div class="status-list">
-  <div class="status-row"><div><strong>Public site contains no provider secrets</strong><p>Runtime configuration is limited to public OAuth and API coordinates.</p></div><span class="status-label">Implemented</span></div>
-  <div class="status-row"><div><strong>Authorization code with PKCE</strong><p>The customer shell uses a public Cognito client, verifier challenge, and one-time state.</p></div><span class="status-label">Implemented</span></div>
-  <div class="status-row"><div><strong>Tokens excluded from persistent browser storage</strong><p>Tokens remain in memory; a hard refresh requires authentication again.</p></div><span class="status-label">Implemented</span></div>
-  <div class="status-row"><div><strong>Per-team Kubernetes isolation</strong><p>The infrastructure and provisioner design assigns a namespace and Gateway per customer team.</p></div><span class="status-label planned">Deployment dependent</span></div>
-  <div class="status-row"><div><strong>GitHub short-lived installation tokens</strong><p>The GitHub App model avoids customer personal access tokens.</p></div><span class="status-label planned">Deployment dependent</span></div>
-  <div class="status-row"><div><strong>Formal third-party assurance</strong><p>No SOC 2 report, ISO 27001 certification, or published penetration-test attestation is currently claimed.</p></div><span class="status-label planned">Planned</span></div>
-</div></div></section>
-
-<section class="content-section"><div class="shell content-grid"><header><span class="eyebrow">Data principles</span><h2>Collect for the product, not for ambiguity.</h2></header><div class="prose"><ul class="check-list"><li>Repository access is established through a customer-installed GitHub App.</li><li>Customer authorization and resource membership are enforced by the API, not encoded into static pages.</li><li>Provider credentials are held server-side in managed secret stores and injected only where required.</li><li>Normalized activity is customer-visible; hidden model reasoning is not presented as a product artifact.</li><li>Cost records retain provider correlation IDs for reconciliation without making provider invoices the product model.</li><li>Development and production are designed as isolated environments with different secrets.</li></ul><p>Retention periods, subprocessors, deletion timelines, and contractual terms are finalized for each early-access engagement and will be published here before general availability.</p></div></div></section>
-
-<section class="content-section"><div class="shell content-grid"><header><span class="eyebrow">Contacts</span><h2>Ask a direct question.</h2></header><div class="prose"><p><strong>Security and vulnerabilities:</strong> <a href="mailto:security@deep.navy">security@deep.navy</a><br><strong>Privacy and data requests:</strong> <a href="mailto:privacy@deep.navy">privacy@deep.navy</a><br><strong>Customer support:</strong> <a href="mailto:support@deep.navy">support@deep.navy</a></p><p>Do not email credentials, tokens, authorization codes, customer source code, or payment information.</p></div></div></section>
+<section class="content-section" id="status-index">
+  <div class="shell content-grid">
+    <header>
+      <span class="eyebrow">Status index</span>
+      <h2>Reviewed statements.</h2>
+    </header>
+    <div class="prose">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Control or assurance item</th><th>Current status</th><th>Current statement</th><th>Evidence or next verification</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Public site secret boundary</td>
+              <td>Implemented in site</td>
+              <td>Runtime configuration is limited to public API and OAuth coordinates, plan ID, environment, and build revision.</td>
+              <td>Static configuration schema and browser bundle review.</td>
+            </tr>
+            <tr>
+              <td>Authorization code with PKCE</td>
+              <td>Implemented in site</td>
+              <td>The customer application creates an S256 verifier challenge and checks state, nonce, client, token use, and expiration.</td>
+              <td>Customer application authentication flow.</td>
+            </tr>
+            <tr>
+              <td>Persistent browser token storage</td>
+              <td>Excluded in site</td>
+              <td>Access and ID tokens remain in memory and are absent from <code>localStorage</code>. Refresh and sign-out clear them.</td>
+              <td>Customer application storage and sign-out paths.</td>
+            </tr>
+            <tr>
+              <td>Server-side resource authorization</td>
+              <td>Deployment validation required</td>
+              <td>The service contract requires authorization for organization, repository, team, activity, approval, and economics operations.</td>
+              <td>Validate middleware and resource-scope tests in the deployed platform API.</td>
+            </tr>
+            <tr>
+              <td>GitHub App repository scope</td>
+              <td>Deployment dependent</td>
+              <td>The integration model uses a customer-installed GitHub App, installation mapping, approved repositories, and short-lived installation tokens.</td>
+              <td>Verify the installed App permissions, selected repositories, callback, and server secret custody.</td>
+            </tr>
+            <tr>
+              <td>Stripe subscription authority</td>
+              <td>Deployment dependent</td>
+              <td>Stripe-hosted checkout collects payment details. Subscription state changes after signed webhook processing.</td>
+              <td>Verify webhook signature enforcement, idempotency, event destinations, and live-mode keys.</td>
+            </tr>
+            <tr>
+              <td>Per-team Kubernetes runtime</td>
+              <td>Deployment dependent</td>
+              <td>The provisioner contract assigns a namespace and runtime records to each customer team.</td>
+              <td>Verify namespace, service identity, cluster policy, network path, teardown, and backup behavior in each environment.</td>
+            </tr>
+            <tr>
+              <td>Provider credential custody</td>
+              <td>Deployment dependent</td>
+              <td>Provider credentials belong in AWS Secrets Manager and are supplied only to authorized services or team runtimes.</td>
+              <td>Verify secret resource policies, workload access, rotation, audit events, and absence from static configuration.</td>
+            </tr>
+            <tr>
+              <td>Normalized activity visibility</td>
+              <td>Contract defined</td>
+              <td>The generated activity service streams team-scoped safe summaries. Provider credentials and hidden model reasoning are outside the customer event record.</td>
+              <td>Validate authorization and redaction against the deployed activity service.</td>
+            </tr>
+            <tr>
+              <td>Approval queue discovery</td>
+              <td>Unavailable in current contract</td>
+              <td>The approval service can decide a known approval ID; it has no method to list pending approvals. The customer application suppresses decision controls.</td>
+              <td>Add and review a scoped discovery contract before exposing an approval queue.</td>
+            </tr>
+            <tr>
+              <td>Retention, deletion, and subprocessor schedule</td>
+              <td>Engagement specific</td>
+              <td>These terms are confirmed for each early-access engagement and have not been published as a general schedule.</td>
+              <td>Publish the approved schedule before general availability.</td>
+            </tr>
+            <tr>
+              <td>SOC 2 report</td>
+              <td>Not completed</td>
+              <td>No SOC 2 report is currently claimed.</td>
+              <td>Scope and complete an independent examination before changing this status.</td>
+            </tr>
+            <tr>
+              <td>ISO 27001 certification</td>
+              <td>Not completed</td>
+              <td>No ISO 27001 certification is currently claimed.</td>
+              <td>Establish the certification scope and accredited audit before changing this status.</td>
+            </tr>
+            <tr>
+              <td>Published penetration-test attestation</td>
+              <td>Not completed</td>
+              <td>No published penetration-test attestation is currently claimed.</td>
+              <td>Complete an authorized assessment and define customer-accessible reporting.</td>
+            </tr>
+            <tr>
+              <td>Contractual uptime commitment</td>
+              <td>Not published</td>
+              <td>No generally available uptime SLA is currently claimed.</td>
+              <td>Publish service-level terms with measurement and remedy definitions before changing this status.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Questions about a row: <a href="mailto:security@deep.navy">security@deep.navy</a>. Data requests: <a href="mailto:privacy@deep.navy">privacy@deep.navy</a>. Do not send credentials, authorization codes, access tokens, customer source code, or payment information by email.</p>
+    </div>
+  </div>
+</section>

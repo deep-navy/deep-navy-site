@@ -110,6 +110,16 @@ The app never synthesizes completion:
 - A team appears only after `ListTeams` or `CreateTeam` returns it.
 - Queued and running teams poll `GetProvisioningStatus`, with `GetTeam` as an
   additive compatibility fallback until the public Connect stream is exposed.
+- The selected team roster comes only from `AgentService.ListAgents`.
+- Team activity uses `ActivityService.StreamTeamActivity`; the browser renders
+  only the typed `safe_summary` and allowlisted event metadata, never raw event
+  details or model reasoning.
+- Team economics comes only from a matching team-scoped
+  `EconomicsService.GetEconomics` response. The browser does not calculate or
+  backfill missing ledger values.
+- The pinned approvals contract supports deciding a known approval but does not
+  expose pending-approval discovery. The UI names that gap and shows no decision
+  controls until a typed list contract exists.
 - Redirect URLs returned by APIs must use HTTPS and an allowlisted GitHub or Stripe host.
 - API errors show an actionable unavailable state and, when present, a request ID.
 
@@ -127,6 +137,7 @@ node --check assets/js/callback-scrubber.js
 node --check assets/js/platform-api-client.js
 node --check assets/js/organization-onboarding.js
 node --check assets/js/launch-contract.js
+node --check assets/js/app-state.js
 node --check assets/js/app.js
 npm test
 ruby scripts/runtime_config_test.rb

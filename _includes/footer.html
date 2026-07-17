@@ -2,33 +2,23 @@
   <div class="shell footer-grid">
     <div class="footer-brand">
       <a class="brand" href="{{ '/' | relative_url }}">
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span class="brand-mark" aria-hidden="true"><span>DN/</span></span>
         <span>Deep Navy</span>
       </a>
-      <p>Autonomous engineering,<br>accountable outcomes.</p>
-      <span class="early-access-badge"><span></span> Early access</span>
+      <p>Objective records, GitHub delivery, and attributed engineering cost.</p>
+      <span class="early-access-badge">Early access</span>
     </div>
-    <div>
-      <h2>Product</h2>
-      <a href="{{ '/product/' | relative_url }}">How it works</a>
-      <a href="{{ '/economics/' | relative_url }}">Engineering Economics</a>
+    <nav class="footer-index" aria-label="Footer">
+      <a href="{{ '/product/' | relative_url }}">Product</a>
+      <a href="{{ '/economics/' | relative_url }}">Economics</a>
       <a href="{{ '/architecture/' | relative_url }}">Architecture</a>
       <a href="{{ '/pricing/' | relative_url }}">Pricing</a>
-    </div>
-    <div>
-      <h2>Resources</h2>
       <a href="{{ '/docs/' | relative_url }}">Documentation</a>
       <a href="{{ '/integrations/github/' | relative_url }}">GitHub integration</a>
-      <a href="{{ '/blog/' | relative_url }}">Field notes</a>
-      <a href="{{ '/compare/ai-coding-assistants/' | relative_url }}">Compare approaches</a>
-    </div>
-    <div>
-      <h2>Company</h2>
-      <a href="{{ '/customers/' | relative_url }}">Customers</a>
       <a href="{{ '/security/' | relative_url }}">Security</a>
-      <a href="{{ '/trust/' | relative_url }}">Trust center</a>
-      <a href="mailto:hello@deep.navy">hello@deep.navy</a>
-    </div>
+      <a href="{{ '/trust/' | relative_url }}">Trust status</a>
+    </nav>
+    <div class="footer-contact"><span>Contact</span><a href="mailto:hello@deep.navy">hello@deep.navy</a><a href="mailto:security@deep.navy">security@deep.navy</a></div>
   </div>
   <div class="shell footer-bottom">
     <span>© {{ 'now' | date: '%Y' }} Deep Navy</span>

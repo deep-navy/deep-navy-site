@@ -1,8 +1,12 @@
 import { Code, ConnectError, createClient, type CallOptions } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
+import { ActivityService } from "../vendor/platform-protos/deepnavy/v1/activity_pb.js";
+import { AgentService } from "../vendor/platform-protos/deepnavy/v1/agents_pb.js";
+import { ApprovalService } from "../vendor/platform-protos/deepnavy/v1/approvals_pb.js";
 import { AuthService } from "../vendor/platform-protos/deepnavy/v1/auth_pb.js";
 import { BillingService } from "../vendor/platform-protos/deepnavy/v1/billing_pb.js";
+import { EconomicsService } from "../vendor/platform-protos/deepnavy/v1/economics_pb.js";
 import {
   GitHubInstallationSetupAction,
   GitHubService
@@ -34,8 +38,19 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "team",
   "teams",
   "create_team",
-  "provisioning_status"
+  "provisioning_status",
+  "agents",
+  "economics",
+  "decide_approval"
 ] as const);
+
+export const PLATFORM_CAPABILITIES = Object.freeze({
+  activityStream: true,
+  economicsRead: true,
+  agentList: true,
+  approvalDecision: true,
+  approvalDiscovery: false
+});
 
 type ProcedureName = (typeof SUPPORTED_PROCEDURES)[number];
 type InputRecord = Record<string, unknown>;
@@ -97,6 +112,11 @@ function pageRequest(value: unknown): { pageSize: number; pageToken: string } | 
   const page = value as InputRecord;
   const size = typeof page.pageSize === "number" && Number.isInteger(page.pageSize) ? page.pageSize : 0;
   return { pageSize: size, pageToken: typeof page.pageToken === "string" ? page.pageToken : "" };
+}
+
+function booleanField(input: InputRecord, name: string): boolean {
+  if (typeof input[name] !== "boolean") throw new PlatformClientError(`${name} is required.`, "invalid_argument", 400, "");
+  return input[name];
 }
 
 function setupAction(value: unknown): GitHubInstallationSetupAction {
@@ -184,8 +204,12 @@ export function createPlatformApi(options: PlatformApiOptions) {
     useBinaryFormat: false,
     useHttpGet: false
   });
+  const activity = createClient(ActivityService, transport);
+  const agents = createClient(AgentService, transport);
+  const approvals = createClient(ApprovalService, transport);
   const auth = createClient(AuthService, transport);
   const billing = createClient(BillingService, transport);
+  const economics = createClient(EconomicsService, transport);
   const github = createClient(GitHubService, transport);
   const organizations = createClient(OrganizationService, transport);
   const provisioning = createClient(ProvisioningService, transport);
@@ -268,6 +292,16 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await teams.createTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
         case "provisioning_status":
           return await provisioning.getProvisioningStatus({ teamId: textField(payload, "teamId") }, callOptions);
+        case "agents":
+          return await agents.listAgents({ teamId: textField(payload, "teamId"), page: pageRequest(payload.page) }, callOptions);
+        case "economics":
+          return await economics.getEconomics({ scopeType: textField(payload, "scopeType"), scopeId: textField(payload, "scopeId") }, callOptions);
+        case "decide_approval":
+          return await approvals.decideApproval({
+            id: textField(payload, "id"),
+            approved: booleanField(payload, "approved"),
+            reason: textField(payload, "reason", false)
+          }, callOptions);
         default:
           throw new PlatformClientError("The requested generated procedure is not available.", "not_configured", 0, requestId);
       }
@@ -282,5 +316,37 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
-  return Object.freeze({ request });
+  async function* streamTeamActivity(input: unknown, options: PlatformCallOptions) {
+    const payload = inputRecord(input);
+    const accessToken = options.accessToken.trim();
+    const requestId = options.requestId.trim();
+    if (!accessToken) throw new PlatformClientError("Sign-in is required.", "unauthenticated", 401, requestId);
+    const callOptions: CallOptions = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Request-ID": requestId
+      },
+      signal: options.signal,
+      timeoutMs: 0
+    };
+
+    try {
+      for await (const response of activity.streamTeamActivity({
+        teamId: textField(payload, "teamId"),
+        afterSequence: int64Field(payload.afterSequence ?? 0, "afterSequence")
+      }, callOptions)) {
+        yield response;
+      }
+    } catch (error) {
+      if (error instanceof PlatformClientError) throw error;
+      const connectError = ConnectError.from(error);
+      const responseRequestId = connectError.metadata.get("x-request-id") || requestId;
+      const safeMessage = connectError.code === Code.Unknown
+        ? "The browser could not reach the activity service."
+        : connectError.rawMessage.slice(0, 300) || "The activity service rejected the stream.";
+      throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
+    }
+  }
+
+  return Object.freeze({ request, streamTeamActivity });
 }

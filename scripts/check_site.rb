@@ -79,10 +79,13 @@ app_pages.each do |file|
   errors << "#{relative}: app pages must not contain inline scripts" if html.scan(%r{<script(?![^>]*\ssrc=)[^>]*>}i).any?
   scrubber = html.index("callback-scrubber.js")
   generated_client = html.index("platform-api-client.js")
+  app_state = html.index("app-state.js")
+  agent_roles = html.index("agent-roles.js")
   application = html.index("assets/js/app.js")
-  unless scrubber && generated_client && application && scrubber < generated_client && generated_client < application
+  unless scrubber && generated_client && app_state && agent_roles && application && scrubber < generated_client && generated_client < app_state && app_state < agent_roles && agent_roles < application
     errors << "#{relative}: secure callback scrubber and generated API client script order is invalid"
   end
+  errors << "#{relative}: hidden elements must have an author-level display guard" unless site.join("assets/css/main.css").read.include?("[hidden] { display: none !important; }")
 end
 
 github_callback = site.join("app/github/callback/index.html")

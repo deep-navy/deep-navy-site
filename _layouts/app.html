@@ -12,11 +12,19 @@
     <a class="skip-link" href="#app-main">Skip to application</a>
     <header class="app-header">
       <a class="brand" href="{{ '/' | relative_url }}" aria-label="Deep Navy home">
-        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span class="brand-mark" aria-hidden="true"><span>DN/</span></span>
         <span>Deep Navy</span>
       </a>
+      <nav class="app-primary-nav" aria-label="Workspace navigation" data-authenticated-nav hidden>
+        <a href="#workspace-overview">Overview</a>
+        <a href="#workspace-setup">Setup</a>
+        <a href="#workspace-activity">Activity</a>
+        <a href="#workspace-economics">Economics</a>
+        <a href="#workspace-approvals">Approvals</a>
+      </nav>
       <div class="app-header-actions">
         <span class="environment-pill" data-environment>Local</span>
+        <span class="session-pill" data-session-state>Signed out</span>
         <button class="button button-quiet button-small" type="button" data-sign-out hidden>Sign out</button>
         <a class="button button-quiet button-small" href="{{ '/docs/' | relative_url }}">Help</a>
       </div>
@@ -27,6 +35,8 @@
     <script src="{{ '/assets/js/platform-api-client.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/organization-onboarding.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/launch-contract.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/app-state.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/agent-roles.js' | relative_url }}"></script>
     <script src="{{ '/assets/js/app.js' | relative_url }}" defer></script>
   </body>
 </html>

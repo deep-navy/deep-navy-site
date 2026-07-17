@@ -6,7 +6,7 @@
     "build": "node scripts/build_platform_client.mjs",
     "check:vendor": "node scripts/check_vendored_platform_protos.mjs",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "node --test scripts/callback_scrubber_test.cjs scripts/onboarding_contract_test.cjs scripts/launch_contract_test.cjs scripts/platform_api_client_test.cjs",
+    "test": "node --test scripts/agent_roles_test.cjs scripts/app_state_test.cjs scripts/callback_scrubber_test.cjs scripts/onboarding_contract_test.cjs scripts/launch_contract_test.cjs scripts/platform_api_client_test.cjs",
     "check": "npm run check:vendor && npm run typecheck && npm run build && npm test"
   },
   "engines": {

@@ -2,112 +2,204 @@
   <section class="app-intro" aria-labelledby="app-title">
     <div>
       <span class="eyebrow">Customer workspace</span>
-      <h1 id="app-title">Bring your engineering team online.</h1>
-      <p data-app-subtitle>Sign in, connect the approved repositories, activate your plan, and create the team.</p>
+      <h1 id="app-title">Organization setup and team activity.</h1>
+      <p data-app-subtitle>Configure the account, repository scope, plan, and team. Service responses populate the workspace below.</p>
     </div>
     <div class="user-summary" data-user-summary hidden>
       <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
-      <div><strong data-user-name>Signed in</strong><span data-user-login></span></div>
+      <div><strong data-user-name></strong><span data-user-login></span></div>
     </div>
   </section>
 
-  <section class="config-banner" data-config-banner data-tone="warning" aria-live="polite">
+  <section class="config-banner" data-config-banner data-tone="warning" aria-live="polite" aria-atomic="true">
     <span class="banner-icon" aria-hidden="true">!</span>
     <div><strong data-config-title>Checking environment configuration</strong><p data-config-message>The application is verifying its public API and identity settings.</p></div>
     <a class="button button-quiet button-small" href="{{ '/docs/#readiness' | relative_url }}">Readiness guide</a>
   </section>
 
-  <section class="auth-banner" data-auth-banner data-tone="warning" aria-live="assertive" hidden>
+  <section class="auth-banner" data-auth-banner data-tone="warning" role="alert" hidden>
     <span class="banner-icon" aria-hidden="true">!</span>
     <div><strong data-auth-title>Authentication needs attention</strong><p data-auth-message></p></div>
     <button class="button button-secondary button-small" type="button" data-retry-sign-in>Try again</button>
   </section>
 
-  <section class="signed-out-card" data-signed-out>
+  <section class="signed-out-card" data-signed-out aria-labelledby="sign-in-title">
     <div class="signed-out-inner">
       <span class="signed-out-mark" aria-hidden="true">↗</span>
-      <h2>Sign in to start onboarding</h2>
-      <p>You’ll continue through this environment’s Amazon Cognito managed login. Deep Navy uses authorization code with PKCE; this static site contains no client secret.</p>
-      <button class="button button-primary button-large" type="button" data-sign-in>Continue securely <span aria-hidden="true">→</span></button>
-      <p class="security-note">Tokens are kept in memory and are not written to local storage. A page refresh requires sign-in again.</p>
+      <span class="eyebrow">Step 1 of 6 · Account</span>
+      <h2 id="sign-in-title">Sign in to start onboarding</h2>
+      <p>Continue through this environment’s Amazon Cognito managed login. Deep Navy uses authorization code with PKCE; this static site contains no client secret.</p>
+      <button class="button button-primary button-large" type="button" data-sign-in>Continue to Cognito <span aria-hidden="true">→</span></button>
+      <p class="security-note">Tokens stay in memory and are never written to local storage. A page refresh requires sign-in again during early access.</p>
     </div>
   </section>
 
   <div data-authenticated hidden>
-    <section class="onboarding-card organization-card" data-step="organization" data-state="loading" aria-labelledby="organization-title">
-      <div class="step-header"><span class="step-number">WORKSPACE</span><span class="step-state" data-step-state>Checking</span></div>
-      <h2 id="organization-title">Establish your organization</h2>
-      <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
-      <form class="inline-form organization-form" data-organization-bootstrap hidden>
-        <label for="organization-name">Organization name</label>
-        <input id="organization-name" name="organizationName" minlength="2" maxlength="80" autocomplete="organization" placeholder="Acme Engineering" required disabled>
-        <button class="button button-primary" type="submit" disabled>Create organization</button>
-      </form>
-      <form class="inline-form organization-form" data-organization-select hidden>
-        <label for="organization-selection">Organization</label>
-        <select id="organization-selection" name="organizationId" required disabled></select>
-        <button class="button button-primary" type="submit" disabled>Continue with organization</button>
-      </form>
-      <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
+    <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
+      <div class="progress-copy">
+        <div><span class="eyebrow">Onboarding status</span><h2 id="onboarding-progress-title">Six server-verified prerequisites.</h2></div>
+        <p data-progress-summary role="status" aria-live="polite">1 of 6 steps complete</p>
+      </div>
+      <ol class="progress-steps">
+        <li data-progress-step="identity" data-state="complete"><span>01</span><strong>Account</strong><small>Authenticated</small></li>
+        <li data-progress-step="organization" data-state="loading"><span>02</span><strong>Organization</strong><small>Checking</small></li>
+        <li data-progress-step="github" data-state="blocked"><span>03</span><strong>GitHub</strong><small>Waiting</small></li>
+        <li data-progress-step="repositories" data-state="blocked"><span>04</span><strong>Repositories</strong><small>Waiting</small></li>
+        <li data-progress-step="subscription" data-state="blocked"><span>05</span><strong>Plan</strong><small>Waiting</small></li>
+        <li data-progress-step="team" data-state="blocked"><span>06</span><strong>Team</strong><small>Waiting</small></li>
+      </ol>
     </section>
 
-    <div data-organization-dependent hidden>
-    <section class="onboarding-grid" aria-label="Onboarding progress">
-      <article class="onboarding-card" data-step="github" data-state="loading">
-        <div class="step-header"><span class="step-number">STEP 01</span><span class="step-state" data-step-state>Checking</span></div>
-        <h2>Connect GitHub</h2>
-        <p data-step-message>Checking for an organization-bound GitHub App installation.</p>
-        <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Install GitHub App</button></div>
-      </article>
+    <section id="workspace-setup" class="workspace-section" aria-labelledby="workspace-setup-title">
+      <div class="workspace-section-heading">
+        <div><span class="eyebrow">Setup procedure</span><h2 id="workspace-setup-title">Account to provisioned team.</h2></div>
+        <p>Each row reflects a platform API resource. The active row contains the available action.</p>
+      </div>
 
-      <article class="onboarding-card repository-card" data-step="repositories" data-state="blocked">
-        <div class="step-header"><span class="step-number">STEP 02</span><span class="step-state" data-step-state>Blocked</span></div>
-        <h2>Choose repositories</h2>
-        <p data-step-message>Connect GitHub before choosing which accessible repositories the team may use.</p>
-        <form class="repository-form" data-repository-form hidden>
-          <fieldset class="repository-modes">
-            <legend>Deep Navy access</legend>
-            <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
-            <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
-          </fieldset>
-          <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories"></div>
-          <p class="form-help" data-repository-empty hidden>No accessible repositories were returned. Grant repository access in GitHub, then refresh.</p>
-          <div class="repository-actions">
-            <button class="button button-primary" type="submit" data-repository-save disabled>Save repository access</button>
-            <button class="button button-quiet" type="button" data-repository-refresh>Refresh repositories</button>
+      <section class="onboarding-card organization-card" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
+        <div class="step-header"><span class="step-number">STEP 02 · ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
+        <h2 id="organization-title">Establish your organization</h2>
+        <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
+        <form class="inline-form organization-form" data-organization-bootstrap hidden>
+          <label for="organization-name">Organization name</label>
+          <input id="organization-name" name="organizationName" minlength="2" maxlength="80" autocomplete="organization" aria-describedby="organization-name-help organization-name-error" placeholder="Acme Engineering" required disabled>
+          <p class="form-help form-help-neutral" id="organization-name-help">Use the customer or company name your members will recognize.</p>
+          <p class="form-error" id="organization-name-error" data-organization-error role="alert" hidden></p>
+          <button class="button button-primary" type="submit" disabled>Create organization</button>
+        </form>
+        <form class="inline-form organization-form" data-organization-select hidden>
+          <label for="organization-selection">Organization</label>
+          <select id="organization-selection" name="organizationId" required disabled></select>
+          <button class="button button-primary" type="submit" disabled>Continue with organization</button>
+        </form>
+        <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
+      </section>
+
+      <div data-organization-dependent hidden>
+        <section class="onboarding-grid" aria-label="Remaining onboarding steps">
+          <article class="onboarding-card" data-step="github" data-state="loading" tabindex="-1">
+            <div class="step-header"><span class="step-number">STEP 03 · GITHUB</span><span class="step-state" data-step-state>Checking</span></div>
+            <h2>Connect GitHub</h2>
+            <p data-step-message>Checking for an organization-bound GitHub App installation.</p>
+            <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Install GitHub App</button></div>
+          </article>
+
+          <article class="onboarding-card repository-card" data-step="repositories" data-state="blocked" tabindex="-1">
+            <div class="step-header"><span class="step-number">STEP 04 · REPOSITORIES</span><span class="step-state" data-step-state>Blocked</span></div>
+            <h2>Choose repositories</h2>
+            <p data-step-message>Connect GitHub before choosing which accessible repositories the team may use.</p>
+            <form class="repository-form" data-repository-form hidden>
+              <fieldset class="repository-modes">
+                <legend>Deep Navy access</legend>
+                <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
+                <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
+              </fieldset>
+              <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories"></div>
+              <p class="form-help" data-repository-empty hidden>No accessible repositories were returned. Grant repository access in GitHub, then refresh.</p>
+              <div class="repository-actions">
+                <button class="button button-primary" type="submit" data-repository-save disabled>Save repository access</button>
+                <button class="button button-quiet" type="button" data-repository-refresh>Refresh repositories</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="onboarding-card" data-step="subscription" data-state="loading" tabindex="-1">
+            <div class="step-header"><span class="step-number">STEP 05 · PLAN</span><span class="step-state" data-step-state>Checking</span></div>
+            <h2>Activate subscription</h2>
+            <p data-step-message>Checking the server-verified subscription status.</p>
+            <dl class="plan-summary" data-plan-summary hidden>
+              <div><dt>Plan</dt><dd data-plan-name></dd></div>
+              <div><dt>Price</dt><dd data-plan-price></dd></div>
+              <div><dt>Included</dt><dd data-plan-credits></dd></div>
+            </dl>
+            <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Open secure checkout</button></div>
+          </article>
+
+          <article class="onboarding-card" data-step="team" data-state="loading" tabindex="-1">
+            <div class="step-header"><span class="step-number">STEP 06 · TEAM</span><span class="step-state" data-step-state>Checking</span></div>
+            <h2>Create your team</h2>
+            <p data-step-message>Team creation unlocks after GitHub, repository access, and the subscription are ready.</p>
+            <form class="inline-form card-action" data-team-form>
+              <label for="team-name">Team name</label>
+              <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
+              <p class="form-help form-help-neutral" id="team-name-help">Choose a durable name tied to the team’s product area.</p>
+              <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
+              <button class="button button-primary" type="submit" disabled>Create engineering team</button>
+            </form>
+          </article>
+        </section>
+      </div>
+    </section>
+
+    <section id="workspace-overview" class="workspace-context" aria-labelledby="workspace-overview-title">
+      <div><span class="eyebrow">Current context</span><h2 id="workspace-overview-title">Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p></div>
+      <div class="dashboard-controls">
+        <label for="workspace-team">Team</label>
+        <select id="workspace-team" data-team-select disabled><option value="">No teams available</option></select>
+        <button class="button button-quiet button-small" type="button" data-refresh>Refresh</button>
+      </div>
+      <dl class="context-ledger">
+        <div><dt>Environment</dt><dd data-environment>Local</dd></div>
+        <div><dt>Organization</dt><dd data-context-organization>Not selected</dd></div>
+        <div><dt>Repository scope</dt><dd data-context-repositories>Not loaded</dd></div>
+        <div><dt>Team</dt><dd data-context-team>Not selected</dd></div>
+      </dl>
+    </section>
+
+    <div class="product-workspace">
+      <aside class="workspace-rail" aria-label="Team context">
+        <article class="app-dashboard" aria-labelledby="teams-title">
+          <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">API response</span></div>
+          <div class="empty-state" data-teams-empty><strong>No team resource</strong><p>Complete setup to create the first team.</p></div>
+          <div class="status-list" data-team-list aria-live="polite" hidden></div>
+        </article>
+
+        <article class="app-dashboard" aria-labelledby="agents-title">
+          <div class="app-dashboard-header"><h3 id="agents-title">Runtime roles</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
+          <div class="empty-state" data-agents-empty><strong>No roster loaded</strong><p>Select a team to query AgentService.</p></div>
+          <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
+        </article>
+
+        <article class="app-dashboard" aria-labelledby="objectives-title">
+          <div class="app-dashboard-header"><h3 id="objectives-title">Objectives / initiatives</h3><span class="data-source-badge">Contract gap</span></div>
+          <div class="empty-state"><strong>No discovery method</strong><p>The pinned API can create an objective and list initiatives only when an objective ID is already known. This site does not infer records.</p></div>
+        </article>
+      </aside>
+
+      <section id="workspace-activity" class="workspace-section workspace-center" aria-labelledby="activity-title">
+        <div class="workspace-section-heading dashboard-heading">
+          <div><span class="eyebrow">Activity ledger</span><h2 id="activity-title">Normalized team events</h2><p>Type, safe summary, role, state, sequence, and timestamp from ActivityService.</p></div>
+          <div class="live-control"><span class="stream-state" data-activity-state>Waiting for a team</span><button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button></div>
+        </div>
+        <div class="activity-workspace">
+          <div class="empty-state" data-activity-empty><strong>No activity loaded</strong><p>Select a team to connect the event stream.</p></div>
+          <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
+        </div>
+      </section>
+
+      <aside class="workspace-side" aria-label="Approvals and economics">
+        <section id="workspace-economics" class="workspace-section" aria-labelledby="workspace-economics-title">
+          <div class="workspace-section-heading dashboard-heading">
+            <div><span class="eyebrow">Team economics</span><h2 id="workspace-economics-title">Cost and credits</h2><p data-economics-message>Select a team to query EconomicsService.</p></div>
+            <span class="data-source-badge" data-economics-state>Waiting</span>
           </div>
-        </form>
-      </article>
+          <div class="empty-state" data-economics-empty><strong>No economics summary</strong><p>The measured team response will populate this ledger.</p></div>
+          <dl class="economics-metrics" data-economics-metrics hidden>
+            <div><dt>Attributable cost</dt><dd data-economics-direct-cost></dd></div>
+            <div><dt>Credits used</dt><dd data-economics-credits-used></dd></div>
+            <div><dt>Credits remaining</dt><dd data-economics-credits-remaining></dd></div>
+          </dl>
+          <p class="measured-note" data-economics-measured hidden></p>
+        </section>
 
-      <article class="onboarding-card" data-step="subscription" data-state="loading">
-        <div class="step-header"><span class="step-number">STEP 03</span><span class="step-state" data-step-state>Checking</span></div>
-        <h2>Activate subscription</h2>
-        <p data-step-message>Checking the server-verified subscription status.</p>
-        <dl class="plan-summary" data-plan-summary hidden>
-          <div><dt>Plan</dt><dd data-plan-name></dd></div>
-          <div><dt>Price</dt><dd data-plan-price></dd></div>
-          <div><dt>Included</dt><dd data-plan-credits></dd></div>
-        </dl>
-        <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Open secure checkout</button></div>
-      </article>
-
-      <article class="onboarding-card" data-step="team" data-state="loading">
-        <div class="step-header"><span class="step-number">STEP 04</span><span class="step-state" data-step-state>Checking</span></div>
-        <h2>Create your team</h2>
-        <p data-step-message>Team creation unlocks after GitHub, repository access, and the subscription are ready.</p>
-        <form class="inline-form card-action" data-team-form>
-          <label for="team-name">Team name</label>
-          <input id="team-name" name="teamName" maxlength="80" autocomplete="organization" placeholder="Product engineering" required disabled>
-          <button class="button button-primary" type="submit" disabled>Create engineering team</button>
-        </form>
-      </article>
-    </section>
-
-    <section class="app-dashboard" aria-labelledby="teams-title">
-      <div class="app-dashboard-header"><h2 id="teams-title">Engineering teams</h2><button class="button button-quiet button-small" type="button" data-refresh>Refresh status</button></div>
-      <div class="empty-state" data-teams-empty><strong>No server-confirmed teams yet</strong><p>When the API returns a created or provisioning team, it will appear here. This shell does not invent demo resources.</p></div>
-      <div class="status-list" data-team-list aria-live="polite" hidden></div>
-    </section>
+        <section id="workspace-approvals" class="workspace-section" aria-labelledby="workspace-approvals-title">
+          <div class="workspace-section-heading"><div><span class="eyebrow">Approval queue</span><h2 id="workspace-approvals-title">Discovery unavailable</h2></div></div>
+          <div class="capability-notice" data-approvals-unavailable>
+            <span class="capability-icon" aria-hidden="true">i</span>
+            <div><strong>The pinned API has no pending-approval list method.</strong><p>It can decide a known approval ID. Queue controls remain disabled until a typed discovery contract is available.</p></div>
+          </div>
+        </section>
+      </aside>
     </div>
   </div>
 </div>

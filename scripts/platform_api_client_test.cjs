@@ -18,6 +18,72 @@ test("the browser bundle exposes the pinned generated contract", () => {
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("provisioning_status"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("agents"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("economics"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("decide_approval"));
+  assert.equal(generated.PLATFORM_CAPABILITIES.activityStream, true);
+  assert.equal(generated.PLATFORM_CAPABILITIES.approvalDecision, true);
+  assert.equal(generated.PLATFORM_CAPABILITIES.approvalDiscovery, false);
+
+  const api = generated.createPlatformApi({
+    baseUrl: "https://api.dev.deep.navy",
+    fetch: async () => { throw new Error("not called"); }
+  });
+  assert.equal(typeof api.streamTeamActivity, "function");
+});
+
+test("generated economics client requests a team-scoped measured summary", async () => {
+  let request;
+  const api = generated.createPlatformApi({
+    baseUrl: "https://api.dev.deep.navy",
+    fetch: async (input, init) => {
+      request = { input: String(input), init };
+      return new Response(JSON.stringify({
+        economics: {
+          scopeType: "team",
+          scopeId: "team-1",
+          directCost: { currencyCode: "USD", units: "12", nanos: 500000000 },
+          grossMargin: 0.42,
+          creditsUsedMicros: "1250000"
+        }
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const result = await api.request("economics", { scopeType: "team", scopeId: "team-1" }, {
+    accessToken: "access-token",
+    requestId: "economics-request"
+  });
+
+  assert.equal(request.input, "https://api.dev.deep.navy/deepnavy.v1.EconomicsService/GetEconomics");
+  assert.deepEqual(parseRequestBody(request.init.body), { scopeType: "team", scopeId: "team-1" });
+  assert.equal(result.economics.scopeId, "team-1");
+  assert.equal(result.economics.creditsUsedMicros, 1250000n);
+});
+
+test("approval decisions accept an explicit boolean and never imply discovery support", async () => {
+  let request;
+  const api = generated.createPlatformApi({
+    baseUrl: "https://api.dev.deep.navy",
+    fetch: async (input, init) => {
+      request = { input: String(input), init };
+      return new Response(JSON.stringify({ approval: { id: "approval-1", status: "denied" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  });
+
+  await api.request("decide_approval", { id: "approval-1", approved: false, reason: "Needs a narrower scope" }, {
+    accessToken: "access-token",
+    requestId: "approval-request"
+  });
+
+  assert.equal(request.input, "https://api.dev.deep.navy/deepnavy.v1.ApprovalService/DecideApproval");
+  assert.deepEqual(parseRequestBody(request.init.body), {
+    id: "approval-1",
+    reason: "Needs a narrower scope"
+  }, "canonical Protobuf JSON omits the false default, which the server decodes as an explicit deny decision");
 });
 
 test("generated GitHub client derives the RPC path and Protobuf JSON", async () => {
