@@ -1,5 +1,10 @@
+---
+layout: null
+permalink: /robots.txt
+---
 User-agent: *
 Allow: /
-Disallow: /app/
-Sitemap: https://deep.navy/sitemap.xml
+Disallow: {{ '/app/' | relative_url }}
+
+Sitemap: {{ '/sitemap.xml' | absolute_url }}
 

@@ -1,0 +1,33 @@
+<header class="site-header" data-site-header>
+  <div class="shell header-inner">
+    <a class="brand" href="{{ '/' | relative_url }}" aria-label="Deep Navy home">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span>Deep Navy</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="{{ '/product/' | relative_url }}">Product</a>
+      <a href="{{ '/solutions/' | relative_url }}">Solutions</a>
+      <a href="{{ '/economics/' | relative_url }}">Economics</a>
+      <a href="{{ '/pricing/' | relative_url }}">Pricing</a>
+      <a href="{{ '/docs/' | relative_url }}">Docs</a>
+      <a href="{{ '/security/' | relative_url }}">Security</a>
+    </nav>
+    <div class="header-actions">
+      <a class="button button-quiet button-small desktop-action" href="{{ '/app/' | relative_url }}">Sign in</a>
+      <a class="button button-primary button-small desktop-action" href="{{ '/app/' | relative_url }}">Hire your team</a>
+      <details class="mobile-menu">
+        <summary aria-label="Open navigation"><span></span><span></span><span></span></summary>
+        <nav aria-label="Mobile navigation">
+          <a href="{{ '/product/' | relative_url }}">Product</a>
+          <a href="{{ '/solutions/' | relative_url }}">Solutions</a>
+          <a href="{{ '/economics/' | relative_url }}">Engineering Economics</a>
+          <a href="{{ '/pricing/' | relative_url }}">Pricing</a>
+          <a href="{{ '/docs/' | relative_url }}">Documentation</a>
+          <a href="{{ '/security/' | relative_url }}">Security</a>
+          <a href="{{ '/app/' | relative_url }}">Sign in</a>
+          <a class="button button-primary" href="{{ '/app/' | relative_url }}">Hire your team</a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>

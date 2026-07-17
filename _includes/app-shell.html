@@ -1,0 +1,89 @@
+<div class="app-shell">
+  <section class="app-intro" aria-labelledby="app-title">
+    <div>
+      <span class="eyebrow">Customer workspace</span>
+      <h1 id="app-title">Bring your engineering team online.</h1>
+      <p data-app-subtitle>Sign in, connect the approved repositories, activate your plan, and create the team.</p>
+    </div>
+    <div class="user-summary" data-user-summary hidden>
+      <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
+      <div><strong data-user-name>Signed in</strong><span data-user-login></span></div>
+    </div>
+  </section>
+
+  <section class="config-banner" data-config-banner data-tone="warning" aria-live="polite">
+    <span class="banner-icon" aria-hidden="true">!</span>
+    <div><strong data-config-title>Checking environment configuration</strong><p data-config-message>The application is verifying its public API and identity settings.</p></div>
+    <a class="button button-quiet button-small" href="{{ '/docs/#readiness' | relative_url }}">Readiness guide</a>
+  </section>
+
+  <section class="auth-banner" data-auth-banner data-tone="warning" aria-live="assertive" hidden>
+    <span class="banner-icon" aria-hidden="true">!</span>
+    <div><strong data-auth-title>Authentication needs attention</strong><p data-auth-message></p></div>
+    <button class="button button-secondary button-small" type="button" data-retry-sign-in>Try again</button>
+  </section>
+
+  <section class="signed-out-card" data-signed-out>
+    <div class="signed-out-inner">
+      <span class="signed-out-mark" aria-hidden="true">↗</span>
+      <h2>Sign in to start onboarding</h2>
+      <p>You’ll continue through this environment’s Amazon Cognito managed login. Deep Navy uses authorization code with PKCE; this static site contains no client secret.</p>
+      <button class="button button-primary button-large" type="button" data-sign-in>Continue securely <span aria-hidden="true">→</span></button>
+      <p class="security-note">Tokens are kept in memory and are not written to local storage. A page refresh requires sign-in again.</p>
+    </div>
+  </section>
+
+  <div data-authenticated hidden>
+    <section class="onboarding-card organization-card" data-step="organization" data-state="loading" aria-labelledby="organization-title">
+      <div class="step-header"><span class="step-number">WORKSPACE</span><span class="step-state" data-step-state>Checking</span></div>
+      <h2 id="organization-title">Establish your organization</h2>
+      <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
+      <form class="inline-form organization-form" data-organization-bootstrap hidden>
+        <label for="organization-name">Organization name</label>
+        <input id="organization-name" name="organizationName" minlength="2" maxlength="80" autocomplete="organization" placeholder="Acme Engineering" required disabled>
+        <button class="button button-primary" type="submit" disabled>Create organization</button>
+      </form>
+      <form class="inline-form organization-form" data-organization-select hidden>
+        <label for="organization-selection">Organization</label>
+        <select id="organization-selection" name="organizationId" required disabled></select>
+        <button class="button button-primary" type="submit" disabled>Continue with organization</button>
+      </form>
+      <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
+    </section>
+
+    <div data-organization-dependent hidden>
+    <section class="onboarding-grid" aria-label="Onboarding progress">
+      <article class="onboarding-card" data-step="github" data-state="loading">
+        <div class="step-header"><span class="step-number">STEP 01</span><span class="step-state" data-step-state>Checking</span></div>
+        <h2>Connect GitHub</h2>
+        <p data-step-message>Checking for an organization-bound GitHub App installation.</p>
+        <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Install GitHub App</button></div>
+      </article>
+
+      <article class="onboarding-card" data-step="subscription" data-state="loading">
+        <div class="step-header"><span class="step-number">STEP 02</span><span class="step-state" data-step-state>Checking</span></div>
+        <h2>Activate subscription</h2>
+        <p data-step-message>Checking the server-verified subscription status.</p>
+        <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Open secure checkout</button></div>
+      </article>
+
+      <article class="onboarding-card" data-step="team" data-state="loading">
+        <div class="step-header"><span class="step-number">STEP 03</span><span class="step-state" data-step-state>Checking</span></div>
+        <h2>Create your team</h2>
+        <p data-step-message>Team creation unlocks after GitHub and the subscription are active.</p>
+        <form class="inline-form card-action" data-team-form>
+          <label for="team-name">Team name</label>
+          <input id="team-name" name="teamName" maxlength="80" autocomplete="organization" placeholder="Product engineering" required disabled>
+          <button class="button button-primary" type="submit" disabled>Create engineering team</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="app-dashboard" aria-labelledby="teams-title">
+      <div class="app-dashboard-header"><h2 id="teams-title">Engineering teams</h2><button class="button button-quiet button-small" type="button" data-refresh>Refresh status</button></div>
+      <div class="empty-state" data-teams-empty><strong>No server-confirmed teams yet</strong><p>When the API returns a created or provisioning team, it will appear here. This shell does not invent demo resources.</p></div>
+      <div data-team-list hidden></div>
+    </section>
+    </div>
+  </div>
+</div>

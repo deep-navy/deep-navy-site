@@ -1,32 +1,77 @@
-name: CI
+name: Site
+
 on:
   pull_request:
   push:
     branches: [develop, main]
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
-        with: {ruby-version: "3.3", bundler-cache: true}
-      - run: bundle exec jekyll build --strict_front_matter
-      - uses: actions/upload-pages-artifact@v3
-        if: github.event_name == 'push' && github.ref_name == 'main'
-        with: {path: _site}
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - name: Check browser JavaScript
+        run: |
+          node --check assets/js/site.js
+          node --check assets/js/organization-onboarding.js
+          node --check assets/js/app.js
+      - name: Check onboarding contract flow
+        run: node --test scripts/onboarding_contract_test.cjs
+      - name: Build static site
+        run: bundle exec jekyll build --strict_front_matter
+      - name: Check rendered HTML and links
+        run: ruby scripts/check_site.rb _site
+
   deploy:
-    if: github.event_name == 'push' && github.ref_name == 'main'
+    if: github.event_name == 'push'
     needs: ci
     runs-on: ubuntu-latest
-    environment: {name: production, url: "${{ steps.deployment.outputs.page_url }}"}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v6
+      - id: pages
+        uses: actions/configure-pages@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - name: Write public environment configuration
+        env:
+          DEEP_NAVY_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_API_BASE_URL: ${{ vars.SITE_API_BASE_URL }}
+          SITE_COGNITO_DOMAIN: ${{ vars.SITE_COGNITO_DOMAIN }}
+          SITE_COGNITO_CLIENT_ID: ${{ vars.SITE_COGNITO_CLIENT_ID }}
+          SITE_COGNITO_CALLBACK_URL: ${{ vars.SITE_COGNITO_CALLBACK_URL }}
+          SITE_COGNITO_LOGOUT_URL: ${{ vars.SITE_COGNITO_LOGOUT_URL }}
+          SITE_PLAN_ID: ${{ vars.SITE_PLAN_ID }}
+        run: ruby scripts/write_runtime_config.rb
+      - name: Build environment site
+        env:
+          JEKYLL_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+        run: bundle exec jekyll build --strict_front_matter --config _config.yml,_config.runtime.yml --baseurl "${{ steps.pages.outputs.base_path }}"
+      - name: Check rendered deployment
+        run: ruby scripts/check_site.rb _site "${{ steps.pages.outputs.base_path }}"
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+          include-hidden-files: true
       - id: deployment
-        uses: actions/deploy-pages@v4
-
+        uses: actions/deploy-pages@v5

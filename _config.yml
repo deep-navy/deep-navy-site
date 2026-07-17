@@ -1,8 +1,77 @@
 title: Deep Navy
-description: Hire an autonomous AI engineering team.
+tagline: Autonomous engineering, accountable outcomes
+description: Deep Navy gives product teams a coordinated autonomous engineering team with explicit approvals, visible work, and transparent engineering economics.
 url: https://deep.navy
+baseurl: ""
+lang: en-US
+timezone: America/Los_Angeles
 permalink: pretty
+author:
+  name: Deep Navy
+  url: https://deep.navy
+logo: /assets/images/deep-navy-mark.svg
+social:
+  name: Deep Navy
+  links:
+    - https://github.com/deep-navy
 plugins:
   - jekyll-feed
   - jekyll-sitemap
-exclude: [node_modules, package.json, package-lock.json, src, vendor/bundle/]
+include:
+  - .well-known
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      image: /assets/images/social-card.svg
+      author: Deep Navy
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      og_type: article
+  - scope:
+      path: app
+    values:
+      layout: app
+      sitemap: false
+runtime:
+  environment: local
+  api_base_url: ""
+  cognito_domain: ""
+  cognito_client_id: ""
+  cognito_callback_url: ""
+  cognito_logout_url: ""
+  oauth_scopes:
+    - openid
+    - email
+    - profile
+  plan_id: founding-team
+  build_revision: local
+  api_paths:
+    current_user: /deepnavy.v1.AuthService/GetCurrentUser
+    bootstrap_organization: /deepnavy.v1.OrganizationService/BootstrapOrganization
+    select_organization: /deepnavy.v1.OrganizationService/SelectOrganization
+    github_installation: /deepnavy.v1.GitHubService/GetGitHubInstallation
+    github_install_link: /deepnavy.v1.GitHubService/CreateGitHubInstallationLink
+    subscription: /deepnavy.v1.BillingService/GetSubscription
+    checkout: /deepnavy.v1.BillingService/CreateCheckoutSession
+    billing_portal: /deepnavy.v1.BillingService/CreateBillingPortalSession
+    teams: /deepnavy.v1.TeamService/ListTeams
+    create_team: /deepnavy.v1.TeamService/CreateTeam
+  allowed_redirect_hosts:
+    - github.com
+    - checkout.stripe.com
+    - billing.stripe.com
+exclude:
+  - node_modules
+  - package.json
+  - package-lock.json
+  - scripts
+  - vendor
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - _config.runtime.yml

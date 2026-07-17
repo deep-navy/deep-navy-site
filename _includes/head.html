@@ -1,0 +1,47 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#071524">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
+{% assign page_title = page.title | default: site.title %}
+{% if page_title == site.title %}
+  <title>{{ site.title }}</title>
+{% else %}
+  <title>{{ page_title }} · {{ site.title }}</title>
+{% endif %}
+<meta name="description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
+<link rel="canonical" href="{{ page.url | replace: 'index.html', '' | absolute_url }}">
+<meta property="og:site_name" content="{{ site.title }}">
+<meta property="og:title" content="{{ page_title | escape }}">
+<meta property="og:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
+<meta property="og:type" content="{{ page.og_type | default: 'website' }}">
+<meta property="og:url" content="{{ page.url | replace: 'index.html', '' | absolute_url }}">
+<meta property="og:image" content="{{ page.image | default: '/assets/images/social-card.svg' | absolute_url }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ page_title | escape }}">
+<meta name="twitter:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
+<link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
+<link rel="alternate" type="application/atom+xml" title="Deep Navy updates" href="{{ '/feed.xml' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "{% if page.schema_type %}{{ page.schema_type }}{% else %}WebPage{% endif %}",
+  "name": {{ page_title | jsonify }},
+  "description": {{ page.description | default: site.description | jsonify }},
+  "url": {{ page.url | replace: 'index.html', '' | absolute_url | jsonify }},
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Deep Navy",
+    "url": {{ '/' | absolute_url | jsonify }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Deep Navy",
+    "url": {{ '/' | absolute_url | jsonify }}
+  }{% if page.updated %},
+  "dateModified": {{ page.updated | jsonify }}{% endif %}{% if page.author %},
+  "author": {"@type": "Organization", "name": {{ page.author | jsonify }}}{% endif %}
+}
+</script>
