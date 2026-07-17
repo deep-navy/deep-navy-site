@@ -5,16 +5,28 @@ Public pages are rendered as static HTML. `/app/` uses a public Amazon Cognito
 app client with OAuth 2.0 authorization code + PKCE, then calls the configured
 ConnectRPC API for server-confirmed onboarding state.
 
-The onboarding client targets the trusted organization contract introduced by
-`platform-protos` revision `12b20f153f6ca4afb6c9e2c7e2fa434d1dfe58b7`.
+The onboarding client targets the additive launch contract finalized by
+`platform-protos` revision `fa01d7cc4c68c1e7ee606a44677ad70d16f4c563`.
+Only the generated Protobuf-ES descriptors required by this site are vendored
+under `vendor/platform-protos`; `REVISION` and `MANIFEST.sha256` pin and verify
+their source. The browser bundle uses the generated service descriptors with
+Connect v2 instead of maintaining handwritten RPC paths or transport models.
 
 The browser contains no provider credentials or client secret. The PKCE verifier
 and OAuth state are transient in `sessionStorage`; access and ID tokens remain in
 memory and are cleared by a hard refresh or sign-out.
 
+The product GitHub App callback's one-time OAuth code and state are also held
+only in the current tab while the customer re-authenticates with Cognito. They
+are sent once to `CompleteGitHubInstallation`, never rendered, logged, or stored
+in local storage, and are cleared after completion or a terminal error.
+
 ## Run locally
 
 ```sh
+node --version # 22.14.0 or newer
+npm ci
+npm run build
 bundle install
 bundle exec jekyll serve --livereload
 ```
@@ -60,6 +72,26 @@ deploys through `production`. Configure these public build inputs as GitHub
 JSON-encodes it into `_config.runtime.yml`. The rendered configuration is visible
 to every browser, as it must be for a public OAuth client.
 
+## Product GitHub App settings
+
+For the development Pages deployment, configure the customer-facing product
+GitHub App—not the infrastructure automation App—as follows:
+
+- Enable **Request user authorization (OAuth) during installation**.
+- Set the first **Callback URL** to the exact rendered
+  `/app/github/callback/` URL, including the GitHub Pages project base path.
+- Leave **Setup URL** blank. GitHub makes it unavailable when OAuth during
+  installation is enabled.
+- Keep expiring user authorization tokens enabled. The API exchanges the
+  one-time code, verifies the installation through `GET /user/installations`,
+  independently confirms it with App authentication, and discards the user
+  token.
+
+GitHub's documented OAuth callback guarantees `code` and server-provided
+`state`. `installation_id` and `setup_action` are accepted when present but are
+not required by the browser; the API must securely resolve and verify the
+installation when GitHub omits them.
+
 ## Onboarding behavior
 
 The app never synthesizes completion:
@@ -67,9 +99,17 @@ The app never synthesizes completion:
 - `GetCurrentUser` is the only source of user memberships and current organization context.
 - A first organization is created only through idempotent `BootstrapOrganization`; an ambiguous retry reuses its key.
 - `SelectOrganization` accepts only an organization returned in `GetCurrentUser.memberships`.
-- GitHub is complete only after `GetGitHubInstallation` returns an active installation.
-- Billing is complete only after `GetSubscription` returns `active` or `trialing`.
+- GitHub starts through idempotent `StartGitHubInstallation` and is complete
+  only after `CompleteGitHubInstallation` or `GetGitHubInstallation` returns an
+  explicitly active typed state.
+- Repository access is complete only after `GetRepositorySelection` or
+  `UpdateRepositorySelection` returns a selection containing at least one
+  currently accessible repository.
+- The checkout display uses `GetBillingPlan`; billing is complete only after
+  `GetSubscription` returns typed `ACTIVE` or `TRIALING` state.
 - A team appears only after `ListTeams` or `CreateTeam` returns it.
+- Queued and running teams poll `GetProvisioningStatus`, with `GetTeam` as an
+  additive compatibility fallback until the public Connect stream is exposed.
 - Redirect URLs returned by APIs must use HTTPS and an allowlisted GitHub or Stripe host.
 - API errors show an actionable unavailable state and, when present, a request ID.
 
@@ -79,10 +119,17 @@ The custom Pages workflow builds with Ruby 3.3 and Jekyll 4.4.1, then uploads
 the rendered `_site` directory through the official Pages artifact actions.
 
 ```sh
+npm run check:vendor
+npm run typecheck
+npm run build
 node --check assets/js/site.js
+node --check assets/js/callback-scrubber.js
+node --check assets/js/platform-api-client.js
 node --check assets/js/organization-onboarding.js
+node --check assets/js/launch-contract.js
 node --check assets/js/app.js
-node --test scripts/onboarding_contract_test.cjs
+npm test
+ruby scripts/runtime_config_test.rb
 bundle exec jekyll build --strict_front_matter
 ruby scripts/check_site.rb _site
 ```

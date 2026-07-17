@@ -1,8 +1,8 @@
-<meta charset="utf-8">
+{% unless page.layout == 'app' %}<meta charset="utf-8">{% endunless %}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#071524">
-<meta name="referrer" content="strict-origin-when-cross-origin">
+{% unless page.layout == 'app' %}<meta name="referrer" content="strict-origin-when-cross-origin">{% endunless %}
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
 {% assign page_title = page.title | default: site.title %}
 {% if page_title == site.title %}
@@ -24,7 +24,7 @@
 <link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
 <link rel="alternate" type="application/atom+xml" title="Deep Navy updates" href="{{ '/feed.xml' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
-<script type="application/ld+json">
+{% unless page.layout == 'app' %}<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "{% if page.schema_type %}{{ page.schema_type }}{% else %}WebPage{% endif %}",
@@ -44,4 +44,4 @@
   "dateModified": {{ page.updated | jsonify }}{% endif %}{% if page.author %},
   "author": {"@type": "Organization", "name": {{ page.author | jsonify }}}{% endif %}
 }
-</script>
+</script>{% endunless %}

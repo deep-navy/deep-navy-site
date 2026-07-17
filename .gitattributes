@@ -1,0 +1,2 @@
+vendor/platform-protos/**/*.ts linguist-generated=true -whitespace
+assets/js/platform-api-client.js linguist-generated=true

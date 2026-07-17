@@ -60,17 +60,41 @@
         <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Install GitHub App</button></div>
       </article>
 
+      <article class="onboarding-card repository-card" data-step="repositories" data-state="blocked">
+        <div class="step-header"><span class="step-number">STEP 02</span><span class="step-state" data-step-state>Blocked</span></div>
+        <h2>Choose repositories</h2>
+        <p data-step-message>Connect GitHub before choosing which accessible repositories the team may use.</p>
+        <form class="repository-form" data-repository-form hidden>
+          <fieldset class="repository-modes">
+            <legend>Deep Navy access</legend>
+            <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
+            <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
+          </fieldset>
+          <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories"></div>
+          <p class="form-help" data-repository-empty hidden>No accessible repositories were returned. Grant repository access in GitHub, then refresh.</p>
+          <div class="repository-actions">
+            <button class="button button-primary" type="submit" data-repository-save disabled>Save repository access</button>
+            <button class="button button-quiet" type="button" data-repository-refresh>Refresh repositories</button>
+          </div>
+        </form>
+      </article>
+
       <article class="onboarding-card" data-step="subscription" data-state="loading">
-        <div class="step-header"><span class="step-number">STEP 02</span><span class="step-state" data-step-state>Checking</span></div>
+        <div class="step-header"><span class="step-number">STEP 03</span><span class="step-state" data-step-state>Checking</span></div>
         <h2>Activate subscription</h2>
         <p data-step-message>Checking the server-verified subscription status.</p>
+        <dl class="plan-summary" data-plan-summary hidden>
+          <div><dt>Plan</dt><dd data-plan-name></dd></div>
+          <div><dt>Price</dt><dd data-plan-price></dd></div>
+          <div><dt>Included</dt><dd data-plan-credits></dd></div>
+        </dl>
         <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Open secure checkout</button></div>
       </article>
 
       <article class="onboarding-card" data-step="team" data-state="loading">
-        <div class="step-header"><span class="step-number">STEP 03</span><span class="step-state" data-step-state>Checking</span></div>
+        <div class="step-header"><span class="step-number">STEP 04</span><span class="step-state" data-step-state>Checking</span></div>
         <h2>Create your team</h2>
-        <p data-step-message>Team creation unlocks after GitHub and the subscription are active.</p>
+        <p data-step-message>Team creation unlocks after GitHub, repository access, and the subscription are ready.</p>
         <form class="inline-form card-action" data-team-form>
           <label for="team-name">Team name</label>
           <input id="team-name" name="teamName" maxlength="80" autocomplete="organization" placeholder="Product engineering" required disabled>
@@ -82,7 +106,7 @@
     <section class="app-dashboard" aria-labelledby="teams-title">
       <div class="app-dashboard-header"><h2 id="teams-title">Engineering teams</h2><button class="button button-quiet button-small" type="button" data-refresh>Refresh status</button></div>
       <div class="empty-state" data-teams-empty><strong>No server-confirmed teams yet</strong><p>When the API returns a created or provisioning team, it will appear here. This shell does not invent demo resources.</p></div>
-      <div data-team-list hidden></div>
+      <div class="status-list" data-team-list aria-live="polite" hidden></div>
     </section>
     </div>
   </div>

@@ -3,5 +3,8 @@
 _site/
 .jekyll-cache/
 .sass-cache/
-vendor/
+vendor/*
+!vendor/platform-protos/
+!vendor/platform-protos/**
+node_modules/
 _config.runtime.yml

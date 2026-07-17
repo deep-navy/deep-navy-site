@@ -64,11 +64,11 @@
     const currentId = stringValue(currentOrganization?.id);
     const memberships = membershipsFromProfile(profile);
     const state = normalizedOnboardingState(profile.onboardingState);
-    const knownStates = new Set(["", ...Object.values(ONBOARDING_STATE)]);
+    const knownStates = new Set(Object.values(ONBOARDING_STATE));
     if (!knownStates.has(state)) throw new ContractError("GetCurrentUser returned an unknown onboarding state.");
 
     if (currentId) {
-      if (state && state !== ONBOARDING_STATE.READY) {
+      if (state !== ONBOARDING_STATE.READY) {
         throw new ContractError("GetCurrentUser returned conflicting current-organization state.");
       }
       if (!memberships.some((membership) => membership.id === currentId)) {

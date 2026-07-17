@@ -44,7 +44,7 @@ test("sign-in profile load followed by bootstrap retries with one idempotency ke
         return {
           user: { id: "user-1", displayName: "Ada" },
           memberships: [],
-          onboardingState: "ONBOARDING_STATE_ORGANIZATION_REQUIRED"
+          onboardingState: 1
         };
       }
       if (name === "bootstrap_organization") {
@@ -81,7 +81,7 @@ test("a single returned membership is selected through SelectOrganization", asyn
       if (name === "current_user") {
         return {
           memberships: [membership("organization-1")],
-          onboardingState: "ONBOARDING_STATE_ORGANIZATION_SELECTION_REQUIRED"
+          onboardingState: 2
         };
       }
       if (name === "select_organization") return { currentMembership: membership("organization-1") };
@@ -130,6 +130,11 @@ test("multiple memberships require an authorized explicit selection", async () =
 });
 
 test("contract contradictions remain unavailable instead of becoming ready", async () => {
+  assert.throws(() => decisionFromProfile({
+    memberships: [membership("organization-1")],
+    onboardingState: 0
+  }), ContractError);
+
   assert.throws(() => decisionFromProfile({
     memberships: [],
     onboardingState: "ONBOARDING_STATE_READY"

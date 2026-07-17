@@ -66,6 +66,32 @@ html_files.each do |file|
   end
 end
 
+app_pages = [site.join("app/index.html"), site.join("app/callback/index.html"), site.join("app/github/callback/index.html")]
+app_pages.each do |file|
+  unless file.file?
+    errors << "missing authenticated app page #{file.relative_path_from(site)}"
+    next
+  end
+  html = file.read
+  relative = file.relative_path_from(site)
+  errors << "#{relative}: app pages require no-referrer" unless html.match?(%r{<meta\s+name=["']referrer["']\s+content=["']no-referrer["']}i)
+  errors << "#{relative}: app pages require a self-only form-action CSP" unless html.match?(%r{form-action 'self';}i)
+  errors << "#{relative}: app pages must not contain inline scripts" if html.scan(%r{<script(?![^>]*\ssrc=)[^>]*>}i).any?
+  scrubber = html.index("callback-scrubber.js")
+  generated_client = html.index("platform-api-client.js")
+  application = html.index("assets/js/app.js")
+  unless scrubber && generated_client && application && scrubber < generated_client && generated_client < application
+    errors << "#{relative}: secure callback scrubber and generated API client script order is invalid"
+  end
+end
+
+github_callback = site.join("app/github/callback/index.html")
+if github_callback.file? && !github_callback.read.match?(%r{data-github-callback=["']true["']}i)
+  errors << "app/github/callback/index.html: missing dedicated GitHub callback marker"
+end
+
+errors << "missing generated browser API bundle" unless site.join("assets/js/platform-api-client.js").file?
+
 if errors.empty?
   puts "Checked #{html_files.length} HTML files: metadata, headings, IDs, and internal links are valid."
 else

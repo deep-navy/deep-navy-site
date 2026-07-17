@@ -17,17 +17,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm install --global npm@11.18.0
+      - run: npm ci
+      - name: Check pinned generated API consumer
+        run: npm run check:vendor
+      - name: Type-check browser API client
+        run: npm run typecheck
+      - name: Build browser API client
+        run: npm run build
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
+      - name: Check public runtime configuration validation
+        run: ruby scripts/runtime_config_test.rb
       - name: Check browser JavaScript
         run: |
           node --check assets/js/site.js
+          node --check assets/js/callback-scrubber.js
+          node --check assets/js/platform-api-client.js
           node --check assets/js/organization-onboarding.js
+          node --check assets/js/launch-contract.js
           node --check assets/js/app.js
       - name: Check onboarding contract flow
-        run: node --test scripts/onboarding_contract_test.cjs
+        run: npm test
       - name: Build static site
         run: bundle exec jekyll build --strict_front_matter
       - name: Check rendered HTML and links
@@ -48,6 +65,14 @@ jobs:
       - uses: actions/checkout@v6
       - id: pages
         uses: actions/configure-pages@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22.14.0"
+          cache: npm
+      - run: npm install --global npm@11.18.0
+      - run: npm ci
+      - name: Build generated browser API client
+        run: npm run build
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
