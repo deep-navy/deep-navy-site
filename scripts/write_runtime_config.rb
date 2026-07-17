@@ -22,6 +22,32 @@ rescue URI::InvalidURIError
   abort "#{name} must be a valid HTTPS origin"
 end
 
+def public_site_url(name)
+  value = public_value(name)
+  return ["", ""] if value.empty?
+
+  uri = URI.parse(value)
+  local_http = uri.scheme == "http" && ["localhost", "127.0.0.1", "::1"].include?(uri.host)
+  path = uri.path.to_s
+  segments = path.delete_prefix("/").split("/", -1)
+  normalized_path = path == "/" ? "" : path
+  valid_path = normalized_path.empty? || (
+    normalized_path.start_with?("/") &&
+    !normalized_path.end_with?("/") &&
+    !segments.any? { |segment| segment.empty? || [".", ".."].include?(segment) } &&
+    !normalized_path.match?(/%2f|%5c|\\/i)
+  )
+  valid = (uri.scheme == "https" || local_http) && uri.host && !uri.user && !uri.password &&
+    !uri.query && !uri.fragment && valid_path
+  abort "#{name} must be an HTTPS site URL with a normalized path and without credentials, query, or fragment" unless valid
+
+  origin = uri.dup
+  origin.path = ""
+  [origin.to_s, normalized_path]
+rescue URI::InvalidURIError
+  abort "#{name} must be a valid HTTPS site URL"
+end
+
 def public_absolute_url(name)
   value = public_value(name)
   return "" if value.empty?
@@ -54,10 +80,10 @@ unless cognito_client_id.empty? || cognito_client_id.match?(/\A[a-zA-Z0-9]{1,128
   abort "SITE_COGNITO_CLIENT_ID must be a public Cognito app-client identifier"
 end
 
-site_url = public_origin("SITE_URL")
+site_origin, site_base_path = public_site_url("SITE_URL")
 callback_url = public_absolute_url("SITE_COGNITO_CALLBACK_URL")
 logout_url = public_absolute_url("SITE_COGNITO_LOGOUT_URL")
-if !site_url.empty? && ((!callback_url.empty? && !same_origin?(site_url, callback_url)) || (!logout_url.empty? && !same_origin?(site_url, logout_url)))
+if !site_origin.empty? && ((!callback_url.empty? && !same_origin?(site_origin, callback_url)) || (!logout_url.empty? && !same_origin?(site_origin, logout_url)))
   abort "Cognito callback and logout URLs must use the deployed SITE_URL origin"
 end
 
@@ -75,7 +101,12 @@ runtime = {
 }
 
 configuration = { "runtime" => runtime }
-configuration["url"] = site_url unless site_url.empty?
+unless site_origin.empty?
+  # GitHub Pages reports a project site as one URL. Jekyll keeps the origin and
+  # project path separate so absolute_url does not duplicate the base path.
+  configuration["url"] = site_origin
+  configuration["baseurl"] = site_base_path
+end
 
 # JSON is valid YAML. Encoding values as JSON prevents a public Actions variable
 # from changing the configuration structure. No secret input names are accepted.

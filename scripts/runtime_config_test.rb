@@ -9,7 +9,7 @@ require "tmpdir"
 script = File.expand_path("write_runtime_config.rb", __dir__)
 base_environment = {
   "DEEP_NAVY_ENVIRONMENT" => "development",
-  "SITE_URL" => "https://deep-navy.github.io",
+  "SITE_URL" => "https://deep-navy.github.io/deep-navy-site",
   "SITE_API_BASE_URL" => "https://api.dev.deep.navy",
   "SITE_COGNITO_DOMAIN" => "https://deep-navy-dev.auth.us-west-2.amazoncognito.com",
   "SITE_COGNITO_CLIENT_ID" => "publicclientid123",
@@ -34,9 +34,14 @@ abort "API origin changed" unless runtime.fetch("api_base_url") == "https://api.
 abort "callback URL changed" unless runtime.fetch("cognito_callback_url").end_with?("/app/callback/")
 abort "unexpected handwritten API paths" if runtime.key?("api_paths")
 abort "unexpected site URL" unless configuration.fetch("url") == "https://deep-navy.github.io"
+abort "unexpected site base path" unless configuration.fetch("baseurl") == "/deep-navy-site"
 
 invalid_cases = {
   "CSP-like API origin injection" => { "SITE_API_BASE_URL" => "https://api.dev.deep.navy; script-src *" },
+  "site URL credentials" => { "SITE_URL" => "https://user@deep-navy.github.io/deep-navy-site" },
+  "site URL query" => { "SITE_URL" => "https://deep-navy.github.io/deep-navy-site?preview=true" },
+  "non-normalized site base path" => { "SITE_URL" => "https://deep-navy.github.io/deep-navy-site/" },
+  "site base path traversal" => { "SITE_URL" => "https://deep-navy.github.io/preview/../deep-navy-site" },
   "cross-origin Cognito callback" => { "SITE_COGNITO_CALLBACK_URL" => "https://example.invalid/app/callback/" },
   "provider billing identifier" => { "SITE_PLAN_ID" => "price_123$" },
   "unknown environment" => { "DEEP_NAVY_ENVIRONMENT" => "staging" }

@@ -86,7 +86,7 @@ jobs:
           SITE_COGNITO_CLIENT_ID: ${{ vars.SITE_COGNITO_CLIENT_ID }}
           SITE_COGNITO_CALLBACK_URL: ${{ vars.SITE_COGNITO_CALLBACK_URL }}
           SITE_COGNITO_LOGOUT_URL: ${{ vars.SITE_COGNITO_LOGOUT_URL }}
-          SITE_PLAN_ID: ${{ vars.SITE_PLAN_ID }}
+          SITE_PLAN_ID: ${{ vars.SITE_PLAN_ID || 'founding-team' }}
         run: ruby scripts/write_runtime_config.rb
       - name: Build environment site
         env:
