@@ -1,5 +1,6 @@
 ---
 title: Solutions
+image: /assets/images/og/solutions.png
 description: Review the pilot decisions deep navy supports for founders, product leaders, and engineering leaders.
 updated: 2026-07-17
 ---

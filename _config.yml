@@ -24,7 +24,7 @@ defaults:
       path: ""
     values:
       layout: default
-      image: /assets/images/social-card.svg
+      image: /assets/images/og/default.png
       author: deep navy
   - scope:
       path: ""

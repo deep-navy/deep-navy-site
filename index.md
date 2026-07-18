@@ -1,5 +1,6 @@
 ---
 title: deep navy
+image: /assets/images/og/home.png
 description: A coordinated engineering team that carries a business objective through reviewed GitHub work, explicit decisions, and measured cost.
 body_class: home
 schema_type: Organization

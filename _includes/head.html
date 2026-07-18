@@ -21,10 +21,21 @@
 <meta property="og:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
 <meta property="og:type" content="{{ page.og_type | default: 'website' }}">
 <meta property="og:url" content="{{ page.url | replace: 'index.html', '' | absolute_url }}">
-<meta property="og:image" content="{{ page.image | default: '/assets/images/social-card.svg' | absolute_url }}">
+{% assign og_image_path = page.image | default: '/assets/images/og/default.png' %}
+{% assign og_image = og_image_path | absolute_url %}
+{% if og_image_path contains '.svg' %}{% assign og_image_type = 'image/svg+xml' %}{% else %}{% assign og_image_type = 'image/png' %}{% endif %}
+{% assign og_image_alt = page.image_alt | default: page_title %}
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:image:secure_url" content="{{ og_image }}">
+<meta property="og:image:type" content="{{ og_image_type }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ og_image_alt | escape }}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ page_title | escape }}">
 <meta name="twitter:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
+<meta name="twitter:image" content="{{ og_image }}">
+<meta name="twitter:image:alt" content="{{ og_image_alt | escape }}">
 <link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
 <link rel="alternate" type="application/atom+xml" title="deep navy updates" href="{{ '/feed.xml' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
