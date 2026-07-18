@@ -27,6 +27,24 @@ test("authenticating state shows neither signed-out call to action nor authentic
   assert.equal(presentation.signOutVisible, false);
 });
 
+test("the GitHub sign-in lifecycle only reveals the workspace once a session token exists", () => {
+  // While beginSignIn redirects to GitHub the phase is "authenticating": neither
+  // the signed-out call to action nor the authenticated workspace is shown.
+  const redirecting = authPresentation(AUTH_PHASES.AUTHENTICATING, false);
+  assert.equal(redirecting.phase, AUTH_PHASES.AUTHENTICATING);
+  assert.equal(redirecting.sessionLabel, "Signing in…");
+  assert.equal(redirecting.signedOutVisible, false);
+  assert.equal(redirecting.workspaceVisible, false);
+
+  // completeSignInCallback stores the returned session token, so the workspace
+  // and sign-out control appear and the identity chrome becomes visible.
+  const signedIn = authPresentation(AUTH_PHASES.AUTHENTICATED, true);
+  assert.equal(signedIn.sessionLabel, "Signed in");
+  assert.equal(signedIn.workspaceVisible, true);
+  assert.equal(signedIn.signOutVisible, true);
+  assert.equal(signedIn.userVisible, true);
+});
+
 test("onboarding progress follows the canonical six-step sequence", () => {
   assert.deepEqual(progressSummary({
     identity: "complete",
