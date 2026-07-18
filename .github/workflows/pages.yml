@@ -107,6 +107,16 @@ jobs:
         run: bundle exec jekyll build --strict_front_matter --config _config.yml,_config.runtime.yml --baseurl ""
       - name: Check rendered deployment
         run: ruby scripts/check_site.rb _site ""
+      - name: Assert the Pages custom domain
+        # Actions-deployed Pages only keeps a custom domain bound if the published
+        # artifact carries a CNAME file. Without it GitHub clears the domain on
+        # each deploy, actions/configure-pages then reports the repository-project
+        # base path (/deep-navy-site) — which bakes broken asset URLs into every
+        # page — and the managed TLS certificate never provisions. Derive the host
+        # from the pinned public origin so this stays a single source of truth.
+        env:
+          SITE_URL: https://dev.deep.navy
+        run: printf '%s\n' "${SITE_URL#https://}" > _site/CNAME
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
