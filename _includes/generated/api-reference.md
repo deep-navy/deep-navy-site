@@ -54,6 +54,9 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.ListAdminAlertsResponse`](#deepnavy-v1-listadminalertsresponse)
   - [Message `deepnavy.v1.StreamAdminAlertsRequest`](#deepnavy-v1-streamadminalertsrequest)
   - [Message `deepnavy.v1.StreamAdminAlertsResponse`](#deepnavy-v1-streamadminalertsresponse)
+  - [Message `deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent)
+  - [Message `deepnavy.v1.ListAdminAuditEventsRequest`](#deepnavy-v1-listadminauditeventsrequest)
+  - [Message `deepnavy.v1.ListAdminAuditEventsResponse`](#deepnavy-v1-listadminauditeventsresponse)
   - [Enum `deepnavy.v1.AdminErrorReason`](#deepnavy-v1-adminerrorreason)
   - [Enum `deepnavy.v1.AdminCustomerHealthState`](#deepnavy-v1-admincustomerhealthstate)
   - [Enum `deepnavy.v1.AdminSupportState`](#deepnavy-v1-adminsupportstate)
@@ -92,6 +95,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.GetCurrentUserResponse`](#deepnavy-v1-getcurrentuserresponse)
   - [Message `deepnavy.v1.StartGitHubSignInRequest`](#deepnavy-v1-startgithubsigninrequest)
   - [Message `deepnavy.v1.StartGitHubSignInResponse`](#deepnavy-v1-startgithubsigninresponse)
+  - [Message `deepnavy.v1.CompleteGitHubSignInRequest`](#deepnavy-v1-completegithubsigninrequest)
+  - [Message `deepnavy.v1.CompleteGitHubSignInResponse`](#deepnavy-v1-completegithubsigninresponse)
   - [Message `deepnavy.v1.SignOutRequest`](#deepnavy-v1-signoutrequest)
   - [Message `deepnavy.v1.SignOutResponse`](#deepnavy-v1-signoutresponse)
   - [Service `deepnavy.v1.AuthService`](#deepnavy-v1-authservice)
@@ -783,6 +788,7 @@ This message has no fields.
 | `provisioned_teams_without_valid_subscriptions` | 14 | `int64` | singular | — |
 | `generated_at` | 15 | `google.protobuf.Timestamp` | singular | — |
 | `projection_status` | 16 | [`deepnavy.v1.AdminProjectionStatus`](#deepnavy-v1-adminprojectionstatus) | singular | — |
+| `collected_revenue` | 17 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | collected_revenue is total cash collected across all customers in the<br> reporting period (sum of paid invoice amounts). Absent when the projection<br> spans more than one currency or no paid invoice is recorded. |
 
 <a id="deepnavy-v1-adminbillingaccount"></a>
 ### Message `deepnavy.v1.AdminBillingAccount`
@@ -809,6 +815,7 @@ AdminBillingAccount is the provider-independent billing projection for one
 | `usage_overage_amount` | 15 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | usage_overage_amount is the billed or billable premium for overage credits<br> in the reporting period. It is absent when there is no overage. |
 | `projection_status` | 16 | [`deepnavy.v1.AdminProjectionStatus`](#deepnavy-v1-adminprojectionstatus) | singular | — |
 | `team_credit_controls` | 17 | [`deepnavy.v1.TeamCreditControl`](#deepnavy-v1-teamcreditcontrol) | repeated | Per-team execution controls are projected directly from the current paid<br> period and economics ledger. No provider identifiers or secrets appear. |
+| `collected_revenue` | 18 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | collected_revenue is cash actually collected in the reporting period (the<br> sum of paid invoice amounts), as opposed to monthly_recurring_revenue, which<br> is recognized recurring revenue. Absent when no paid invoice is recorded. |
 
 <a id="deepnavy-v1-adminbillingreconciliationissue"></a>
 ### Message `deepnavy.v1.AdminBillingReconciliationIssue`
@@ -948,6 +955,47 @@ AdminAlert is a safe, deduplicated operational or commercial alert. It must
 | `change_type` | 2 | [`deepnavy.v1.AdminStreamChangeType`](#deepnavy-v1-adminstreamchangetype) | singular | — |
 | `resource_id` | 3 | `string` | singular | resource_id is always set and equals alert.id on UPSERT. |
 | `sequence` | 4 | `int64` | singular | sequence is the environment-monotonic cursor for this change and equals<br> alert.sequence on UPSERT. |
+
+<a id="deepnavy-v1-adminauditevent"></a>
+### Message `deepnavy.v1.AdminAuditEvent`
+
+AdminAuditEvent is one immutable administrative audit record. It exposes deep
+ navy identifiers and a stable human actor label; it never exposes provider
+ object identifiers or credentials. source_ip and user_agent are operator
+ forensic metadata and may be empty.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `occurred_at` | 2 | `google.protobuf.Timestamp` | singular | — |
+| `actor_user_id` | 3 | `string` | singular | actor_user_id is the deep navy user UUID; empty when the actor is no longer<br> resolvable. actor_label is a human label (email or GitHub login) and may be<br> empty. |
+| `actor_label` | 4 | `string` | singular | — |
+| `action` | 5 | `string` | singular | action is the audited operation, for example "admin.rpc.read" or a future<br> "admin.team.suspend". resource_type and resource_id identify the target. |
+| `resource_type` | 6 | `string` | singular | — |
+| `resource_id` | 7 | `string` | singular | — |
+| `organization_id` | 8 | `string` | singular | organization_id is the deep navy organization the action targeted, when<br> applicable. |
+| `request_id` | 9 | `string` | singular | — |
+| `source_ip` | 10 | `string` | singular | — |
+| `user_agent` | 11 | `string` | singular | — |
+
+<a id="deepnavy-v1-listadminauditeventsrequest"></a>
+### Message `deepnavy.v1.ListAdminAuditEventsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `page` | 1 | [`deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest) | singular | — |
+| `organization_id` | 2 | `string` | singular | Empty string filters are not applied. Pages are a consistent snapshot<br> ordered by occurred_at descending, then id descending. Admin lists default<br> to 50 and reject page sizes above 200. |
+| `action` | 3 | `string` | singular | — |
+| `actor_user_id` | 4 | `string` | singular | — |
+| `reporting_period` | 5 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
+
+<a id="deepnavy-v1-listadminauditeventsresponse"></a>
+### Message `deepnavy.v1.ListAdminAuditEventsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `events` | 1 | [`deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent) | repeated | — |
+| `page` | 2 | [`deepnavy.v1.PageResponse`](#deepnavy-v1-pageresponse) | singular | — |
 
 <a id="deepnavy-v1-adminerrorreason"></a>
 ### Enum `deepnavy.v1.AdminErrorReason`
@@ -1172,6 +1220,7 @@ AdminService is a read-only projection over the same versioned API used by
 | `ListAdminBillingReconciliationIssues` | [`deepnavy.v1.ListAdminBillingReconciliationIssuesRequest`](#deepnavy-v1-listadminbillingreconciliationissuesrequest) | [`deepnavy.v1.ListAdminBillingReconciliationIssuesResponse`](#deepnavy-v1-listadminbillingreconciliationissuesresponse) | unary | — |
 | `ListAdminAlerts` | [`deepnavy.v1.ListAdminAlertsRequest`](#deepnavy-v1-listadminalertsrequest) | [`deepnavy.v1.ListAdminAlertsResponse`](#deepnavy-v1-listadminalertsresponse) | unary | — |
 | `StreamAdminAlerts` | [`deepnavy.v1.StreamAdminAlertsRequest`](#deepnavy-v1-streamadminalertsrequest) | [`deepnavy.v1.StreamAdminAlertsResponse`](#deepnavy-v1-streamadminalertsresponse) | server | — |
+| `ListAdminAuditEvents` | [`deepnavy.v1.ListAdminAuditEventsRequest`](#deepnavy-v1-listadminauditeventsrequest) | [`deepnavy.v1.ListAdminAuditEventsResponse`](#deepnavy-v1-listadminauditeventsresponse) | unary | ListAdminAuditEvents returns the immutable administrative audit trail<br> (admin RPC access and, in future, privileged mutations). |
 
 
 <a id="deepnavy-v1-agents-proto"></a>
@@ -1314,7 +1363,7 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 
 Package: `deepnavy.v1`
 
-Imports: `deepnavy/v1/organizations.proto`
+Imports: `deepnavy/v1/organizations.proto`, `deepnavy/v1/github.proto`, `google/protobuf/timestamp.proto`
 
 <a id="deepnavy-v1-currentuser"></a>
 ### Message `deepnavy.v1.CurrentUser`
@@ -1328,6 +1377,7 @@ Imports: `deepnavy/v1/organizations.proto`
 | `username` | 5 | `string` | singular | — |
 | `email` | 6 | `string` | singular | — |
 | `cognito_subject` | 7 | `string` | singular | — |
+| `github_user_id` | 8 | `string` | singular | github_user_id is the stable numeric GitHub account id (as a string) for a<br> customer who signed in with GitHub; empty for a Cognito-authenticated admin. |
 
 <a id="deepnavy-v1-getcurrentuserrequest"></a>
 ### Message `deepnavy.v1.GetCurrentUserRequest`
@@ -1358,6 +1408,27 @@ This message has no fields.
 | --- | ---: | --- | --- | --- |
 | `authorization_url` | 1 | `string` | singular | — |
 
+<a id="deepnavy-v1-completegithubsigninrequest"></a>
+### Message `deepnavy.v1.CompleteGitHubSignInRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `authorization_code` | 1 | `string` | singular | authorization_code and state_token are one-time credentials: redact them<br> from logs, traces, errors, and analytics. |
+| `state_token` | 2 | `string` | singular | — |
+| `installation_id` | 3 | `int64` | singular | installation_id may be 0. The server resolves and verifies the installation<br> from the trusted GET /user/installations response and fails closed if no<br> unique installation can be established; a supplied value may only narrow it. |
+| `return_to` | 4 | `string` | singular | — |
+
+<a id="deepnavy-v1-completegithubsigninresponse"></a>
+### Message `deepnavy.v1.CompleteGitHubSignInResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `session_token` | 1 | `string` | singular | session_token is the deep navy customer session bearer token. It is a<br> credential: redact it from logs and never persist it outside browser memory. |
+| `expires_at` | 2 | `google.protobuf.Timestamp` | singular | — |
+| `user` | 3 | [`deepnavy.v1.CurrentUser`](#deepnavy-v1-currentuser) | singular | — |
+| `memberships` | 4 | [`deepnavy.v1.OrganizationMembership`](#deepnavy-v1-organizationmembership) | repeated | — |
+| `pending_installation` | 5 | [`deepnavy.v1.GitHubInstallation`](#deepnavy-v1-githubinstallation) | singular | pending_installation is the captured GitHub App installation, not yet bound<br> to an organization. Onboarding binds it when the organization is created. |
+
 <a id="deepnavy-v1-signoutrequest"></a>
 ### Message `deepnavy.v1.SignOutRequest`
 
@@ -1375,6 +1446,7 @@ This message has no fields.
 | --- | --- | --- | --- | --- |
 | `GetCurrentUser` | [`deepnavy.v1.GetCurrentUserRequest`](#deepnavy-v1-getcurrentuserrequest) | [`deepnavy.v1.GetCurrentUserResponse`](#deepnavy-v1-getcurrentuserresponse) | unary | GetCurrentUser resolves (and, on first sign-in, synchronizes) the user from<br> verified Cognito claims. It never accepts a principal or organization ID<br> and never creates an organization implicitly. |
 | `StartGitHubSignIn` | [`deepnavy.v1.StartGitHubSignInRequest`](#deepnavy-v1-startgithubsigninrequest) | [`deepnavy.v1.StartGitHubSignInResponse`](#deepnavy-v1-startgithubsigninresponse) | unary | — |
+| `CompleteGitHubSignIn` | [`deepnavy.v1.CompleteGitHubSignInRequest`](#deepnavy-v1-completegithubsigninrequest) | [`deepnavy.v1.CompleteGitHubSignInResponse`](#deepnavy-v1-completegithubsigninresponse) | unary | CompleteGitHubSignIn exchanges the one-time GitHub authorization code for a<br> deep navy customer session, capturing the GitHub identity and the App<br> installation selected during sign-in. It is public (no bearer required). |
 | `SignOut` | [`deepnavy.v1.SignOutRequest`](#deepnavy-v1-signoutrequest) | [`deepnavy.v1.SignOutResponse`](#deepnavy-v1-signoutresponse) | unary | — |
 
 

@@ -38,7 +38,7 @@ test("the browser uses the generated ProvisioningService stream", () => {
   assert.match(client, /provisioning\.streamProvisioningStatus/);
   assert.match(client, /afterSequence: int64Field/);
   assert.match(client, /timeoutMs: 0/);
-  assert.match(client, /return Object\.freeze\(\{ request, streamTeamActivity, streamProvisioningStatus \}\)/);
+  assert.match(client, /return Object\.freeze\(\{ request, signIn, streamTeamActivity, streamProvisioningStatus \}\)/);
 });
 
 test("objective recovery is team-scoped, paginated, and selectable after refresh", () => {

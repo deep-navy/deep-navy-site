@@ -152,7 +152,6 @@
 
   const session = {
     accessToken: "",
-    idToken: "",
     user: null,
     claims: {},
     organizationId: "",
@@ -233,14 +232,13 @@
   };
 
   const environment = stringValue(config.environment) || "local";
-  const oauthStorageKey = `deep-navy.oauth.${stringValue(config.cognito_client_id) || environment}`;
-  const githubStartStorageKey = `deep-navy.github-start.${stringValue(config.cognito_client_id) || environment}`;
-  const githubCompletionStorageKey = `deep-navy.github-completion.${stringValue(config.cognito_client_id) || environment}`;
-  const billingReturnStorageKey = `deep-navy.billing-return.${stringValue(config.cognito_client_id) || environment}`;
+  const storageNamespace = environment;
+  const signInStorageKey = `deep-navy.sign-in.${storageNamespace}`;
+  const githubStartStorageKey = `deep-navy.github-start.${storageNamespace}`;
+  const githubCompletionStorageKey = `deep-navy.github-completion.${storageNamespace}`;
+  const billingReturnStorageKey = `deep-navy.billing-return.${storageNamespace}`;
   const appPath = deriveAppPath();
   const appUrl = new URL(appPath, window.location.origin).toString();
-  const derivedCallbackUrl = new URL(`${appPath.replace(/\/$/, "")}/callback/`, window.location.origin).toString();
-  const identity = identityConfiguration();
   const apiBaseUrl = normalizeServiceUrl(config.api_base_url);
   const organizationContract = window.deepNavyOrganizationOnboarding || null;
   const launchContract = window.deepNavyLaunchContract || null;
@@ -248,6 +246,7 @@
   const agentRoleContract = window.DeepNavyAgentRoles || null;
   const generatedClient = window.deepNavyGeneratedClient || null;
   const platformApi = createPlatformApi();
+  const identity = identityConfiguration();
   const stripePublishableKey = validatedStripePublishableKey(config.stripe_publishable_key);
   const stripeClient = createStripeClient();
   let embeddedCheckout = null;
@@ -315,13 +314,6 @@
     }
   }
 
-  function normalizeCognitoDomain(value) {
-    const raw = stringValue(value);
-    if (!raw) return "";
-    const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    return normalizeServiceUrl(withScheme);
-  }
-
   function validatedStripePublishableKey(value) {
     const key = stringValue(value);
     if (!/^pk_(?:test|live)_[A-Za-z0-9]{8,}$/.test(key)) return "";
@@ -340,7 +332,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "fa01d7cc4c68c1e7ee606a44677ad70d16f4c563" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "b128f096be863f542eeb422c148d95f37fee0741" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -348,43 +340,23 @@
     }
   }
 
-  function absolutePublicUrl(value, fallback) {
-    const raw = stringValue(value);
-    if (!raw) return fallback;
-    try {
-      const url = new URL(raw, window.location.origin);
-      const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-      if (url.protocol !== "https:" && !localHttp) return "";
-      if (url.username || url.password) return "";
-      if (url.origin !== window.location.origin) return "";
-      return url.toString();
-    } catch {
-      return "";
-    }
-  }
-
   function identityConfiguration() {
-    const domain = normalizeCognitoDomain(config.cognito_domain);
-    const clientId = stringValue(config.cognito_client_id);
-    const callbackUrl = absolutePublicUrl(config.cognito_callback_url, derivedCallbackUrl);
-    const logoutUrl = absolutePublicUrl(config.cognito_logout_url, appUrl);
-    const requestedScopes = Array.isArray(config.oauth_scopes) ? config.oauth_scopes.filter((scope) => typeof scope === "string" && /^[a-zA-Z0-9:./_-]+$/.test(scope)) : [];
-    const scopes = requestedScopes.length ? requestedScopes : ["openid", "email", "profile"];
-    return { domain, clientId, callbackUrl, logoutUrl, scopes, ready: Boolean(domain && clientId && callbackUrl && logoutUrl) };
+    // Sign-in readiness no longer depends on Cognito. The GitHub sign-in round
+    // trip is owned by the platform API, so readiness means the platform API
+    // origin is configured and the generated client bundle loaded.
+    return { ready: Boolean(apiBaseUrl && platformApi) };
   }
 
   function renderConfiguration() {
     const missing = [];
-    if (!identity.domain) missing.push("Cognito domain");
-    if (!identity.clientId) missing.push("Cognito public client ID");
-    if (!identity.callbackUrl) missing.push("callback URL");
     if (!apiBaseUrl) missing.push("platform API origin");
+    if (!platformApi) missing.push("platform API client");
     if (!stripeClient) missing.push("Stripe publishable configuration");
 
     if (missing.length === 0) {
       ui.configBanner.hidden = true;
     } else if (identity.ready) {
-      setBanner(ui.configBanner, ui.configTitle, ui.configMessage, "warning", "Identity ready; platform services pending", `Missing ${missing.join(", ")}. You can sign in, but server-backed onboarding remains unavailable until deployment configuration is complete.`);
+      setBanner(ui.configBanner, ui.configTitle, ui.configMessage, "warning", "Sign-in ready; platform services pending", `Missing ${missing.join(", ")}. You can sign in, but server-backed onboarding remains unavailable until deployment configuration is complete.`);
     } else {
       setBanner(ui.configBanner, ui.configTitle, ui.configMessage, "warning", "This environment is not ready for sign-in", `Missing ${missing.join(", ")}. No authentication or onboarding action will be attempted.`);
     }
@@ -409,148 +381,100 @@
     return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
 
-  async function sha256Base64Url(value) {
-    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-    return bytesToBase64Url(new Uint8Array(digest));
-  }
-
-  async function beginSignIn(purpose = "sign_in") {
+  async function beginSignIn() {
     hideAuthError();
-    if (!identity.ready || !window.crypto?.subtle) {
-      showAuthError("Sign-in is not available", "This deployment is missing its public Cognito configuration or browser cryptography support. No sign-in request was sent.");
+    if (!identity.ready || !platformApi) {
+      showAuthError("Sign-in is not available", "This deployment is missing its platform API configuration or the generated client bundle. No sign-in request was sent.");
       return;
     }
 
     setAuthPhase("authenticating");
     ui.signIn.disabled = true;
     ui.retrySignIn.disabled = true;
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const verifier = randomBase64Url(64);
-      const challenge = await sha256Base64Url(verifier);
-      const state = randomBase64Url(32);
-      const nonce = randomBase64Url(32);
-      const transaction = {
-        verifier,
-        state,
-        nonce,
-        redirectUri: identity.callbackUrl,
-        purpose: stringValue(purpose) || "sign_in",
-        createdAt: Date.now()
-      };
-      window.sessionStorage.setItem(oauthStorageKey, JSON.stringify(transaction));
-
-      const authorizeUrl = new URL("/oauth2/authorize", identity.domain);
-      authorizeUrl.search = new URLSearchParams({
-        response_type: "code",
-        client_id: identity.clientId,
-        redirect_uri: identity.callbackUrl,
-        scope: identity.scopes.join(" "),
-        state,
-        nonce,
-        code_challenge_method: "S256",
-        code_challenge: challenge
-      }).toString();
-      window.location.assign(authorizeUrl.toString());
+      // The server owns the one-time state; the browser only records that this
+      // GitHub round trip is a sign-in so the callback can distinguish it from a
+      // signed-in repository-management install.
+      if (!storageWrite(signInStorageKey, { purpose: "sign_in", createdAt: Date.now() })) {
+        throw new Error("secure_storage_unavailable");
+      }
+      const result = await platformApi.signIn("github_sign_in_start", { returnTo: appPath }, { requestId, signal: controller.signal });
+      const destination = validatedRedirect(result?.authorizationUrl, ["github.com"]);
+      if (!destination) throw new Error("untrusted_authorization_url");
+      window.location.assign(destination);
     } catch {
+      clearSignInTransaction();
       setAuthPhase("signed_out");
-      showAuthError("Could not start sign-in", "The browser could not prepare a secure PKCE transaction. No credentials were sent. Try again in a current browser.");
+      showAuthError("Could not start sign-in", "deep navy could not begin GitHub sign-in. No credentials were sent. Try again in a moment.");
       ui.signIn.disabled = !identity.ready;
       ui.retrySignIn.disabled = !identity.ready;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 
-  async function completeCallback(params) {
+  async function completeSignInCallback(callback) {
     setAuthPhase("authenticating");
-    const authorizationError = params.get("error");
-    if (authorizationError) {
-      clearOAuthTransaction();
-      const description = safeOAuthDescription(params.get("error_description"));
-      showAuthError("Cognito did not complete sign-in", description || "The authorization request was cancelled or rejected. Start again when you are ready.");
+    clearSignInTransaction();
+    if (!platformApi) {
+      showAuthError("Cannot complete sign-in", "The generated platform API client did not load at the pinned contract revision. No sign-in request was sent.");
       return false;
     }
 
-    const code = params.get("code");
-    const returnedState = params.get("state");
-    if (!code || !returnedState) {
-      showAuthError("Incomplete sign-in callback", "The callback does not include the one-time authorization code and state. Start sign-in again.");
-      return false;
-    }
-
-    const transaction = readOAuthTransaction();
-    clearOAuthTransaction();
-    const tenMinutes = 10 * 60 * 1000;
-    if (!transaction || transaction.state !== returnedState || Date.now() - transaction.createdAt > tenMinutes) {
-      showAuthError("Authorization state did not match", "This callback was not paired with a current sign-in transaction in this browser tab. No token request was sent.");
-      return false;
-    }
-    if (transaction.redirectUri !== identity.callbackUrl) {
-      showAuthError("Callback configuration changed", "The configured callback URL changed during sign-in. Start again so Cognito can validate a single redirect URI.");
-      return false;
-    }
-
-    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "Completing secure sign-in", "Exchanging the one-time authorization code with PKCE. Tokens will remain in memory.");
+    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "Completing secure sign-in", "Verifying the one-time GitHub authorization with deep navy. Your session stays in memory.");
     ui.retrySignIn.hidden = true;
 
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const tokenUrl = new URL("/oauth2/token", identity.domain);
-      const response = await fetch(tokenUrl, {
-        method: "POST",
-        credentials: "omit",
-        cache: "no-store",
-        redirect: "error",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          client_id: identity.clientId,
-          code,
-          code_verifier: transaction.verifier,
-          redirect_uri: identity.callbackUrl
-        })
-      });
-      const result = await parseJsonResponse(response);
-      if (!response.ok || !stringValue(result.access_token) || !stringValue(result.id_token)) {
-        throw new Error("token_exchange_failed");
-      }
+      const result = await platformApi.signIn("github_sign_in_complete", {
+        authorizationCode: callback.authorizationCode,
+        stateToken: callback.stateToken,
+        installationId: callback.installationId,
+        returnTo: appPath
+      }, { requestId, signal: controller.signal });
+      const sessionToken = stringValue(result?.sessionToken);
+      if (!sessionToken) throw new Error("session_token_missing");
 
-      const claims = decodeJwtPayload(result.id_token);
-      const accessClaims = decodeJwtPayload(result.access_token);
-      const accessClient = stringValue(accessClaims?.client_id) || stringValue(accessClaims?.aud);
-      if (!claims || claims.nonce !== transaction.nonce || claims.aud !== identity.clientId || Number(claims.exp || 0) * 1000 <= Date.now()) {
-        throw new Error("token_validation_failed");
-      }
-      if (!accessClaims || accessClient !== identity.clientId || stringValue(accessClaims.token_use) !== "access" || Number(accessClaims.exp || 0) * 1000 <= Date.now()) {
-        throw new Error("access_token_validation_failed");
-      }
-
-      session.accessToken = result.access_token;
-      session.idToken = result.id_token;
-      session.claims = claims;
+      const user = result?.user || {};
+      session.accessToken = sessionToken;
+      // Preliminary display only; the authoritative profile is loaded from
+      // GetCurrentUser during initializeAuthenticatedSession.
+      session.claims = {
+        displayName: stringValue(user.displayName),
+        githubLogin: stringValue(user.githubLogin),
+        email: stringValue(user.email)
+      };
       hideAuthError();
       showAuthenticated();
       await initializeAuthenticatedSession();
       return true;
     } catch {
       session.accessToken = "";
-      session.idToken = "";
       session.claims = {};
-      showAuthError("Token exchange failed", "Cognito rejected or could not complete the one-time exchange. The code was not retained. Start a new sign-in attempt.");
+      showAuthError("Sign-in could not be completed", "deep navy could not verify the one-time GitHub authorization. The code was not retained. Start a new sign-in attempt.");
       return false;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 
-  function readOAuthTransaction() {
-    try {
-      const raw = window.sessionStorage.getItem(oauthStorageKey);
-      const value = raw ? JSON.parse(raw) : null;
-      if (!value || typeof value.verifier !== "string" || typeof value.state !== "string" || typeof value.nonce !== "string" || typeof value.createdAt !== "number") return null;
-      return value;
-    } catch {
+  function readSignInTransaction() {
+    const value = storageRead(signInStorageKey);
+    const tenMinutes = 10 * 60 * 1000;
+    if (!value || value.purpose !== "sign_in" || typeof value.createdAt !== "number" || Date.now() - value.createdAt > tenMinutes) {
+      storageRemove(signInStorageKey);
       return null;
     }
+    return value;
   }
 
-  function clearOAuthTransaction() {
-    try { window.sessionStorage.removeItem(oauthStorageKey); } catch { /* session storage may be disabled */ }
+  function clearSignInTransaction() {
+    storageRemove(signInStorageKey);
   }
 
   function storageRead(key) {
@@ -630,23 +554,6 @@
     window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
   }
 
-  function safeOAuthDescription(value) {
-    const description = stringValue(value).replace(/[\r\n\t]/g, " ");
-    return description.slice(0, 240);
-  }
-
-  function decodeJwtPayload(token) {
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-      const bytes = Uint8Array.from(window.atob(base64), (character) => character.charCodeAt(0));
-      return JSON.parse(new TextDecoder().decode(bytes));
-    } catch {
-      return null;
-    }
-  }
-
   function showAuthError(title, message) {
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "error", title, message);
     ui.retrySignIn.hidden = false;
@@ -662,8 +569,8 @@
   function showAuthenticated() {
     setAuthPhase("authenticated");
     updateProgressStep("identity", "complete", "Authenticated");
-    const name = stringValue(session.claims.name) || stringValue(session.claims.preferred_username) || stringValue(session.claims.email) || "Signed-in user";
-    const login = stringValue(session.claims.preferred_username) || stringValue(session.claims.email);
+    const name = stringValue(session.claims.displayName) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email) || "Signed-in user";
+    const login = stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
     ui.userName.textContent = name;
     ui.userLogin.textContent = login;
     ui.userInitial.textContent = name.charAt(0).toUpperCase();
@@ -728,8 +635,8 @@
   function renderProfile(profile) {
     const user = profile?.user || {};
     session.user = user;
-    const name = stringValue(user.displayName) || stringValue(session.claims.name) || stringValue(session.claims.email) || "Signed-in user";
-    const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(user.email) || stringValue(session.claims.preferred_username) || stringValue(session.claims.email);
+    const name = stringValue(user.displayName) || stringValue(session.claims.displayName) || stringValue(session.claims.email) || "Signed-in user";
+    const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(user.email) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
     ui.userName.textContent = name;
     ui.userLogin.textContent = login;
     ui.userInitial.textContent = name.charAt(0).toUpperCase();
@@ -830,12 +737,6 @@
     } finally {
       window.clearTimeout(timeout);
     }
-  }
-
-  async function parseJsonResponse(response) {
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) return {};
-    try { return await response.json(); } catch { return {}; }
   }
 
   function isMissingResource(error) {
@@ -4667,12 +4568,12 @@
     element.hidden = !element.textContent;
   }
 
-  function signOut() {
+  async function signOut() {
     closeEmbeddedCheckout();
     stopProvisioningPolling();
     stopActivityStream();
+    const revokedToken = session.accessToken;
     session.accessToken = "";
-    session.idToken = "";
     session.claims = {};
     session.user = null;
     session.organizationId = "";
@@ -4689,20 +4590,28 @@
     ui.contextTeam.textContent = "Not selected";
     resetWorkspaceViews("Sign in and select a team to load its workspace.");
     setAuthPhase("signed_out");
-    clearOAuthTransaction();
+    clearSignInTransaction();
     clearGitHubFlow();
     storageRemove(billingReturnStorageKey);
-    if (identity.ready) {
-      const logout = new URL("/logout", identity.domain);
-      logout.search = new URLSearchParams({ client_id: identity.clientId, logout_uri: identity.logoutUrl }).toString();
-      window.location.assign(logout.toString());
-      return;
+    // Revoke the session server-side (best effort); a failure never blocks the
+    // local sign-out or the redirect back into the app.
+    if (revokedToken && platformApi) {
+      const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
+      try {
+        await platformApi.request("sign_out", {}, { accessToken: revokedToken, requestId, signal: controller.signal });
+      } catch {
+        /* Server-side revocation failure is non-fatal to local sign-out. */
+      } finally {
+        window.clearTimeout(timeout);
+      }
     }
     window.location.assign(appPath);
   }
 
-  ui.signIn.addEventListener("click", () => beginSignIn(readGitHubCompletion() ? "github_completion" : "sign_in"));
-  ui.retrySignIn.addEventListener("click", () => beginSignIn(readGitHubCompletion() ? "github_completion" : "sign_in"));
+  ui.signIn.addEventListener("click", () => beginSignIn());
+  ui.retrySignIn.addEventListener("click", () => beginSignIn());
   ui.signOut.addEventListener("click", signOut);
   ui.organizationBootstrapForm.addEventListener("submit", bootstrapOrganization);
   ui.organizationSelectForm.addEventListener("submit", selectOrganization);
@@ -4766,28 +4675,36 @@
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }
   const callbackParams = new URLSearchParams(initialQuery);
   const githubCallback = document.body.dataset.githubCallback === "true" || callbackParams.has("installation_id") || callbackParams.has("setup_action");
-  const cognitoCallback = document.body.dataset.appCallback === "true" && (callbackParams.has("code") || callbackParams.has("error"));
   const billingReturn = captureBillingReturn(callbackParams);
   stripCallbackQuery();
 
   if (githubCallback) {
+    // The GitHub App "install & authorize" round trip lands here. A "sign_in"
+    // transaction (and no in-memory session yet) means this is a sign-in: bind
+    // the one-time GitHub authorization to a platform session. Otherwise it is a
+    // signed-in user's repository-management install completing the usual way.
+    const signInTransaction = readSignInTransaction();
     try {
-      if (!captureGitHubCallback(callbackParams)) throw new Error("github_callback_missing");
-      setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub returned securely", "Re-authenticate with deep navy to bind the one-time GitHub authorization to the same account and organization.");
-      if (!identity.ready) showAuthError("Cannot complete GitHub connection", "This environment is missing its public Cognito configuration. The one-time callback is held only in this browser tab and will expire soon.");
-      else beginSignIn("github_completion");
+      if (!launchContract) throw new Error("launch_contract_unavailable");
+      const callback = launchContract.parseGitHubCallback(callbackParams, { forceGitHub: document.body.dataset.githubCallback === "true" });
+      if (!callback) throw new Error("github_callback_missing");
+      if (signInTransaction && !session.accessToken) {
+        completeSignInCallback(callback);
+      } else if (captureGitHubCallback(callbackParams)) {
+        setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub returned securely", "Sign in with GitHub to bind this one-time authorization to your account and organization.");
+      } else {
+        throw new Error("github_callback_missing");
+      }
     } catch (error) {
+      clearSignInTransaction();
       clearGitHubFlow();
       const message = launchContract && error instanceof launchContract.LaunchContractError
         ? error.message
-        : "The GitHub callback could not be validated in this browser. Start the installation again.";
-      showAuthError("GitHub installation was not completed", message);
+        : "The GitHub callback could not be validated in this browser. Start sign-in again.";
+      showAuthError("Sign-in was not completed", message);
     }
-  } else if (cognitoCallback) {
-    if (!identity.ready) showAuthError("Cannot complete sign-in", "This deployment is missing the same public Cognito configuration that initiated the flow. No token request was sent.");
-    else completeCallback(callbackParams);
   } else if (readGitHubCompletion()) {
-    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in again before the one-time GitHub authorization expires. deep navy will verify it server-side before showing a connection.");
+    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in with GitHub again before the one-time authorization expires. deep navy verifies it server-side before showing a connection.");
   } else if (billingReturn) {
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "warning", "Confirm your payment", "Sign in to refresh the webhook-confirmed subscription and team credit records. A Stripe return alone never changes access or balances.");
   }

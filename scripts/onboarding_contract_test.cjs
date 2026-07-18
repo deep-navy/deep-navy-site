@@ -185,3 +185,35 @@ test("team onboarding exhausts stable organization-scoped pages before enforcing
   assert.match(appSource, /stringValue\(team\?\.organizationId\) !== session\.organizationId/);
   assert.match(appSource, /listAllTeams\(\)/);
 });
+
+test("customer sign-in uses the platform-owned GitHub round trip instead of Cognito hosted UI", () => {
+  // beginSignIn asks the platform API to start a GitHub sign-in and redirects to
+  // the returned authorization URL rather than building a Cognito PKCE URL.
+  assert.match(appSource, /platformApi\.signIn\("github_sign_in_start", \{ returnTo: appPath \}/);
+  assert.match(appSource, /const destination = validatedRedirect\(result\?\.authorizationUrl, \["github\.com"\]\)/);
+  assert.match(appSource, /storageWrite\(signInStorageKey, \{ purpose: "sign_in", createdAt: Date\.now\(\) \}\)/);
+  // The Cognito hosted-UI OAuth + PKCE token exchange is fully removed.
+  assert.doesNotMatch(appSource, /oauth2\//);
+  assert.doesNotMatch(appSource, /code_challenge/);
+  assert.doesNotMatch(appSource, /config\.cognito_/);
+  assert.doesNotMatch(appSource, /function completeCallback/);
+});
+
+test("the shared GitHub callback completes sign-in with the parsed one-time credential and stores the session", () => {
+  // A "sign_in" transaction plus no in-memory session distinguishes a sign-in
+  // from a signed-in user's repository-management install on the same page.
+  assert.match(appSource, /const signInTransaction = readSignInTransaction\(\)/);
+  assert.match(appSource, /if \(signInTransaction && !session\.accessToken\)/);
+  assert.match(appSource, /completeSignInCallback\(callback\)/);
+  assert.match(appSource, /launchContract\.parseGitHubCallback\(callbackParams/);
+  assert.match(appSource, /platformApi\.signIn\("github_sign_in_complete", \{/);
+  assert.match(appSource, /authorizationCode: callback\.authorizationCode/);
+  assert.match(appSource, /stateToken: callback\.stateToken/);
+  assert.match(appSource, /installationId: callback\.installationId/);
+  assert.match(appSource, /session\.accessToken = sessionToken/);
+});
+
+test("sign-out revokes the session server-side, then redirects into the app", () => {
+  assert.match(appSource, /platformApi\.request\("sign_out", \{\}, \{ accessToken: revokedToken/);
+  assert.match(appSource, /window\.location\.assign\(appPath\)/);
+});

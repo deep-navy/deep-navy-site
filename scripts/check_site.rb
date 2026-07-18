@@ -66,7 +66,7 @@ html_files.each do |file|
   end
 end
 
-app_pages = [site.join("app/index.html"), site.join("app/callback/index.html"), site.join("app/github/callback/index.html")]
+app_pages = [site.join("app/index.html"), site.join("app/github/callback/index.html")]
 app_pages.each do |file|
   unless file.file?
     errors << "missing authenticated app page #{file.relative_path_from(site)}"
