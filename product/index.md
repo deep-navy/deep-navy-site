@@ -1,5 +1,6 @@
 ---
 title: Product
+image: /assets/images/og/product.png
 description: Review the deep navy work contract from objective and repository scope through GitHub delivery, approval, activity, and attributable cost.
 updated: 2026-07-17
 ---

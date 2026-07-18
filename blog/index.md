@@ -1,5 +1,6 @@
 ---
 title: Field Notes
+image: /assets/images/og/blog.png
 description: Product, engineering, security, and economics notes from the deep navy implementation record.
 updated: 2026-07-17
 ---

@@ -1,5 +1,6 @@
 ---
 title: Documentation
+image: /assets/images/og/docs.png
 description: Follow the deep navy onboarding procedure and review authentication, GitHub, billing, team provisioning, runtime, and recovery behavior.
 updated: 2026-07-17
 hide_cta: true

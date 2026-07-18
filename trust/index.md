@@ -1,5 +1,6 @@
 ---
 title: Trust Status
+image: /assets/images/og/trust.png
 description: Review the current implementation, deployment, and assurance status of deep navy security and data-handling controls.
 updated: 2026-07-17
 hide_cta: true

@@ -1,5 +1,6 @@
 ---
 title: Architecture
+image: /assets/images/og/architecture.png
 description: Explore the deep navy architecture across GitHub Pages, Cognito, the platform API, EKS, isolated OpenClaw team runtimes, LiteLLM, Langfuse, and Aurora.
 updated: 2026-07-17
 hide_cta: true

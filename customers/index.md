@@ -1,5 +1,6 @@
 ---
 title: Customers
+image: /assets/images/og/customers.png
 description: Review the entry criteria, procedure, and review record for a deep navy founding-team pilot.
 updated: 2026-07-17
 ---

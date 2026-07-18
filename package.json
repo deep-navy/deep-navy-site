@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build_platform_client.mjs",
+    "og:images": "node scripts/generate_og_images.mjs",
     "check:api-docs": "node scripts/check_generated_api_reference.mjs",
     "check:vendor": "node scripts/check_vendored_platform_protos.mjs",
     "typecheck": "tsc --project tsconfig.json --noEmit",
