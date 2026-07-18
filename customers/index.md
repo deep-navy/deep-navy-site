@@ -1,10 +1,10 @@
 ---
 title: Customers
-description: Review the entry criteria, procedure, and review record for a Deep Navy founding-team pilot.
+description: Review the entry criteria, procedure, and review record for a deep navy founding-team pilot.
 updated: 2026-07-17
 ---
 
-<section class="page-hero"><div class="shell"><span class="eyebrow">Founding-team register</span><h1>Early access begins with a bounded pilot.</h1><p>Deep Navy is onboarding a small cohort while the product and operating controls are validated in live customer environments.</p><div class="page-meta"><span>Program state / accepting pilots</span><span>Updated July 17, 2026</span></div></div></section>
+<section class="page-hero"><div class="shell"><span class="eyebrow">Founding-team register</span><h1>Early access begins with a bounded pilot.</h1><p>deep navy is onboarding a small cohort while the product and operating controls are validated in live customer environments.</p><div class="page-meta"><span>Program state / accepting pilots</span><span>Updated July 17, 2026</span></div></div></section>
 
 <section class="content-section" aria-labelledby="entry-title"><div class="shell content-grid"><header><span class="eyebrow">Entry criteria / 01</span><h2 id="entry-title">Four conditions before activation.</h2></header><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Condition</th><th>Required evidence</th><th>Owner</th></tr></thead><tbody><tr><td>Bounded objective</td><td>Population, desired signal, time horizon</td><td>Business or product lead</td></tr><tr><td>Active GitHub repository</td><td>Organization-owned repository eligible for GitHub App access</td><td>GitHub organization owner</td></tr><tr><td>Decision owner</td><td>Named person authorized to review product and protected actions</td><td>Customer</td></tr><tr><td>Measurement source</td><td>Existing KPI series or an agreed observation method</td><td>Product lead</td></tr></tbody></table></div></div></section>
 

@@ -3,7 +3,11 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#02060b">
 {% unless page.layout == 'app' %}<meta name="referrer" content="strict-origin-when-cross-origin">{% endunless %}
+{% if page.layout == 'app' %}
+<meta http-equiv="Permissions-Policy" content='camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://hooks.stripe.com" "https://checkout.stripe.com")'>
+{% else %}
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
+{% endif %}
 {% assign page_title = page.title | default: site.title %}
 {% if page_title == site.title %}
   <title>{{ site.title }}</title>
@@ -22,7 +26,7 @@
 <meta name="twitter:title" content="{{ page_title | escape }}">
 <meta name="twitter:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
 <link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
-<link rel="alternate" type="application/atom+xml" title="Deep Navy updates" href="{{ '/feed.xml' | relative_url }}">
+<link rel="alternate" type="application/atom+xml" title="deep navy updates" href="{{ '/feed.xml' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 {% unless page.layout == 'app' %}<script type="application/ld+json">
 {
@@ -33,12 +37,12 @@
   "url": {{ page.url | replace: 'index.html', '' | absolute_url | jsonify }},
   "isPartOf": {
     "@type": "WebSite",
-    "name": "Deep Navy",
+    "name": "deep navy",
     "url": {{ '/' | absolute_url | jsonify }}
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Deep Navy",
+    "name": "deep navy",
     "url": {{ '/' | absolute_url | jsonify }}
   }{% if page.updated %},
   "dateModified": {{ page.updated | jsonify }}{% endif %}{% if page.author %},

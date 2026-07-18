@@ -2,9 +2,9 @@
 layout: null
 permalink: /llms.txt
 ---
-# Deep Navy
+# deep navy
 
-> Deep Navy is an early-access SaaS platform for hiring a coordinated autonomous AI engineering team. It connects business objectives to reviewed delivery, explicit approvals, engineering cost, and observed product outcomes.
+> deep navy is an early-access SaaS platform for hiring a coordinated autonomous AI engineering team. It connects business objectives to reviewed delivery, explicit approvals, engineering cost, and observed product outcomes.
 
 ## Primary pages
 
@@ -13,6 +13,7 @@ permalink: /llms.txt
 - [Engineering Economics]({{ '/economics/' | absolute_url }}): Cost attribution and Engineering Credits
 - [Pricing]({{ '/pricing/' | absolute_url }}): Founding-team pilot model
 - [Documentation]({{ '/docs/' | absolute_url }}): Authentication and onboarding guide
+- [Generated API reference]({{ '/docs/api/' | absolute_url }}): Current protobuf messages, enums, services, RPCs, and source comments
 - [Architecture]({{ '/architecture/' | absolute_url }}): System ownership and isolation model
 - [GitHub integration]({{ '/integrations/github/' | absolute_url }}): Installation and repository access
 - [Security]({{ '/security/' | absolute_url }}): Security design and vulnerability reporting
@@ -20,7 +21,7 @@ permalink: /llms.txt
 
 ## Important qualifications
 
-- Deep Navy is in early access.
+- deep navy is in early access.
 - Customer claims, certifications, and performance metrics are not implied unless explicitly published with evidence.
 - Engineering outcome attribution is not automatically a causal claim.
 - The browser never receives GitHub App, AWS, Stripe, OpenClaw, LiteLLM, or Langfuse secrets.

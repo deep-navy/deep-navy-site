@@ -347,7 +347,7 @@ export enum RepositorySelectionMode {
 
   /**
    * All repositories currently and subsequently granted to the GitHub App
-   * installation are selected for Deep Navy.
+   * installation are selected for deep navy.
    *
    * @generated from enum value: REPOSITORY_SELECTION_MODE_ALL_ACCESSIBLE = 1;
    */

@@ -1,6 +1,6 @@
 ---
 title: Trust Status
-description: Review the current implementation, deployment, and assurance status of Deep Navy security and data-handling controls.
+description: Review the current implementation, deployment, and assurance status of deep navy security and data-handling controls.
 updated: 2026-07-17
 hide_cta: true
 ---
@@ -11,7 +11,7 @@ hide_cta: true
     <h1>Current control and assurance status.</h1>
     <p>Each row states what can be verified in the customer application, what remains dependent on the active deployment, and what has not been completed.</p>
     <div class="page-meta">
-      <span>Owner: Deep Navy</span>
+      <span>Owner: deep navy</span>
       <span>Last reviewed: 2026-07-17</span>
       <span>Security: <a href="mailto:security@deep.navy">security@deep.navy</a></span>
       <span>Privacy: <a href="mailto:privacy@deep.navy">privacy@deep.navy</a></span>
@@ -63,7 +63,7 @@ hide_cta: true
             <tr>
               <td>Stripe subscription authority</td>
               <td>Deployment dependent</td>
-              <td>Stripe-hosted checkout collects payment details. Subscription state changes after signed webhook processing.</td>
+              <td>Stripe Embedded Checkout renders isolated payment fields. Subscription state changes only after signed webhook processing.</td>
               <td>Verify webhook signature enforcement, idempotency, event destinations, and live-mode keys.</td>
             </tr>
             <tr>
@@ -86,9 +86,9 @@ hide_cta: true
             </tr>
             <tr>
               <td>Approval queue discovery</td>
-              <td>Unavailable in current contract</td>
-              <td>The approval service can decide a known approval ID; it has no method to list pending approvals. The customer application suppresses decision controls.</td>
-              <td>Add and review a scoped discovery contract before exposing an approval queue.</td>
+              <td>Contract implemented</td>
+              <td>The approval service lists only team-scoped pending safe summaries, requires current membership, and restricts decisions to authorized owners or administrators. Denials require a bounded reason.</td>
+              <td>Validate deployed authorization, snapshot pagination, and immutable decision audit events.</td>
             </tr>
             <tr>
               <td>Retention, deletion, and subprocessor schedule</td>

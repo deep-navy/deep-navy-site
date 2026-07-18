@@ -28,7 +28,7 @@
       <span class="signed-out-mark" aria-hidden="true">↗</span>
       <span class="eyebrow">Step 1 of 6 · Account</span>
       <h2 id="sign-in-title">Sign in to start onboarding</h2>
-      <p>Continue through this environment’s Amazon Cognito managed login. Deep Navy uses authorization code with PKCE; this static site contains no client secret.</p>
+      <p>Continue through this environment’s Amazon Cognito managed login. deep navy uses authorization code with PKCE; this static site contains no client secret.</p>
       <button class="button button-primary button-large" type="button" data-sign-in>Continue to Cognito <span aria-hidden="true">→</span></button>
       <p class="security-note">Tokens stay in memory and are never written to local storage. A page refresh requires sign-in again during early access.</p>
     </div>
@@ -90,7 +90,7 @@
             <p data-step-message>Connect GitHub before choosing which accessible repositories the team may use.</p>
             <form class="repository-form" data-repository-form hidden>
               <fieldset class="repository-modes">
-                <legend>Deep Navy access</legend>
+                <legend>deep navy access</legend>
                 <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
                 <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
               </fieldset>
@@ -111,8 +111,9 @@
               <div><dt>Plan</dt><dd data-plan-name></dd></div>
               <div><dt>Price</dt><dd data-plan-price></dd></div>
               <div><dt>Included</dt><dd data-plan-credits></dd></div>
+              <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot</dd></div>
             </dl>
-            <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Open secure checkout</button></div>
+            <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Review and subscribe</button></div>
           </article>
 
           <article class="onboarding-card" data-step="team" data-state="loading" tabindex="-1">
@@ -161,15 +162,56 @@
         </article>
 
         <article class="app-dashboard" aria-labelledby="objectives-title">
-          <div class="app-dashboard-header"><h3 id="objectives-title">Objectives / initiatives</h3><span class="data-source-badge">Contract gap</span></div>
-          <div class="empty-state"><strong>No discovery method</strong><p>The pinned API can create an objective and list initiatives only when an objective ID is already known. This site does not infer records.</p></div>
+          <div class="app-dashboard-header"><h3 id="objectives-title">Objective / initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
+          <div class="empty-state" data-objective-empty><strong>No objective loaded</strong><p>Select a team to load its durable objectives or submit a new business outcome.</p></div>
+          <div class="objective-select" data-objective-select-control hidden>
+            <label for="objective-select">Objective</label>
+            <select id="objective-select" data-objective-select disabled></select>
+          </div>
+          <form class="inline-form objective-form" data-objective-form hidden>
+            <label for="objective-title">Business objective</label>
+            <input id="objective-title" name="objectiveTitle" minlength="3" maxlength="160" placeholder="Improve trial-to-paid conversion" required disabled>
+            <label for="objective-description">Context and outcome</label>
+            <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="4" placeholder="Describe the customer problem, current baseline, desired outcome, and constraints." required disabled></textarea>
+            <p class="form-error" data-objective-error role="alert" hidden></p>
+            <button class="button button-primary" type="submit" disabled>Submit objective</button>
+          </form>
+          <div class="objective-record" data-objective-record hidden>
+            <span class="eyebrow">Selected objective</span>
+            <strong data-objective-title></strong>
+            <p data-objective-description></p>
+            <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not reported</span><p data-objective-dispatch-detail>Waiting for the durable TPM handoff status.</p></div>
+            <section class="objective-kpis" aria-labelledby="objective-kpis-title">
+              <div><strong id="objective-kpis-title">Proposed KPIs</strong><span class="data-source-badge" data-objective-kpi-state>Waiting</span></div>
+              <div class="empty-state objective-kpi-empty" data-objective-kpi-empty><strong>No KPIs proposed</strong><p>ObjectiveService has not returned KPI definitions for this objective.</p></div>
+              <ol data-objective-kpi-list hidden></ol>
+              <p class="objective-review-note">KPI definitions are read-only here. Any real acceptance request appears in the <a href="#workspace-approvals">ApprovalService queue</a>.</p>
+            </section>
+            <div class="initiative-stack"><div><strong>Proposed initiatives</strong><span class="data-source-badge" data-initiative-state>Waiting</span></div><ol data-initiative-list></ol><p>Initiatives are reviewed here; any protected decision appears in the <a href="#workspace-approvals">ApprovalService queue</a>.</p></div>
+          </div>
         </article>
       </aside>
 
       <section id="workspace-activity" class="workspace-section workspace-center" aria-labelledby="activity-title">
         <div class="workspace-section-heading dashboard-heading">
-          <div><span class="eyebrow">Activity ledger</span><h2 id="activity-title">Normalized team events</h2><p>Type, safe summary, role, state, sequence, and timestamp from ActivityService.</p></div>
+          <div><span class="eyebrow">Activity ledger</span><h2 id="activity-title">Team work, from authoritative services</h2><p>Runtime events keep their ActivityService sequence; approvals, provisioning, and cost retain their own source and timestamp semantics.</p></div>
           <div class="live-control"><span class="stream-state" data-activity-state>Waiting for a team</span><button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button></div>
+        </div>
+        <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
+          <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
+          <button type="button" data-activity-filter="conversations" aria-pressed="false">A2A <span data-activity-filter-count="conversations">0</span></button>
+          <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
+          <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
+          <button type="button" data-activity-filter="workspace" aria-pressed="false">Workspace / diffs <span data-activity-filter-count="workspace">0</span></button>
+          <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues / PRs <span data-activity-filter-count="delivery">0</span></button>
+          <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
+          <button type="button" data-activity-filter="provisioning" aria-pressed="false">Provisioning <span data-activity-filter-count="provisioning">0</span></button>
+          <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
+        </div>
+        <div class="activity-source-pages" aria-label="Snapshot source coverage">
+          <div><span><strong>Session history</strong><small data-session-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-sessions-more hidden>Load more sessions</button></div>
+          <div><span><strong>Workspace changes</strong><small data-workspace-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-workspace-more hidden>Load more changes</button></div>
+          <div class="delivery-source"><span><strong>GitHub delivery</strong><small data-delivery-history-state>Waiting for a team</small></span><label><span class="visually-hidden">Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label><span class="delivery-page-actions"><button class="button button-quiet button-small" type="button" data-issues-more hidden>More issues</button><button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>More PRs</button></span></div>
         </div>
         <div class="activity-workspace">
           <div class="empty-state" data-activity-empty><strong>No activity loaded</strong><p>Select a team to connect the event stream.</p></div>
@@ -190,16 +232,102 @@
             <div><dt>Credits remaining</dt><dd data-economics-credits-remaining></dd></div>
           </dl>
           <p class="measured-note" data-economics-measured hidden></p>
+          <section class="economics-breakdown" data-economics-breakdown hidden aria-labelledby="economics-breakdown-title">
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Measured allocation</span><strong id="economics-breakdown-title">Cost and credit breakdown</strong></div>
+              <span class="data-source-badge" data-economics-breakdown-state>Waiting</span>
+            </div>
+            <label for="economics-group">Group by</label>
+            <select id="economics-group" data-economics-group disabled></select>
+            <div class="empty-state economics-breakdown-empty" data-economics-breakdown-empty><strong>No breakdown loaded</strong><p>Select a team to query server-calculated dimensions.</p></div>
+            <ol class="economics-breakdown-list" data-economics-breakdown-list hidden></ol>
+          </section>
+          <section class="credit-control credit-balance" data-credit-balance-panel hidden aria-labelledby="credit-balance-title">
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Authoritative ledger</span><strong id="credit-balance-title">Team credit balance</strong></div>
+              <span class="data-source-badge" data-credit-balance-state>Waiting</span>
+            </div>
+            <dl class="economics-metrics credit-control-metrics">
+              <div><dt>Available prepaid balance</dt><dd data-credit-balance-value>Unavailable</dd></div>
+            </dl>
+            <p class="measured-note" data-credit-balance-message>Select a team to query BillingService.</p>
+          </section>
+          <section class="credit-control" data-credit-control hidden aria-labelledby="credit-control-title">
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Execution guardrail</span><strong id="credit-control-title">Team credit budget</strong></div>
+              <span class="data-source-badge" data-credit-control-state>Waiting</span>
+            </div>
+            <dl class="economics-metrics credit-control-metrics">
+              <div><dt>Open reservations</dt><dd data-credit-open-reserved></dd></div>
+              <div><dt>Period consumed</dt><dd data-credit-period-consumed></dd></div>
+              <div><dt>Hard limit</dt><dd data-credit-hard-limit></dd></div>
+              <div><dt>Spendable now</dt><dd data-credit-effective-available></dd></div>
+            </dl>
+            <form class="credit-control-form" data-credit-control-form>
+              <label for="credit-hard-limit">Hard limit in credits</label>
+              <input id="credit-hard-limit" name="hardLimitCredits" data-credit-hard-limit-input type="number" inputmode="decimal" min="0.000001" step="0.000001" required disabled>
+              <label class="credit-pause-toggle" for="credit-customer-paused"><input id="credit-customer-paused" name="customerPaused" data-credit-customer-paused type="checkbox" disabled> Pause billable agent work for this team</label>
+              <p class="credit-pack-summary" data-credit-control-summary></p>
+              <p class="form-error" data-credit-control-error role="alert" hidden></p>
+              <button class="button button-quiet" type="submit" data-credit-control-submit disabled>Save budget control</button>
+            </form>
+          </section>
+          <form class="credit-pack-form" data-credit-pack-form hidden>
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Prepaid capacity</span><strong>Add engineering credits</strong></div>
+              <span class="data-source-badge">Team scoped</span>
+            </div>
+            <label for="credit-pack">Credit pack</label>
+            <select id="credit-pack" name="creditPackId" data-credit-pack-select disabled></select>
+            <label for="credit-pack-quantity">Quantity</label>
+            <input id="credit-pack-quantity" name="quantity" data-credit-pack-quantity type="number" inputmode="numeric" min="1" step="1" value="1" disabled>
+            <p class="credit-pack-summary" data-credit-pack-summary>Select a prepaid pack.</p>
+            <p class="form-error" data-credit-pack-error role="alert" hidden></p>
+            <button class="button button-secondary" type="submit" data-credit-pack-submit disabled>Buy prepaid credits</button>
+            <p class="form-help form-help-neutral">Credits are posted only after deep navy verifies Stripe’s signed paid webhook. Agent work stops before an unpaid balance can accrue.</p>
+          </form>
+          <section class="invoice-history" data-invoice-history hidden aria-labelledby="invoice-history-title">
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Billing ledger</span><strong id="invoice-history-title">Invoices and receipts</strong></div>
+              <span class="data-source-badge" data-invoice-state>Waiting</span>
+            </div>
+            <p class="invoice-history-note">Server-verified billing records for this organization. Payment return screens never create invoice state.</p>
+            <div class="empty-state invoice-empty" data-invoice-empty><strong>No invoices loaded</strong><p>Invoice history will appear after the signed billing projection is available.</p></div>
+            <ol class="invoice-list" data-invoice-list aria-live="polite" hidden></ol>
+            <button class="button button-quiet button-small invoice-more" type="button" data-invoice-more hidden>Load more invoices</button>
+          </section>
         </section>
 
         <section id="workspace-approvals" class="workspace-section" aria-labelledby="workspace-approvals-title">
-          <div class="workspace-section-heading"><div><span class="eyebrow">Approval queue</span><h2 id="workspace-approvals-title">Discovery unavailable</h2></div></div>
-          <div class="capability-notice" data-approvals-unavailable>
-            <span class="capability-icon" aria-hidden="true">i</span>
-            <div><strong>The pinned API has no pending-approval list method.</strong><p>It can decide a known approval ID. Queue controls remain disabled until a typed discovery contract is available.</p></div>
+          <div class="workspace-section-heading dashboard-heading">
+            <div><span class="eyebrow">Approval queue</span><h2 id="workspace-approvals-title">Pending decisions</h2><p>Only safe action summaries returned for the selected team are shown.</p></div>
+            <span class="data-source-badge" data-approvals-state>Waiting</span>
           </div>
+          <div class="empty-state" data-approvals-empty><strong>No approval queue loaded</strong><p>Select a team to request its pending approvals.</p></div>
+          <ol class="approval-list" data-approval-list aria-live="polite" hidden></ol>
+          <button class="button button-quiet button-small approval-more" type="button" data-approvals-more hidden>Load more pending approvals</button>
         </section>
       </aside>
     </div>
   </div>
 </div>
+
+<dialog class="checkout-dialog" data-checkout-dialog aria-labelledby="checkout-title">
+  <div class="checkout-frame">
+    <header class="checkout-header">
+      <div>
+        <span class="eyebrow">deep navy / secure payment</span>
+        <h2 id="checkout-title" data-checkout-title>Complete subscription</h2>
+        <p data-checkout-subtitle>Stripe renders the encrypted payment fields inside this deep navy checkout.</p>
+      </div>
+      <button class="checkout-close" type="button" data-checkout-close aria-label="Close checkout">Close</button>
+    </header>
+    <div class="checkout-summary" data-checkout-summary></div>
+    <div class="checkout-status" data-checkout-status role="status" aria-live="polite">Preparing secure payment…</div>
+    <div class="checkout-mount" data-checkout-mount></div>
+    <footer class="checkout-footer">
+      <span>Payment fields are served by Stripe.</span>
+      <span>Activation and credits require a verified webhook.</span>
+    </footer>
+  </div>
+</dialog>

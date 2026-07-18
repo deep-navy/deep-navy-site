@@ -1,14 +1,16 @@
 <header class="site-header" data-site-header>
   <div class="shell header-inner">
-    <a class="brand" href="{{ '/' | relative_url }}" aria-label="Deep Navy home">
+    <a class="brand" href="{{ '/' | relative_url }}" aria-label="deep navy home">
       <span class="brand-mark" aria-hidden="true"><span>DN/</span></span>
-      <span>Deep Navy</span>
+      <span>deep navy</span>
     </a>
     <nav class="desktop-nav" aria-label="Primary navigation">
       <a href="{{ '/product/' | relative_url }}"{% if page.url contains '/product/' %} aria-current="page"{% endif %}>Product</a>
       <a href="{{ '/solutions/' | relative_url }}"{% if page.url contains '/solutions/' %} aria-current="page"{% endif %}>Solutions</a>
       <a href="{{ '/economics/' | relative_url }}"{% if page.url contains '/economics/' %} aria-current="page"{% endif %}>Economics</a>
+      <a href="{{ '/customers/' | relative_url }}"{% if page.url contains '/customers/' %} aria-current="page"{% endif %}>Customers</a>
       <a href="{{ '/pricing/' | relative_url }}"{% if page.url contains '/pricing/' %} aria-current="page"{% endif %}>Pricing</a>
+      <a href="{{ '/blog/' | relative_url }}"{% if page.url contains '/blog/' %} aria-current="page"{% endif %}>Resources</a>
       <a href="{{ '/docs/' | relative_url }}"{% if page.url contains '/docs/' %} aria-current="page"{% endif %}>Docs</a>
       <a href="{{ '/security/' | relative_url }}"{% if page.url contains '/security/' %} aria-current="page"{% endif %}>Security</a>
     </nav>
@@ -21,7 +23,9 @@
           <a href="{{ '/product/' | relative_url }}">Product</a>
           <a href="{{ '/solutions/' | relative_url }}">Solutions</a>
           <a href="{{ '/economics/' | relative_url }}">Engineering Economics</a>
+          <a href="{{ '/customers/' | relative_url }}">Customers</a>
           <a href="{{ '/pricing/' | relative_url }}">Pricing</a>
+          <a href="{{ '/blog/' | relative_url }}">Resources</a>
           <a href="{{ '/docs/' | relative_url }}">Documentation</a>
           <a href="{{ '/security/' | relative_url }}">Security</a>
           <a href="{{ '/app/' | relative_url }}">Sign in</a>

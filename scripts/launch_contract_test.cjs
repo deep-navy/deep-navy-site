@@ -19,15 +19,16 @@ const {
 } = require("../assets/js/launch-contract.js");
 
 test("GitHub callback preserves documented OAuth fields and optional setup metadata", () => {
+  // 987654321 is an intentionally non-production installation fixture.
   const callback = parseGitHubCallback(new URLSearchParams({
     code: "one-time-code",
     state: "server-bound-state",
-    installation_id: "147125820",
+    installation_id: "987654321",
     setup_action: "install"
   }));
 
   assert.deepEqual(callback, {
-    installationId: "147125820",
+    installationId: "987654321",
     setupAction: "GIT_HUB_INSTALLATION_SETUP_ACTION_INSTALL",
     stateToken: "server-bound-state",
     authorizationCode: "one-time-code"
@@ -35,7 +36,7 @@ test("GitHub callback preserves documented OAuth fields and optional setup metad
 
   assert.throws(() => parseGitHubCallback(new URLSearchParams({
     state: "server-bound-state",
-    installation_id: "147125820",
+    installation_id: "987654321",
     setup_action: "install"
   })), (error) => {
     assert.ok(error instanceof LaunchContractError);
@@ -65,7 +66,7 @@ test("typed installation and subscription states never infer success from resour
   assert.equal(githubInstallationActive({ id: "99", installationState: 1, status: "active" }), false);
   assert.equal(githubInstallationActive({ id: "99", installationState: 0, status: "active" }), false);
   assert.equal(subscriptionActive({ id: "sub-1", subscriptionStatus: "SUBSCRIPTION_STATUS_ACTIVE" }), true);
-  assert.equal(subscriptionActive({ id: "sub-1", subscriptionStatus: 3 }), true);
+  assert.equal(subscriptionActive({ id: "sub-1", subscriptionStatus: 3 }), false, "trialing does not fund agent work or team capacity");
   assert.equal(subscriptionActive({ id: "sub-1", subscriptionStatus: "SUBSCRIPTION_STATUS_PAST_DUE", status: "active" }), false);
   assert.equal(subscriptionActive({ id: "sub-1", subscriptionStatus: 0, status: "active" }), false);
 });

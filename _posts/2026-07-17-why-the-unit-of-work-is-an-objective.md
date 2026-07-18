@@ -1,14 +1,14 @@
 ---
 title: Why the unit of work is an objective
 description: Prompt volume and ticket throughput are poor proxies for product value. A coordinated engineering team needs an outcome, evidence, and a stopping rule.
-author: Deep Navy
+author: deep navy
 updated: 2026-07-17
 og_type: article
 ---
 
 The easiest way to make an AI engineering system look busy is to give it an endless list of implementation tasks. The harder and more useful question is whether the work changed anything for a customer or the business.
 
-Deep Navy starts with a business objective because it creates a durable reason for the work. The objective is translated into proposed KPIs and initiatives. Those proposals can be reviewed before engineering capacity is spent.
+deep navy starts with a business objective because it creates a durable reason for the work. The objective is translated into proposed KPIs and initiatives. Those proposals can be reviewed before engineering capacity is spent.
 
 ## A useful objective has boundaries
 

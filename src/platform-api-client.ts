@@ -3,21 +3,29 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { ActivityService } from "../vendor/platform-protos/deepnavy/v1/activity_pb.js";
 import { AgentService } from "../vendor/platform-protos/deepnavy/v1/agents_pb.js";
-import { ApprovalService } from "../vendor/platform-protos/deepnavy/v1/approvals_pb.js";
+import {
+  ApprovalService,
+  ApprovalStatus
+} from "../vendor/platform-protos/deepnavy/v1/approvals_pb.js";
 import { AuthService } from "../vendor/platform-protos/deepnavy/v1/auth_pb.js";
 import { BillingService } from "../vendor/platform-protos/deepnavy/v1/billing_pb.js";
-import { EconomicsService } from "../vendor/platform-protos/deepnavy/v1/economics_pb.js";
+import { EconomicsScopeType, EconomicsService } from "../vendor/platform-protos/deepnavy/v1/economics_pb.js";
 import {
   GitHubInstallationSetupAction,
   GitHubService
 } from "../vendor/platform-protos/deepnavy/v1/github_pb.js";
+import { GitHubDeliveryService } from "../vendor/platform-protos/deepnavy/v1/github_delivery_pb.js";
+import { InitiativeService } from "../vendor/platform-protos/deepnavy/v1/initiatives_pb.js";
+import { ObjectiveService } from "../vendor/platform-protos/deepnavy/v1/objectives_pb.js";
 import { OrganizationService } from "../vendor/platform-protos/deepnavy/v1/organizations_pb.js";
 import { ProvisioningService } from "../vendor/platform-protos/deepnavy/v1/provisioning_pb.js";
 import {
   RepositorySelectionMode,
   RepositoryService
 } from "../vendor/platform-protos/deepnavy/v1/repositories_pb.js";
+import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_pb.js";
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
+import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
 export const PLATFORM_PROTOS_REVISION = "fa01d7cc4c68c1e7ee606a44677ad70d16f4c563";
 
@@ -33,7 +41,14 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "update_repository_selection",
   "billing_plan",
   "subscription",
+  "invoices",
+  "invoice",
   "checkout",
+  "credit_packs",
+  "credit_pack_checkout",
+  "credit_balance",
+  "credit_control",
+  "update_credit_control",
   "billing_portal",
   "team",
   "teams",
@@ -41,15 +56,32 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "provisioning_status",
   "agents",
   "economics",
+  "economics_breakdowns",
+  "objectives",
+  "create_objective",
+  "initiatives",
+  "sessions",
+  "workspace_changes",
+  "github_issues",
+  "github_pull_requests",
+  "approvals",
   "decide_approval"
 ] as const);
 
 export const PLATFORM_CAPABILITIES = Object.freeze({
   activityStream: true,
+  provisioningStream: true,
   economicsRead: true,
   agentList: true,
+  objectiveSubmission: true,
+  objectiveDiscovery: true,
+  initiativeDiscoveryByObjective: true,
+  sessionHistory: true,
+  workspaceChangeHistory: true,
+  githubIssueHistory: true,
+  githubPullRequestHistory: true,
   approvalDecision: true,
-  approvalDiscovery: false
+  approvalDiscovery: true
 });
 
 type ProcedureName = (typeof SUPPORTED_PROCEDURES)[number];
@@ -117,6 +149,28 @@ function pageRequest(value: unknown): { pageSize: number; pageToken: string } | 
 function booleanField(input: InputRecord, name: string): boolean {
   if (typeof input[name] !== "boolean") throw new PlatformClientError(`${name} is required.`, "invalid_argument", 400, "");
   return input[name];
+}
+
+function economicsScopeType(value: unknown, name: string): EconomicsScopeType {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  const values: Record<string, EconomicsScopeType> = {
+    organization: EconomicsScopeType.ORGANIZATION,
+    team: EconomicsScopeType.TEAM,
+    agent: EconomicsScopeType.AGENT,
+    agent_role: EconomicsScopeType.AGENT_ROLE,
+    objective: EconomicsScopeType.OBJECTIVE,
+    initiative: EconomicsScopeType.INITIATIVE,
+    issue: EconomicsScopeType.ISSUE,
+    pull_request: EconomicsScopeType.PULL_REQUEST,
+    repository: EconomicsScopeType.REPOSITORY,
+    session: EconomicsScopeType.SESSION,
+    model: EconomicsScopeType.MODEL,
+    provider: EconomicsScopeType.PROVIDER,
+    operation: EconomicsScopeType.OPERATION
+  };
+  const result = values[normalized];
+  if (result === undefined) throw new PlatformClientError(`${name} is invalid.`, "invalid_argument", 400, "");
+  return result;
 }
 
 function setupAction(value: unknown): GitHubInstallationSetupAction {
@@ -211,10 +265,15 @@ export function createPlatformApi(options: PlatformApiOptions) {
   const billing = createClient(BillingService, transport);
   const economics = createClient(EconomicsService, transport);
   const github = createClient(GitHubService, transport);
+  const githubDelivery = createClient(GitHubDeliveryService, transport);
+  const initiatives = createClient(InitiativeService, transport);
+  const objectives = createClient(ObjectiveService, transport);
   const organizations = createClient(OrganizationService, transport);
   const provisioning = createClient(ProvisioningService, transport);
   const repositories = createClient(RepositoryService, transport);
+  const sessionHistory = createClient(SessionService, transport);
   const teams = createClient(TeamService, transport);
+  const workspaceHistory = createClient(WorkspaceService, transport);
 
   async function request(name: ProcedureName, input: unknown, options: PlatformCallOptions): Promise<unknown> {
     const payload = inputRecord(input);
@@ -270,12 +329,53 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await billing.getBillingPlan({ planId: textField(payload, "planId") }, callOptions);
         case "subscription":
           return await billing.getSubscription({ organizationId: textField(payload, "organizationId") }, callOptions);
+        case "invoices":
+          return await billing.listInvoices({
+            organizationId: textField(payload, "organizationId"),
+            page: pageRequest(payload.page)
+          }, callOptions);
+        case "invoice":
+          return await billing.getInvoice({
+            organizationId: textField(payload, "organizationId"),
+            invoiceId: textField(payload, "invoiceId")
+          }, callOptions);
         case "checkout":
           return await billing.createCheckoutSession({
             organizationId: textField(payload, "organizationId"),
             planId: textField(payload, "planId"),
-            successUrl: textField(payload, "successUrl"),
-            cancelUrl: textField(payload, "cancelUrl"),
+            returnUrl: textField(payload, "returnUrl"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        case "credit_packs":
+          return await billing.listCreditPacks({
+            organizationId: textField(payload, "organizationId")
+          }, callOptions);
+        case "credit_pack_checkout":
+          return await billing.createCreditPackCheckoutSession({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId"),
+            creditPackId: textField(payload, "creditPackId"),
+            quantity: int64Field(payload.quantity, "quantity", false),
+            returnUrl: textField(payload, "returnUrl"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        case "credit_balance":
+          return await billing.getCreditBalance({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId")
+          }, callOptions);
+        case "credit_control":
+          return await billing.getTeamCreditControl({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId")
+          }, callOptions);
+        case "update_credit_control":
+          return await billing.updateTeamCreditControl({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId"),
+            hardLimitMicros: int64Field(payload.hardLimitMicros, "hardLimitMicros", false),
+            customerPaused: booleanField(payload, "customerPaused"),
+            expectedVersion: int64Field(payload.expectedVersion, "expectedVersion", false),
             idempotencyKey: textField(payload, "idempotencyKey")
           }, callOptions);
         case "billing_portal":
@@ -296,6 +396,68 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await agents.listAgents({ teamId: textField(payload, "teamId"), page: pageRequest(payload.page) }, callOptions);
         case "economics":
           return await economics.getEconomics({ scopeType: textField(payload, "scopeType"), scopeId: textField(payload, "scopeId") }, callOptions);
+        case "economics_breakdowns": {
+          const page = pageRequest(payload.page);
+          if (page && (page.pageSize < 0 || page.pageSize > 100)) throw new PlatformClientError("pageSize is invalid.", "invalid_argument", 400, requestId);
+          return await economics.listEconomicsBreakdowns({
+            parentScope: { type: economicsScopeType(payload.parentScopeType, "parentScopeType"), id: textField(payload, "parentScopeId") },
+            groupBy: economicsScopeType(payload.groupBy, "groupBy"),
+            pageSize: page?.pageSize || 0,
+            pageToken: page?.pageToken || ""
+          }, callOptions);
+        }
+        case "objectives":
+          return await objectives.listBusinessObjectives({ teamId: textField(payload, "teamId"), page: pageRequest(payload.page) }, callOptions);
+        case "create_objective":
+          return await objectives.createBusinessObjective({
+            teamId: textField(payload, "teamId"),
+            title: textField(payload, "title"),
+            description: textField(payload, "description"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        case "initiatives":
+          return await initiatives.listInitiatives({ objectiveId: textField(payload, "objectiveId"), page: pageRequest(payload.page) }, callOptions);
+        case "sessions":
+          return await sessionHistory.listSessions({
+            teamId: textField(payload, "teamId"),
+            agentId: textField(payload, "agentId", false),
+            objectiveId: textField(payload, "objectiveId", false),
+            initiativeId: textField(payload, "initiativeId", false),
+            sessionId: textField(payload, "sessionId", false),
+            repositoryId: textField(payload, "repositoryId", false),
+            page: pageRequest(payload.page)
+          }, callOptions);
+        case "workspace_changes":
+          return await workspaceHistory.listWorkspaceChanges({
+            teamId: textField(payload, "teamId"),
+            afterSequence: int64Field(payload.afterSequence ?? 0, "afterSequence"),
+            agentId: textField(payload, "agentId", false),
+            sessionId: textField(payload, "sessionId", false),
+            objectiveId: textField(payload, "objectiveId", false),
+            initiativeId: textField(payload, "initiativeId", false),
+            repositoryId: textField(payload, "repositoryId", false),
+            page: pageRequest(payload.page)
+          }, callOptions);
+        case "github_issues":
+          return await githubDelivery.listGitHubIssues({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId"),
+            githubRepositoryId: int64Field(payload.githubRepositoryId, "githubRepositoryId", false),
+            page: pageRequest(payload.page)
+          }, callOptions);
+        case "github_pull_requests":
+          return await githubDelivery.listGitHubPullRequests({
+            organizationId: textField(payload, "organizationId"),
+            teamId: textField(payload, "teamId"),
+            githubRepositoryId: int64Field(payload.githubRepositoryId, "githubRepositoryId", false),
+            page: pageRequest(payload.page)
+          }, callOptions);
+        case "approvals":
+          return await approvals.listApprovals({
+            teamId: textField(payload, "teamId"),
+            approvalStatus: ApprovalStatus.PENDING,
+            page: pageRequest(payload.page)
+          }, callOptions);
         case "decide_approval":
           return await approvals.decideApproval({
             id: textField(payload, "id"),
@@ -348,5 +510,37 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
-  return Object.freeze({ request, streamTeamActivity });
+  async function* streamProvisioningStatus(input: unknown, options: PlatformCallOptions) {
+    const payload = inputRecord(input);
+    const accessToken = options.accessToken.trim();
+    const requestId = options.requestId.trim();
+    if (!accessToken) throw new PlatformClientError("Sign-in is required.", "unauthenticated", 401, requestId);
+    const callOptions: CallOptions = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Request-ID": requestId
+      },
+      signal: options.signal,
+      timeoutMs: 0
+    };
+
+    try {
+      for await (const response of provisioning.streamProvisioningStatus({
+        teamId: textField(payload, "teamId"),
+        afterSequence: int64Field(payload.afterSequence ?? 0, "afterSequence")
+      }, callOptions)) {
+        yield response;
+      }
+    } catch (error) {
+      if (error instanceof PlatformClientError) throw error;
+      const connectError = ConnectError.from(error);
+      const responseRequestId = connectError.metadata.get("x-request-id") || requestId;
+      const safeMessage = connectError.code === Code.Unknown
+        ? "The browser could not reach the provisioning service."
+        : connectError.rawMessage.slice(0, 300) || "The provisioning service rejected the stream.";
+      throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
+    }
+  }
+
+  return Object.freeze({ request, streamTeamActivity, streamProvisioningStatus });
 }

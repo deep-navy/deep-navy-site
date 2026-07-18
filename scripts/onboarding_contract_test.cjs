@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
 const test = require("node:test");
 
 const {
@@ -10,7 +11,9 @@ const {
   organizationIdFromProfile
 } = require("../assets/js/organization-onboarding.js");
 
-function membership(id, name = "Deep Navy") {
+const appSource = readFileSync("assets/js/app.js", "utf8");
+
+function membership(id, name = "deep navy") {
   return {
     organization: { id, name, slug: name.toLowerCase().replace(/\s+/g, "-") },
     role: "MEMBERSHIP_ROLE_OWNER"
@@ -173,4 +176,12 @@ test("failed selection preserves the needs-selection state", async () => {
   await coordinator.load();
   await assert.rejects(coordinator.select("organization-1"), /selection unavailable/);
   assert.equal(coordinator.state().kind, "needs_selection");
+});
+
+test("team onboarding exhausts stable organization-scoped pages before enforcing paid capacity", () => {
+  assert.match(appSource, /async function listAllTeams\(\)/);
+  assert.match(appSource, /pageSize: 100, pageToken/);
+  assert.match(appSource, /TeamService returned a repeated page cursor/);
+  assert.match(appSource, /stringValue\(team\?\.organizationId\) !== session\.organizationId/);
+  assert.match(appSource, /listAllTeams\(\)/);
 });

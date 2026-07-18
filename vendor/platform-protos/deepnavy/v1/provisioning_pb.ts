@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file deepnavy/v1/provisioning.proto.
  */
 export const file_deepnavy_v1_provisioning: GenFile = /*@__PURE__*/
-  fileDesc("Ch5kZWVwbmF2eS92MS9wcm92aXNpb25pbmcucHJvdG8SC2RlZXBuYXZ5LnYxImUKF1Byb3Zpc2lvbmluZ0Vycm9yRGV0YWlsEjQKBnJlYXNvbhgBIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfbWVzc2FnZRgCIAEoCSKaBAoSUHJvdmlzaW9uaW5nU3RhdHVzEg8KB3RlYW1faWQYASABKAkSFQoJb3BlcmF0aW9uGAIgASgJQgIYARISCgZzdGF0dXMYAyABKAlCAhgBEhAKBHN0ZXAYBCABKAlCAhgBEhIKCnNhZmVfZXJyb3IYBSABKAkSLgoKdXBkYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASOgoOb3BlcmF0aW9uX3R5cGUYByABKA4yIi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdPcGVyYXRpb24SOgoScHJvdmlzaW9uaW5nX3N0YXRlGAggASgOMh4uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RhdGUSOAoRcHJvdmlzaW9uaW5nX3N0ZXAYCSABKA4yHS5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGVwEhoKEmRlc2lyZWRfZ2VuZXJhdGlvbhgKIAEoAxISCgpjb21tYW5kX2lkGAsgASgJEg8KB2F0dGVtcHQYDCABKAUSMQoNbmV4dF9yZXRyeV9hdBgNIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIc2VxdWVuY2UYDiABKAMSOgoMZXJyb3JfcmVhc29uGA8gASgOMiQuZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nRXJyb3JSZWFzb24i4QIKE1Byb3Zpc2lvbmluZ0NvbW1hbmQSCgoCaWQYASABKAkSDwoHdGVhbV9pZBgCIAEoCRIXCg9vcmdhbml6YXRpb25faWQYAyABKAkSNQoJb3BlcmF0aW9uGAQgASgOMiIuZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nT3BlcmF0aW9uEhoKEmRlc2lyZWRfZ2VuZXJhdGlvbhgFIAEoAxIRCgl0ZWFtX25hbWUYBiABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgHIAEoCRIeChZnaXRodWJfaW5zdGFsbGF0aW9uX2lkGAggASgDEhYKDnJlcG9zaXRvcnlfaWRzGAkgAygJEg8KB3BsYW5faWQYCiABKAkSGQoRZGVkdXBsaWNhdGlvbl9rZXkYCyABKAkSMAoMcmVxdWVzdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCL0AgoRUHJvdmlzaW9uaW5nRXZlbnQSCgoCaWQYASABKAkSEgoKY29tbWFuZF9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhAKCHNlcXVlbmNlGAQgASgDEjoKEnByb3Zpc2lvbmluZ19zdGF0ZRgFIAEoDjIeLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ1N0YXRlEjgKEXByb3Zpc2lvbmluZ19zdGVwGAYgASgOMh0uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RlcBIPCgdhdHRlbXB0GAcgASgFEjoKDGVycm9yX3JlYXNvbhgIIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfc3VtbWFyeRgJIAEoCRISCgpzYWZlX2Vycm9yGAogASgJEi8KC29jY3VycmVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKPAQoZUHJvdmlzaW9uaW5nUnVudGltZVJlc3VsdBIcChRrdWJlcm5ldGVzX25hbWVzcGFjZRgBIAEoCRIeChZvcGVuY2xhd19pbnN0YW5jZV9uYW1lGAIgASgJEhcKD2xpdGVsbG1fdGVhbV9pZBgDIAEoCRIbChNsYW5nZnVzZV9wcm9qZWN0X2lkGAQgASgJIvoCChZQcm92aXNpb25pbmdFdmVudElucHV0EgoKAmlkGAEgASgJEjoKEnByb3Zpc2lvbmluZ19zdGF0ZRgCIAEoDjIeLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ1N0YXRlEjgKEXByb3Zpc2lvbmluZ19zdGVwGAMgASgOMh0uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RlcBIPCgdhdHRlbXB0GAQgASgFEjoKDGVycm9yX3JlYXNvbhgFIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfc3VtbWFyeRgGIAEoCRISCgpzYWZlX2Vycm9yGAcgASgJEi8KC29ic2VydmVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI2CgZyZXN1bHQYCSABKAsyJi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdSdW50aW1lUmVzdWx0Ii8KHEdldFByb3Zpc2lvbmluZ1N0YXR1c1JlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCSJWCh1HZXRQcm92aXNpb25pbmdTdGF0dXNSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMiSgofU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEhYKDmFmdGVyX3NlcXVlbmNlGAIgASgDIogBCiBTdHJlYW1Qcm92aXNpb25pbmdTdGF0dXNSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMSLQoFZXZlbnQYAiABKAsyHi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdFdmVudCJ+CiBMZWFzZVByb3Zpc2lvbmluZ0NvbW1hbmRzUmVxdWVzdBIRCgl3b3JrZXJfaWQYASABKAkSFAoMbWF4X2NvbW1hbmRzGAIgASgFEjEKDmxlYXNlX2R1cmF0aW9uGAMgASgLMhkuZ29vZ2xlLnByb3RvYnVmLkR1cmF0aW9uIqoBChlMZWFzZWRQcm92aXNpb25pbmdDb21tYW5kEjEKB2NvbW1hbmQYASABKAsyIC5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdDb21tYW5kEhMKC2xlYXNlX3Rva2VuGAIgASgJEjQKEGxlYXNlX2V4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2F0dGVtcHQYBCABKAUiXQohTGVhc2VQcm92aXNpb25pbmdDb21tYW5kc1Jlc3BvbnNlEjgKCGNvbW1hbmRzGAEgAygLMiYuZGVlcG5hdnkudjEuTGVhc2VkUHJvdmlzaW9uaW5nQ29tbWFuZCKCAQokUmVuZXdQcm92aXNpb25pbmdDb21tYW5kTGVhc2VSZXF1ZXN0EhIKCmNvbW1hbmRfaWQYASABKAkSEwoLbGVhc2VfdG9rZW4YAiABKAkSMQoObGVhc2VfZHVyYXRpb24YAyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24iXQolUmVuZXdQcm92aXNpb25pbmdDb21tYW5kTGVhc2VSZXNwb25zZRI0ChBsZWFzZV9leHBpcmVzX2F0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJ9Ch5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlcXVlc3QSEgoKY29tbWFuZF9pZBgBIAEoCRITCgtsZWFzZV90b2tlbhgCIAEoCRIyCgVldmVudBgDIAEoCzIjLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0V2ZW50SW5wdXQiWAofUmVjb3JkUHJvdmlzaW9uaW5nRXZlbnRSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMqzwEKFVByb3Zpc2lvbmluZ09wZXJhdGlvbhImCiJQUk9WSVNJT05JTkdfT1BFUkFUSU9OX1VOU1BFQ0lGSUVEEAASJAogUFJPVklTSU9OSU5HX09QRVJBVElPTl9QUk9WSVNJT04QARIiCh5QUk9WSVNJT05JTkdfT1BFUkFUSU9OX1NVU1BFTkQQAhIhCh1QUk9WSVNJT05JTkdfT1BFUkFUSU9OX1JFU1VNRRADEiEKHVBST1ZJU0lPTklOR19PUEVSQVRJT05fREVMRVRFEAQq+QEKEVByb3Zpc2lvbmluZ1N0YXRlEiIKHlBST1ZJU0lPTklOR19TVEFURV9VTlNQRUNJRklFRBAAEh0KGVBST1ZJU0lPTklOR19TVEFURV9RVUVVRUQQARIeChpQUk9WSVNJT05JTkdfU1RBVEVfUlVOTklORxACEh8KG1BST1ZJU0lPTklOR19TVEFURV9SRVRSWUlORxADEiAKHFBST1ZJU0lPTklOR19TVEFURV9TVUNDRUVERUQQBBIdChlQUk9WSVNJT05JTkdfU1RBVEVfRkFJTEVEEAUSHwobUFJPVklTSU9OSU5HX1NUQVRFX0NBTkNFTEVEEAYqtgMKEFByb3Zpc2lvbmluZ1N0ZXASIQodUFJPVklTSU9OSU5HX1NURVBfVU5TUEVDSUZJRUQQABIcChhQUk9WSVNJT05JTkdfU1RFUF9RVUVVRUQQARIuCipQUk9WSVNJT05JTkdfU1RFUF9WQUxJREFUSU5HX1BSRVJFUVVJU0lURVMQAhIoCiRQUk9WSVNJT05JTkdfU1RFUF9DUkVBVElOR19OQU1FU1BBQ0UQAxIpCiVQUk9WSVNJT05JTkdfU1RFUF9DT05GSUdVUklOR19SVU5USU1FEAQSMAosUFJPVklTSU9OSU5HX1NURVBfQ1JFQVRJTkdfT1BFTkNMQVdfSU5TVEFOQ0UQBRIpCiVQUk9WSVNJT05JTkdfU1RFUF9XQUlUSU5HX0ZPUl9HQVRFV0FZEAYSGwoXUFJPVklTSU9OSU5HX1NURVBfUkVBRFkQBxIgChxQUk9WSVNJT05JTkdfU1RFUF9TVVNQRU5ESU5HEAgSIAocUFJPVklTSU9OSU5HX1NURVBfQkFDS0lOR19VUBAJEh4KGlBST1ZJU0lPTklOR19TVEVQX0RFTEVUSU5HEAoqhAUKF1Byb3Zpc2lvbmluZ0Vycm9yUmVhc29uEikKJVBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fVU5TUEVDSUZJRUQQABItCilQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX0lOVkFMSURfQ09NTUFORBABEjYKMlBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fUFJFUkVRVUlTSVRFX1VOQVZBSUxBQkxFEAISOgo2UFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9CSUxMSU5HX0VOVElUTEVNRU5UX0lOQUNUSVZFEAMSOgo2UFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9HSVRIVUJfSU5TVEFMTEFUSU9OX0lOQUNUSVZFEAQSOAo0UFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9SRVBPU0lUT1JZX1NFTEVDVElPTl9FTVBUWRAFEjUKMVBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fS1VCRVJORVRFU19BUFBMWV9GQUlMRUQQBhIwCixQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX09QRU5DTEFXX05PVF9SRUFEWRAHEi0KKVBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fUkVUUllfRVhIQVVTVEVEEAgSKwonUFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9MRUFTRV9JTlZBTElEEAkSMgouUFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9JREVNUE9URU5DWV9DT05GTElDVBAKEiwKKFBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fTk9UX0FVVEhPUklaRUQQCzKAAgoTUHJvdmlzaW9uaW5nU2VydmljZRJuChVHZXRQcm92aXNpb25pbmdTdGF0dXMSKS5kZWVwbmF2eS52MS5HZXRQcm92aXNpb25pbmdTdGF0dXNSZXF1ZXN0GiouZGVlcG5hdnkudjEuR2V0UHJvdmlzaW9uaW5nU3RhdHVzUmVzcG9uc2USeQoYU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzEiwuZGVlcG5hdnkudjEuU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzUmVxdWVzdBotLmRlZXBuYXZ5LnYxLlN0cmVhbVByb3Zpc2lvbmluZ1N0YXR1c1Jlc3BvbnNlMAEylgMKGVByb3Zpc2lvbmluZ1dvcmtlclNlcnZpY2USegoZTGVhc2VQcm92aXNpb25pbmdDb21tYW5kcxItLmRlZXBuYXZ5LnYxLkxlYXNlUHJvdmlzaW9uaW5nQ29tbWFuZHNSZXF1ZXN0Gi4uZGVlcG5hdnkudjEuTGVhc2VQcm92aXNpb25pbmdDb21tYW5kc1Jlc3BvbnNlEoYBCh1SZW5ld1Byb3Zpc2lvbmluZ0NvbW1hbmRMZWFzZRIxLmRlZXBuYXZ5LnYxLlJlbmV3UHJvdmlzaW9uaW5nQ29tbWFuZExlYXNlUmVxdWVzdBoyLmRlZXBuYXZ5LnYxLlJlbmV3UHJvdmlzaW9uaW5nQ29tbWFuZExlYXNlUmVzcG9uc2USdAoXUmVjb3JkUHJvdmlzaW9uaW5nRXZlbnQSKy5kZWVwbmF2eS52MS5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlcXVlc3QaLC5kZWVwbmF2eS52MS5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlc3BvbnNlQkRaQmdpdGh1Yi5jb20vZGVlcC1uYXZ5L3BsYXRmb3JtLXByb3Rvcy9nZW4vZ28vZGVlcG5hdnkvdjE7ZGVlcG5hdnl2MWIGcHJvdG8z", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
+  fileDesc("Ch5kZWVwbmF2eS92MS9wcm92aXNpb25pbmcucHJvdG8SC2RlZXBuYXZ5LnYxImUKF1Byb3Zpc2lvbmluZ0Vycm9yRGV0YWlsEjQKBnJlYXNvbhgBIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfbWVzc2FnZRgCIAEoCSKaBAoSUHJvdmlzaW9uaW5nU3RhdHVzEg8KB3RlYW1faWQYASABKAkSFQoJb3BlcmF0aW9uGAIgASgJQgIYARISCgZzdGF0dXMYAyABKAlCAhgBEhAKBHN0ZXAYBCABKAlCAhgBEhIKCnNhZmVfZXJyb3IYBSABKAkSLgoKdXBkYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASOgoOb3BlcmF0aW9uX3R5cGUYByABKA4yIi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdPcGVyYXRpb24SOgoScHJvdmlzaW9uaW5nX3N0YXRlGAggASgOMh4uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RhdGUSOAoRcHJvdmlzaW9uaW5nX3N0ZXAYCSABKA4yHS5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGVwEhoKEmRlc2lyZWRfZ2VuZXJhdGlvbhgKIAEoAxISCgpjb21tYW5kX2lkGAsgASgJEg8KB2F0dGVtcHQYDCABKAUSMQoNbmV4dF9yZXRyeV9hdBgNIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIc2VxdWVuY2UYDiABKAMSOgoMZXJyb3JfcmVhc29uGA8gASgOMiQuZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nRXJyb3JSZWFzb24i4QIKE1Byb3Zpc2lvbmluZ0NvbW1hbmQSCgoCaWQYASABKAkSDwoHdGVhbV9pZBgCIAEoCRIXCg9vcmdhbml6YXRpb25faWQYAyABKAkSNQoJb3BlcmF0aW9uGAQgASgOMiIuZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nT3BlcmF0aW9uEhoKEmRlc2lyZWRfZ2VuZXJhdGlvbhgFIAEoAxIRCgl0ZWFtX25hbWUYBiABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgHIAEoCRIeChZnaXRodWJfaW5zdGFsbGF0aW9uX2lkGAggASgDEhYKDnJlcG9zaXRvcnlfaWRzGAkgAygJEg8KB3BsYW5faWQYCiABKAkSGQoRZGVkdXBsaWNhdGlvbl9rZXkYCyABKAkSMAoMcmVxdWVzdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCL0AgoRUHJvdmlzaW9uaW5nRXZlbnQSCgoCaWQYASABKAkSEgoKY29tbWFuZF9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhAKCHNlcXVlbmNlGAQgASgDEjoKEnByb3Zpc2lvbmluZ19zdGF0ZRgFIAEoDjIeLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ1N0YXRlEjgKEXByb3Zpc2lvbmluZ19zdGVwGAYgASgOMh0uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RlcBIPCgdhdHRlbXB0GAcgASgFEjoKDGVycm9yX3JlYXNvbhgIIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfc3VtbWFyeRgJIAEoCRISCgpzYWZlX2Vycm9yGAogASgJEi8KC29jY3VycmVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKPAQoZUHJvdmlzaW9uaW5nUnVudGltZVJlc3VsdBIcChRrdWJlcm5ldGVzX25hbWVzcGFjZRgBIAEoCRIeChZvcGVuY2xhd19pbnN0YW5jZV9uYW1lGAIgASgJEhcKD2xpdGVsbG1fdGVhbV9pZBgDIAEoCRIbChNsYW5nZnVzZV9wcm9qZWN0X2lkGAQgASgJIvoCChZQcm92aXNpb25pbmdFdmVudElucHV0EgoKAmlkGAEgASgJEjoKEnByb3Zpc2lvbmluZ19zdGF0ZRgCIAEoDjIeLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ1N0YXRlEjgKEXByb3Zpc2lvbmluZ19zdGVwGAMgASgOMh0uZGVlcG5hdnkudjEuUHJvdmlzaW9uaW5nU3RlcBIPCgdhdHRlbXB0GAQgASgFEjoKDGVycm9yX3JlYXNvbhgFIAEoDjIkLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0Vycm9yUmVhc29uEhQKDHNhZmVfc3VtbWFyeRgGIAEoCRISCgpzYWZlX2Vycm9yGAcgASgJEi8KC29ic2VydmVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI2CgZyZXN1bHQYCSABKAsyJi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdSdW50aW1lUmVzdWx0Ii8KHEdldFByb3Zpc2lvbmluZ1N0YXR1c1JlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCSJWCh1HZXRQcm92aXNpb25pbmdTdGF0dXNSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMiSgofU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEhYKDmFmdGVyX3NlcXVlbmNlGAIgASgDIogBCiBTdHJlYW1Qcm92aXNpb25pbmdTdGF0dXNSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMSLQoFZXZlbnQYAiABKAsyHi5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdFdmVudCJ+CiBMZWFzZVByb3Zpc2lvbmluZ0NvbW1hbmRzUmVxdWVzdBIRCgl3b3JrZXJfaWQYASABKAkSFAoMbWF4X2NvbW1hbmRzGAIgASgFEjEKDmxlYXNlX2R1cmF0aW9uGAMgASgLMhkuZ29vZ2xlLnByb3RvYnVmLkR1cmF0aW9uIqoBChlMZWFzZWRQcm92aXNpb25pbmdDb21tYW5kEjEKB2NvbW1hbmQYASABKAsyIC5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdDb21tYW5kEhMKC2xlYXNlX3Rva2VuGAIgASgJEjQKEGxlYXNlX2V4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2F0dGVtcHQYBCABKAUiXQohTGVhc2VQcm92aXNpb25pbmdDb21tYW5kc1Jlc3BvbnNlEjgKCGNvbW1hbmRzGAEgAygLMiYuZGVlcG5hdnkudjEuTGVhc2VkUHJvdmlzaW9uaW5nQ29tbWFuZCKCAQokUmVuZXdQcm92aXNpb25pbmdDb21tYW5kTGVhc2VSZXF1ZXN0EhIKCmNvbW1hbmRfaWQYASABKAkSEwoLbGVhc2VfdG9rZW4YAiABKAkSMQoObGVhc2VfZHVyYXRpb24YAyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24iXQolUmVuZXdQcm92aXNpb25pbmdDb21tYW5kTGVhc2VSZXNwb25zZRI0ChBsZWFzZV9leHBpcmVzX2F0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJ9Ch5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlcXVlc3QSEgoKY29tbWFuZF9pZBgBIAEoCRITCgtsZWFzZV90b2tlbhgCIAEoCRIyCgVldmVudBgDIAEoCzIjLmRlZXBuYXZ5LnYxLlByb3Zpc2lvbmluZ0V2ZW50SW5wdXQiWAofUmVjb3JkUHJvdmlzaW9uaW5nRXZlbnRSZXNwb25zZRI1Cgxwcm92aXNpb25pbmcYASABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMi7gIKE1J1bnRpbWVIZWFsdGhSZXBvcnQSCgoCaWQYASABKAkSDwoHdGVhbV9pZBgCIAEoCRIaChJkZXNpcmVkX2dlbmVyYXRpb24YAyABKAMSGwoTb2JzZXJ2ZWRfZ2VuZXJhdGlvbhgEIAEoAxIcChRrdWJlcm5ldGVzX25hbWVzcGFjZRgFIAEoCRIeChZvcGVuY2xhd19pbnN0YW5jZV9uYW1lGAYgASgJEi4KBXN0YXRlGAcgASgOMh8uZGVlcG5hdnkudjEuUnVudGltZUhlYWx0aFN0YXRlEhUKDWdhdGV3YXlfcmVhZHkYCCABKAgSGQoRcmVhZHlfYWdlbnRfY291bnQYCSABKAUSMAoGcmVhc29uGAogASgOMiAuZGVlcG5hdnkudjEuUnVudGltZUhlYWx0aFJlYXNvbhIvCgtvYnNlcnZlZF9hdBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAizAMKFVJ1bnRpbWVIZWFsdGhTbmFwc2hvdBIKCgJpZBgBIAEoCRIXCg9vcmdhbml6YXRpb25faWQYAiABKAkSDwoHdGVhbV9pZBgDIAEoCRIaChJkZXNpcmVkX2dlbmVyYXRpb24YBCABKAMSGwoTb2JzZXJ2ZWRfZ2VuZXJhdGlvbhgFIAEoAxIcChRrdWJlcm5ldGVzX25hbWVzcGFjZRgGIAEoCRIeChZvcGVuY2xhd19pbnN0YW5jZV9uYW1lGAcgASgJEi4KBXN0YXRlGAggASgOMh8uZGVlcG5hdnkudjEuUnVudGltZUhlYWx0aFN0YXRlEhUKDWdhdGV3YXlfcmVhZHkYCSABKAgSGQoRcmVhZHlfYWdlbnRfY291bnQYCiABKAUSMAoGcmVhc29uGAsgASgOMiAuZGVlcG5hdnkudjEuUnVudGltZUhlYWx0aFJlYXNvbhIvCgtvYnNlcnZlZF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLcmVjZWl2ZWRfYXQYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCHNlcXVlbmNlGA4gASgDIk4KGlJlcG9ydFJ1bnRpbWVIZWFsdGhSZXF1ZXN0EjAKBnJlcG9ydBgBIAEoCzIgLmRlZXBuYXZ5LnYxLlJ1bnRpbWVIZWFsdGhSZXBvcnQicQobUmVwb3J0UnVudGltZUhlYWx0aFJlc3BvbnNlEjoKDnJ1bnRpbWVfaGVhbHRoGAEgASgLMiIuZGVlcG5hdnkudjEuUnVudGltZUhlYWx0aFNuYXBzaG90EhYKDmJlY2FtZV9jdXJyZW50GAIgASgIKs8BChVQcm92aXNpb25pbmdPcGVyYXRpb24SJgoiUFJPVklTSU9OSU5HX09QRVJBVElPTl9VTlNQRUNJRklFRBAAEiQKIFBST1ZJU0lPTklOR19PUEVSQVRJT05fUFJPVklTSU9OEAESIgoeUFJPVklTSU9OSU5HX09QRVJBVElPTl9TVVNQRU5EEAISIQodUFJPVklTSU9OSU5HX09QRVJBVElPTl9SRVNVTUUQAxIhCh1QUk9WSVNJT05JTkdfT1BFUkFUSU9OX0RFTEVURRAEKvkBChFQcm92aXNpb25pbmdTdGF0ZRIiCh5QUk9WSVNJT05JTkdfU1RBVEVfVU5TUEVDSUZJRUQQABIdChlQUk9WSVNJT05JTkdfU1RBVEVfUVVFVUVEEAESHgoaUFJPVklTSU9OSU5HX1NUQVRFX1JVTk5JTkcQAhIfChtQUk9WSVNJT05JTkdfU1RBVEVfUkVUUllJTkcQAxIgChxQUk9WSVNJT05JTkdfU1RBVEVfU1VDQ0VFREVEEAQSHQoZUFJPVklTSU9OSU5HX1NUQVRFX0ZBSUxFRBAFEh8KG1BST1ZJU0lPTklOR19TVEFURV9DQU5DRUxFRBAGKrYDChBQcm92aXNpb25pbmdTdGVwEiEKHVBST1ZJU0lPTklOR19TVEVQX1VOU1BFQ0lGSUVEEAASHAoYUFJPVklTSU9OSU5HX1NURVBfUVVFVUVEEAESLgoqUFJPVklTSU9OSU5HX1NURVBfVkFMSURBVElOR19QUkVSRVFVSVNJVEVTEAISKAokUFJPVklTSU9OSU5HX1NURVBfQ1JFQVRJTkdfTkFNRVNQQUNFEAMSKQolUFJPVklTSU9OSU5HX1NURVBfQ09ORklHVVJJTkdfUlVOVElNRRAEEjAKLFBST1ZJU0lPTklOR19TVEVQX0NSRUFUSU5HX09QRU5DTEFXX0lOU1RBTkNFEAUSKQolUFJPVklTSU9OSU5HX1NURVBfV0FJVElOR19GT1JfR0FURVdBWRAGEhsKF1BST1ZJU0lPTklOR19TVEVQX1JFQURZEAcSIAocUFJPVklTSU9OSU5HX1NURVBfU1VTUEVORElORxAIEiAKHFBST1ZJU0lPTklOR19TVEVQX0JBQ0tJTkdfVVAQCRIeChpQUk9WSVNJT05JTkdfU1RFUF9ERUxFVElORxAKKr0FChdQcm92aXNpb25pbmdFcnJvclJlYXNvbhIpCiVQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX1VOU1BFQ0lGSUVEEAASLQopUFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9JTlZBTElEX0NPTU1BTkQQARI2CjJQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX1BSRVJFUVVJU0lURV9VTkFWQUlMQUJMRRACEjoKNlBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fQklMTElOR19FTlRJVExFTUVOVF9JTkFDVElWRRADEjoKNlBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fR0lUSFVCX0lOU1RBTExBVElPTl9JTkFDVElWRRAEEjgKNFBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fUkVQT1NJVE9SWV9TRUxFQ1RJT05fRU1QVFkQBRI1CjFQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX0tVQkVSTkVURVNfQVBQTFlfRkFJTEVEEAYSMAosUFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9PUEVOQ0xBV19OT1RfUkVBRFkQBxItCilQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX1JFVFJZX0VYSEFVU1RFRBAIEisKJ1BST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fTEVBU0VfSU5WQUxJRBAJEjIKLlBST1ZJU0lPTklOR19FUlJPUl9SRUFTT05fSURFTVBPVEVOQ1lfQ09ORkxJQ1QQChIsCihQUk9WSVNJT05JTkdfRVJST1JfUkVBU09OX05PVF9BVVRIT1JJWkVEEAsSNwozUFJPVklTSU9OSU5HX0VSUk9SX1JFQVNPTl9SVU5USU1FX0lERU5USVRZX01JU01BVENIEAwqwgEKElJ1bnRpbWVIZWFsdGhTdGF0ZRIkCiBSVU5USU1FX0hFQUxUSF9TVEFURV9VTlNQRUNJRklFRBAAEh4KGlJVTlRJTUVfSEVBTFRIX1NUQVRFX1JFQURZEAESIQodUlVOVElNRV9IRUFMVEhfU1RBVEVfREVHUkFERUQQAhIiCh5SVU5USU1FX0hFQUxUSF9TVEFURV9TVVNQRU5ERUQQAxIfChtSVU5USU1FX0hFQUxUSF9TVEFURV9GQUlMRUQQBCqSAwoTUnVudGltZUhlYWx0aFJlYXNvbhIlCiFSVU5USU1FX0hFQUxUSF9SRUFTT05fVU5TUEVDSUZJRUQQABIeChpSVU5USU1FX0hFQUxUSF9SRUFTT05fTk9ORRABEiUKIVJVTlRJTUVfSEVBTFRIX1JFQVNPTl9SRUNPTkNJTElORxACEi0KKVJVTlRJTUVfSEVBTFRIX1JFQVNPTl9HRU5FUkFUSU9OX01JU01BVENIEAMSKwonUlVOVElNRV9IRUFMVEhfUkVBU09OX0dBVEVXQVlfTk9UX1JFQURZEAQSMAosUlVOVElNRV9IRUFMVEhfUkVBU09OX0FHRU5UX1JPU1RFUl9OT1RfUkVBRFkQBRIjCh9SVU5USU1FX0hFQUxUSF9SRUFTT05fU1VTUEVOREVEEAYSLworUlVOVElNRV9IRUFMVEhfUkVBU09OX1JFQ09OQ0lMSUFUSU9OX0ZBSUxFRBAHEikKJVJVTlRJTUVfSEVBTFRIX1JFQVNPTl9IRUFSVEJFQVRfU1RBTEUQCDKAAgoTUHJvdmlzaW9uaW5nU2VydmljZRJuChVHZXRQcm92aXNpb25pbmdTdGF0dXMSKS5kZWVwbmF2eS52MS5HZXRQcm92aXNpb25pbmdTdGF0dXNSZXF1ZXN0GiouZGVlcG5hdnkudjEuR2V0UHJvdmlzaW9uaW5nU3RhdHVzUmVzcG9uc2USeQoYU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzEiwuZGVlcG5hdnkudjEuU3RyZWFtUHJvdmlzaW9uaW5nU3RhdHVzUmVxdWVzdBotLmRlZXBuYXZ5LnYxLlN0cmVhbVByb3Zpc2lvbmluZ1N0YXR1c1Jlc3BvbnNlMAEylgMKGVByb3Zpc2lvbmluZ1dvcmtlclNlcnZpY2USegoZTGVhc2VQcm92aXNpb25pbmdDb21tYW5kcxItLmRlZXBuYXZ5LnYxLkxlYXNlUHJvdmlzaW9uaW5nQ29tbWFuZHNSZXF1ZXN0Gi4uZGVlcG5hdnkudjEuTGVhc2VQcm92aXNpb25pbmdDb21tYW5kc1Jlc3BvbnNlEoYBCh1SZW5ld1Byb3Zpc2lvbmluZ0NvbW1hbmRMZWFzZRIxLmRlZXBuYXZ5LnYxLlJlbmV3UHJvdmlzaW9uaW5nQ29tbWFuZExlYXNlUmVxdWVzdBoyLmRlZXBuYXZ5LnYxLlJlbmV3UHJvdmlzaW9uaW5nQ29tbWFuZExlYXNlUmVzcG9uc2USdAoXUmVjb3JkUHJvdmlzaW9uaW5nRXZlbnQSKy5kZWVwbmF2eS52MS5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlcXVlc3QaLC5kZWVwbmF2eS52MS5SZWNvcmRQcm92aXNpb25pbmdFdmVudFJlc3BvbnNlMoABChRSdW50aW1lSGVhbHRoU2VydmljZRJoChNSZXBvcnRSdW50aW1lSGVhbHRoEicuZGVlcG5hdnkudjEuUmVwb3J0UnVudGltZUhlYWx0aFJlcXVlc3QaKC5kZWVwbmF2eS52MS5SZXBvcnRSdW50aW1lSGVhbHRoUmVzcG9uc2VCRFpCZ2l0aHViLmNvbS9kZWVwLW5hdnkvcGxhdGZvcm0tcHJvdG9zL2dlbi9nby9kZWVwbmF2eS92MTtkZWVwbmF2eXYxYgZwcm90bzM", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
 
 /**
  * ProvisioningErrorDetail is attached to a non-OK Connect/gRPC status.
@@ -188,7 +188,7 @@ export type ProvisioningCommand = Message<"deepnavy.v1.ProvisioningCommand"> & {
   githubInstallationId: bigint;
 
   /**
-   * repository_ids are Deep Navy repository resource IDs, not caller-supplied
+   * repository_ids are deep navy repository resource IDs, not caller-supplied
    * GitHub names and never credentials.
    *
    * @generated from field: repeated string repository_ids = 9;
@@ -196,7 +196,7 @@ export type ProvisioningCommand = Message<"deepnavy.v1.ProvisioningCommand"> & {
   repositoryIds: string[];
 
   /**
-   * plan_id is Deep Navy's stable public plan ID, never a Stripe price ID.
+   * plan_id is deep navy's stable public plan ID, never a Stripe price ID.
    *
    * @generated from field: string plan_id = 10;
    */
@@ -670,6 +670,209 @@ export const RecordProvisioningEventResponseSchema: GenMessage<RecordProvisionin
   messageDesc(file_deepnavy_v1_provisioning, 16);
 
 /**
+ * RuntimeHealthReport is emitted by team-provisioner on every observed state
+ * transition and heartbeat. id is a worker-generated UUID reused for retries.
+ * Runtime names are credential-free identifiers and must exactly match the
+ * server-owned Team record; arbitrary Kubernetes objects are prohibited.
+ *
+ * @generated from message deepnavy.v1.RuntimeHealthReport
+ */
+export type RuntimeHealthReport = Message<"deepnavy.v1.RuntimeHealthReport"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string team_id = 2;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: int64 desired_generation = 3;
+   */
+  desiredGeneration: bigint;
+
+  /**
+   * @generated from field: int64 observed_generation = 4;
+   */
+  observedGeneration: bigint;
+
+  /**
+   * @generated from field: string kubernetes_namespace = 5;
+   */
+  kubernetesNamespace: string;
+
+  /**
+   * @generated from field: string openclaw_instance_name = 6;
+   */
+  openclawInstanceName: string;
+
+  /**
+   * @generated from field: deepnavy.v1.RuntimeHealthState state = 7;
+   */
+  state: RuntimeHealthState;
+
+  /**
+   * @generated from field: bool gateway_ready = 8;
+   */
+  gatewayReady: boolean;
+
+  /**
+   * A launch runtime has exactly six configured agents. Values outside [0,6]
+   * are rejected, and READY requires six ready agents.
+   *
+   * @generated from field: int32 ready_agent_count = 9;
+   */
+  readyAgentCount: number;
+
+  /**
+   * @generated from field: deepnavy.v1.RuntimeHealthReason reason = 10;
+   */
+  reason: RuntimeHealthReason;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp observed_at = 11;
+   */
+  observedAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.RuntimeHealthReport.
+ * Use `create(RuntimeHealthReportSchema)` to create a new message.
+ */
+export const RuntimeHealthReportSchema: GenMessage<RuntimeHealthReport> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_provisioning, 17);
+
+/**
+ * RuntimeHealthSnapshot is the canonical persisted report. organization_id,
+ * sequence, and received_at are server-owned. It never contains workload
+ * credentials, Kubernetes manifests, pod names, endpoints, or provider data.
+ *
+ * @generated from message deepnavy.v1.RuntimeHealthSnapshot
+ */
+export type RuntimeHealthSnapshot = Message<"deepnavy.v1.RuntimeHealthSnapshot"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string organization_id = 2;
+   */
+  organizationId: string;
+
+  /**
+   * @generated from field: string team_id = 3;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: int64 desired_generation = 4;
+   */
+  desiredGeneration: bigint;
+
+  /**
+   * @generated from field: int64 observed_generation = 5;
+   */
+  observedGeneration: bigint;
+
+  /**
+   * @generated from field: string kubernetes_namespace = 6;
+   */
+  kubernetesNamespace: string;
+
+  /**
+   * @generated from field: string openclaw_instance_name = 7;
+   */
+  openclawInstanceName: string;
+
+  /**
+   * @generated from field: deepnavy.v1.RuntimeHealthState state = 8;
+   */
+  state: RuntimeHealthState;
+
+  /**
+   * @generated from field: bool gateway_ready = 9;
+   */
+  gatewayReady: boolean;
+
+  /**
+   * @generated from field: int32 ready_agent_count = 10;
+   */
+  readyAgentCount: number;
+
+  /**
+   * @generated from field: deepnavy.v1.RuntimeHealthReason reason = 11;
+   */
+  reason: RuntimeHealthReason;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp observed_at = 12;
+   */
+  observedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp received_at = 13;
+   */
+  receivedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: int64 sequence = 14;
+   */
+  sequence: bigint;
+};
+
+/**
+ * Describes the message deepnavy.v1.RuntimeHealthSnapshot.
+ * Use `create(RuntimeHealthSnapshotSchema)` to create a new message.
+ */
+export const RuntimeHealthSnapshotSchema: GenMessage<RuntimeHealthSnapshot> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_provisioning, 18);
+
+/**
+ * @generated from message deepnavy.v1.ReportRuntimeHealthRequest
+ */
+export type ReportRuntimeHealthRequest = Message<"deepnavy.v1.ReportRuntimeHealthRequest"> & {
+  /**
+   * @generated from field: deepnavy.v1.RuntimeHealthReport report = 1;
+   */
+  report?: RuntimeHealthReport | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.ReportRuntimeHealthRequest.
+ * Use `create(ReportRuntimeHealthRequestSchema)` to create a new message.
+ */
+export const ReportRuntimeHealthRequestSchema: GenMessage<ReportRuntimeHealthRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_provisioning, 19);
+
+/**
+ * @generated from message deepnavy.v1.ReportRuntimeHealthResponse
+ */
+export type ReportRuntimeHealthResponse = Message<"deepnavy.v1.ReportRuntimeHealthResponse"> & {
+  /**
+   * runtime_health is the canonical current snapshot after this report is
+   * persisted. An out-of-order report remains in history but does not replace it.
+   *
+   * @generated from field: deepnavy.v1.RuntimeHealthSnapshot runtime_health = 1;
+   */
+  runtimeHealth?: RuntimeHealthSnapshot | undefined;
+
+  /**
+   * @generated from field: bool became_current = 2;
+   */
+  becameCurrent: boolean;
+};
+
+/**
+ * Describes the message deepnavy.v1.ReportRuntimeHealthResponse.
+ * Use `create(ReportRuntimeHealthResponseSchema)` to create a new message.
+ */
+export const ReportRuntimeHealthResponseSchema: GenMessage<ReportRuntimeHealthResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_provisioning, 20);
+
+/**
  * @generated from enum deepnavy.v1.ProvisioningOperation
  */
 export enum ProvisioningOperation {
@@ -889,6 +1092,14 @@ export enum ProvisioningErrorReason {
    * @generated from enum value: PROVISIONING_ERROR_REASON_NOT_AUTHORIZED = 11;
    */
   NOT_AUTHORIZED = 11,
+
+  /**
+   * A runtime health report did not match the server-owned team, generation, or
+   * credential-free runtime identity. Returned with FAILED_PRECONDITION.
+   *
+   * @generated from enum value: PROVISIONING_ERROR_REASON_RUNTIME_IDENTITY_MISMATCH = 12;
+   */
+  RUNTIME_IDENTITY_MISMATCH = 12,
 }
 
 /**
@@ -896,6 +1107,105 @@ export enum ProvisioningErrorReason {
  */
 export const ProvisioningErrorReasonSchema: GenEnum<ProvisioningErrorReason> = /*@__PURE__*/
   enumDesc(file_deepnavy_v1_provisioning, 3);
+
+/**
+ * RuntimeHealthState is the workload-observed state of one provisioned team
+ * runtime. The server independently marks stale current reports degraded.
+ *
+ * @generated from enum deepnavy.v1.RuntimeHealthState
+ */
+export enum RuntimeHealthState {
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_STATE_READY = 1;
+   */
+  READY = 1,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_STATE_DEGRADED = 2;
+   */
+  DEGRADED = 2,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_STATE_SUSPENDED = 3;
+   */
+  SUSPENDED = 3,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_STATE_FAILED = 4;
+   */
+  FAILED = 4,
+}
+
+/**
+ * Describes the enum deepnavy.v1.RuntimeHealthState.
+ */
+export const RuntimeHealthStateSchema: GenEnum<RuntimeHealthState> = /*@__PURE__*/
+  enumDesc(file_deepnavy_v1_provisioning, 4);
+
+/**
+ * RuntimeHealthReason is a bounded, credential-free explanation suitable for
+ * operator display. HEARTBEAT_STALE is server-derived and cannot be reported by
+ * the workload.
+ *
+ * @generated from enum deepnavy.v1.RuntimeHealthReason
+ */
+export enum RuntimeHealthReason {
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_NONE = 1;
+   */
+  NONE = 1,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_RECONCILING = 2;
+   */
+  RECONCILING = 2,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_GENERATION_MISMATCH = 3;
+   */
+  GENERATION_MISMATCH = 3,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_GATEWAY_NOT_READY = 4;
+   */
+  GATEWAY_NOT_READY = 4,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_AGENT_ROSTER_NOT_READY = 5;
+   */
+  AGENT_ROSTER_NOT_READY = 5,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_SUSPENDED = 6;
+   */
+  SUSPENDED = 6,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_RECONCILIATION_FAILED = 7;
+   */
+  RECONCILIATION_FAILED = 7,
+
+  /**
+   * @generated from enum value: RUNTIME_HEALTH_REASON_HEARTBEAT_STALE = 8;
+   */
+  HEARTBEAT_STALE = 8,
+}
+
+/**
+ * Describes the enum deepnavy.v1.RuntimeHealthReason.
+ */
+export const RuntimeHealthReasonSchema: GenEnum<RuntimeHealthReason> = /*@__PURE__*/
+  enumDesc(file_deepnavy_v1_provisioning, 5);
 
 /**
  * @generated from service deepnavy.v1.ProvisioningService
@@ -960,4 +1270,23 @@ export const ProvisioningWorkerService: GenService<{
   },
 }> = /*@__PURE__*/
   serviceDesc(file_deepnavy_v1_provisioning, 1);
+
+/**
+ * RuntimeHealthService is an internal workload-authenticated ingestion boundary.
+ * It is mounted only on platform-api's internal listener with the same workload
+ * identity as ProvisioningWorkerService and is never exposed through the ALB.
+ *
+ * @generated from service deepnavy.v1.RuntimeHealthService
+ */
+export const RuntimeHealthService: GenService<{
+  /**
+   * @generated from rpc deepnavy.v1.RuntimeHealthService.ReportRuntimeHealth
+   */
+  reportRuntimeHealth: {
+    methodKind: "unary";
+    input: typeof ReportRuntimeHealthRequestSchema;
+    output: typeof ReportRuntimeHealthResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_deepnavy_v1_provisioning, 2);
 
