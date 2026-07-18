@@ -1,5 +1,6 @@
 ---
 title: Engineering Economics
+image: /assets/images/og/economics.png
 description: Trace provider usage into customer credits, budgets, attributable cost, and time-stamped outcome evidence.
 updated: 2026-07-17
 ---

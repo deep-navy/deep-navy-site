@@ -1,5 +1,6 @@
 ---
 title: API Reference
+image: /assets/images/og/docs-api.png
 description: Generated deep navy protobuf messages, enums, services, RPCs, and source comments for the current public platform contract.
 updated: 2026-07-17
 hide_cta: true

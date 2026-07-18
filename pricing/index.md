@@ -1,5 +1,6 @@
 ---
 title: Pricing
+image: /assets/images/og/pricing.png
 description: Review the commercial fields deep navy confirms for an early-access pilot before Stripe checkout begins.
 updated: 2026-07-17
 ---

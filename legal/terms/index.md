@@ -1,5 +1,6 @@
 ---
 title: Website Terms
+image: /assets/images/og/legal-terms.png
 description: Website terms for deep navy's public early-access information and onboarding interface.
 updated: 2026-07-17
 hide_cta: true

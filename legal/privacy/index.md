@@ -1,5 +1,6 @@
 ---
 title: Privacy Notice
+image: /assets/images/og/legal-privacy.png
 description: Early-access privacy notice for the deep navy public site and customer onboarding experience.
 updated: 2026-07-17
 hide_cta: true

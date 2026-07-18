@@ -1,5 +1,6 @@
 ---
 title: Why the unit of work is an objective
+image: /assets/images/og/posts/why-the-unit-of-work-is-an-objective.png
 description: Prompt volume and ticket throughput are poor proxies for product value. A coordinated engineering team needs an outcome, evidence, and a stopping rule.
 author: deep navy
 updated: 2026-07-17

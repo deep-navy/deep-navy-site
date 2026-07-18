@@ -1,5 +1,6 @@
 ---
 title: Security
+image: /assets/images/og/security.png
 description: Review deep navy trust boundaries, credential handling, resource scopes, request enforcement, runtime isolation, and disclosure process.
 updated: 2026-07-17
 hide_cta: true

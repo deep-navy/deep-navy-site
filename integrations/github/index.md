@@ -1,5 +1,6 @@
 ---
 title: GitHub Integration
+image: /assets/images/og/integrations-github.png
 description: Review the GitHub App installation, repository-selection, credential, and delivery path used by deep navy.
 updated: 2026-07-17
 ---
