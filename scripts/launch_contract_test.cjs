@@ -59,6 +59,36 @@ test("the dedicated GitHub callback accepts GitHub's documented code and state w
   });
 });
 
+test("the GitHub sign-in install-and-authorize callback yields the fields CompleteGitHubSignIn needs", () => {
+  // A first-time GitHub sign-in installs and authorizes in one round trip, so the
+  // callback carries an authorization code, the server-bound state, and the newly
+  // captured installation id. 987654321 is an intentionally non-production fixture.
+  const callback = parseGitHubCallback(new URLSearchParams({
+    code: "sign-in-code",
+    state: "server-bound-state",
+    installation_id: "987654321"
+  }), { forceGitHub: true });
+
+  assert.deepEqual(callback, {
+    installationId: "987654321",
+    setupAction: "GIT_HUB_INSTALLATION_SETUP_ACTION_UNSPECIFIED",
+    stateToken: "server-bound-state",
+    authorizationCode: "sign-in-code"
+  });
+  assert.equal(typeof callback.installationId, "string", "the installation id stays a string for lossless int64 transport");
+
+  // A callback missing the one-time code fails closed without leaking the state.
+  assert.throws(() => parseGitHubCallback(new URLSearchParams({
+    state: "server-bound-state",
+    installation_id: "987654321"
+  }), { forceGitHub: true }), (error) => {
+    assert.ok(error instanceof LaunchContractError);
+    assert.equal(error.code, "github_oauth_code_missing");
+    assert.doesNotMatch(error.message, /server-bound-state/);
+    return true;
+  });
+});
+
 test("typed installation and subscription states never infer success from resource presence", () => {
   assert.equal(githubInstallationActive({ id: "99", installationState: GITHUB_INSTALLATION_STATE.ACTIVE }), true);
   assert.equal(githubInstallationActive({ id: 99n, installationState: 2 }), true);

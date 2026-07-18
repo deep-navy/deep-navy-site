@@ -446,6 +446,129 @@ test("team credit controls preserve team scope, micros, pause, and optimistic ve
   });
 });
 
+test("GitHub sign-in start is a public AuthService call that returns an authorization URL", async () => {
+  assert.ok(generated.PUBLIC_PROCEDURES.includes("github_sign_in_start"));
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), init });
+      return new Response(JSON.stringify({
+        authorizationUrl: "https://github.com/apps/deep-navy/installations/new?state=server-state"
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const result = await api.signIn("github_sign_in_start", { returnTo: "/app/" }, { requestId: "sign-in-start" });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.AuthService/StartGitHubSignIn");
+  assert.equal(new Headers(calls[0].init.headers).has("authorization"), false, "the public sign-in start carries no bearer token");
+  assert.equal(new Headers(calls[0].init.headers).get("x-request-id"), "sign-in-start");
+  assert.equal(calls[0].init.credentials, "omit");
+  assert.deepEqual(parseRequestBody(calls[0].init.body), { returnTo: "/app/" });
+  assert.equal(result.authorizationUrl, "https://github.com/apps/deep-navy/installations/new?state=server-state");
+});
+
+test("GitHub sign-in completion sends the parsed code, state, and installation ID and returns a session", async () => {
+  assert.ok(generated.PUBLIC_PROCEDURES.includes("github_sign_in_complete"));
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), init });
+      return new Response(JSON.stringify({
+        sessionToken: "session-token-1",
+        expiresAt: "2026-07-18T08:00:00Z",
+        user: { id: "user-1", githubLogin: "octocat", displayName: "Octo Cat", email: "octo@example.com" },
+        memberships: [],
+        pendingInstallation: { id: "987654321", organizationId: "" }
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  // 987654321 is an intentionally non-production installation fixture.
+  const result = await api.signIn("github_sign_in_complete", {
+    authorizationCode: "one-time-code",
+    stateToken: "server-bound-state",
+    installationId: "987654321",
+    returnTo: "/app/"
+  }, { requestId: "sign-in-complete" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.AuthService/CompleteGitHubSignIn");
+  assert.equal(new Headers(calls[0].init.headers).has("authorization"), false, "sign-in completion runs before any session exists");
+  assert.deepEqual(parseRequestBody(calls[0].init.body), {
+    authorizationCode: "one-time-code",
+    stateToken: "server-bound-state",
+    installationId: "987654321",
+    returnTo: "/app/"
+  });
+  assert.equal(result.sessionToken, "session-token-1");
+  assert.equal(result.user.githubLogin, "octocat");
+  assert.equal(result.user.displayName, "Octo Cat");
+  assert.equal(String(result.pendingInstallation.id), "987654321");
+});
+
+test("sign-in completion omits a zero installation ID so the server resolves it from the user", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        sessionToken: "session-token-2",
+        user: { id: "user-2", githubLogin: "hubot" },
+        memberships: []
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  await api.signIn("github_sign_in_complete", {
+    authorizationCode: "code-2",
+    stateToken: "state-2",
+    installationId: "0",
+    returnTo: ""
+  }, { requestId: "sign-in-complete-2" });
+
+  assert.deepEqual(calls[0].body, {
+    authorizationCode: "code-2",
+    stateToken: "state-2"
+  }, "installationId 0 and an empty returnTo are omitted from canonical Protobuf JSON");
+});
+
+test("session sign-out revokes the caller's session through the authenticated AuthService", async () => {
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("sign_out"));
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), init });
+      return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  await api.request("sign_out", {}, { accessToken: "session-token-1", requestId: "sign-out-1" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.AuthService/SignOut");
+  assert.equal(new Headers(calls[0].init.headers).get("authorization"), "Bearer session-token-1");
+  assert.deepEqual(parseRequestBody(calls[0].init.body), {});
+});
+
+test("the public sign-in procedures still require a request ID for correlation", async () => {
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async () => { throw new Error("must not run"); }
+  });
+  await assert.rejects(
+    api.signIn("github_sign_in_start", { returnTo: "/app/" }, { requestId: "  " }),
+    (error) => {
+      assert.equal(error.name, "PlatformClientError");
+      assert.equal(error.code, "invalid_argument");
+      return true;
+    }
+  );
+});
+
 test("Connect errors expose only the safe top-level message and request ID", async () => {
   const api = generated.createPlatformApi({
     baseUrl: "https://dev.api.deep.navy",
