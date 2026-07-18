@@ -113,7 +113,7 @@
   function subscriptionActive(subscription) {
     if (!subscription || !stringValue(subscription.id)) return false;
     const typed = enumValue(subscription.subscriptionStatus, subscriptionStatesByNumber);
-    return typed === SUBSCRIPTION_STATUS.ACTIVE || typed === SUBSCRIPTION_STATUS.TRIALING;
+    return typed === SUBSCRIPTION_STATUS.ACTIVE;
   }
 
   function repositorySelectionMode(value) {

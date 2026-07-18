@@ -1,6 +1,6 @@
 # deep-navy-site
 
-Public Jekyll site and authenticated early-access customer shell for Deep Navy.
+Public Jekyll site and authenticated early-access customer shell for deep navy.
 Public pages are rendered as static HTML. `/app/` uses a public Amazon Cognito
 app client with OAuth 2.0 authorization code + PKCE, then calls the configured
 ConnectRPC API for server-confirmed onboarding state.
@@ -39,11 +39,13 @@ and generate the ignored runtime overlay:
 
 ```sh
 DEEP_NAVY_ENVIRONMENT=development \
-SITE_API_BASE_URL=https://api.dev.deep.navy \
+SITE_URL=http://localhost:4000 \
+SITE_API_BASE_URL=https://dev.api.deep.navy \
 SITE_COGNITO_DOMAIN=https://YOUR_DOMAIN.auth.us-west-2.amazoncognito.com \
 SITE_COGNITO_CLIENT_ID=YOUR_PUBLIC_CLIENT_ID \
 SITE_COGNITO_CALLBACK_URL=http://localhost:4000/app/callback/ \
 SITE_COGNITO_LOGOUT_URL=http://localhost:4000/app/ \
+SITE_STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLIC_KEY \
 ruby scripts/write_runtime_config.rb
 
 bundle exec jekyll serve --config _config.yml,_config.runtime.yml
@@ -51,7 +53,8 @@ bundle exec jekyll serve --config _config.yml,_config.runtime.yml
 
 The callback and logout URLs must be allowlisted on the Cognito app client.
 Never add a Cognito client secret, AWS credential, GitHub App private key,
-Stripe key, access token, or password to these variables.
+Stripe secret/restricted key, webhook secret, access token, or password to these
+variables. The Stripe publishable key is intentionally browser-visible.
 
 ## GitHub environment variables
 
@@ -61,12 +64,13 @@ deploys through `production`. Configure these public build inputs as GitHub
 
 | Variable | Example | Required |
 | --- | --- | --- |
-| `SITE_API_BASE_URL` | `https://api.dev.deep.navy` | for API-backed onboarding |
+| `SITE_API_BASE_URL` | `https://dev.api.deep.navy` | for API-backed onboarding |
 | `SITE_COGNITO_DOMAIN` | `https://deep-navy-dev.auth.us-west-2.amazoncognito.com` | for sign-in |
 | `SITE_COGNITO_CLIENT_ID` | Cognito public app-client ID | for sign-in |
 | `SITE_COGNITO_CALLBACK_URL` | exact deployed `/app/callback/` URL | for sign-in |
 | `SITE_COGNITO_LOGOUT_URL` | exact deployed `/app/` URL | for sign-out |
 | `SITE_PLAN_ID` | `founding-team` | optional; this is the default |
+| `SITE_STRIPE_PUBLISHABLE_KEY` | environment-matched `pk_test_…` or `pk_live_…` | for Embedded Checkout |
 
 `scripts/write_runtime_config.rb` accepts only this explicit public allowlist and
 JSON-encodes it into `_config.runtime.yml`. The rendered configuration is visible
@@ -105,22 +109,52 @@ The app never synthesizes completion:
 - Repository access is complete only after `GetRepositorySelection` or
   `UpdateRepositorySelection` returns a selection containing at least one
   currently accessible repository.
-- The checkout display uses `GetBillingPlan`; billing is complete only after
-  `GetSubscription` returns typed `ACTIVE` or `TRIALING` state.
+- The checkout display uses `GetBillingPlan`; the browser mounts the returned
+  short-lived `client_secret` with Stripe Embedded Checkout and keeps it only
+  in memory. Billing is complete only after `GetSubscription` returns typed
+  `ACTIVE` state with a consistent paid/used/available team-slot snapshot.
+- Prepaid packs come only from `ListCreditPacks`. Purchase requests send the
+  public deep navy pack ID, selected team, quantity, exact return URL, and an
+  idempotency key; the browser never sends a Stripe Price ID.
+- Subscription capacity and team credits change only after signed webhook
+  processing. A successful iframe callback or return URL is not fulfillment.
+- The selected team’s visible prepaid balance comes from the organization- and
+  team-scoped `BillingService.GetCreditBalance` ledger read. The browser checks
+  it against `TeamCreditControl.ledger_available_micros` when both projections
+  are available and shows a typed unavailable state instead of assuming zero.
+- Invoice history comes only from the organization-scoped local billing
+  projection. The browser never queries Stripe for invoice state and exposes a
+  receipt link only when the API returns the exact HTTPS `invoice.stripe.com`
+  origin.
 - A team appears only after `ListTeams` or `CreateTeam` returns it.
-- Queued and running teams poll `GetProvisioningStatus`, with `GetTeam` as an
-  additive compatibility fallback until the public Connect stream is exposed.
+- Queued and running teams resume `StreamProvisioningStatus` from the typed
+  team sequence. Bounded `GetProvisioningStatus` polling remains a recovery
+  path, with `GetTeam` as an additive compatibility fallback.
 - The selected team roster comes only from `AgentService.ListAgents`.
 - Team activity uses `ActivityService.StreamTeamActivity`; the browser renders
   only the typed `safe_summary` and allowlisted event metadata, never raw event
   details or model reasoning.
+- The filterable activity ledger keeps source semantics intact: runtime A2A,
+  session, tool, workspace/diff, issue, and pull-request events retain their
+  ActivityService cursor; approvals come from ApprovalService, provisioning
+  from ProvisioningService, and measured cost from EconomicsService.
 - Team economics comes only from a matching team-scoped
   `EconomicsService.GetEconomics` response. The browser does not calculate or
   backfill missing ledger values.
-- The pinned approvals contract supports deciding a known approval but does not
-  expose pending-approval discovery. The UI names that gap and shows no decision
-  controls until a typed list contract exists.
-- Redirect URLs returned by APIs must use HTTPS and an allowlisted GitHub or Stripe host.
+- Pending decisions come only from team-scoped
+  `ApprovalService.ListApprovals` pages filtered to typed `PENDING` status. The
+  browser revalidates team scope, safe fields, unique IDs, and pagination
+  cursors before rendering. Approval and denial responses are revalidated, and
+  a bounded reason is required for every denial.
+- Durable objectives are recovered through paginated, team-scoped
+  `ObjectiveService.ListBusinessObjectives`; creating a new objective uses
+  `CreateBusinessObjective`. The customer view renders the returned durable
+  TPM dispatch state without inferring delivery, validates and reviews the
+  objective's KPI definitions, and exhausts the selected objective's
+  `InitiativeService.ListInitiatives` pages. KPI or initiative decisions appear
+  only as real `ApprovalService` records; the objective view invents no action.
+- GitHub and Billing Portal redirects must use HTTPS and the exact provider
+  host. Subscription and credit purchases remain inside Embedded Checkout.
 - API errors show an actionable unavailable state and, when present, a request ID.
 
 ## Verification

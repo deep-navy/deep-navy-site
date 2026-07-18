@@ -1,17 +1,17 @@
-title: Deep Navy
+title: deep navy
 tagline: Autonomous engineering, accountable outcomes
-description: Deep Navy gives product teams a coordinated autonomous engineering team with explicit approvals, visible work, and transparent engineering economics.
+description: deep navy gives product teams a coordinated autonomous engineering team with explicit approvals, visible work, and transparent engineering economics.
 url: https://deep.navy
 baseurl: ""
 lang: en-US
 timezone: America/Los_Angeles
 permalink: pretty
 author:
-  name: Deep Navy
+  name: deep navy
   url: https://deep.navy
 logo: /assets/images/deep-navy-mark.svg
 social:
-  name: Deep Navy
+  name: deep navy
   links:
     - https://github.com/deep-navy
 plugins:
@@ -25,7 +25,7 @@ defaults:
     values:
       layout: default
       image: /assets/images/social-card.svg
-      author: Deep Navy
+      author: deep navy
   - scope:
       path: ""
       type: posts
@@ -49,11 +49,8 @@ runtime:
     - email
     - profile
   plan_id: founding-team
+  stripe_publishable_key: ""
   build_revision: local
-  allowed_redirect_hosts:
-    - github.com
-    - checkout.stripe.com
-    - billing.stripe.com
 exclude:
   - node_modules
   - src

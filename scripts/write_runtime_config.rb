@@ -75,6 +75,17 @@ plan_id = public_value("SITE_PLAN_ID")
 plan_id = "founding-team" if plan_id.empty?
 abort "SITE_PLAN_ID must be a stable lowercase public identifier" unless plan_id.match?(/\A[a-z0-9][a-z0-9_-]{0,63}\z/)
 
+stripe_publishable_key = public_value("SITE_STRIPE_PUBLISHABLE_KEY")
+unless stripe_publishable_key.empty? || stripe_publishable_key.match?(/\Apk_(?:test|live)_[A-Za-z0-9]{8,}\z/)
+  abort "SITE_STRIPE_PUBLISHABLE_KEY must be a Stripe publishable key"
+end
+if environment == "development" && !stripe_publishable_key.start_with?("pk_test_")
+  abort "development requires a Stripe test-mode publishable key"
+end
+if environment == "production" && !stripe_publishable_key.start_with?("pk_live_")
+  abort "production requires a Stripe live-mode publishable key"
+end
+
 cognito_client_id = public_value("SITE_COGNITO_CLIENT_ID")
 unless cognito_client_id.empty? || cognito_client_id.match?(/\A[a-zA-Z0-9]{1,128}\z/)
   abort "SITE_COGNITO_CLIENT_ID must be a public Cognito app-client identifier"
@@ -96,8 +107,8 @@ runtime = {
   "cognito_logout_url" => logout_url,
   "oauth_scopes" => %w[openid email profile],
   "plan_id" => plan_id,
-  "build_revision" => public_value("GITHUB_SHA").then { |value| value.empty? ? "local" : value[0, 12] },
-  "allowed_redirect_hosts" => %w[github.com checkout.stripe.com billing.stripe.com]
+  "stripe_publishable_key" => stripe_publishable_key,
+  "build_revision" => public_value("GITHUB_SHA").then { |value| value.empty? ? "local" : value[0, 12] }
 }
 
 configuration = { "runtime" => runtime }

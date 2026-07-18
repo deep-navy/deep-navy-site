@@ -44,6 +44,7 @@
     planName: document.querySelector("[data-plan-name]"),
     planPrice: document.querySelector("[data-plan-price]"),
     planCredits: document.querySelector("[data-plan-credits]"),
+    planSlots: document.querySelector("[data-plan-slots]"),
     teamForm: document.querySelector("[data-team-form]"),
     teamInput: document.querySelector("[data-team-form] input"),
     teamSubmit: document.querySelector("[data-team-form] button"),
@@ -59,10 +60,40 @@
     agentsState: document.querySelector("[data-agents-state]"),
     agentsEmpty: document.querySelector("[data-agents-empty]"),
     agentList: document.querySelector("[data-agent-list]"),
+    objectiveState: document.querySelector("[data-objective-state]"),
+    objectiveEmpty: document.querySelector("[data-objective-empty]"),
+    objectiveSelectControl: document.querySelector("[data-objective-select-control]"),
+    objectiveSelect: document.querySelector("[data-objective-select]"),
+    objectiveForm: document.querySelector("[data-objective-form]"),
+    objectiveTitleInput: document.querySelector('[data-objective-form] input[name="objectiveTitle"]'),
+    objectiveDescriptionInput: document.querySelector('[data-objective-form] textarea[name="objectiveDescription"]'),
+    objectiveSubmit: document.querySelector("[data-objective-form] button"),
+    objectiveError: document.querySelector("[data-objective-error]"),
+    objectiveRecord: document.querySelector("[data-objective-record]"),
+    objectiveTitle: document.querySelector("[data-objective-title]"),
+    objectiveDescription: document.querySelector("[data-objective-description]"),
+    objectiveDispatchState: document.querySelector("[data-objective-dispatch-state]"),
+    objectiveDispatchDetail: document.querySelector("[data-objective-dispatch-detail]"),
+    objectiveKpiState: document.querySelector("[data-objective-kpi-state]"),
+    objectiveKpiEmpty: document.querySelector("[data-objective-kpi-empty]"),
+    objectiveKpiList: document.querySelector("[data-objective-kpi-list]"),
+    initiativeState: document.querySelector("[data-initiative-state]"),
+    initiativeList: document.querySelector("[data-initiative-list]"),
     activityState: document.querySelector("[data-activity-state]"),
+    activityFilters: document.querySelector("[data-activity-filters]"),
+    activityFilterButtons: [...document.querySelectorAll("[data-activity-filter]")],
+    activityFilterCounts: [...document.querySelectorAll("[data-activity-filter-count]")],
     activityEmpty: document.querySelector("[data-activity-empty]"),
     activityList: document.querySelector("[data-activity-list]"),
     activityRetry: document.querySelector("[data-activity-retry]"),
+    sessionHistoryState: document.querySelector("[data-session-history-state]"),
+    sessionsMore: document.querySelector("[data-sessions-more]"),
+    workspaceHistoryState: document.querySelector("[data-workspace-history-state]"),
+    workspaceMore: document.querySelector("[data-workspace-more]"),
+    deliveryHistoryState: document.querySelector("[data-delivery-history-state]"),
+    deliveryRepository: document.querySelector("[data-delivery-repository]"),
+    issuesMore: document.querySelector("[data-issues-more]"),
+    pullRequestsMore: document.querySelector("[data-pull-requests-more]"),
     economicsState: document.querySelector("[data-economics-state]"),
     economicsMessage: document.querySelector("[data-economics-message]"),
     economicsEmpty: document.querySelector("[data-economics-empty]"),
@@ -71,6 +102,49 @@
     economicsCreditsUsed: document.querySelector("[data-economics-credits-used]"),
     economicsCreditsRemaining: document.querySelector("[data-economics-credits-remaining]"),
     economicsMeasured: document.querySelector("[data-economics-measured]"),
+    economicsBreakdown: document.querySelector("[data-economics-breakdown]"),
+    economicsBreakdownState: document.querySelector("[data-economics-breakdown-state]"),
+    economicsGroup: document.querySelector("[data-economics-group]"),
+    economicsBreakdownEmpty: document.querySelector("[data-economics-breakdown-empty]"),
+    economicsBreakdownList: document.querySelector("[data-economics-breakdown-list]"),
+    creditBalancePanel: document.querySelector("[data-credit-balance-panel]"),
+    creditBalanceState: document.querySelector("[data-credit-balance-state]"),
+    creditBalanceValue: document.querySelector("[data-credit-balance-value]"),
+    creditBalanceMessage: document.querySelector("[data-credit-balance-message]"),
+    creditControl: document.querySelector("[data-credit-control]"),
+    creditControlState: document.querySelector("[data-credit-control-state]"),
+    creditOpenReserved: document.querySelector("[data-credit-open-reserved]"),
+    creditPeriodConsumed: document.querySelector("[data-credit-period-consumed]"),
+    creditHardLimit: document.querySelector("[data-credit-hard-limit]"),
+    creditEffectiveAvailable: document.querySelector("[data-credit-effective-available]"),
+    creditControlForm: document.querySelector("[data-credit-control-form]"),
+    creditHardLimitInput: document.querySelector("[data-credit-hard-limit-input]"),
+    creditCustomerPaused: document.querySelector("[data-credit-customer-paused]"),
+    creditControlSummary: document.querySelector("[data-credit-control-summary]"),
+    creditControlError: document.querySelector("[data-credit-control-error]"),
+    creditControlSubmit: document.querySelector("[data-credit-control-submit]"),
+    approvalsState: document.querySelector("[data-approvals-state]"),
+    approvalsEmpty: document.querySelector("[data-approvals-empty]"),
+    approvalList: document.querySelector("[data-approval-list]"),
+    approvalsMore: document.querySelector("[data-approvals-more]"),
+    creditPackForm: document.querySelector("[data-credit-pack-form]"),
+    creditPackSelect: document.querySelector("[data-credit-pack-select]"),
+    creditPackQuantity: document.querySelector("[data-credit-pack-quantity]"),
+    creditPackSummary: document.querySelector("[data-credit-pack-summary]"),
+    creditPackError: document.querySelector("[data-credit-pack-error]"),
+    creditPackSubmit: document.querySelector("[data-credit-pack-submit]"),
+    invoiceHistory: document.querySelector("[data-invoice-history]"),
+    invoiceState: document.querySelector("[data-invoice-state]"),
+    invoiceEmpty: document.querySelector("[data-invoice-empty]"),
+    invoiceList: document.querySelector("[data-invoice-list]"),
+    invoiceMore: document.querySelector("[data-invoice-more]"),
+    checkoutDialog: document.querySelector("[data-checkout-dialog]"),
+    checkoutTitle: document.querySelector("[data-checkout-title]"),
+    checkoutSubtitle: document.querySelector("[data-checkout-subtitle]"),
+    checkoutSummary: document.querySelector("[data-checkout-summary]"),
+    checkoutStatus: document.querySelector("[data-checkout-status]"),
+    checkoutMount: document.querySelector("[data-checkout-mount]"),
+    checkoutClose: document.querySelector("[data-checkout-close]"),
     toast: document.querySelector("[data-toast]")
   };
 
@@ -93,6 +167,19 @@
     subscription: null,
     subscriptionActive: false,
     subscriptionManageable: false,
+    paidTeamSlots: 0n,
+    usedTeamSlots: 0n,
+    availableTeamSlots: 0n,
+    creditPacks: [],
+    creditBalance: null,
+    creditControl: null,
+    invoices: [],
+    invoiceIds: new Set(),
+    invoiceNextPageToken: "",
+    invoicePageTokens: new Set(),
+    invoiceLoading: false,
+    economicsBreakdowns: new Map(),
+    selectedEconomicsGroup: "initiative",
     teamServiceAvailable: false,
     teams: [],
     completingGitHub: false,
@@ -100,8 +187,47 @@
     selectedTeamId: "",
     workspaceGeneration: 0,
     activityAbort: null,
+    provisioningAbort: null,
     activityEvents: [],
-    lastActivitySequence: 0n
+    activityEventIds: new Set(),
+    provisioningEvents: [],
+    activityProjections: new Map(),
+    activityFilter: "all",
+    lastActivitySequence: 0n,
+    lastProvisioningSequence: 0n,
+    sessions: [],
+    sessionIds: new Set(),
+    sessionNextPageToken: "",
+    sessionPageTokens: new Set(),
+    sessionHistoryLoading: false,
+    workspaceChanges: [],
+    workspaceChangeIds: new Set(),
+    workspaceNextPageToken: "",
+    workspacePageTokens: new Set(),
+    workspaceHistoryLoading: false,
+    lastWorkspaceSequence: 0n,
+    deliveryRepositoryId: "",
+    githubIssues: [],
+    githubIssueIds: new Set(),
+    githubIssuesNextPageToken: "",
+    githubIssuePageTokens: new Set(),
+    githubIssuesLoading: false,
+    githubIssuesState: "waiting",
+    githubPullRequests: [],
+    githubPullRequestIds: new Set(),
+    githubPullRequestsNextPageToken: "",
+    githubPullRequestPageTokens: new Set(),
+    githubPullRequestsLoading: false,
+    githubPullRequestsState: "waiting",
+    deliveryLoadGeneration: 0,
+    githubIssueLastSort: null,
+    githubPullRequestLastSort: null,
+    objectivesByTeam: new Map(),
+    objectiveListsByTeam: new Map(),
+    approvals: [],
+    approvalNextPageToken: "",
+    approvalPageTokens: new Set(),
+    approvalDecisionIds: new Set()
   };
 
   const environment = stringValue(config.environment) || "local";
@@ -120,6 +246,10 @@
   const agentRoleContract = window.DeepNavyAgentRoles || null;
   const generatedClient = window.deepNavyGeneratedClient || null;
   const platformApi = createPlatformApi();
+  const stripePublishableKey = validatedStripePublishableKey(config.stripe_publishable_key);
+  const stripeClient = createStripeClient();
+  let embeddedCheckout = null;
+  let checkoutOpening = false;
   const provisioningTimers = new Map();
   const mutationKeys = launchContract?.createMutationKeys(() => window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18));
   const organizationCoordinator = organizationContract?.createCoordinator({
@@ -190,6 +320,23 @@
     return normalizeServiceUrl(withScheme);
   }
 
+  function validatedStripePublishableKey(value) {
+    const key = stringValue(value);
+    if (!/^pk_(?:test|live)_[A-Za-z0-9]{8,}$/.test(key)) return "";
+    if (environment === "development" && !key.startsWith("pk_test_")) return "";
+    if (environment === "production" && !key.startsWith("pk_live_")) return "";
+    return key;
+  }
+
+  function createStripeClient() {
+    if (!stripePublishableKey || typeof window.Stripe !== "function") return null;
+    try {
+      return window.Stripe(stripePublishableKey);
+    } catch {
+      return null;
+    }
+  }
+
   function createPlatformApi() {
     if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "fa01d7cc4c68c1e7ee606a44677ad70d16f4c563" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
@@ -230,6 +377,7 @@
     if (!identity.clientId) missing.push("Cognito public client ID");
     if (!identity.callbackUrl) missing.push("callback URL");
     if (!apiBaseUrl) missing.push("platform API origin");
+    if (!stripeClient) missing.push("Stripe publishable configuration");
 
     if (missing.length === 0) {
       ui.configBanner.hidden = true;
@@ -469,8 +617,9 @@
 
   function captureBillingReturn(params) {
     const value = stringValue(params.get("billing") || params.get("checkout")).toLowerCase();
-    if (!["success", "cancelled", "canceled"].includes(value)) return false;
-    storageWrite(billingReturnStorageKey, { value: value === "success" ? "success" : "cancelled", createdAt: Date.now() });
+    const sessionId = stringValue(params.get("session_id"));
+    if (value !== "return" || !/^cs_(?:test|live)_[A-Za-z0-9_]{8,}$/.test(sessionId)) return false;
+    storageWrite(billingReturnStorageKey, { value: "return", createdAt: Date.now() });
     return true;
   }
 
@@ -596,8 +745,14 @@
   }
 
   async function renderOrganizationState(state) {
+    closeEmbeddedCheckout();
     resetOrganizationControls();
     session.organizationId = "";
+    session.creditPacks = [];
+    session.creditBalance = null;
+    session.creditControl = null;
+    resetInvoiceHistory("Select an organization to load its verified billing records.", "Waiting");
+    resetSubscriptionCapacity();
     ui.contextOrganization.textContent = "Not selected";
     ui.organizationDependent.hidden = true;
 
@@ -749,24 +904,54 @@
     }
   }
 
+  async function listAllTeams() {
+    const teams = [];
+    const seenIds = new Set();
+    const seenTokens = new Set();
+    let pageToken = "";
+    for (let pageNumber = 0; pageNumber < 100; pageNumber += 1) {
+      const response = await apiRequest("teams", { organizationId: session.organizationId, page: { pageSize: 100, pageToken } });
+      const pageTeams = Array.isArray(response?.teams) ? response.teams : [];
+      if (pageTeams.length > 100) throw new ApiError("TeamService returned an oversized page", 0, "invalid_response", "");
+      for (const team of pageTeams) {
+        const id = stringValue(team?.id);
+        if (!id || stringValue(team?.organizationId) !== session.organizationId || seenIds.has(id)) {
+          throw new ApiError("TeamService returned an invalid or duplicate organization-scoped team", 0, "invalid_response", "");
+        }
+        seenIds.add(id);
+        teams.push(team);
+      }
+      const nextPageToken = stringValue(response?.page?.nextPageToken);
+      if (!nextPageToken) return { teams, page: { nextPageToken: "" } };
+      if (nextPageToken === pageToken || seenTokens.has(nextPageToken)) throw new ApiError("TeamService returned a repeated page cursor", 0, "invalid_response", "");
+      seenTokens.add(nextPageToken);
+      pageToken = nextPageToken;
+    }
+    throw new ApiError("TeamService exceeded the safe pagination limit", 0, "invalid_response", "");
+  }
+
   async function refreshOnboarding() {
     setStep("github", "loading", "Checking", "Checking for an organization-bound GitHub App installation.");
     setStep("repositories", "loading", "Checking", "Loading the repositories that the GitHub App makes available.");
     setStep("subscription", "loading", "Checking", "Checking the server-verified subscription status.");
     setStep("team", "loading", "Checking", "Checking existing engineering teams and prerequisites.");
+    resetInvoiceHistory("Loading the signed-webhook-backed invoice projection.", "Loading", "loading");
     ui.refresh.disabled = true;
-    const [githubResult, planResult, subscriptionResult, teamsResult] = await Promise.allSettled([
+    const [githubResult, planResult, subscriptionResult, teamsResult, invoicesResult] = await Promise.allSettled([
       apiRequest("github_installation", { organizationId: session.organizationId }),
       apiRequest("billing_plan", { planId: stringValue(config.plan_id) || "founding-team" }),
       apiRequest("subscription", { organizationId: session.organizationId }),
-      apiRequest("teams", { organizationId: session.organizationId, page: { pageSize: 50 } })
+      listAllTeams(),
+      apiRequest("invoices", { organizationId: session.organizationId, page: { pageSize: 25 } })
     ]);
 
     renderBillingPlanResult(planResult);
     renderSubscriptionResult(subscriptionResult);
     renderTeamsResult(teamsResult);
+    renderInvoicesResult(invoicesResult);
     await renderGitHubResult(githubResult);
     updateTeamAction();
+    await refreshCreditPacks();
     reconcileBillingReturn();
     await refreshSelectedTeam();
     ui.refresh.disabled = false;
@@ -785,7 +970,7 @@
       session.githubInstalled = Boolean(launchContract?.githubInstallationActive(installation));
       if (session.githubInstalled) {
         const account = stringValue(installation.accountLogin) || stringValue(installation.account_login) || "selected GitHub account";
-        setStep("github", "complete", "Connected", `The API confirms an active installation for ${account}. Choose the repositories Deep Navy may use next.`);
+        setStep("github", "complete", "Connected", `The API confirms an active installation for ${account}. Choose the repositories deep navy may use next.`);
         ui.githubAction.textContent = "Manage GitHub access";
         ui.githubAction.disabled = false;
         await refreshRepositoryAccess();
@@ -921,7 +1106,7 @@
       setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
     } else {
       ui.contextRepositories.textContent = "Selection required";
-      setStep("repositories", "action", "Needs action", "Choose the accessible repositories that Deep Navy may use, then save the server-side selection.");
+      setStep("repositories", "action", "Needs action", "Choose the accessible repositories that deep navy may use, then save the server-side selection.");
     }
   }
 
@@ -965,6 +1150,7 @@
     ui.planName.textContent = stringValue(session.billingPlan.name) || stringValue(session.billingPlan.id);
     ui.planPrice.textContent = formatMoney(session.billingPlan.recurringPrice, session.billingPlan.interval);
     ui.planCredits.textContent = formatCredits(session.billingPlan.includedCreditMicros);
+    ui.planSlots.textContent = "1 paid team slot per subscription unit";
     ui.planSummary.hidden = false;
   }
 
@@ -979,8 +1165,30 @@
   }
 
   function formatCredits(value) {
-    const micros = Number(value || 0);
-    return Number.isSafeInteger(micros) && micros > 0 ? `${new Intl.NumberFormat().format(micros / 1_000_000)} Engineering Credits` : "Included credits shown at checkout";
+    const micros = int64Value(value);
+    if (micros === null || micros <= 0n) return "Included credits shown at checkout";
+    return `${new Intl.NumberFormat().format(micros / 1_000_000n)} engineering credits`;
+  }
+
+  function int64Value(value) {
+    try {
+      const normalized = typeof value === "bigint"
+        ? value.toString()
+        : typeof value === "number" && Number.isSafeInteger(value)
+          ? String(value)
+          : stringValue(value);
+      if (!/^(?:0|[1-9][0-9]{0,18})$/.test(normalized)) return null;
+      const parsed = BigInt(normalized);
+      return parsed <= 9_223_372_036_854_775_807n ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function resetSubscriptionCapacity() {
+    session.paidTeamSlots = 0n;
+    session.usedTeamSlots = 0n;
+    session.availableTeamSlots = 0n;
   }
 
   function renderSubscriptionResult(result) {
@@ -998,26 +1206,44 @@
       const status = subscriptionStatusLabel(subscription);
       session.subscription = subscription || null;
       session.subscriptionManageable = Boolean(subscription?.id);
-      session.subscriptionActive = Boolean(launchContract?.subscriptionActive(subscription));
+      resetSubscriptionCapacity();
+      const paid = int64Value(subscription?.paidTeamSlots);
+      const used = int64Value(subscription?.usedTeamSlots);
+      const available = int64Value(subscription?.availableTeamSlots);
+      const validCapacity = paid !== null && used !== null && available !== null && paid > 0n && used + available === paid;
+      session.subscriptionActive = status === "active" && validCapacity;
+      if (status === "active" && !validCapacity) {
+        setStep("subscription", "error", "Invalid capacity", "The billing service did not return a consistent paid team-slot balance. Team creation remains locked.");
+        ui.subscriptionAction.textContent = "Manage billing";
+        ui.subscriptionAction.disabled = !session.subscriptionManageable;
+        return;
+      }
+      if (validCapacity) {
+        session.paidTeamSlots = paid;
+        session.usedTeamSlots = used;
+        session.availableTeamSlots = available;
+        ui.planSlots.textContent = `${paid.toString()} paid · ${used.toString()} in use · ${available.toString()} available`;
+      }
       if (session.subscriptionActive) {
-        setStep("subscription", "complete", "Active", `The API confirms the ${stringValue(subscription.planId) || stringValue(subscription.plan_id) || "current"} plan is ${status}.`);
+        setStep("subscription", "complete", "Active", `The signed billing record confirms ${used.toString()} of ${paid.toString()} paid team ${paid === 1n ? "slot" : "slots"} in use.`);
         ui.subscriptionAction.textContent = "Manage billing";
         ui.subscriptionAction.disabled = false;
       } else {
-        setStep("subscription", "action", "Needs action", status ? `The subscription is ${status}; team creation requires an active or trialing plan.` : "No active subscription is recorded for this organization.");
-        ui.subscriptionAction.textContent = session.subscriptionManageable ? "Manage billing" : "Open secure checkout";
-        ui.subscriptionAction.disabled = !session.subscriptionManageable && !session.billingPlanAvailable;
+        setStep("subscription", "action", "Needs action", status ? `The subscription is ${status}; team creation requires a paid active billing period.` : "No active subscription is recorded for this organization.");
+        ui.subscriptionAction.textContent = session.subscriptionManageable ? "Manage billing" : "Review and subscribe";
+        ui.subscriptionAction.disabled = !session.subscriptionManageable && (!session.billingPlanAvailable || !stripeClient);
       }
       return;
     }
     session.subscription = null;
     session.subscriptionManageable = false;
     session.subscriptionActive = false;
+    resetSubscriptionCapacity();
     if (isMissingResource(result.reason)) {
-      const planMessage = session.billingPlanAvailable ? "Checkout is created by the billing service and completed on Stripe." : session.billingPlanError;
+      const planMessage = session.billingPlanAvailable ? "The billing service creates a short-lived Stripe session rendered inside deep navy." : session.billingPlanError;
       setStep("subscription", session.billingPlanAvailable ? "action" : "error", session.billingPlanAvailable ? "Needs action" : "Plan unavailable", `No subscription is recorded. ${planMessage}`);
-      ui.subscriptionAction.textContent = "Open secure checkout";
-      ui.subscriptionAction.disabled = !session.billingPlanAvailable;
+      ui.subscriptionAction.textContent = "Review and subscribe";
+      ui.subscriptionAction.disabled = !session.billingPlanAvailable || !stripeClient;
     } else {
       setStep("subscription", "error", "Unavailable", apiErrorMessage(result.reason, "The billing service is not ready. No subscription state was assumed."));
       ui.subscriptionAction.disabled = true;
@@ -1037,25 +1263,297 @@
       storageRemove(billingReturnStorageKey);
       return;
     }
-    if (returned.value === "cancelled") {
-      storageRemove(billingReturnStorageKey);
-      toast("Checkout was cancelled. No subscription completion was assumed.", "info");
-      return;
-    }
-    if (session.subscriptionActive) {
-      storageRemove(billingReturnStorageKey);
-      toast("Stripe and the API confirm that your subscription is active.", "success");
-      return;
-    }
-    if ((reconcileBillingReturn.attempts || 0) < 4) {
+    if ((reconcileBillingReturn.attempts || 0) < 3) {
       reconcileBillingReturn.attempts = (reconcileBillingReturn.attempts || 0) + 1;
       window.setTimeout(() => { if (session.accessToken) refreshOnboarding(); }, 3000 * reconcileBillingReturn.attempts);
-      setStep("subscription", "loading", "Confirming", "Stripe returned successfully. Waiting for the signed webhook to update the subscription before marking it active.");
+      toast("Stripe returned. Refreshing team billing and credits while the signed webhook is verified.", "info");
     } else {
       storageRemove(billingReturnStorageKey);
       reconcileBillingReturn.attempts = 0;
-      toast("Stripe returned, but the subscription is not active yet. Refresh after webhook processing completes.", "info");
+      toast("Billing records were refreshed. Only webhook-confirmed subscriptions and credits are shown.", "info");
     }
+  }
+
+  function resetInvoiceHistory(message, label = "Waiting", tone = "") {
+    session.invoices = [];
+    session.invoiceIds = new Set();
+    session.invoiceNextPageToken = "";
+    session.invoicePageTokens = new Set();
+    session.invoiceLoading = false;
+    ui.invoiceHistory.hidden = !session.organizationId;
+    ui.invoiceList.replaceChildren();
+    ui.invoiceList.hidden = true;
+    ui.invoiceEmpty.hidden = false;
+    ui.invoiceMore.hidden = true;
+    ui.invoiceMore.disabled = true;
+    ui.invoiceMore.textContent = "Load more invoices";
+    setEmptyState(ui.invoiceEmpty, label === "Loading" ? "Loading invoices" : "No invoices loaded", message);
+    setSourceState(ui.invoiceState, label, tone);
+  }
+
+  function signedInt64Value(value) {
+    try {
+      const normalized = typeof value === "bigint"
+        ? value.toString()
+        : typeof value === "number" && Number.isSafeInteger(value)
+          ? String(value)
+          : stringValue(value);
+      if (!/^-?(?:0|[1-9][0-9]{0,18})$/.test(normalized)) return null;
+      const parsed = BigInt(normalized);
+      return parsed >= -9_223_372_036_854_775_808n && parsed <= 9_223_372_036_854_775_807n ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function canonicalMoneyValue(money) {
+    const units = signedInt64Value(money?.units);
+    const nanos = Number(money?.nanos || 0);
+    const currency = stringValue(money?.currencyCode);
+    if (units === null || !Number.isInteger(nanos) || Math.abs(nanos) > 999_999_999 || !/^[A-Z]{3}$/.test(currency)) return null;
+    if ((units > 0n && nanos < 0) || (units < 0n && nanos > 0)) return null;
+    return { currency, nanos: units * 1_000_000_000n + BigInt(nanos) };
+  }
+
+  function invoiceStatusLabel(value) {
+    const numeric = typeof value === "number" ? value : -1;
+    const normalized = numeric >= 0
+      ? ["", "DRAFT", "OPEN", "PAID", "VOID", "UNCOLLECTIBLE"][numeric] || ""
+      : stringValue(value).replace(/^INVOICE_STATUS_/, "");
+    return ({ DRAFT: "draft", OPEN: "open", PAID: "paid", VOID: "void", UNCOLLECTIBLE: "uncollectible" })[normalized] || "";
+  }
+
+  function validatedHostedInvoiceURL(value) {
+    if (typeof value !== "string" || !value || value.trim() !== value) return "";
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:" || url.host !== "invoice.stripe.com" || url.username || url.password || url.hash || !url.pathname.startsWith("/")) return "";
+      return value;
+    } catch {
+      return "";
+    }
+  }
+
+  function validInvoice(invoice) {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!invoice || !uuid.test(stringValue(invoice.id)) || !uuid.test(stringValue(invoice.subscriptionId)) ||
+      stringValue(invoice.organizationId) !== session.organizationId || !invoiceStatusLabel(invoice.status)) return false;
+    const amounts = [invoice.subtotal, invoice.total, invoice.amountDue, invoice.amountPaid].map(canonicalMoneyValue);
+    if (amounts.some((amount) => !amount) || new Set(amounts.map((amount) => amount.currency)).size !== 1 ||
+      amounts[2].nanos < 0n || amounts[3].nanos < 0n) return false;
+    const periodStart = timestampDate(invoice.periodStartsAt);
+    const periodEnd = timestampDate(invoice.periodEndsAt);
+    const createdAt = timestampDate(invoice.createdAt);
+    const updatedAt = timestampDate(invoice.updatedAt);
+    const dueAt = invoice.dueAt ? timestampDate(invoice.dueAt) : null;
+    const paidAt = invoice.paidAt ? timestampDate(invoice.paidAt) : null;
+    if (!periodStart || !periodEnd || periodEnd <= periodStart || !createdAt || !updatedAt || updatedAt < createdAt ||
+      (invoice.dueAt && (!dueAt || dueAt < createdAt)) || (invoice.paidAt && (!paidAt || paidAt < createdAt)) ||
+      (invoiceStatusLabel(invoice.status) === "paid" && !paidAt)) return false;
+    const hostedURL = stringValue(invoice.hostedInvoiceUrl);
+    return !hostedURL || Boolean(validatedHostedInvoiceURL(invoice.hostedInvoiceUrl));
+  }
+
+  function invoiceDateLabel(invoice) {
+    const created = timestampDate(invoice.createdAt);
+    return created ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(created) : "Date unavailable";
+  }
+
+  function renderInvoiceHistory() {
+    ui.invoiceHistory.hidden = !session.organizationId;
+    ui.invoiceList.replaceChildren();
+    session.invoices.forEach((invoice) => {
+      const status = invoiceStatusLabel(invoice.status);
+      const item = document.createElement("li");
+      item.className = "invoice-record";
+      const head = document.createElement("div");
+      head.className = "invoice-record-head";
+      const state = document.createElement("span");
+      state.className = "invoice-record-status";
+      state.dataset.status = status;
+      state.textContent = status;
+      const date = document.createElement("time");
+      date.textContent = invoiceDateLabel(invoice);
+      const total = document.createElement("div");
+      total.className = "invoice-record-total";
+      const amount = document.createElement("strong");
+      const amountSource = status === "paid" ? invoice.amountPaid : status === "open" || status === "uncollectible" ? invoice.amountDue : invoice.total;
+      amount.textContent = formatCanonicalMoney(amountSource);
+      const amountLabel = document.createElement("span");
+      amountLabel.textContent = status === "paid" ? "paid" : status === "open" ? "due" : status === "uncollectible" ? "uncollected" : "invoice total";
+      const period = document.createElement("span");
+      period.className = "invoice-record-period";
+      const starts = timestampDate(invoice.periodStartsAt);
+      const ends = timestampDate(invoice.periodEndsAt);
+      period.textContent = `Service period · ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(starts)} – ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(ends)}`;
+      const actions = document.createElement("div");
+      actions.className = "invoice-record-actions";
+      const source = document.createElement("span");
+      source.textContent = "Verified billing projection";
+      actions.append(source);
+      const hostedURL = validatedHostedInvoiceURL(invoice.hostedInvoiceUrl);
+      if (hostedURL) {
+        const receipt = document.createElement("a");
+        receipt.className = "invoice-receipt";
+        receipt.href = hostedURL;
+        receipt.target = "_blank";
+        receipt.rel = "noopener noreferrer";
+        receipt.referrerPolicy = "no-referrer";
+        receipt.textContent = status === "paid" ? "View receipt ↗" : "View invoice ↗";
+        actions.append(receipt);
+      }
+      head.append(state, date);
+      total.append(amount, amountLabel);
+      item.append(head, total, period, actions);
+      ui.invoiceList.append(item);
+    });
+    const count = session.invoices.length;
+    ui.invoiceEmpty.hidden = count > 0;
+    ui.invoiceList.hidden = count === 0;
+    if (!count) setEmptyState(ui.invoiceEmpty, "No invoices yet", "No signed-webhook-backed invoice records exist for this organization yet.");
+    ui.invoiceMore.hidden = !session.invoiceNextPageToken;
+    ui.invoiceMore.disabled = session.invoiceLoading || !session.invoiceNextPageToken;
+    setSourceState(ui.invoiceState, count ? `${count} verified` : "No records", count ? "success" : "");
+  }
+
+  function acceptInvoicePage(response, pageToken = "", append = false) {
+    const invoices = Array.isArray(response?.invoices) ? response.invoices : [];
+    if (invoices.length > 25 || invoices.some((invoice) => !validInvoice(invoice))) {
+      throw new ApiError("BillingService returned an invalid invoice page", 0, "invalid_response", "");
+    }
+    const existingIDs = append ? new Set(session.invoiceIds) : new Set();
+    for (const invoice of invoices) {
+      const id = stringValue(invoice.id);
+      if (existingIDs.has(id)) throw new ApiError("BillingService returned a duplicate invoice", 0, "invalid_response", "");
+      existingIDs.add(id);
+    }
+    const next = stringValue(response?.page?.nextPageToken);
+    const seenTokens = append ? new Set(session.invoicePageTokens) : new Set();
+    if (next && (next === pageToken || seenTokens.has(next) || next.length > 4096)) {
+      throw new ApiError("BillingService returned a repeated invoice page cursor", 0, "invalid_response", "");
+    }
+    if (pageToken) seenTokens.add(pageToken);
+    if (next) seenTokens.add(next);
+    session.invoices = append ? [...session.invoices, ...invoices] : invoices;
+    session.invoiceIds = existingIDs;
+    session.invoicePageTokens = seenTokens;
+    session.invoiceNextPageToken = next;
+    renderInvoiceHistory();
+  }
+
+  function renderInvoicesResult(result) {
+    if (result.status === "rejected") {
+      resetInvoiceHistory(apiErrorMessage(result.reason, "The verified invoice projection is unavailable. No billing history was assumed."), "Unavailable", "error");
+      ui.invoiceHistory.hidden = false;
+      return;
+    }
+    try {
+      acceptInvoicePage(result.value);
+    } catch (error) {
+      resetInvoiceHistory(apiErrorMessage(error, "The billing service returned invalid invoice history. No records were displayed."), "Invalid response", "error");
+      ui.invoiceHistory.hidden = false;
+    }
+  }
+
+  async function loadMoreInvoices() {
+    const organizationId = session.organizationId;
+    const pageToken = session.invoiceNextPageToken;
+    if (!organizationId || !pageToken || session.invoiceLoading) return;
+    session.invoiceLoading = true;
+    ui.invoiceMore.disabled = true;
+    ui.invoiceMore.textContent = "Loading…";
+    try {
+      const response = await apiRequest("invoices", { organizationId, page: { pageSize: 25, pageToken } });
+      if (organizationId !== session.organizationId) return;
+      acceptInvoicePage(response, pageToken, true);
+    } catch (error) {
+      if (organizationId !== session.organizationId) return;
+      session.invoiceNextPageToken = "";
+      ui.invoiceMore.hidden = true;
+      setSourceState(ui.invoiceState, "Unavailable", "error");
+      toast(apiErrorMessage(error, "More verified invoices could not be loaded."), "error");
+    } finally {
+      session.invoiceLoading = false;
+      ui.invoiceMore.textContent = "Load more invoices";
+      if (organizationId === session.organizationId) ui.invoiceMore.disabled = !session.invoiceNextPageToken;
+    }
+  }
+
+  function activeCreditPack(pack) {
+    const state = typeof pack?.state === "number" ? pack.state : stringValue(pack?.state).replace(/^BILLING_PLAN_STATE_/, "");
+    const id = stringValue(pack?.id);
+    const credits = int64Value(pack?.creditMicros);
+    const maximum = int64Value(pack?.maximumQuantity);
+    return Boolean(id && !id.startsWith("price_") && (state === 1 || state === "ACTIVE") && credits !== null && credits > 0n && maximum !== null && maximum > 0n && maximum <= 1000n && pack?.price);
+  }
+
+  async function refreshCreditPacks() {
+    session.creditPacks = [];
+    if (!session.subscriptionActive || !session.organizationId) {
+      renderCreditPackControls();
+      return;
+    }
+    try {
+      const response = await apiRequest("credit_packs", { organizationId: session.organizationId });
+      const packs = Array.isArray(response.creditPacks) ? response.creditPacks : [];
+      if (!packs.length || packs.some((pack) => !activeCreditPack(pack))) {
+        throw new ApiError("The billing service returned an invalid prepaid catalog", 0, "invalid_response", "");
+      }
+      session.creditPacks = packs;
+      renderCreditPackControls();
+    } catch (error) {
+      renderCreditPackControls(apiErrorMessage(error, "Prepaid credit packs are unavailable."));
+    }
+  }
+
+  function selectedCreditPack() {
+    const id = stringValue(ui.creditPackSelect.value);
+    return session.creditPacks.find((pack) => stringValue(pack.id) === id) || null;
+  }
+
+  function renderCreditPackControls(errorMessage = "") {
+    const team = selectedTeam();
+    const visible = Boolean(session.subscriptionActive && team);
+    ui.creditPackForm.hidden = !visible;
+    if (!visible) return;
+    const previous = stringValue(ui.creditPackSelect.value);
+    ui.creditPackSelect.replaceChildren();
+    session.creditPacks.forEach((pack) => {
+      const option = document.createElement("option");
+      option.value = stringValue(pack.id);
+      option.textContent = `${stringValue(pack.name) || formatCredits(pack.creditMicros)} · ${formatCanonicalMoney(pack.price)}`;
+      ui.creditPackSelect.append(option);
+    });
+    if (session.creditPacks.some((pack) => stringValue(pack.id) === previous)) ui.creditPackSelect.value = previous;
+    const controlReady = stringValue(session.creditControl?.teamId) === stringValue(team.id);
+    const ready = Boolean(session.creditPacks.length && stripeClient && controlReady && !checkoutOpening);
+    ui.creditPackSelect.disabled = !ready;
+    ui.creditPackQuantity.disabled = !ready;
+    ui.creditPackSubmit.disabled = !ready;
+    setFieldError(ui.creditPackError, errorMessage || (!stripeClient
+      ? "Secure checkout is not configured in this deployment."
+      : !controlReady
+        ? "The team credit control is unavailable; purchases remain fail-closed."
+        : session.creditPacks.length ? "" : "No prepaid packs are available."));
+    updateCreditPackSummary();
+  }
+
+  function updateCreditPackSummary() {
+    const pack = selectedCreditPack();
+    if (!pack) {
+      ui.creditPackSummary.textContent = "Select a prepaid pack.";
+      ui.creditPackQuantity.removeAttribute("max");
+      return;
+    }
+    const maximum = int64Value(pack.maximumQuantity) || 1n;
+    ui.creditPackQuantity.max = maximum.toString();
+    const quantity = int64Value(ui.creditPackQuantity.value) || 0n;
+    const valid = quantity > 0n && quantity <= maximum;
+    const totalCredits = valid ? (int64Value(pack.creditMicros) || 0n) * quantity : 0n;
+    ui.creditPackSummary.textContent = valid
+      ? `${formatCanonicalMoney(pack.price)} each · ${formatCredits(totalCredits)} added to ${stringValue(selectedTeam()?.name) || "this team"}`
+      : `Enter a quantity from 1 to ${maximum.toString()}.`;
+    ui.creditPackSubmit.disabled = !valid || !stripeClient || checkoutOpening;
   }
 
   function renderTeamsResult(result) {
@@ -1090,8 +1588,9 @@
       ui.teamSubmit.disabled = true;
       return;
     }
-    if (session.teams.length > 0) {
-      setStep("team", "complete", "Created", `${session.teams.length} server-confirmed engineering ${session.teams.length === 1 ? "team" : "teams"} found.`);
+    const returnedTeamCount = BigInt(session.teams.length);
+    if (session.subscriptionActive && session.usedTeamSlots < returnedTeamCount) {
+      setStep("team", "error", "Invalid capacity", "The team list exceeds the signed billing capacity record. Creation remains locked.");
       ui.teamInput.disabled = true;
       ui.teamSubmit.disabled = true;
       return;
@@ -1101,9 +1600,13 @@
       repositorySelectionReady: session.repositorySelectionReady,
       subscriptionActive: session.subscriptionActive
     });
-    const ready = missing.length === 0;
+    const capacityAvailable = session.availableTeamSlots > 0n;
+    const ready = missing.length === 0 && capacityAvailable;
     if (ready) {
-      setStep("team", "action", "Ready", "GitHub, repository access, and the subscription are server-confirmed. Choose a clear name for the first engineering team.");
+      const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
+      setStep("team", "action", "Slot available", `${existing}${session.availableTeamSlots.toString()} paid ${session.availableTeamSlots === 1n ? "slot remains" : "slots remain"}. Choose a durable team name.`);
+    } else if (missing.length === 0) {
+      setStep("team", "complete", "Capacity used", `${session.usedTeamSlots.toString()} of ${session.paidTeamSlots.toString()} paid team ${session.paidTeamSlots === 1n ? "slot is" : "slots are"} in use. Increase subscription quantity before creating another team.`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
       setStep("team", "blocked", "Blocked", `Complete the ${requirements} before creating a team. The API enforces these prerequisites.`);
@@ -1194,6 +1697,7 @@
       session.selectedTeamId = "";
       ui.contextTeam.textContent = "Not selected";
       resetWorkspaceViews("Complete setup to create the first server-confirmed team.");
+      renderCreditPackControls();
       return;
     }
 
@@ -1210,6 +1714,7 @@
     ui.teamSelect.value = session.selectedTeamId;
     ui.teamSelect.disabled = false;
     renderSelectedTeamSummary();
+    renderCreditPackControls();
   }
 
   function selectedTeam() {
@@ -1241,16 +1746,47 @@
     renderSelectedTeamSummary();
     resetAgentView("Loading the server-confirmed team roster.", "Loading", "loading");
     resetEconomicsView("Loading the measured economics summary for this team.", "Loading", "loading");
+    resetCreditBalanceView("Loading the authoritative team ledger balance.", "Loading", "loading");
+    resetCreditControlView("Loading the current paid-period team budget.", "Loading", "loading");
+    resetApprovalView("Loading pending decisions for this team.", "Loading", "loading");
     resetActivityView("Connecting to the team’s normalized activity stream.", "Connecting", "loading");
+    resetSessionHistoryView("Loading assignment-bound session history.", "Loading", "loading");
+    resetWorkspaceHistoryView("Loading server-sanitized workspace changes.", "Loading", "loading");
+    resetDeliveryHistoryView("Loading webhook-backed GitHub delivery records.", "Loading", "loading");
+    const deliveryRepository = configureDeliveryRepository();
+    syncProvisioningSnapshot(team);
+    resetObjectiveView("Loading durable objectives for the selected team.");
+    setSourceState(ui.objectiveState, "Loading", "loading");
     startActivityStream(team.id, generation);
+    startProvisioningStream(team.id, generation);
 
-    const [agentsResult, economicsResult] = await Promise.allSettled([
+    const [agentsResult, economicsResult, economicsBreakdownsResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult] = await Promise.allSettled([
       apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
-      apiRequest("economics", { scopeType: "team", scopeId: team.id })
+      apiRequest("economics", { scopeType: "team", scopeId: team.id }),
+      loadEconomicsBreakdowns(team.id),
+      apiRequest("credit_balance", { organizationId: session.organizationId, teamId: team.id }),
+      apiRequest("credit_control", { organizationId: session.organizationId, teamId: team.id }),
+      apiRequest("approvals", { teamId: team.id, page: { pageSize: 100 } }),
+      listAllObjectives(team.id),
+      apiRequest("sessions", { teamId: team.id, page: { pageSize: 100 } }),
+      apiRequest("workspace_changes", { teamId: team.id, afterSequence: "0", page: { pageSize: 100 } }),
+      deliveryRepository ? apiRequest("github_issues", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: deliveryRepository.id, page: { pageSize: 100 } }) : null,
+      deliveryRepository ? apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: deliveryRepository.id, page: { pageSize: 100 } }) : null
     ]);
     if (generation !== session.workspaceGeneration || team.id !== session.selectedTeamId) return;
     renderAgentsResult(agentsResult, team.id);
     renderEconomicsResult(economicsResult, team.id);
+    renderEconomicsBreakdownsResult(economicsBreakdownsResult);
+    renderTeamCreditResults(creditBalanceResult, creditControlResult, team.id);
+    renderApprovalsResult(approvalsResult, team.id);
+    renderObjectivesResult(objectivesResult, team.id, generation);
+    renderSessionHistoryResult(sessionsResult, team.id, "", false);
+    renderWorkspaceHistoryResult(workspaceResult, team.id, "", false);
+    if (deliveryRepository) {
+      renderGitHubIssuesResult(issuesResult, team.id, deliveryRepository, "", false);
+      renderGitHubPullRequestsResult(pullRequestsResult, team.id, deliveryRepository, "", false);
+    }
+    renderCreditPackControls();
   }
 
   function resetWorkspaceViews(message) {
@@ -1259,7 +1795,15 @@
     ui.dashboardState.textContent = message;
     resetAgentView(message, "Waiting");
     resetEconomicsView(message, "Waiting");
+    resetCreditBalanceView(message, "Waiting");
+    resetCreditControlView(message, "Waiting");
+    resetApprovalView(message, "Waiting");
+    renderCreditPackControls();
     resetActivityView(message, "Waiting");
+    resetSessionHistoryView(message, "Waiting");
+    resetWorkspaceHistoryView(message, "Waiting");
+    resetDeliveryHistoryView(message, "Waiting");
+    resetObjectiveView(message);
   }
 
   function setEmptyState(element, title, message) {
@@ -1274,6 +1818,355 @@
     element.textContent = label;
     if (tone) element.dataset.tone = tone;
     else delete element.dataset.tone;
+  }
+
+  function resetObjectiveView(message) {
+    ui.objectiveForm.hidden = true;
+    ui.objectiveTitleInput.disabled = true;
+    ui.objectiveDescriptionInput.disabled = true;
+    ui.objectiveSubmit.disabled = true;
+    ui.objectiveSelectControl.hidden = true;
+    ui.objectiveSelect.disabled = true;
+    ui.objectiveSelect.replaceChildren();
+    ui.objectiveRecord.hidden = true;
+    ui.objectiveEmpty.hidden = false;
+    setEmptyState(ui.objectiveEmpty, "No objective loaded", message);
+    ui.initiativeList.replaceChildren();
+    setSourceState(ui.objectiveDispatchState, "Not reported");
+    ui.objectiveDispatchDetail.textContent = "Waiting for the durable TPM handoff status.";
+    ui.objectiveKpiList.replaceChildren();
+    ui.objectiveKpiList.hidden = true;
+    ui.objectiveKpiEmpty.hidden = false;
+    setEmptyState(ui.objectiveKpiEmpty, "No KPIs proposed", "ObjectiveService has not returned KPI definitions for this objective.");
+    setSourceState(ui.objectiveKpiState, "Waiting");
+    setFieldError(ui.objectiveError, "");
+    setSourceState(ui.objectiveState, "Waiting");
+  }
+
+  function objectiveDispatchStateLabel(value) {
+    if (typeof value === "number") return ["", "queued", "delivering", "retrying", "delivered", "failed"][value] || "";
+    return ({
+      OBJECTIVE_DISPATCH_STATE_QUEUED: "queued",
+      OBJECTIVE_DISPATCH_STATE_DELIVERING: "delivering",
+      OBJECTIVE_DISPATCH_STATE_RETRYING: "retrying",
+      OBJECTIVE_DISPATCH_STATE_DELIVERED: "delivered",
+      OBJECTIVE_DISPATCH_STATE_FAILED: "failed"
+    })[stringValue(value)] || "";
+  }
+
+  function objectiveDispatchFailureLabel(value) {
+    if (typeof value === "number") return ["", "gateway unavailable", "TPM session unavailable", "delivery rejected", "retry exhausted"][value] || "";
+    return ({
+      OBJECTIVE_DISPATCH_FAILURE_REASON_GATEWAY_UNAVAILABLE: "gateway unavailable",
+      OBJECTIVE_DISPATCH_FAILURE_REASON_TPM_SESSION_UNAVAILABLE: "TPM session unavailable",
+      OBJECTIVE_DISPATCH_FAILURE_REASON_DELIVERY_REJECTED: "delivery rejected",
+      OBJECTIVE_DISPATCH_FAILURE_REASON_RETRY_EXHAUSTED: "retry exhausted"
+    })[stringValue(value)] || "";
+  }
+
+  function validObjectiveDispatch(dispatch) {
+    const id = stringValue(dispatch?.dispatchId);
+    const stateLabel = objectiveDispatchStateLabel(dispatch?.state);
+    const attempt = Number(dispatch?.attempt);
+    const updatedAt = timestampDate(dispatch?.updatedAt);
+    const deliveredAt = dispatch?.deliveredAt ? timestampDate(dispatch.deliveredAt) : null;
+    const failureReason = objectiveDispatchFailureLabel(dispatch?.failureReason);
+    const safeError = stringValue(dispatch?.safeError);
+    if (!id || id.length > 128 || /[\u0000-\u001f\u007f]/.test(id) || !stateLabel || !Number.isInteger(attempt) || attempt < 0 || attempt > 2_147_483_647 || !updatedAt || safeError.length > 1000 || /[\u0000-\u001f\u007f]/.test(safeError)) return false;
+    if (stateLabel === "delivered" && !deliveredAt) return false;
+    if (dispatch?.deliveredAt && !deliveredAt) return false;
+    if (stateLabel === "failed" && !failureReason) return false;
+    return true;
+  }
+
+  function renderObjectiveDispatch(dispatch) {
+    if (!validObjectiveDispatch(dispatch)) {
+      setSourceState(ui.objectiveDispatchState, "Unavailable", "error");
+      ui.objectiveDispatchDetail.textContent = "ObjectiveService did not return a valid durable handoff status. Delivery is not assumed.";
+      return;
+    }
+    const stateLabel = objectiveDispatchStateLabel(dispatch.state);
+    const tone = stateLabel === "delivered" ? "success" : stateLabel === "failed" ? "error" : "loading";
+    setSourceState(ui.objectiveDispatchState, capitalize(stateLabel), tone);
+    const parts = [`Attempt ${Number(dispatch.attempt)}`, `updated ${relativeTime(timestampDate(dispatch.updatedAt))}`];
+    const failureReason = objectiveDispatchFailureLabel(dispatch.failureReason);
+    if (failureReason) parts.push(failureReason);
+    const safeError = stringValue(dispatch.safeError);
+    if (safeError) parts.push(safeError);
+    const deliveredAt = dispatch.deliveredAt ? timestampDate(dispatch.deliveredAt) : null;
+    if (deliveredAt) parts.push(`delivered ${relativeTime(deliveredAt)}`);
+    ui.objectiveDispatchDetail.textContent = `Durable TPM handoff · ${parts.join(" · ")}.`;
+  }
+
+  function validObjectiveKpis(kpis) {
+    if (!Array.isArray(kpis) || kpis.length > 100) return false;
+    const ids = new Set();
+    return kpis.every((kpi) => {
+      const id = stringValue(kpi?.id);
+      const name = stringValue(kpi?.name);
+      const unit = stringValue(kpi?.unit);
+      const direction = stringValue(kpi?.direction).toLowerCase();
+      const baseline = Number(kpi?.baseline);
+      const target = Number(kpi?.target);
+      const safeText = (value) => value && !/[\u0000-\u001f\u007f]/.test(value);
+      if (!id || id.length > 128 || ids.has(id) || !safeText(id) || !safeText(name) || name.length > 160 || !safeText(unit) || unit.length > 80 || !["increase", "decrease", "maintain"].includes(direction) || !Number.isFinite(baseline) || !Number.isFinite(target) || typeof kpi?.guardrail !== "boolean") return false;
+      ids.add(id);
+      return true;
+    });
+  }
+
+  function renderObjectiveKpis(kpis) {
+    ui.objectiveKpiList.replaceChildren();
+    if (!validObjectiveKpis(kpis)) {
+      ui.objectiveKpiList.hidden = true;
+      ui.objectiveKpiEmpty.hidden = false;
+      setEmptyState(ui.objectiveKpiEmpty, "KPI projection unavailable", "ObjectiveService returned malformed KPI definitions. No proposed values were displayed.");
+      setSourceState(ui.objectiveKpiState, "Invalid response", "error");
+      return;
+    }
+    kpis.forEach((kpi) => {
+      const item = document.createElement("li");
+      const name = document.createElement("strong");
+      const detail = document.createElement("span");
+      const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 7 });
+      name.textContent = stringValue(kpi.name);
+      detail.textContent = `${number.format(Number(kpi.baseline))} → ${number.format(Number(kpi.target))} ${stringValue(kpi.unit)} · ${stringValue(kpi.direction).toLowerCase()} · ${kpi.guardrail ? "guardrail" : "outcome KPI"}`;
+      item.append(name, detail);
+      ui.objectiveKpiList.append(item);
+    });
+    ui.objectiveKpiEmpty.hidden = kpis.length > 0;
+    ui.objectiveKpiList.hidden = kpis.length === 0;
+    if (!kpis.length) setEmptyState(ui.objectiveKpiEmpty, "No KPIs proposed", "ObjectiveService returned no KPI definitions for this objective yet.");
+    setSourceState(ui.objectiveKpiState, kpis.length ? `${kpis.length} proposed` : "None yet", kpis.length ? "success" : "");
+  }
+
+  function renderObjectiveView(teamId, generation = session.workspaceGeneration) {
+    const normalizedTeamId = stringValue(teamId);
+    const objectives = session.objectiveListsByTeam.get(normalizedTeamId) || [];
+    const remembered = session.objectivesByTeam.get(normalizedTeamId);
+    const objective = objectives.find((candidate) => stringValue(candidate.id) === stringValue(remembered?.id)) || objectives[0] || null;
+    if (objective) session.objectivesByTeam.set(normalizedTeamId, objective);
+    else session.objectivesByTeam.delete(normalizedTeamId);
+    setFieldError(ui.objectiveError, "");
+    ui.initiativeList.replaceChildren();
+    if (!objective) {
+      ui.objectiveSelectControl.hidden = true;
+      ui.objectiveSelect.disabled = true;
+      ui.objectiveSelect.replaceChildren();
+      ui.objectiveRecord.hidden = true;
+      ui.objectiveEmpty.hidden = false;
+      setEmptyState(ui.objectiveEmpty, "No business objectives", "ObjectiveService returned no durable objectives for this team. Submit the first outcome its agents should pursue.");
+      ui.objectiveForm.hidden = false;
+      ui.objectiveTitleInput.disabled = false;
+      ui.objectiveDescriptionInput.disabled = false;
+      ui.objectiveSubmit.disabled = false;
+      setSourceState(ui.objectiveState, "Ready", "success");
+      return;
+    }
+    ui.objectiveSelect.replaceChildren();
+    objectives.forEach((candidate) => {
+      const option = document.createElement("option");
+      option.value = stringValue(candidate.id);
+      option.textContent = stringValue(candidate.title) || "Untitled objective";
+      ui.objectiveSelect.append(option);
+    });
+    ui.objectiveSelect.value = stringValue(objective.id);
+    ui.objectiveSelect.disabled = false;
+    ui.objectiveSelectControl.hidden = false;
+    ui.objectiveForm.hidden = false;
+    ui.objectiveTitleInput.disabled = false;
+    ui.objectiveDescriptionInput.disabled = false;
+    ui.objectiveSubmit.disabled = false;
+    ui.objectiveEmpty.hidden = true;
+    ui.objectiveRecord.hidden = false;
+    ui.objectiveTitle.textContent = stringValue(objective.title) || "Untitled objective";
+    ui.objectiveDescription.textContent = stringValue(objective.description) || "No description returned.";
+    renderObjectiveDispatch(objective.dispatch);
+    renderObjectiveKpis(objective.kpis);
+    setSourceState(ui.objectiveState, `${objectives.length} ${objectives.length === 1 ? "objective" : "objectives"}`, "success");
+    loadInitiatives(objective, generation);
+  }
+
+  async function listAllObjectives(teamId) {
+    const objectives = [];
+    const seenIds = new Set();
+    const seenTokens = new Set();
+    let pageToken = "";
+    for (let page = 0; page < 10; page += 1) {
+      const response = await apiRequest("objectives", { teamId, page: { pageSize: 100, pageToken } });
+      const pageObjectives = Array.isArray(response.objectives) ? response.objectives : [];
+      if (pageObjectives.length > 100) throw new ApiError("ObjectiveService returned an oversized page", 0, "invalid_response", "");
+      for (const objective of pageObjectives) {
+        const id = stringValue(objective?.id);
+        if (!id || stringValue(objective?.teamId) !== stringValue(teamId) || seenIds.has(id) || !validObjectiveDispatch(objective?.dispatch) || !validObjectiveKpis(objective?.kpis)) throw new ApiError("ObjectiveService returned an invalid or duplicate team objective", 0, "invalid_response", "");
+        seenIds.add(id);
+        objectives.push(objective);
+      }
+      const next = stringValue(response.page?.nextPageToken);
+      if (!next) return objectives;
+      if (next === pageToken || seenTokens.has(next)) throw new ApiError("Objective pagination returned a repeated cursor", 0, "invalid_response", "");
+      seenTokens.add(next);
+      pageToken = next;
+    }
+    throw new ApiError("Objective list exceeded the supported launch page limit", 0, "resource_exhausted", "");
+  }
+
+  function renderObjectivesResult(result, teamId, generation = session.workspaceGeneration) {
+    if (generation !== session.workspaceGeneration || stringValue(teamId) !== session.selectedTeamId) return;
+    if (result.status === "rejected") {
+      session.objectiveListsByTeam.delete(stringValue(teamId));
+      resetObjectiveView(apiErrorMessage(result.reason, "Durable objectives could not be loaded for this team."));
+      setSourceState(ui.objectiveState, "Unavailable", "error");
+      return;
+    }
+    session.objectiveListsByTeam.set(stringValue(teamId), result.value);
+    renderObjectiveView(teamId, generation);
+  }
+
+  function validInitiative(initiative, objectiveId) {
+    const id = stringValue(initiative?.id);
+    const title = stringValue(initiative?.title);
+    const description = stringValue(initiative?.description);
+    const hypothesis = stringValue(initiative?.hypothesis);
+    const status = stringValue(initiative?.status);
+    const priority = Number(initiative?.priority);
+    const startedAt = initiative?.startedAt ? timestampDate(initiative.startedAt) : null;
+    const completedAt = initiative?.completedAt ? timestampDate(initiative.completedAt) : null;
+    return Boolean(
+      id && id.length <= 128 && !/[\u0000-\u001f\u007f]/.test(id) &&
+      stringValue(initiative?.objectiveId) === stringValue(objectiveId) &&
+      title && title.length <= 200 && !/[\u0000\u007f]/.test(title) &&
+      description && description.length <= 8192 && !/[\u0000\u007f]/.test(description) &&
+      hypothesis.length <= 4096 && !/[\u0000\u007f]/.test(hypothesis) &&
+      status && status.length <= 64 && /^[a-z][a-z0-9_-]*$/.test(status) &&
+      Number.isInteger(priority) && priority >= 0 && priority <= 100 &&
+      (!initiative?.startedAt || startedAt) && (!initiative?.completedAt || completedAt) &&
+      (!startedAt || !completedAt || completedAt >= startedAt)
+    );
+  }
+
+  async function listAllInitiatives(objectiveId) {
+    const initiatives = [];
+    const seenIds = new Set();
+    const seenTokens = new Set();
+    let pageToken = "";
+    for (let page = 0; page < 10; page += 1) {
+      const response = await apiRequest("initiatives", { objectiveId, page: { pageSize: 100, pageToken } });
+      const pageInitiatives = Array.isArray(response.initiatives) ? response.initiatives : [];
+      if (pageInitiatives.length > 100) throw new ApiError("InitiativeService returned an oversized page", 0, "invalid_response", "");
+      for (const initiative of pageInitiatives) {
+        const id = stringValue(initiative?.id);
+        if (!validInitiative(initiative, objectiveId) || seenIds.has(id)) throw new ApiError("InitiativeService returned an invalid or duplicate objective-scoped proposal", 0, "invalid_response", "");
+        seenIds.add(id);
+        initiatives.push(initiative);
+      }
+      const next = stringValue(response.page?.nextPageToken);
+      if (!next) return initiatives;
+      if (next === pageToken || seenTokens.has(next)) throw new ApiError("Initiative pagination returned a repeated cursor", 0, "invalid_response", "");
+      seenTokens.add(next);
+      pageToken = next;
+    }
+    throw new ApiError("Initiative list exceeded the supported launch page limit", 0, "resource_exhausted", "");
+  }
+
+  async function loadInitiatives(objective, generation = session.workspaceGeneration) {
+    const objectiveId = stringValue(objective?.id);
+    const teamId = stringValue(objective?.teamId);
+    if (!objectiveId || !teamId) return;
+    setSourceState(ui.initiativeState, "Loading", "loading");
+    try {
+      const initiatives = await listAllInitiatives(objectiveId);
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      if (initiatives.some((initiative) => stringValue(initiative?.objectiveId) !== objectiveId)) {
+        throw new ApiError("Initiative service returned a record outside the current objective", 0, "invalid_response", "");
+      }
+      ui.initiativeList.replaceChildren();
+      initiatives.forEach((initiative) => {
+        const item = document.createElement("li");
+        const title = document.createElement("strong");
+        const description = document.createElement("p");
+        const detail = document.createElement("span");
+        title.textContent = stringValue(initiative.title) || "Untitled initiative";
+        description.textContent = stringValue(initiative.description);
+        detail.textContent = [`Priority ${Number(initiative.priority)}`, stringValue(initiative.status).replaceAll("_", " "), stringValue(initiative.hypothesis) ? `Hypothesis: ${stringValue(initiative.hypothesis)}` : "No hypothesis supplied"].join(" · ");
+        item.append(title, description, detail);
+        ui.initiativeList.append(item);
+      });
+      setSourceState(ui.initiativeState, initiatives.length ? `${initiatives.length} ${initiatives.length === 1 ? "initiative" : "initiatives"}` : "No initiatives yet", initiatives.length ? "success" : "");
+    } catch (error) {
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      ui.initiativeList.replaceChildren();
+      setSourceState(ui.initiativeState, "Unavailable", "error");
+      toast(apiErrorMessage(error, "Initiatives could not be loaded for the submitted objective."), "error");
+    }
+  }
+
+  async function createObjective(event) {
+    event.preventDefault();
+    const team = selectedTeam();
+    if (!team) return;
+    const form = new FormData(ui.objectiveForm);
+    const title = stringValue(form.get("objectiveTitle"));
+    const description = stringValue(form.get("objectiveDescription"));
+    setFieldError(ui.objectiveError, "");
+    if (title.length < 3 || title.length > 160) {
+      setFieldError(ui.objectiveError, "Enter an objective title between 3 and 160 characters.");
+      ui.objectiveTitleInput.focus();
+      return;
+    }
+    if (description.length < 10 || description.length > 2000) {
+      setFieldError(ui.objectiveError, "Describe the outcome and context in 10 to 2,000 characters.");
+      ui.objectiveDescriptionInput.focus();
+      return;
+    }
+    ui.objectiveTitleInput.disabled = true;
+    ui.objectiveDescriptionInput.disabled = true;
+    ui.objectiveSubmit.disabled = true;
+    ui.objectiveSubmit.textContent = "Submitting…";
+    setSourceState(ui.objectiveState, "Submitting", "loading");
+    try {
+      const fingerprint = `${team.id}:${title.toLowerCase()}:${description}`;
+      const result = await apiRequest("create_objective", {
+        teamId: team.id,
+        title,
+        description,
+        idempotencyKey: mutationKeys.for("createObjective", fingerprint)
+      });
+      const objective = result.objective;
+      if (!objective?.id || stringValue(objective.teamId) !== stringValue(team.id) || !validObjectiveDispatch(objective.dispatch) || !validObjectiveKpis(objective.kpis)) {
+        throw new ApiError("Objective service did not return a resource in the selected team scope", 0, "invalid_response", "");
+      }
+      mutationKeys.clear("createObjective");
+      const teamKey = stringValue(team.id);
+      const existing = session.objectiveListsByTeam.get(teamKey) || [];
+      session.objectiveListsByTeam.set(teamKey, [objective, ...existing.filter((candidate) => stringValue(candidate.id) !== stringValue(objective.id))]);
+      session.objectivesByTeam.set(teamKey, objective);
+      ui.objectiveForm.reset();
+      renderObjectiveView(team.id, session.workspaceGeneration);
+      toast(`The API confirmed the business objective and its durable handoff is ${objectiveDispatchStateLabel(objective.dispatch.state)}.`, "success");
+    } catch (error) {
+      const message = apiErrorMessage(error, "The objective was not confirmed as created. It is safe to retry with the same request.");
+      setFieldError(ui.objectiveError, message);
+      setSourceState(ui.objectiveState, "Not submitted", "error");
+      ui.objectiveTitleInput.disabled = false;
+      ui.objectiveDescriptionInput.disabled = false;
+      ui.objectiveSubmit.disabled = false;
+    } finally {
+      ui.objectiveSubmit.textContent = "Submit objective";
+    }
+  }
+
+  function selectObjective() {
+    const team = selectedTeam();
+    if (!team) return;
+    const objective = (session.objectiveListsByTeam.get(stringValue(team.id)) || [])
+      .find((candidate) => stringValue(candidate.id) === stringValue(ui.objectiveSelect.value));
+    if (!objective) {
+      setSourceState(ui.objectiveState, "Invalid selection", "error");
+      return;
+    }
+    session.objectivesByTeam.set(stringValue(team.id), objective);
+    renderObjectiveView(team.id, session.workspaceGeneration);
   }
 
   function resetAgentView(message, label, tone = "") {
@@ -1336,13 +2229,333 @@
     return agentRoleContract?.canonicalAgentRole?.(value)?.label || "Unspecified agent role";
   }
 
+  const economicsGroupDefinitions = Object.freeze([
+    { key: "initiative", label: "Initiative", scopeType: 7 },
+    { key: "agent", label: "Agent", scopeType: 4 },
+    { key: "agent_role", label: "Agent role", scopeType: 5 },
+    { key: "repository", label: "Repository", scopeType: 10 },
+    { key: "issue", label: "Issue", scopeType: 8 },
+    { key: "pull_request", label: "Pull request", scopeType: 9 }
+  ]);
+
+  function formatIntegerCount(value) {
+    const integer = int64Value(value);
+    return integer === null ? "Not reported" : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(integer);
+  }
+
+  async function listAllEconomicsBreakdowns(teamId, definition) {
+    const records = [];
+    const seenIds = new Set();
+    const seenTokens = new Set();
+    let pageToken = "";
+    let measuredAt = null;
+    for (let page = 0; page < 5; page += 1) {
+      const response = await apiRequest("economics_breakdowns", {
+        parentScopeType: "team",
+        parentScopeId: teamId,
+        groupBy: definition.key,
+        page: { pageSize: 100, pageToken }
+      });
+      const pageRecords = Array.isArray(response.breakdowns) ? response.breakdowns : [];
+      if (pageRecords.length > 100) throw new ApiError("EconomicsService returned an oversized breakdown page", 0, "invalid_response", "");
+      const responseMeasuredAt = timestampDate(response.measuredAt);
+      if (!responseMeasuredAt) throw new ApiError("EconomicsService omitted breakdown measurement time", 0, "invalid_response", "");
+      if (measuredAt && measuredAt.getTime() !== responseMeasuredAt.getTime()) throw new ApiError("EconomicsService changed measurement time during pagination", 0, "invalid_response", "");
+      measuredAt = responseMeasuredAt;
+      for (const record of pageRecords) {
+        const id = stringValue(record?.scope?.id);
+        const displayName = stringValue(record?.displayName);
+        const usageCount = int64Value(record?.usageEventCount);
+        const credits = int64Value(record?.creditsUsedMicros);
+        if (!id || id.length > 256 || /[\u0000-\u001f\u007f]/.test(id) || record?.scope?.type !== definition.scopeType || seenIds.has(id) || !displayName || displayName.length > 256 || usageCount === null || usageCount < 0n || credits === null || credits < 0n) {
+          throw new ApiError("EconomicsService returned an invalid scoped breakdown", 0, "invalid_response", "");
+        }
+        seenIds.add(id);
+        records.push(record);
+      }
+      const next = stringValue(response.nextPageToken);
+      if (!next) return { records, measuredAt };
+      if (next === pageToken || seenTokens.has(next)) throw new ApiError("Economics breakdown pagination returned a repeated cursor", 0, "invalid_response", "");
+      seenTokens.add(next);
+      pageToken = next;
+    }
+    throw new ApiError("Economics breakdown exceeded the supported 500-row dimension limit", 0, "resource_exhausted", "");
+  }
+
+  async function loadEconomicsBreakdowns(teamId) {
+    const results = await Promise.allSettled(economicsGroupDefinitions.map((definition) => listAllEconomicsBreakdowns(teamId, definition)));
+    return new Map(economicsGroupDefinitions.map((definition, index) => [definition.key, results[index]]));
+  }
+
+  function renderSelectedEconomicsGroup() {
+    const definition = economicsGroupDefinitions.find((candidate) => candidate.key === session.selectedEconomicsGroup) || economicsGroupDefinitions[0];
+    const result = session.economicsBreakdowns.get(definition.key);
+    ui.economicsBreakdownList.replaceChildren();
+    if (!result || result.status === "rejected") {
+      ui.economicsBreakdownList.hidden = true;
+      ui.economicsBreakdownEmpty.hidden = false;
+      setEmptyState(ui.economicsBreakdownEmpty, `${definition.label} breakdown unavailable`, result ? apiErrorMessage(result.reason, "The server-calculated breakdown is unavailable.") : "No breakdown response was loaded.");
+      return;
+    }
+    result.value.records.forEach((record) => {
+      const item = document.createElement("li");
+      const name = document.createElement("strong");
+      const values = document.createElement("span");
+      const time = document.createElement("span");
+      name.textContent = stringValue(record.displayName);
+      values.textContent = `${formatCanonicalMoney(record.directCost)} cost · ${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatIntegerCount(record.usageEventCount)} usage events`;
+      const measured = result.value.measuredAt;
+      const first = timestampDate(record.firstOccurredAt);
+      const last = timestampDate(record.lastOccurredAt);
+      time.textContent = `Measured ${relativeTime(measured)}${first && last ? ` · activity ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(first)} – ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(last)}` : ""}`;
+      item.append(name, values, time);
+      ui.economicsBreakdownList.append(item);
+    });
+    ui.economicsBreakdownEmpty.hidden = result.value.records.length > 0;
+    ui.economicsBreakdownList.hidden = result.value.records.length === 0;
+    if (!result.value.records.length) setEmptyState(ui.economicsBreakdownEmpty, `No ${definition.label.toLowerCase()} usage`, "The authoritative ledger returned no rows for the current paid period.");
+  }
+
+  function renderEconomicsBreakdownsResult(result) {
+    ui.economicsBreakdown.hidden = false;
+    if (result.status === "rejected") {
+      session.economicsBreakdowns = new Map();
+      ui.economicsGroup.disabled = true;
+      setSourceState(ui.economicsBreakdownState, "Unavailable", "error");
+      renderSelectedEconomicsGroup();
+      return;
+    }
+    session.economicsBreakdowns = result.value;
+    ui.economicsGroup.replaceChildren();
+    economicsGroupDefinitions.forEach((definition) => {
+      const option = document.createElement("option");
+      const groupResult = result.value.get(definition.key);
+      option.value = definition.key;
+      option.textContent = `${definition.label} · ${groupResult?.status === "fulfilled" ? groupResult.value.records.length : "unavailable"}`;
+      ui.economicsGroup.append(option);
+    });
+    if (!economicsGroupDefinitions.some((definition) => definition.key === session.selectedEconomicsGroup)) session.selectedEconomicsGroup = economicsGroupDefinitions[0].key;
+    ui.economicsGroup.value = session.selectedEconomicsGroup;
+    ui.economicsGroup.disabled = false;
+    const loaded = [...result.value.values()].filter((group) => group.status === "fulfilled").length;
+    setSourceState(ui.economicsBreakdownState, loaded === economicsGroupDefinitions.length ? "Measured" : `${loaded}/${economicsGroupDefinitions.length} measured`, loaded ? "success" : "error");
+    renderSelectedEconomicsGroup();
+  }
+
+  function selectEconomicsGroup() {
+    const key = stringValue(ui.economicsGroup.value);
+    if (!economicsGroupDefinitions.some((definition) => definition.key === key)) return;
+    session.selectedEconomicsGroup = key;
+    renderSelectedEconomicsGroup();
+  }
+
   function resetEconomicsView(message, label, tone = "") {
+    replaceActivityProjections("cost:", []);
+    session.economicsBreakdowns = new Map();
+    session.selectedEconomicsGroup = "initiative";
+    ui.economicsBreakdown.hidden = true;
+    ui.economicsGroup.disabled = true;
+    ui.economicsGroup.replaceChildren();
+    ui.economicsBreakdownList.replaceChildren();
+    ui.economicsBreakdownList.hidden = true;
+    ui.economicsBreakdownEmpty.hidden = false;
+    setSourceState(ui.economicsBreakdownState, label, tone);
     ui.economicsMetrics.hidden = true;
     ui.economicsMeasured.hidden = true;
     ui.economicsEmpty.hidden = false;
     setEmptyState(ui.economicsEmpty, label === "Loading" ? "Loading economics" : "No economics summary loaded", message);
     ui.economicsMessage.textContent = message;
     setSourceState(ui.economicsState, label, tone);
+  }
+
+  function resetCreditBalanceView(message, label = "Waiting", tone = "") {
+    session.creditBalance = null;
+    ui.creditBalancePanel.hidden = !selectedTeam();
+    ui.creditBalanceValue.textContent = "Unavailable";
+    ui.creditBalanceMessage.textContent = message;
+    setSourceState(ui.creditBalanceState, label, tone);
+  }
+
+  function renderCreditBalanceResult(result) {
+    if (result.status === "rejected") {
+      resetCreditBalanceView(apiErrorMessage(result.reason, "The team credit ledger balance is unavailable. No balance was assumed."), "Unavailable", "error");
+      return;
+    }
+    const balance = int64Value(result.value?.balanceMicros);
+    if (balance === null) {
+      resetCreditBalanceView("BillingService returned an invalid team credit balance. No balance was displayed.", "Invalid response", "error");
+      return;
+    }
+    session.creditBalance = balance;
+    ui.creditBalancePanel.hidden = false;
+    ui.creditBalanceValue.textContent = formatCreditMicros(balance);
+    ui.creditBalanceMessage.textContent = "Signed grants minus settled usage for this team. Open reservations and the paid-period hard limit are separate execution guardrails below.";
+    setSourceState(ui.creditBalanceState, "Verified", "success");
+  }
+
+  function renderTeamCreditResults(balanceResult, controlResult, teamId) {
+    const balance = balanceResult.status === "fulfilled" ? int64Value(balanceResult.value?.balanceMicros) : null;
+    const control = controlResult.status === "fulfilled" ? controlResult.value?.control : null;
+    if (balance !== null && validCreditControl(control, teamId) && balance !== int64Value(control.ledgerAvailableMicros)) {
+      const message = "BillingService returned inconsistent ledger and budget projections. No credit state was displayed; billable work remains fail-closed.";
+      resetCreditBalanceView(message, "Invalid response", "error");
+      resetCreditControlView(message, "Invalid response", "error");
+      return;
+    }
+    renderCreditBalanceResult(balanceResult);
+    renderCreditControlResult(controlResult, teamId);
+  }
+
+  function resetCreditControlView(message, label = "Waiting", tone = "") {
+    session.creditControl = null;
+    ui.creditControl.hidden = !selectedTeam();
+    ui.creditHardLimitInput.disabled = true;
+    ui.creditCustomerPaused.disabled = true;
+    ui.creditControlSubmit.disabled = true;
+    ui.creditControlSummary.textContent = message;
+    setFieldError(ui.creditControlError, tone === "error" ? message : "");
+    setSourceState(ui.creditControlState, label, tone);
+    renderCreditPackControls();
+  }
+
+  function pauseReasonLabel(value) {
+    const numeric = typeof value === "number" ? value : -1;
+    const normalized = numeric >= 0
+      ? ["", "NONE", "CUSTOMER_PAUSED", "BILLING_INACTIVE", "CREDITS_EXHAUSTED", "BUDGET_EXHAUSTED"][numeric] || ""
+      : stringValue(value).replace(/^TEAM_CREDIT_PAUSE_REASON_/, "");
+    return ({
+      NONE: "Ready",
+      CUSTOMER_PAUSED: "Customer paused",
+      BILLING_INACTIVE: "Billing inactive",
+      CREDITS_EXHAUSTED: "Credits exhausted",
+      BUDGET_EXHAUSTED: "Budget exhausted"
+    })[normalized] || "Unavailable";
+  }
+
+  function microsInputValue(value) {
+    const micros = int64Value(value);
+    if (micros === null) return "";
+    const whole = micros / 1_000_000n;
+    const fraction = (micros % 1_000_000n).toString().padStart(6, "0").replace(/0+$/, "");
+    return `${whole.toString()}${fraction ? `.${fraction}` : ""}`;
+  }
+
+  function creditInputMicros(value) {
+    const normalized = stringValue(value);
+    const match = /^(0|[1-9][0-9]{0,12})(?:\.([0-9]{1,6}))?$/.exec(normalized);
+    if (!match) return null;
+    const micros = BigInt(match[1]) * 1_000_000n + BigInt((match[2] || "").padEnd(6, "0") || "0");
+    return micros <= 9_223_372_036_854_775_807n ? micros : null;
+  }
+
+  function validCreditControl(control, teamId) {
+    if (!control || stringValue(control.teamId) !== stringValue(teamId)) return false;
+    const ledger = int64Value(control.ledgerAvailableMicros);
+    const open = int64Value(control.openReservedMicros);
+    const consumed = int64Value(control.periodConsumedMicros);
+    const hard = int64Value(control.hardLimitMicros);
+    const budget = int64Value(control.budgetRemainingMicros);
+    const effective = int64Value(control.effectiveAvailableMicros);
+    const version = int64Value(control.version);
+    if ([ledger, open, consumed, hard, budget, effective, version].some((value) => value === null) || hard <= 0n || version <= 0n) return false;
+    const committed = open + consumed;
+    const expectedBudget = hard > committed ? hard - committed : 0n;
+    const expectedEffective = (ledger < expectedBudget ? ledger : expectedBudget);
+    if (budget !== expectedBudget || effective !== expectedEffective || effective < 0n) return false;
+    const reason = pauseReasonLabel(control.pauseReason);
+    if (reason === "Unavailable" || Boolean(control.paused) !== (reason !== "Ready")) return false;
+    if (Boolean(control.customerPaused) !== (reason === "Customer paused")) return false;
+    const startsAt = timestampDate(control.periodStartsAt);
+    const endsAt = timestampDate(control.periodEndsAt);
+    return Boolean(startsAt && endsAt && endsAt > startsAt);
+  }
+
+  function renderCreditControlResult(result, teamId) {
+    if (result.status === "rejected") {
+      resetCreditControlView(apiErrorMessage(result.reason, "The team credit control is unavailable. Billable work remains fail-closed."), "Unavailable", "error");
+      return;
+    }
+    const control = result.value.control;
+    if (!validCreditControl(control, teamId)) {
+      resetCreditControlView("The billing service returned an inconsistent team credit control. Billable work remains fail-closed.", "Invalid response", "error");
+      return;
+    }
+    session.creditControl = control;
+    const committed = int64Value(control.periodConsumedMicros) + int64Value(control.openReservedMicros);
+    const prepaidCeiling = committed + int64Value(control.ledgerAvailableMicros);
+    ui.creditControl.hidden = false;
+    ui.creditOpenReserved.textContent = formatCreditMicros(control.openReservedMicros);
+    ui.creditPeriodConsumed.textContent = formatCreditMicros(control.periodConsumedMicros);
+    ui.creditHardLimit.textContent = formatCreditMicros(control.hardLimitMicros);
+    ui.creditEffectiveAvailable.textContent = formatCreditMicros(control.effectiveAvailableMicros);
+    ui.creditHardLimitInput.value = microsInputValue(control.hardLimitMicros);
+    ui.creditHardLimitInput.min = microsInputValue(committed > 0n ? committed : 1n);
+    ui.creditHardLimitInput.max = microsInputValue(prepaidCeiling);
+    ui.creditCustomerPaused.checked = Boolean(control.customerPaused);
+    ui.creditHardLimitInput.disabled = false;
+    ui.creditCustomerPaused.disabled = false;
+    ui.creditControlSubmit.disabled = false;
+    setFieldError(ui.creditControlError, "");
+    const label = pauseReasonLabel(control.pauseReason);
+    setSourceState(ui.creditControlState, label, label === "Ready" ? "success" : "error");
+    updateCreditControlSummary();
+    renderCreditPackControls();
+  }
+
+  function updateCreditControlSummary() {
+    const control = session.creditControl;
+    if (!control) return;
+    const committed = int64Value(control.periodConsumedMicros) + int64Value(control.openReservedMicros);
+    const prepaidCeiling = committed + int64Value(control.ledgerAvailableMicros);
+    const proposed = creditInputMicros(ui.creditHardLimitInput.value);
+    const withinRange = proposed !== null && proposed >= committed && proposed <= prepaidCeiling && proposed > 0n;
+    ui.creditControlSummary.textContent = withinRange
+      ? `${formatCreditMicros(proposed)} credit hard limit · ${ui.creditCustomerPaused.checked ? "billable work paused" : "billable work enabled"} · version ${String(control.version)}`
+      : `Choose a limit from ${formatCreditMicros(committed)} to ${formatCreditMicros(prepaidCeiling)} available prepaid credits.`;
+    ui.creditControlSubmit.disabled = !withinRange;
+  }
+
+  async function saveCreditControl(event) {
+    event.preventDefault();
+    const team = selectedTeam();
+    const control = session.creditControl;
+    if (!team || !control || stringValue(control.teamId) !== stringValue(team.id)) return;
+    const hardLimit = creditInputMicros(ui.creditHardLimitInput.value);
+    const committed = int64Value(control.periodConsumedMicros) + int64Value(control.openReservedMicros);
+    const prepaidCeiling = committed + int64Value(control.ledgerAvailableMicros);
+    if (hardLimit === null || hardLimit <= 0n || hardLimit < committed || hardLimit > prepaidCeiling) {
+      setFieldError(ui.creditControlError, "The hard limit must cover committed usage and remain within prepaid availability.");
+      return;
+    }
+    const customerPaused = Boolean(ui.creditCustomerPaused.checked);
+    const expectedVersion = int64Value(control.version);
+    const fingerprint = `${session.organizationId}:${team.id}:${hardLimit.toString()}:${customerPaused}:${expectedVersion.toString()}`;
+    ui.creditControlSubmit.disabled = true;
+    ui.creditControlSubmit.textContent = "Saving…";
+    try {
+      const result = await apiRequest("update_credit_control", {
+        organizationId: session.organizationId,
+        teamId: team.id,
+        hardLimitMicros: hardLimit.toString(),
+        customerPaused,
+        expectedVersion: expectedVersion.toString(),
+        idempotencyKey: mutationKeys.for("updateCreditControl", fingerprint)
+      });
+      if (!validCreditControl(result.control, team.id)) throw new ApiError("Billing service returned an invalid updated credit control", 0, "invalid_response", "");
+      if (session.creditBalance !== null && int64Value(result.control.ledgerAvailableMicros) !== session.creditBalance) {
+        throw new ApiError("Billing service returned credit projections that do not reconcile", 0, "invalid_response", "");
+      }
+      mutationKeys.clear("updateCreditControl");
+      renderCreditControlResult({ status: "fulfilled", value: result }, team.id);
+      toast("Team budget control was confirmed by the API.", "success");
+    } catch (error) {
+      const message = apiErrorMessage(error, "The team budget control was not updated.");
+      setFieldError(ui.creditControlError, message);
+      if (error instanceof ApiError && ["aborted", "failed_precondition"].includes(error.code)) await refreshSelectedTeam();
+    } finally {
+      ui.creditControlSubmit.textContent = "Save budget control";
+      if (session.creditControl) updateCreditControlSummary();
+    }
   }
 
   function renderEconomicsResult(result, teamId) {
@@ -1365,6 +2578,279 @@
     ui.economicsMetrics.hidden = false;
     ui.economicsMeasured.hidden = false;
     setSourceState(ui.economicsState, "Measured", "success");
+    upsertActivityProjection({
+      id: `cost:${teamId}`,
+      category: "cost",
+      source: "EconomicsService snapshot",
+      title: "Cost and credits measured",
+      safeSummary: `${formatCanonicalMoney(economics.directCost)} attributable cost · ${formatCreditMicros(economics.creditsUsedMicros)} credits used · ${formatCreditMicros(economics.creditsRemainingMicros)} credits remaining.`,
+      detail: "Point-in-time team economics; not a streamed usage event.",
+      status: "measured",
+      sequenceLabel: "Snapshot",
+      occurredAt: economics.measuredAt
+    });
+  }
+
+  function resetApprovalView(message, label, tone = "") {
+    replaceActivityProjections("approval-pending:", []);
+    session.approvals = [];
+    session.approvalNextPageToken = "";
+    session.approvalPageTokens = new Set();
+    session.approvalDecisionIds = new Set();
+    ui.approvalList.replaceChildren();
+    ui.approvalList.hidden = true;
+    ui.approvalsMore.hidden = true;
+    ui.approvalsMore.disabled = true;
+    ui.approvalsEmpty.hidden = false;
+    setEmptyState(ui.approvalsEmpty, label === "Loading" ? "Loading pending approvals" : "No approval queue loaded", message);
+    setSourceState(ui.approvalsState, label, tone);
+  }
+
+  function pendingApprovalStatus(approval) {
+    if (typeof approval?.approvalStatus === "number") return approval.approvalStatus === 1;
+    return stringValue(approval?.approvalStatus) === "APPROVAL_STATUS_PENDING";
+  }
+
+  function decidedApprovalStatus(approval, approved) {
+    if (typeof approval?.approvalStatus === "number") return approval.approvalStatus === (approved ? 2 : 3);
+    return stringValue(approval?.approvalStatus) === (approved ? "APPROVAL_STATUS_APPROVED" : "APPROVAL_STATUS_DENIED");
+  }
+
+  function validPendingApproval(approval, teamId) {
+    const id = stringValue(approval?.id);
+    const summary = stringValue(approval?.safeSummary);
+    const actionType = stringValue(approval?.actionType);
+    return Boolean(
+      id && id.length <= 128 && !/[\u0000-\u001f\u007f]/.test(id) &&
+      stringValue(approval?.teamId) === stringValue(teamId) &&
+      summary && summary.length <= 1000 &&
+      actionType && actionType.length <= 160 &&
+      pendingApprovalStatus(approval)
+    );
+  }
+
+  function applyApprovalPage(response, teamId, append = false, requestedToken = "") {
+    const approvals = Array.isArray(response?.approvals) ? response.approvals : [];
+    if (approvals.length > 100 || approvals.some((approval) => !validPendingApproval(approval, teamId))) {
+      throw new ApiError("ApprovalService returned an invalid pending approval page", 0, "invalid_response", "");
+    }
+    const existing = append ? new Map(session.approvals.map((approval) => [stringValue(approval.id), approval])) : new Map();
+    for (const approval of approvals) {
+      const id = stringValue(approval.id);
+      if (existing.has(id)) throw new ApiError("ApprovalService returned a duplicate approval", 0, "invalid_response", "");
+      existing.set(id, approval);
+    }
+    const nextPageToken = stringValue(response?.page?.nextPageToken);
+    if (nextPageToken && (nextPageToken === requestedToken || session.approvalPageTokens.has(nextPageToken))) {
+      throw new ApiError("ApprovalService returned a repeated page cursor", 0, "invalid_response", "");
+    }
+    if (!append) session.approvalPageTokens = new Set();
+    if (nextPageToken) session.approvalPageTokens.add(nextPageToken);
+    session.approvals = [...existing.values()];
+    session.approvalNextPageToken = nextPageToken;
+    renderApprovalQueue();
+  }
+
+  function renderApprovalQueue() {
+    ui.approvalList.replaceChildren();
+    session.approvals.forEach((approval, index) => {
+      const id = stringValue(approval.id);
+      const actionType = stringValue(approval.actionType);
+      const summary = stringValue(approval.safeSummary);
+      const pending = session.approvalDecisionIds.has(id);
+      const item = document.createElement("li");
+      const form = document.createElement("form");
+      form.className = "approval-card";
+      form.dataset.approvalId = id;
+      if (pending) form.setAttribute("aria-busy", "true");
+
+      const header = document.createElement("div");
+      header.className = "approval-card-header";
+      const type = document.createElement("span");
+      type.className = "approval-action-type";
+      type.textContent = actionType.replaceAll("_", " ");
+      const requested = document.createElement("time");
+      const requestedAt = timestampDate(approval.requestedAt);
+      requested.textContent = requestedAt ? relativeTime(requestedAt) : "Time not reported";
+      if (requestedAt) {
+        requested.dateTime = requestedAt.toISOString();
+        requested.title = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(requestedAt);
+      }
+      header.append(type, requested);
+
+      const safeSummary = document.createElement("strong");
+      safeSummary.textContent = summary;
+      const requestedBy = document.createElement("p");
+      requestedBy.className = "approval-requester";
+      requestedBy.textContent = stringValue(approval.requestedByAgentId)
+        ? `Requested by ${stringValue(approval.requestedByAgentId)}`
+        : "Requesting agent not reported";
+
+      const reasonId = `approval-reason-${index}`;
+      const reasonLabel = document.createElement("label");
+      reasonLabel.htmlFor = reasonId;
+      reasonLabel.textContent = "Decision note";
+      const reason = document.createElement("textarea");
+      reason.id = reasonId;
+      reason.name = "reason";
+      reason.rows = 2;
+      reason.maxLength = 500;
+      reason.placeholder = "Required to deny; optional to approve";
+      reason.disabled = pending;
+      reason.setAttribute("aria-describedby", `${reasonId}-help ${reasonId}-error`);
+      const help = document.createElement("small");
+      help.id = `${reasonId}-help`;
+      help.textContent = "The API records the authenticated decision owner and immutable audit event.";
+      const error = document.createElement("p");
+      error.id = `${reasonId}-error`;
+      error.className = "form-error";
+      error.dataset.approvalError = "";
+      error.setAttribute("role", "alert");
+      error.hidden = true;
+
+      const actions = document.createElement("div");
+      actions.className = "approval-actions";
+      const approve = document.createElement("button");
+      approve.className = "button button-primary button-small";
+      approve.type = "submit";
+      approve.value = "approve";
+      approve.dataset.approvalDecision = "approve";
+      approve.textContent = pending ? "Saving…" : "Approve";
+      approve.disabled = pending;
+      approve.setAttribute("aria-label", `Approve ${actionType.replaceAll("_", " ")}`);
+      const deny = document.createElement("button");
+      deny.className = "button button-quiet button-small approval-deny";
+      deny.type = "submit";
+      deny.value = "deny";
+      deny.dataset.approvalDecision = "deny";
+      deny.textContent = "Deny";
+      deny.disabled = pending;
+      deny.setAttribute("aria-label", `Deny ${actionType.replaceAll("_", " ")}`);
+      actions.append(approve, deny);
+      form.append(header, safeSummary, requestedBy, reasonLabel, reason, help, error, actions);
+      item.append(form);
+      ui.approvalList.append(item);
+    });
+
+    const count = session.approvals.length;
+    ui.approvalsEmpty.hidden = count > 0;
+    ui.approvalList.hidden = count === 0;
+    if (!count) setEmptyState(ui.approvalsEmpty, "No pending approvals", "The API returned no pending decisions for this team.");
+    setSourceState(ui.approvalsState, count ? `${count} pending` : "Clear", count ? "loading" : "success");
+    ui.approvalsMore.hidden = !session.approvalNextPageToken;
+    ui.approvalsMore.disabled = !session.approvalNextPageToken;
+    replaceActivityProjections("approval-pending:", session.approvals.map((approval) => ({
+      id: `approval-pending:${stringValue(approval.id)}`,
+      category: "approvals",
+      source: "ApprovalService queue",
+      title: stringValue(approval.actionType).replaceAll("_", " ") || "Approval requested",
+      safeSummary: stringValue(approval.safeSummary),
+      detail: stringValue(approval.requestedByAgentId) ? `Requested by agent ${stringValue(approval.requestedByAgentId)}` : "Requesting agent not reported.",
+      status: "pending",
+      sequenceLabel: "Snapshot",
+      occurredAt: approval.requestedAt
+    })));
+  }
+
+  function renderApprovalsResult(result, teamId) {
+    if (result.status === "rejected") {
+      resetApprovalView(apiErrorMessage(result.reason, "Pending approvals are unavailable."), "Unavailable", "error");
+      return;
+    }
+    try {
+      applyApprovalPage(result.value, teamId);
+    } catch (error) {
+      resetApprovalView(apiErrorMessage(error, "The approval service returned an invalid team-scoped queue."), "Invalid response", "error");
+    }
+  }
+
+  async function loadMoreApprovals() {
+    const team = selectedTeam();
+    const pageToken = session.approvalNextPageToken;
+    const generation = session.workspaceGeneration;
+    if (!team || !pageToken || ui.approvalsMore.disabled) return;
+    ui.approvalsMore.disabled = true;
+    ui.approvalsMore.textContent = "Loading…";
+    try {
+      const response = await apiRequest("approvals", { teamId: team.id, page: { pageSize: 100, pageToken } });
+      if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
+      applyApprovalPage(response, team.id, true, pageToken);
+    } catch (error) {
+      if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
+      setSourceState(ui.approvalsState, "More unavailable", "error");
+      toast(apiErrorMessage(error, "More pending approvals could not be loaded."), "error");
+      ui.approvalsMore.disabled = false;
+    } finally {
+      if (generation === session.workspaceGeneration && stringValue(team.id) === session.selectedTeamId) {
+        ui.approvalsMore.textContent = "Load more pending approvals";
+        if (!session.approvalNextPageToken) ui.approvalsMore.hidden = true;
+      }
+    }
+  }
+
+  async function decideApproval(event) {
+    event.preventDefault();
+    const form = event.target.closest("[data-approval-id]");
+    const submitter = event.submitter;
+    const id = stringValue(form?.dataset.approvalId);
+    const decision = stringValue(submitter?.dataset.approvalDecision);
+    const approved = decision === "approve";
+    const team = selectedTeam();
+    const generation = session.workspaceGeneration;
+    const approval = session.approvals.find((candidate) => stringValue(candidate.id) === id);
+    if (!form || !submitter || !team || !approval || !["approve", "deny"].includes(decision) || session.approvalDecisionIds.has(id)) return;
+    const actionType = stringValue(approval.actionType);
+    const reasonField = form.elements.namedItem("reason");
+    const reason = stringValue(reasonField?.value);
+    const error = form.querySelector("[data-approval-error]");
+    setFieldError(error, "");
+    if (!approved && !reason) {
+      setFieldError(error, "Enter a reason before denying this request.");
+      reasonField?.focus();
+      return;
+    }
+    if (new TextEncoder().encode(reason).length > 500) {
+      setFieldError(error, "Keep the decision note to 500 UTF-8 bytes or fewer.");
+      reasonField?.focus();
+      return;
+    }
+
+    session.approvalDecisionIds.add(id);
+    form.setAttribute("aria-busy", "true");
+    form.querySelectorAll("button, textarea").forEach((control) => { control.disabled = true; });
+    submitter.textContent = "Saving…";
+    setSourceState(ui.approvalsState, "Saving decision", "loading");
+    try {
+      const response = await apiRequest("decide_approval", { id, approved, reason });
+      const decided = response?.approval;
+      if (!decided || stringValue(decided.id) !== id || stringValue(decided.teamId) !== stringValue(team.id) || !decidedApprovalStatus(decided, approved)) {
+        throw new ApiError("ApprovalService did not return the expected decided approval", 0, "invalid_response", "");
+      }
+      if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
+      session.approvalDecisionIds.delete(id);
+      session.approvals = session.approvals.filter((candidate) => stringValue(candidate.id) !== id);
+      upsertActivityProjection({
+        id: `approval-decision:${id}`,
+        category: "approvals",
+        source: "ApprovalService decision",
+        title: `${actionType.replaceAll("_", " ")} · ${approved ? "approved" : "denied"}`,
+        safeSummary: stringValue(decided.safeSummary) || stringValue(approval.safeSummary),
+        detail: "Decision confirmed by the authenticated ApprovalService response.",
+        status: approved ? "approved" : "denied",
+        sequenceLabel: "Decision",
+        occurredAt: decided.decidedAt || approval.requestedAt
+      });
+      renderApprovalQueue();
+      toast(approved ? "Approval recorded. The authorized action may proceed." : "Denial recorded with its audit note.", "success");
+    } catch (caught) {
+      if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
+      session.approvalDecisionIds.delete(id);
+      form.removeAttribute("aria-busy");
+      form.querySelectorAll("button, textarea").forEach((control) => { control.disabled = false; });
+      submitter.textContent = approved ? "Approve" : "Deny";
+      setFieldError(error, apiErrorMessage(caught, "The decision was not recorded. It is safe to retry."));
+      setSourceState(ui.approvalsState, `${session.approvals.length} pending`, "error");
+    }
   }
 
   function formatCanonicalMoney(money) {
@@ -1396,22 +2882,819 @@
 
   function resetActivityView(message, label, tone = "") {
     session.activityEvents = [];
+    session.activityEventIds = new Set();
+    session.provisioningEvents = [];
+    session.activityProjections = new Map();
+    session.activityFilter = "all";
     session.lastActivitySequence = 0n;
+    session.lastProvisioningSequence = 0n;
     ui.activityList.replaceChildren();
     ui.activityList.hidden = true;
     ui.activityEmpty.hidden = false;
     setEmptyState(ui.activityEmpty, label === "Connecting" ? "Connecting to activity" : "No activity loaded", message);
     setSourceState(ui.activityState, label, tone);
     ui.activityRetry.hidden = true;
+    renderActivityFilters();
   }
 
-  function stopActivityStream() {
+  function resetSessionHistoryView(message, label, tone = "") {
+    session.sessions = [];
+    session.sessionIds = new Set();
+    session.sessionNextPageToken = "";
+    session.sessionPageTokens = new Set();
+    session.sessionHistoryLoading = false;
+    setSourceState(ui.sessionHistoryState, label, tone);
+    ui.sessionsMore.hidden = true;
+    ui.sessionsMore.disabled = false;
+    ui.sessionsMore.setAttribute("aria-label", message);
+    replaceActivityProjections("session-history:", []);
+  }
+
+  function resetWorkspaceHistoryView(message, label, tone = "") {
+    session.workspaceChanges = [];
+    session.workspaceChangeIds = new Set();
+    session.workspaceNextPageToken = "";
+    session.workspacePageTokens = new Set();
+    session.workspaceHistoryLoading = false;
+    session.lastWorkspaceSequence = 0n;
+    setSourceState(ui.workspaceHistoryState, label, tone);
+    ui.workspaceMore.hidden = true;
+    ui.workspaceMore.disabled = false;
+    ui.workspaceMore.setAttribute("aria-label", message);
+    replaceActivityProjections("workspace-change:", []);
+  }
+
+  function safeOpaqueId(value, required = true) {
+    if (value === undefined || value === null || value === "") return required ? "" : "";
+    if (typeof value !== "string" || value !== value.trim() || value.length > 128 || /[\u0000-\u001f\u007f]/.test(value)) return "";
+    return value;
+  }
+
+  function opaquePageToken(value) {
+    if (value === undefined || value === null || value === "") return "";
+    if (typeof value !== "string" || value.length > 4096 || /[\u0000-\u001f\u007f]/.test(value)) {
+      throw new ApiError("The service returned an invalid opaque page cursor", 0, "invalid_response", "");
+    }
+    return value;
+  }
+
+  function sessionKindLabel(value) {
+    if (typeof value === "number") return ["", "objective", "delegated"][value] || "";
+    return ({
+      AGENT_SESSION_KIND_OBJECTIVE: "objective",
+      AGENT_SESSION_KIND_DELEGATED: "delegated"
+    })[stringValue(value)] || "";
+  }
+
+  function sessionStatusLabel(value) {
+    if (typeof value === "number") return ["", "started", "running", "waiting", "blocked", "paused", "succeeded", "failed", "cancelled"][value] || "";
+    return ({
+      AGENT_SESSION_STATUS_STARTED: "started",
+      AGENT_SESSION_STATUS_RUNNING: "running",
+      AGENT_SESSION_STATUS_WAITING: "waiting",
+      AGENT_SESSION_STATUS_BLOCKED: "blocked",
+      AGENT_SESSION_STATUS_PAUSED: "paused",
+      AGENT_SESSION_STATUS_SUCCEEDED: "succeeded",
+      AGENT_SESSION_STATUS_FAILED: "failed",
+      AGENT_SESSION_STATUS_CANCELLED: "cancelled"
+    })[stringValue(value)] || "";
+  }
+
+  function sessionHistoryEntry(record, teamId) {
+    const id = safeOpaqueId(record?.id);
+    const recordTeamId = safeOpaqueId(record?.teamId);
+    const agentId = safeOpaqueId(record?.agentId);
+    const workAssignmentId = safeOpaqueId(record?.workAssignmentId);
+    const organizationId = safeOpaqueId(record?.organizationId);
+    const objectiveId = safeOpaqueId(record?.objectiveId, false);
+    const initiativeId = safeOpaqueId(record?.initiativeId, false);
+    const repositoryId = safeOpaqueId(record?.repositoryId, false);
+    const kind = sessionKindLabel(record?.sessionKind);
+    const status = sessionStatusLabel(record?.sessionStatus);
+    const summary = stringValue(record?.safeSummary);
+    const generation = int64Value(record?.teamGeneration);
+    const assignmentVersion = int64Value(record?.assignmentVersion);
+    const issueNumber = int64Value(record?.githubIssueNumber);
+    const pullRequestNumber = int64Value(record?.githubPullRequestNumber);
+    const startedAt = timestampDate(record?.startedAt);
+    const endedAt = record?.endedAt ? timestampDate(record.endedAt) : null;
+    const lastObservedAt = timestampDate(record?.lastObservedAt);
+    const repositoryNumericId = repositoryId ? int64Value(repositoryId) : 0n;
+    if (
+      !id || !agentId || !workAssignmentId || !organizationId || organizationId !== session.organizationId ||
+      !recordTeamId || recordTeamId !== stringValue(teamId) || !kind || !status || !summary || summary.length > 1000 || /[\u0000-\u001f\u007f]/.test(summary) ||
+      generation === null || generation <= 0n || assignmentVersion === null || assignmentVersion <= 0n ||
+      issueNumber === null || pullRequestNumber === null || !startedAt || !lastObservedAt || lastObservedAt < startedAt ||
+      (record?.endedAt && !endedAt) || (endedAt && endedAt < startedAt) ||
+      (record?.objectiveId && !objectiveId) || (record?.initiativeId && !initiativeId) ||
+      (record?.repositoryId && (!repositoryId || repositoryNumericId === null || repositoryNumericId <= 0n))
+    ) throw new ApiError("SessionService returned an invalid assignment-bound lifecycle record", 0, "invalid_response", "");
+    return {
+      id: `session-history:${id}`,
+      category: "sessions",
+      source: "SessionService snapshot",
+      title: `Session · ${status}`,
+      safeSummary: summary,
+      detail: `${kind} assignment · Agent ${agentId} · Work assignment ${workAssignmentId} v${assignmentVersion.toString()} · Team generation ${generation.toString()}`,
+      status,
+      sequenceLabel: "Lifecycle snapshot",
+      occurredAt: record.lastObservedAt,
+      sessionId: id,
+      objectiveId,
+      initiativeId,
+      repositoryId,
+      githubIssueId: issueNumber > 0n ? issueNumber.toString() : "",
+      pullRequestId: pullRequestNumber > 0n ? pullRequestNumber.toString() : ""
+    };
+  }
+
+  function workspaceChangeKindLabel(value) {
+    if (typeof value === "number") return ["", "added", "modified", "deleted", "renamed", "copied"][value] || "";
+    return ({
+      WORKSPACE_CHANGE_KIND_ADDED: "added",
+      WORKSPACE_CHANGE_KIND_MODIFIED: "modified",
+      WORKSPACE_CHANGE_KIND_DELETED: "deleted",
+      WORKSPACE_CHANGE_KIND_RENAMED: "renamed",
+      WORKSPACE_CHANGE_KIND_COPIED: "copied"
+    })[stringValue(value)] || "";
+  }
+
+  function workspaceDiffAvailabilityLabel(value) {
+    if (typeof value === "number") return ["", "available", "binary file", "unsafe content", "oversize diff", "diff error"][value] || "";
+    return ({
+      WORKSPACE_DIFF_AVAILABILITY_AVAILABLE: "available",
+      WORKSPACE_DIFF_AVAILABILITY_UNAVAILABLE_BINARY: "binary file",
+      WORKSPACE_DIFF_AVAILABILITY_UNAVAILABLE_UNSAFE: "unsafe content",
+      WORKSPACE_DIFF_AVAILABILITY_UNAVAILABLE_OVERSIZE: "oversize diff",
+      WORKSPACE_DIFF_AVAILABILITY_UNAVAILABLE_ERROR: "diff error"
+    })[stringValue(value)] || "";
+  }
+
+  function canonicalRelativePath(value) {
+    if (typeof value !== "string" || !value || value.length > 1024 || value.startsWith("/") || value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) return "";
+    const segments = value.split("/");
+    return segments.some((segment) => !segment || segment === "." || segment === "..") ? "" : value;
+  }
+
+  function validSafeDiff(value) {
+    if (typeof value !== "string" || new TextEncoder().encode(value).byteLength > 4096 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) return false;
+    for (let index = 0; index < value.length; index += 1) {
+      const code = value.charCodeAt(index);
+      if (code >= 0xd800 && code <= 0xdbff) {
+        const next = value.charCodeAt(index + 1);
+        if (next < 0xdc00 || next > 0xdfff) return false;
+        index += 1;
+      } else if (code >= 0xdc00 && code <= 0xdfff) return false;
+    }
+    return true;
+  }
+
+  function workspaceHistoryEntry(record, teamId, previousSequence) {
+    const id = safeOpaqueId(record?.id);
+    const recordTeamId = safeOpaqueId(record?.teamId);
+    const agentId = safeOpaqueId(record?.agentId);
+    const workAssignmentId = safeOpaqueId(record?.workAssignmentId);
+    const sessionId = safeOpaqueId(record?.sessionId);
+    const organizationId = safeOpaqueId(record?.organizationId);
+    const objectiveId = safeOpaqueId(record?.objectiveId, false);
+    const initiativeId = safeOpaqueId(record?.initiativeId, false);
+    const repositoryId = safeOpaqueId(record?.repositoryId);
+    const relativePath = canonicalRelativePath(record?.relativePath);
+    const kind = workspaceChangeKindLabel(record?.changeKind);
+    const availability = workspaceDiffAvailabilityLabel(record?.diffAvailability);
+    const sequence = int64Value(record?.sequence);
+    const generation = int64Value(record?.teamGeneration);
+    const assignmentVersion = int64Value(record?.assignmentVersion);
+    const additions = int64Value(record?.additions);
+    const deletions = int64Value(record?.deletions);
+    const issueNumber = int64Value(record?.githubIssueNumber);
+    const pullRequestNumber = int64Value(record?.githubPullRequestNumber);
+    const observedAt = timestampDate(record?.observedAt);
+    const repositoryNumericId = int64Value(repositoryId);
+    const safeDiff = typeof record?.safeDiff === "string" ? record.safeDiff : null;
+    const diffRedacted = record?.diffRedacted;
+    const diffTruncated = record?.diffTruncated;
+    if (
+      !id || !agentId || !workAssignmentId || !sessionId || !organizationId || organizationId !== session.organizationId ||
+      !recordTeamId || recordTeamId !== stringValue(teamId) || !relativePath || !kind || !availability || !observedAt ||
+      repositoryNumericId === null || repositoryNumericId <= 0n || generation === null || generation <= 0n || assignmentVersion === null || assignmentVersion <= 0n ||
+      sequence === null || sequence <= previousSequence || additions === null || deletions === null || issueNumber === null || pullRequestNumber === null ||
+      safeDiff === null || !validSafeDiff(safeDiff) || typeof diffRedacted !== "boolean" || typeof diffTruncated !== "boolean" ||
+      (availability !== "available" && (safeDiff || diffRedacted || diffTruncated)) ||
+      (record?.objectiveId && !objectiveId) || (record?.initiativeId && !initiativeId)
+    ) throw new ApiError("WorkspaceService returned an invalid customer-safe change record", 0, "invalid_response", "");
+    const diffState = availability === "available"
+      ? ["server-sanitized diff available", diffRedacted ? "sensitive text redacted" : "", diffTruncated ? "diff truncated" : ""].filter(Boolean).join(" · ")
+      : `diff unavailable: ${availability}`;
+    return {
+      id: `workspace-change:${id}`,
+      category: "workspace",
+      source: "WorkspaceService snapshot",
+      title: `${relativePath} · ${kind}`,
+      safeSummary: `${additions.toString()} additions · ${deletions.toString()} deletions · ${diffState}.`,
+      detail: `Agent ${agentId} · Work assignment ${workAssignmentId} v${assignmentVersion.toString()} · Team generation ${generation.toString()}`,
+      status: kind,
+      sequenceLabel: `Workspace change ${sequence.toString()}`,
+      sequence,
+      occurredAt: record.observedAt,
+      sessionId,
+      objectiveId,
+      initiativeId,
+      repositoryId,
+      githubIssueId: issueNumber > 0n ? issueNumber.toString() : "",
+      pullRequestId: pullRequestNumber > 0n ? pullRequestNumber.toString() : "",
+      safeDiff,
+      diffAvailability: availability,
+      diffRedacted,
+      diffTruncated
+    };
+  }
+
+  function installSnapshotEntries(prefix, entries, append) {
+    if (!append) {
+      replaceActivityProjections(prefix, entries);
+      return;
+    }
+    entries.forEach((entry) => session.activityProjections.set(entry.id, entry));
+    renderActivityLedger();
+  }
+
+  function renderSessionHistoryResult(result, teamId, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId) return;
+    if (result.status === "rejected") {
+      setSourceState(ui.sessionHistoryState, "Unavailable", "error");
+      ui.sessionsMore.hidden = !session.sessionNextPageToken;
+      ui.sessionsMore.setAttribute("aria-label", apiErrorMessage(result.reason, "Session history could not be loaded."));
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.sessions) ? result.value.sessions : [];
+      if (records.length > 100) throw new ApiError("SessionService returned an oversized page", 0, "invalid_response", "");
+      const localIds = new Set(session.sessionIds);
+      const entries = records.map((record) => {
+        const entry = sessionHistoryEntry(record, teamId);
+        if (localIds.has(entry.id)) throw new ApiError("SessionService returned a duplicate session", 0, "invalid_response", "");
+        localIds.add(entry.id);
+        return entry;
+      });
+      const next = opaquePageToken(result.value?.page?.nextPageToken);
+      if (next && (next === requestedToken || session.sessionPageTokens.has(next))) throw new ApiError("SessionService returned a repeated page cursor", 0, "invalid_response", "");
+      records.forEach((record) => session.sessions.push(record));
+      entries.forEach((entry) => session.sessionIds.add(entry.id));
+      if (next) session.sessionPageTokens.add(next);
+      session.sessionNextPageToken = next;
+      installSnapshotEntries("session-history:", entries, append);
+      setSourceState(ui.sessionHistoryState, session.sessions.length ? `${session.sessions.length} loaded` : "No sessions", session.sessions.length ? "success" : "");
+      ui.sessionsMore.hidden = !next;
+      ui.sessionsMore.disabled = false;
+      ui.sessionsMore.setAttribute("aria-label", next ? "Load the next opaque SessionService snapshot page" : "All session history pages loaded");
+    } catch (error) {
+      if (!append) {
+        session.sessions = [];
+        session.sessionIds = new Set();
+        replaceActivityProjections("session-history:", []);
+      }
+      session.sessionNextPageToken = "";
+      setSourceState(ui.sessionHistoryState, "Invalid response", "error");
+      ui.sessionsMore.hidden = true;
+      ui.sessionsMore.setAttribute("aria-label", apiErrorMessage(error, "Session history was rejected because it was invalid."));
+    }
+  }
+
+  function renderWorkspaceHistoryResult(result, teamId, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId) return;
+    if (result.status === "rejected") {
+      setSourceState(ui.workspaceHistoryState, "Unavailable", "error");
+      ui.workspaceMore.hidden = !session.workspaceNextPageToken;
+      ui.workspaceMore.setAttribute("aria-label", apiErrorMessage(result.reason, "Workspace changes could not be loaded."));
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.changes) ? result.value.changes : [];
+      if (records.length > 100) throw new ApiError("WorkspaceService returned an oversized page", 0, "invalid_response", "");
+      const localIds = new Set(session.workspaceChangeIds);
+      let previousSequence = session.lastWorkspaceSequence;
+      const entries = records.map((record) => {
+        const entry = workspaceHistoryEntry(record, teamId, previousSequence);
+        if (localIds.has(entry.id)) throw new ApiError("WorkspaceService returned a duplicate change", 0, "invalid_response", "");
+        localIds.add(entry.id);
+        previousSequence = entry.sequence;
+        return entry;
+      });
+      const next = opaquePageToken(result.value?.page?.nextPageToken);
+      if (next && (next === requestedToken || session.workspacePageTokens.has(next))) throw new ApiError("WorkspaceService returned a repeated page cursor", 0, "invalid_response", "");
+      records.forEach((record) => session.workspaceChanges.push(record));
+      entries.forEach((entry) => session.workspaceChangeIds.add(entry.id));
+      if (entries.length) session.lastWorkspaceSequence = entries.at(-1).sequence;
+      if (next) session.workspacePageTokens.add(next);
+      session.workspaceNextPageToken = next;
+      installSnapshotEntries("workspace-change:", entries, append);
+      setSourceState(ui.workspaceHistoryState, session.workspaceChanges.length ? `${session.workspaceChanges.length} loaded` : "No changes", session.workspaceChanges.length ? "success" : "");
+      ui.workspaceMore.hidden = !next;
+      ui.workspaceMore.disabled = false;
+      ui.workspaceMore.setAttribute("aria-label", next ? "Load the next opaque WorkspaceService snapshot page" : "All workspace change pages loaded");
+    } catch (error) {
+      if (!append) {
+        session.workspaceChanges = [];
+        session.workspaceChangeIds = new Set();
+        session.lastWorkspaceSequence = 0n;
+        replaceActivityProjections("workspace-change:", []);
+      }
+      session.workspaceNextPageToken = "";
+      setSourceState(ui.workspaceHistoryState, "Invalid response", "error");
+      ui.workspaceMore.hidden = true;
+      ui.workspaceMore.setAttribute("aria-label", apiErrorMessage(error, "Workspace changes were rejected because they were invalid."));
+    }
+  }
+
+  async function loadMoreSessions() {
+    const teamId = session.selectedTeamId;
+    const pageToken = session.sessionNextPageToken;
+    const generation = session.workspaceGeneration;
+    if (!teamId || !pageToken || session.sessionHistoryLoading) return;
+    session.sessionHistoryLoading = true;
+    ui.sessionsMore.disabled = true;
+    setSourceState(ui.sessionHistoryState, "Loading more", "loading");
+    try {
+      const response = await apiRequest("sessions", { teamId, page: { pageSize: 100, pageToken } });
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      renderSessionHistoryResult({ status: "fulfilled", value: response }, teamId, pageToken, true);
+    } catch (error) {
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      renderSessionHistoryResult({ status: "rejected", reason: error }, teamId, pageToken, true);
+    } finally {
+      if (generation === session.workspaceGeneration && teamId === session.selectedTeamId) {
+        session.sessionHistoryLoading = false;
+        ui.sessionsMore.disabled = false;
+      }
+    }
+  }
+
+  async function loadMoreWorkspaceChanges() {
+    const teamId = session.selectedTeamId;
+    const pageToken = session.workspaceNextPageToken;
+    const generation = session.workspaceGeneration;
+    if (!teamId || !pageToken || session.workspaceHistoryLoading) return;
+    session.workspaceHistoryLoading = true;
+    ui.workspaceMore.disabled = true;
+    setSourceState(ui.workspaceHistoryState, "Loading more", "loading");
+    try {
+      const response = await apiRequest("workspace_changes", { teamId, afterSequence: "0", page: { pageSize: 100, pageToken } });
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      renderWorkspaceHistoryResult({ status: "fulfilled", value: response }, teamId, pageToken, true);
+    } catch (error) {
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      renderWorkspaceHistoryResult({ status: "rejected", reason: error }, teamId, pageToken, true);
+    } finally {
+      if (generation === session.workspaceGeneration && teamId === session.selectedTeamId) {
+        session.workspaceHistoryLoading = false;
+        ui.workspaceMore.disabled = false;
+      }
+    }
+  }
+
+  function resetDeliveryRecords(message, label, tone = "") {
+    session.githubIssues = [];
+    session.githubIssueIds = new Set();
+    session.githubIssuesNextPageToken = "";
+    session.githubIssuePageTokens = new Set();
+    session.githubIssuesLoading = false;
+    session.githubIssuesState = label === "Loading" ? "loading" : "waiting";
+    session.githubIssueLastSort = null;
+    session.githubPullRequests = [];
+    session.githubPullRequestIds = new Set();
+    session.githubPullRequestsNextPageToken = "";
+    session.githubPullRequestPageTokens = new Set();
+    session.githubPullRequestsLoading = false;
+    session.githubPullRequestsState = label === "Loading" ? "loading" : "waiting";
+    session.githubPullRequestLastSort = null;
+    session.deliveryLoadGeneration += 1;
+    setSourceState(ui.deliveryHistoryState, label, tone);
+    ui.deliveryHistoryState.title = message;
+    ui.issuesMore.hidden = true;
+    ui.issuesMore.disabled = false;
+    ui.pullRequestsMore.hidden = true;
+    ui.pullRequestsMore.disabled = false;
+    replaceActivityProjections("github-issue:", []);
+    replaceActivityProjections("github-pull-request:", []);
+  }
+
+  function resetDeliveryHistoryView(message, label, tone = "") {
+    resetDeliveryRecords(message, label, tone);
+    session.deliveryRepositoryId = "";
+    ui.deliveryRepository.replaceChildren();
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No selected repository";
+    ui.deliveryRepository.append(option);
+    ui.deliveryRepository.disabled = true;
+  }
+
+  function deliveryRepositories() {
+    const repositories = [];
+    const seen = new Set();
+    for (const repository of session.repositories) {
+      if (repository?.selectedForTeams !== true) continue;
+      const numericId = int64Value(repository?.githubRepositoryId);
+      const owner = stringValue(repository?.owner);
+      const name = stringValue(repository?.name);
+      const organizationId = safeOpaqueId(repository?.organizationId);
+      if (
+        numericId === null || numericId <= 0n || seen.has(numericId.toString()) || organizationId !== session.organizationId ||
+        !owner || owner.length > 100 || !/^[A-Za-z0-9.-]+$/.test(owner) ||
+        !name || name.length > 100 || !/^[A-Za-z0-9._-]+$/.test(name)
+      ) throw new ApiError("RepositoryService returned an invalid selected delivery scope", 0, "invalid_response", "");
+      seen.add(numericId.toString());
+      repositories.push({ id: numericId.toString(), owner, name, label: `${owner}/${name}` });
+    }
+    return repositories;
+  }
+
+  function configureDeliveryRepository(preferredId = "") {
+    try {
+      const repositories = deliveryRepositories();
+      ui.deliveryRepository.replaceChildren();
+      if (!repositories.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No selected repository";
+        ui.deliveryRepository.append(option);
+        ui.deliveryRepository.disabled = true;
+        session.deliveryRepositoryId = "";
+        session.githubIssuesState = "empty";
+        session.githubPullRequestsState = "empty";
+        setSourceState(ui.deliveryHistoryState, "No selected repositories");
+        ui.deliveryHistoryState.title = "Choose at least one accessible repository in GitHub setup before loading delivery records.";
+        return null;
+      }
+      repositories.forEach((repository) => {
+        const option = document.createElement("option");
+        option.value = repository.id;
+        option.textContent = repository.label;
+        ui.deliveryRepository.append(option);
+      });
+      const selected = repositories.find((repository) => repository.id === preferredId) || repositories.find((repository) => repository.id === session.deliveryRepositoryId) || repositories[0];
+      session.deliveryRepositoryId = selected.id;
+      ui.deliveryRepository.value = selected.id;
+      ui.deliveryRepository.disabled = false;
+      return selected;
+    } catch (error) {
+      session.deliveryRepositoryId = "";
+      ui.deliveryRepository.replaceChildren();
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "Repository scope unavailable";
+      ui.deliveryRepository.append(option);
+      ui.deliveryRepository.disabled = true;
+      session.githubIssuesState = "invalid";
+      session.githubPullRequestsState = "invalid";
+      setSourceState(ui.deliveryHistoryState, "Invalid repository scope", "error");
+      ui.deliveryHistoryState.title = apiErrorMessage(error, "The selected delivery repository scope is invalid.");
+      return null;
+    }
+  }
+
+  function updateDeliveryHistoryState() {
+    const states = [session.githubIssuesState, session.githubPullRequestsState];
+    if (!session.deliveryRepositoryId) return;
+    if (states.some((state) => state === "loading")) {
+      setSourceState(ui.deliveryHistoryState, "Loading", "loading");
+      return;
+    }
+    if (states.every((state) => state === "loaded")) {
+      setSourceState(ui.deliveryHistoryState, `${session.githubIssues.length} issues · ${session.githubPullRequests.length} PRs`, "success");
+      ui.deliveryHistoryState.title = "GitHubDeliveryService returned both webhook-backed snapshots.";
+      return;
+    }
+    if (states.some((state) => state === "loaded")) {
+      setSourceState(ui.deliveryHistoryState, `Partial · ${session.githubIssues.length} issues · ${session.githubPullRequests.length} PRs`, "error");
+      ui.deliveryHistoryState.title = "One GitHubDeliveryService projection is unavailable; no missing records are inferred.";
+      return;
+    }
+    setSourceState(ui.deliveryHistoryState, states.includes("invalid") ? "Invalid response" : "Unavailable", "error");
+    ui.deliveryHistoryState.title = "GitHubDeliveryService did not return a trustworthy issue or pull-request projection.";
+  }
+
+  function githubIssueStateLabel(value) {
+    if (typeof value === "number") return ["", "open", "closed", "deleted"][value] || "";
+    return ({
+      GIT_HUB_ISSUE_STATE_OPEN: "open",
+      GIT_HUB_ISSUE_STATE_CLOSED: "closed",
+      GIT_HUB_ISSUE_STATE_DELETED: "deleted"
+    })[stringValue(value)] || "";
+  }
+
+  function githubPullRequestStateLabel(value) {
+    if (typeof value === "number") return ["", "open", "closed", "merged"][value] || "";
+    return ({
+      GIT_HUB_PULL_REQUEST_STATE_OPEN: "open",
+      GIT_HUB_PULL_REQUEST_STATE_CLOSED: "closed",
+      GIT_HUB_PULL_REQUEST_STATE_MERGED: "merged"
+    })[stringValue(value)] || "";
+  }
+
+  function safeGitHubText(value, maximum, required = false) {
+    if (value === undefined || value === null || value === "") return required ? "" : "";
+    if (typeof value !== "string" || value.length > maximum || /[\u0000-\u001f\u007f]/.test(value)) return "";
+    const normalized = value.trim();
+    return required && !normalized ? "" : normalized;
+  }
+
+  function safeGitHubList(value, maximumItems, maximumLength) {
+    if (!Array.isArray(value) || value.length > maximumItems) throw new ApiError("GitHubDeliveryService returned an invalid text list", 0, "invalid_response", "");
+    const seen = new Set();
+    return value.map((entry) => {
+      const normalized = safeGitHubText(entry, maximumLength, true);
+      if (!normalized || seen.has(normalized)) throw new ApiError("GitHubDeliveryService returned an invalid or duplicate text list value", 0, "invalid_response", "");
+      seen.add(normalized);
+      return normalized;
+    });
+  }
+
+  function exactGitHubDeliveryUrl(value, repository, resource, number) {
+    if (typeof value !== "string" || value !== value.trim()) return "";
+    try {
+      const url = new URL(value);
+      const expectedPath = `/${repository.owner}/${repository.name}/${resource}/${number}`;
+      if (url.protocol !== "https:" || url.hostname !== "github.com" || url.username || url.password || url.port || url.search || url.hash || url.pathname !== expectedPath) return "";
+      return value;
+    } catch {
+      return "";
+    }
+  }
+
+  function validDeliverySort(current, previous) {
+    return !previous || current.createdAt < previous.createdAt || (current.createdAt === previous.createdAt && current.id.localeCompare(previous.id) < 0);
+  }
+
+  function normalizedGitHubIssue(record, repository, previousSort) {
+    const id = safeOpaqueId(record?.id);
+    const repositoryId = int64Value(record?.githubRepositoryId);
+    const number = int64Value(record?.number);
+    const comments = int64Value(record?.commentsCount);
+    const title = safeGitHubText(record?.title, 256, true);
+    const state = githubIssueStateLabel(record?.state);
+    const stateReason = safeGitHubText(record?.stateReason, 80);
+    const author = safeGitHubText(record?.authorLogin, 100);
+    const assignees = safeGitHubList(record?.assigneeLogins, 100, 100);
+    const labels = safeGitHubList(record?.labelNames, 100, 255);
+    const createdAt = timestampDate(record?.createdAt);
+    const updatedAt = timestampDate(record?.updatedAt);
+    const closedAt = record?.closedAt ? timestampDate(record.closedAt) : null;
+    const sort = { id, createdAt: createdAt?.getTime() || 0 };
+    const artifactUrl = number === null ? "" : exactGitHubDeliveryUrl(record?.githubUrl, repository, "issues", number.toString());
+    if (
+      !id || repositoryId === null || repositoryId.toString() !== repository.id || number === null || number <= 0n || comments === null || comments < 0n ||
+      !title || !state || !artifactUrl || typeof record?.locked !== "boolean" || !createdAt || !updatedAt || updatedAt < createdAt ||
+      (record?.closedAt && (!closedAt || closedAt < createdAt)) || !validDeliverySort(sort, previousSort)
+    ) throw new ApiError("GitHubDeliveryService returned an invalid issue projection", 0, "invalid_response", "");
+    return {
+      sort,
+      entry: {
+        id: `github-issue:${repository.id}:${id}`,
+        category: "delivery",
+        source: "GitHubDeliveryService issue snapshot",
+        title: `Issue #${number.toString()} · ${title}`,
+        safeSummary: `${state} · ${comments.toString()} comments${record.locked ? " · locked" : ""}.`,
+        detail: [stateReason ? `Reason ${stateReason}` : "", author ? `Author ${author}` : "Author unavailable", assignees.length ? `Assignees ${assignees.join(", ")}` : "No assignees", labels.length ? `Labels ${labels.join(", ")}` : "No labels"].filter(Boolean).join(" · "),
+        artifactUrl,
+        status: state,
+        sequenceLabel: "Webhook-backed issue snapshot",
+        occurredAt: record.updatedAt,
+        repositoryId: repository.id,
+        githubIssueId: number.toString()
+      }
+    };
+  }
+
+  function normalizedGitHubPullRequest(record, repository, previousSort) {
+    const id = safeOpaqueId(record?.id);
+    const repositoryId = int64Value(record?.githubRepositoryId);
+    const number = int64Value(record?.number);
+    const title = safeGitHubText(record?.title, 256, true);
+    const state = githubPullRequestStateLabel(record?.state);
+    const author = safeGitHubText(record?.authorLogin, 100);
+    const assignees = safeGitHubList(record?.assigneeLogins, 100, 100);
+    const labels = safeGitHubList(record?.labelNames, 100, 255);
+    const headRef = safeGitHubText(record?.headRef, 255, true);
+    const baseRef = safeGitHubText(record?.baseRef, 255, true);
+    const counterNames = ["commentsCount", "reviewCommentsCount", "commitsCount", "additions", "deletions", "changedFiles"];
+    const counters = Object.fromEntries(counterNames.map((name) => [name, int64Value(record?.[name])]));
+    const createdAt = timestampDate(record?.createdAt);
+    const updatedAt = timestampDate(record?.updatedAt);
+    const closedAt = record?.closedAt ? timestampDate(record.closedAt) : null;
+    const mergedAt = record?.mergedAt ? timestampDate(record.mergedAt) : null;
+    const sort = { id, createdAt: createdAt?.getTime() || 0 };
+    const artifactUrl = number === null ? "" : exactGitHubDeliveryUrl(record?.githubUrl, repository, "pull", number.toString());
+    if (
+      !id || repositoryId === null || repositoryId.toString() !== repository.id || number === null || number <= 0n || !title || !state ||
+      !artifactUrl || typeof record?.draft !== "boolean" || !headRef || !baseRef || Object.values(counters).some((value) => value === null || value < 0n) ||
+      !createdAt || !updatedAt || updatedAt < createdAt || (record?.closedAt && (!closedAt || closedAt < createdAt)) ||
+      (record?.mergedAt && (!mergedAt || mergedAt < createdAt)) || (state === "merged" && !mergedAt) || !validDeliverySort(sort, previousSort)
+    ) throw new ApiError("GitHubDeliveryService returned an invalid pull-request projection", 0, "invalid_response", "");
+    return {
+      sort,
+      entry: {
+        id: `github-pull-request:${repository.id}:${id}`,
+        category: "delivery",
+        source: "GitHubDeliveryService pull-request snapshot",
+        title: `PR #${number.toString()} · ${title}`,
+        safeSummary: `${state}${record.draft ? " draft" : ""} · ${counters.commitsCount.toString()} commits · ${counters.changedFiles.toString()} files · +${counters.additions.toString()} / −${counters.deletions.toString()}.`,
+        detail: [`${headRef} → ${baseRef}`, author ? `Author ${author}` : "Author unavailable", `${counters.commentsCount.toString()} comments`, `${counters.reviewCommentsCount.toString()} review comments`, assignees.length ? `Assignees ${assignees.join(", ")}` : "No assignees", labels.length ? `Labels ${labels.join(", ")}` : "No labels"].join(" · "),
+        artifactUrl,
+        status: state,
+        sequenceLabel: "Webhook-backed pull-request snapshot",
+        occurredAt: record.updatedAt,
+        repositoryId: repository.id,
+        pullRequestId: number.toString()
+      }
+    };
+  }
+
+  function renderGitHubIssuesResult(result, teamId, repository, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+    if (result.status === "rejected") {
+      session.githubIssuesState = "unavailable";
+      ui.issuesMore.hidden = !session.githubIssuesNextPageToken;
+      ui.issuesMore.title = apiErrorMessage(result.reason, "Issue history is unavailable.");
+      updateDeliveryHistoryState();
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.issues) ? result.value.issues : [];
+      if (records.length > 100) throw new ApiError("GitHubDeliveryService returned an oversized issue page", 0, "invalid_response", "");
+      const localIds = new Set(session.githubIssueIds);
+      let previousSort = session.githubIssueLastSort;
+      const normalized = records.map((record) => {
+        const value = normalizedGitHubIssue(record, repository, previousSort);
+        if (localIds.has(value.entry.id)) throw new ApiError("GitHubDeliveryService returned a duplicate issue", 0, "invalid_response", "");
+        localIds.add(value.entry.id);
+        previousSort = value.sort;
+        return value;
+      });
+      const next = opaquePageToken(result.value?.page?.nextPageToken);
+      if (next && (next === requestedToken || session.githubIssuePageTokens.has(next))) throw new ApiError("GitHubDeliveryService returned a repeated issue cursor", 0, "invalid_response", "");
+      session.githubIssues.push(...records);
+      normalized.forEach((value) => session.githubIssueIds.add(value.entry.id));
+      if (normalized.length) session.githubIssueLastSort = normalized.at(-1).sort;
+      if (next) session.githubIssuePageTokens.add(next);
+      session.githubIssuesNextPageToken = next;
+      installSnapshotEntries("github-issue:", normalized.map((value) => value.entry), append);
+      session.githubIssuesState = "loaded";
+      ui.issuesMore.hidden = !next;
+      ui.issuesMore.disabled = false;
+      ui.issuesMore.title = next ? "Load the next repository- and subject-bound issue snapshot page" : "All issue snapshot pages loaded";
+    } catch (error) {
+      if (!append) {
+        session.githubIssues = [];
+        session.githubIssueIds = new Set();
+        session.githubIssueLastSort = null;
+        replaceActivityProjections("github-issue:", []);
+      }
+      session.githubIssuesNextPageToken = "";
+      session.githubIssuesState = "invalid";
+      ui.issuesMore.hidden = true;
+      ui.issuesMore.title = apiErrorMessage(error, "Issue history was rejected because it was invalid.");
+    }
+    updateDeliveryHistoryState();
+  }
+
+  function renderGitHubPullRequestsResult(result, teamId, repository, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+    if (result.status === "rejected") {
+      session.githubPullRequestsState = "unavailable";
+      ui.pullRequestsMore.hidden = !session.githubPullRequestsNextPageToken;
+      ui.pullRequestsMore.title = apiErrorMessage(result.reason, "Pull-request history is unavailable.");
+      updateDeliveryHistoryState();
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.pullRequests) ? result.value.pullRequests : [];
+      if (records.length > 100) throw new ApiError("GitHubDeliveryService returned an oversized pull-request page", 0, "invalid_response", "");
+      const localIds = new Set(session.githubPullRequestIds);
+      let previousSort = session.githubPullRequestLastSort;
+      const normalized = records.map((record) => {
+        const value = normalizedGitHubPullRequest(record, repository, previousSort);
+        if (localIds.has(value.entry.id)) throw new ApiError("GitHubDeliveryService returned a duplicate pull request", 0, "invalid_response", "");
+        localIds.add(value.entry.id);
+        previousSort = value.sort;
+        return value;
+      });
+      const next = opaquePageToken(result.value?.page?.nextPageToken);
+      if (next && (next === requestedToken || session.githubPullRequestPageTokens.has(next))) throw new ApiError("GitHubDeliveryService returned a repeated pull-request cursor", 0, "invalid_response", "");
+      session.githubPullRequests.push(...records);
+      normalized.forEach((value) => session.githubPullRequestIds.add(value.entry.id));
+      if (normalized.length) session.githubPullRequestLastSort = normalized.at(-1).sort;
+      if (next) session.githubPullRequestPageTokens.add(next);
+      session.githubPullRequestsNextPageToken = next;
+      installSnapshotEntries("github-pull-request:", normalized.map((value) => value.entry), append);
+      session.githubPullRequestsState = "loaded";
+      ui.pullRequestsMore.hidden = !next;
+      ui.pullRequestsMore.disabled = false;
+      ui.pullRequestsMore.title = next ? "Load the next repository- and subject-bound pull-request snapshot page" : "All pull-request snapshot pages loaded";
+    } catch (error) {
+      if (!append) {
+        session.githubPullRequests = [];
+        session.githubPullRequestIds = new Set();
+        session.githubPullRequestLastSort = null;
+        replaceActivityProjections("github-pull-request:", []);
+      }
+      session.githubPullRequestsNextPageToken = "";
+      session.githubPullRequestsState = "invalid";
+      ui.pullRequestsMore.hidden = true;
+      ui.pullRequestsMore.title = apiErrorMessage(error, "Pull-request history was rejected because it was invalid.");
+    }
+    updateDeliveryHistoryState();
+  }
+
+  async function reloadGitHubDelivery() {
+    const teamId = session.selectedTeamId;
+    const repository = configureDeliveryRepository(stringValue(ui.deliveryRepository.value));
+    if (!teamId || !repository) return;
+    resetDeliveryRecords("Loading webhook-backed GitHub issues and pull requests.", "Loading", "loading");
+    session.deliveryRepositoryId = repository.id;
+    ui.deliveryRepository.value = repository.id;
+    const generation = session.deliveryLoadGeneration;
+    const [issuesResult, pullRequestsResult] = await Promise.allSettled([
+      apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100 } }),
+      apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100 } })
+    ]);
+    if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+    renderGitHubIssuesResult(issuesResult, teamId, repository, "", false);
+    renderGitHubPullRequestsResult(pullRequestsResult, teamId, repository, "", false);
+  }
+
+  function currentDeliveryRepository() {
+    try { return deliveryRepositories().find((repository) => repository.id === session.deliveryRepositoryId) || null; } catch { return null; }
+  }
+
+  async function loadMoreGitHubIssues() {
+    const teamId = session.selectedTeamId;
+    const repository = currentDeliveryRepository();
+    const pageToken = session.githubIssuesNextPageToken;
+    const generation = session.deliveryLoadGeneration;
+    if (!teamId || !repository || !pageToken || session.githubIssuesLoading) return;
+    session.githubIssuesLoading = true;
+    session.githubIssuesState = "loading";
+    ui.issuesMore.disabled = true;
+    updateDeliveryHistoryState();
+    try {
+      const response = await apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100, pageToken } });
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+      renderGitHubIssuesResult({ status: "fulfilled", value: response }, teamId, repository, pageToken, true);
+    } catch (error) {
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+      renderGitHubIssuesResult({ status: "rejected", reason: error }, teamId, repository, pageToken, true);
+    } finally {
+      if (generation === session.deliveryLoadGeneration && repository.id === session.deliveryRepositoryId) {
+        session.githubIssuesLoading = false;
+        ui.issuesMore.disabled = false;
+      }
+    }
+  }
+
+  async function loadMoreGitHubPullRequests() {
+    const teamId = session.selectedTeamId;
+    const repository = currentDeliveryRepository();
+    const pageToken = session.githubPullRequestsNextPageToken;
+    const generation = session.deliveryLoadGeneration;
+    if (!teamId || !repository || !pageToken || session.githubPullRequestsLoading) return;
+    session.githubPullRequestsLoading = true;
+    session.githubPullRequestsState = "loading";
+    ui.pullRequestsMore.disabled = true;
+    updateDeliveryHistoryState();
+    try {
+      const response = await apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100, pageToken } });
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+      renderGitHubPullRequestsResult({ status: "fulfilled", value: response }, teamId, repository, pageToken, true);
+    } catch (error) {
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+      renderGitHubPullRequestsResult({ status: "rejected", reason: error }, teamId, repository, pageToken, true);
+    } finally {
+      if (generation === session.deliveryLoadGeneration && repository.id === session.deliveryRepositoryId) {
+        session.githubPullRequestsLoading = false;
+        ui.pullRequestsMore.disabled = false;
+      }
+    }
+  }
+
+  function stopRuntimeActivityStream() {
     if (session.activityAbort) session.activityAbort.abort();
     session.activityAbort = null;
   }
 
+  function stopProvisioningStream() {
+    if (session.provisioningAbort) session.provisioningAbort.abort();
+    session.provisioningAbort = null;
+  }
+
+  function stopActivityStream() {
+    stopRuntimeActivityStream();
+    stopProvisioningStream();
+  }
+
   async function startActivityStream(teamId, generation = session.workspaceGeneration) {
-    stopActivityStream();
+    stopRuntimeActivityStream();
     if (!teamId || typeof platformApi?.streamTeamActivity !== "function") {
       resetActivityView("The generated ActivityService client is not available in this deployment.", "Unavailable", "error");
       return;
@@ -1433,7 +3716,7 @@
         if (!event) continue;
         if (stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("The activity service returned an event outside the selected team scope", 0, "invalid_response", requestId);
         appendActivityEvent(event);
-        setSourceState(ui.activityState, "Live", "success");
+        setSourceState(ui.activityState, "Runtime live", "success");
       }
       if (!controller.signal.aborted && generation === session.workspaceGeneration) {
         setSourceState(ui.activityState, "Stream ended", "error");
@@ -1446,7 +3729,7 @@
         : error;
       const message = apiErrorMessage(normalized, "Live activity is unavailable.");
       setSourceState(ui.activityState, "Unavailable", "error");
-      if (!session.activityEvents.length) {
+      if (!allActivityEntries().length) {
         ui.activityEmpty.hidden = false;
         setEmptyState(ui.activityEmpty, "Activity unavailable", message);
       }
@@ -1456,42 +3739,327 @@
     }
   }
 
-  function appendActivityEvent(event) {
-    const sequence = typeof event.sequence === "bigint" ? event.sequence : BigInt(event.sequence || 0);
-    if (sequence > session.lastActivitySequence) session.lastActivitySequence = sequence;
-    session.activityEvents.push(event);
-    if (session.activityEvents.length > 80) {
-      session.activityEvents.shift();
-      ui.activityList.firstElementChild?.remove();
+  const activityCategories = new Set(["all", "conversations", "sessions", "tools", "workspace", "delivery", "approvals", "provisioning", "cost"]);
+  const runtimeActivityTypes = new Set(["a2a.message", "tool.call", "session.status", "artifact.summary"]);
+  const workspaceArtifactTypes = new Set(["workspace_change", "commit", "plan", "design", "decision_record", "test_report", "deployment"]);
+  const deliveryArtifactTypes = new Set(["issue", "pull_request"]);
+  const activityDetailKeys = Object.freeze({
+    "a2a.message": new Set(["from_agent_id", "to_agent_id", "message_kind"]),
+    "tool.call": new Set(["tool_name", "result", "duration_ms"]),
+    "session.status": new Set(["previous_status", "current_status", "reason_code"]),
+    "artifact.summary": new Set(["artifact_type", "artifact_id", "uri", "change_kind"])
+  });
+
+  function activityDetails(event, type) {
+    const details = event?.details;
+    if (!details || typeof details !== "object" || Array.isArray(details)) return {};
+    const allowed = activityDetailKeys[type];
+    if (!allowed) return {};
+    const normalized = {};
+    for (const [name, value] of Object.entries(details)) {
+      if (!allowed.has(name)) throw new ApiError("ActivityService returned an unexpected detail field", 0, "invalid_response", "");
+      if (typeof value === "string" && value.length <= 512 && !/[\u0000-\u001f\u007f]/.test(value)) normalized[name] = value;
+      else if (typeof value === "number" && Number.isFinite(value) && value >= 0) normalized[name] = value;
+      else throw new ApiError("ActivityService returned an invalid detail value", 0, "invalid_response", "");
     }
+    return normalized;
+  }
+
+  function canonicalArtifactUrl(value) {
+    const raw = stringValue(value);
+    if (!raw) return "";
+    try {
+      const url = new URL(raw);
+      if (url.protocol !== "https:" || url.hostname !== "github.com" || url.username || url.password || url.port || url.search || url.hash) return "";
+      return url.toString();
+    } catch {
+      return "";
+    }
+  }
+
+  function normalizedRuntimeActivity(event) {
+    const id = stringValue(event?.id);
+    const type = stringValue(event?.type);
+    const safeSummary = stringValue(event?.safeSummary);
+    const status = stringValue(event?.status);
+    const sequence = typeof event?.sequence === "bigint" ? event.sequence : BigInt(event?.sequence || 0);
+    if (!id || id.length > 128 || /[\u0000-\u001f\u007f]/.test(id) || !runtimeActivityTypes.has(type) || !safeSummary || safeSummary.length > 1000 || sequence <= 0n) {
+      throw new ApiError("ActivityService returned an invalid normalized event", 0, "invalid_response", "");
+    }
+    const details = activityDetails(event, type);
+    let category = "workspace";
+    let title = "Artifact update";
+    let detail = "";
+    let artifactUrl = "";
+    if (type === "a2a.message") {
+      if (!details.from_agent_id || !details.to_agent_id || !details.message_kind) throw new ApiError("ActivityService returned incomplete A2A metadata", 0, "invalid_response", "");
+      category = "conversations";
+      title = `A2A ${String(details.message_kind).replaceAll("_", " ")}`;
+      detail = `${details.from_agent_id} → ${details.to_agent_id}`;
+    } else if (type === "tool.call") {
+      if (!details.tool_name) throw new ApiError("ActivityService returned incomplete tool metadata", 0, "invalid_response", "");
+      category = "tools";
+      title = `Tool · ${String(details.tool_name).replaceAll("_", " ")}`;
+      detail = [details.result, Number.isFinite(details.duration_ms) ? `${details.duration_ms} ms` : ""].filter(Boolean).join(" · ");
+    } else if (type === "session.status") {
+      if (!details.current_status) throw new ApiError("ActivityService returned incomplete session metadata", 0, "invalid_response", "");
+      category = "sessions";
+      title = `Session · ${String(details.current_status).replaceAll("_", " ")}`;
+      detail = [details.previous_status ? `${details.previous_status} → ${details.current_status}` : details.current_status, details.reason_code].filter(Boolean).join(" · ");
+    } else {
+      if (!details.artifact_type || !details.artifact_id) throw new ApiError("ActivityService returned incomplete artifact metadata", 0, "invalid_response", "");
+      const artifactType = String(details.artifact_type);
+      if (deliveryArtifactTypes.has(artifactType)) category = "delivery";
+      else if (!workspaceArtifactTypes.has(artifactType)) throw new ApiError("ActivityService returned an unsupported artifact type", 0, "invalid_response", "");
+      title = `${artifactType.replaceAll("_", " ")} · ${String(details.change_kind || status || "updated").replaceAll("_", " ")}`;
+      detail = String(details.artifact_id);
+      artifactUrl = canonicalArtifactUrl(details.uri);
+      if (details.uri && !artifactUrl) throw new ApiError("ActivityService returned an invalid artifact URL", 0, "invalid_response", "");
+    }
+    return {
+      id: `runtime:${id}`,
+      category,
+      source: "ActivityService stream",
+      title,
+      safeSummary,
+      detail,
+      artifactUrl,
+      status,
+      sequence,
+      sequenceLabel: `Activity event ${sequence.toString()}`,
+      occurredAt: event.occurredAt,
+      agentRole: event.agentRole,
+      sessionId: stringValue(event.sessionId),
+      objectiveId: stringValue(event.objectiveId),
+      initiativeId: stringValue(event.initiativeId),
+      repositoryId: stringValue(event.repositoryId),
+      githubIssueId: stringValue(event.githubIssueId),
+      pullRequestId: stringValue(event.pullRequestId)
+    };
+  }
+
+  function appendActivityEvent(event) {
+    const entry = normalizedRuntimeActivity(event);
+    if (session.activityEventIds.has(entry.id)) return;
+    if (entry.sequence <= session.lastActivitySequence) throw new ApiError("ActivityService returned a non-monotonic sequence", 0, "invalid_response", "");
+    session.lastActivitySequence = entry.sequence;
+    session.activityEventIds.add(entry.id);
+    session.activityEvents.push(entry);
+    if (session.activityEvents.length > 80) {
+      const removed = session.activityEvents.shift();
+      if (removed) session.activityEventIds.delete(removed.id);
+    }
+    renderActivityLedger();
+  }
+
+  function replaceActivityProjections(prefix, entries) {
+    for (const key of session.activityProjections.keys()) {
+      if (key.startsWith(prefix)) session.activityProjections.delete(key);
+    }
+    entries.forEach((entry) => session.activityProjections.set(entry.id, entry));
+    renderActivityLedger();
+  }
+
+  function upsertActivityProjection(entry) {
+    if (!entry?.id || !activityCategories.has(entry.category) || entry.category === "all") return;
+    session.activityProjections.set(entry.id, entry);
+    renderActivityLedger();
+  }
+
+  function activityEntryTime(entry) {
+    return timestampDate(entry.occurredAt)?.getTime() || 0;
+  }
+
+  function allActivityEntries() {
+    return [...session.activityEvents, ...session.provisioningEvents, ...session.activityProjections.values()]
+      .sort((left, right) => activityEntryTime(right) - activityEntryTime(left) || String(right.id).localeCompare(String(left.id)));
+  }
+
+  function renderActivityFilters() {
+    const entries = allActivityEntries();
+    const counts = new Map([...activityCategories].map((category) => [category, category === "all" ? entries.length : entries.filter((entry) => entry.category === category).length]));
+    ui.activityFilterButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.activityFilter === session.activityFilter)));
+    ui.activityFilterCounts.forEach((element) => { element.textContent = String(counts.get(element.dataset.activityFilterCount) || 0); });
+  }
+
+  function activityMarker(entry) {
+    if (entry.source === "ActivityService stream") return agentRoleContract?.canonicalAgentRole?.(entry.agentRole)?.code || "A";
+    return ({ sessions: "S", workspace: "W", approvals: "AP", provisioning: "PV", cost: "$" })[entry.category] || "·";
+  }
+
+  function renderActivityLedger() {
+    renderActivityFilters();
+    const allEntries = allActivityEntries();
+    const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
+    ui.activityList.replaceChildren();
+    entries.forEach((entry) => {
     const item = document.createElement("li");
     item.className = "customer-activity-item";
     const roleMark = document.createElement("span");
     roleMark.className = "agent-ordinal";
-    roleMark.textContent = agentRoleContract?.canonicalAgentRole?.(event.agentRole)?.code || "—";
+      roleMark.textContent = activityMarker(entry);
     roleMark.setAttribute("aria-hidden", "true");
     const copy = document.createElement("div");
     const title = document.createElement("strong");
     const summary = document.createElement("p");
     const meta = document.createElement("div");
     meta.className = "customer-activity-meta";
-    const type = stringValue(event.type).replaceAll("_", " ").replaceAll(".", " · ");
-    title.textContent = type ? capitalize(type) : "Activity recorded";
-    summary.textContent = stringValue(event.safeSummary) || "The service recorded a customer-safe event without a summary.";
-    [agentRoleLabel(event.agentRole), stringValue(event.status), sequence > 0n ? `Event ${sequence.toString()}` : ""].filter(Boolean).forEach((value) => {
+      title.textContent = stringValue(entry.title) || "Activity recorded";
+      summary.textContent = stringValue(entry.safeSummary) || "The source returned a typed event without a customer-safe summary.";
+      const metaValues = [entry.source, entry.source === "ActivityService stream" ? agentRoleLabel(entry.agentRole) : "", stringValue(entry.status), stringValue(entry.sequenceLabel)];
+      [entry.sessionId ? `Session ${entry.sessionId}` : "", entry.objectiveId ? `Objective ${entry.objectiveId}` : "", entry.initiativeId ? `Initiative ${entry.initiativeId}` : "", entry.repositoryId ? `Repository ${entry.repositoryId}` : "", entry.githubIssueId ? `Issue ${entry.githubIssueId}` : "", entry.pullRequestId ? `PR ${entry.pullRequestId}` : ""].forEach((value) => metaValues.push(value));
+      metaValues.filter(Boolean).forEach((value) => {
       const span = document.createElement("span");
       span.textContent = value;
       meta.append(span);
     });
-    copy.append(title, summary, meta);
+      copy.append(title, summary);
+      if (entry.detail) {
+        const detail = document.createElement("p");
+        detail.className = "customer-activity-details";
+        detail.textContent = stringValue(entry.detail);
+        if (entry.artifactUrl) {
+          detail.append(document.createTextNode(" · "));
+          const link = document.createElement("a");
+          link.href = entry.artifactUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.referrerPolicy = "no-referrer";
+          link.textContent = "Open verified GitHub artifact";
+          detail.append(link);
+        }
+        copy.append(detail);
+      }
+      if (entry.diffAvailability) {
+        const diff = document.createElement("details");
+        diff.className = "safe-diff";
+        const diffSummary = document.createElement("summary");
+        diffSummary.textContent = entry.diffAvailability === "available" ? "Review server-sanitized diff" : `Diff unavailable · ${entry.diffAvailability}`;
+        diff.append(diffSummary);
+        const diffNote = document.createElement("p");
+        diffNote.textContent = entry.diffAvailability === "available"
+          ? ["WorkspaceService returned customer-safe text only.", entry.diffRedacted ? "Sensitive-looking values were redacted." : "", entry.diffTruncated ? "The diff was truncated at the service boundary." : ""].filter(Boolean).join(" ")
+          : "WorkspaceService withheld the diff and returned this typed availability state.";
+        diff.append(diffNote);
+        if (entry.diffAvailability === "available" && entry.safeDiff) {
+          const pre = document.createElement("pre");
+          const code = document.createElement("code");
+          code.textContent = entry.safeDiff;
+          pre.append(code);
+          diff.append(pre);
+        }
+        copy.append(diff);
+      }
+      copy.append(meta);
     const time = document.createElement("time");
-    const date = timestampDate(event.occurredAt);
+      const date = timestampDate(entry.occurredAt);
     time.textContent = date ? relativeTime(date) : "Time not reported";
     if (date) time.dateTime = date.toISOString();
     item.append(roleMark, copy, time);
     ui.activityList.append(item);
-    ui.activityEmpty.hidden = true;
-    ui.activityList.hidden = false;
+    });
+    ui.activityEmpty.hidden = entries.length > 0;
+    ui.activityList.hidden = entries.length === 0;
+    if (!entries.length && allEntries.length) {
+      const filterLabel = ui.activityFilterButtons.find((button) => button.dataset.activityFilter === session.activityFilter)?.childNodes[0]?.textContent?.trim() || "selected";
+      setEmptyState(ui.activityEmpty, `No ${filterLabel.toLowerCase()} activity`, "The authoritative sources returned no records in this filter.");
+    } else if (!entries.length) {
+      setEmptyState(ui.activityEmpty, "No activity yet", "The selected team has no customer-safe events or source snapshots yet.");
+    }
+  }
+
+  function provisioningEntry(record, source, idPrefix) {
+    const teamId = stringValue(record?.teamId);
+    if (!teamId || teamId !== session.selectedTeamId) throw new ApiError("ProvisioningService returned a record outside the selected team scope", 0, "invalid_response", "");
+    const sequence = typeof record.sequence === "bigint" ? record.sequence : BigInt(record.sequence || 0);
+    const presentation = launchContract?.provisioningPresentation(record) || {};
+    const label = stringValue(presentation.label) || lifecycleLabel(record.provisioningState || record.status) || "state not reported";
+    const step = stringValue(presentation.step) || stringValue(record.provisioningStep || record.step).replaceAll("_", " ").toLowerCase();
+    const safeSummary = stringValue(record.safeSummary) || `Provisioning is ${label}.`;
+    const safeError = stringValue(record.safeError);
+    if (safeSummary.length > 1000 || safeError.length > 1000 || /[\u0000-\u001f\u007f]/.test(safeSummary + safeError)) {
+      throw new ApiError("ProvisioningService returned invalid customer-safe text", 0, "invalid_response", "");
+    }
+    return {
+      id: `${idPrefix}:${stringValue(record.id) || sequence.toString() || teamId}`,
+      category: "provisioning",
+      source,
+      title: `Provisioning · ${label}`,
+      safeSummary,
+      detail: [step, safeError, Number.isInteger(record.attempt) && record.attempt > 0 ? `attempt ${record.attempt}` : ""].filter(Boolean).join(" · "),
+      status: label,
+      sequenceLabel: sequence > 0n ? `Provisioning event ${sequence.toString()}` : "Snapshot",
+      occurredAt: record.occurredAt || record.updatedAt
+    };
+  }
+
+  function syncProvisioningSnapshot(team) {
+    const status = team?.provisioning;
+    if (!status || stringValue(team.id) !== session.selectedTeamId) {
+      replaceActivityProjections("provisioning-snapshot:", []);
+      return;
+    }
+    const entry = provisioningEntry(status, "ProvisioningService snapshot", "provisioning-snapshot");
+    const sequence = typeof status.sequence === "bigint" ? status.sequence : BigInt(status.sequence || 0);
+    if (sequence > session.lastProvisioningSequence) session.lastProvisioningSequence = sequence;
+    replaceActivityProjections("provisioning-snapshot:", [entry]);
+  }
+
+  function appendProvisioningEvent(event) {
+    const sequence = typeof event?.sequence === "bigint" ? event.sequence : BigInt(event?.sequence || 0);
+    if (sequence <= session.lastProvisioningSequence) return;
+    const entry = provisioningEntry(event, "ProvisioningService stream", "provisioning-event");
+    session.lastProvisioningSequence = sequence;
+    session.provisioningEvents.push(entry);
+    if (session.provisioningEvents.length > 80) session.provisioningEvents.shift();
+    renderActivityLedger();
+  }
+
+  async function startProvisioningStream(teamId, generation = session.workspaceGeneration) {
+    stopProvisioningStream();
+    if (!teamId || typeof platformApi?.streamProvisioningStatus !== "function") return;
+    const controller = new AbortController();
+    session.provisioningAbort = controller;
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    try {
+      for await (const response of platformApi.streamProvisioningStatus({ teamId, afterSequence: session.lastProvisioningSequence }, {
+        accessToken: session.accessToken,
+        requestId,
+        signal: controller.signal
+      })) {
+        if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || controller.signal.aborted) return;
+        const status = response?.provisioning;
+        const event = response?.event;
+        if (status && stringValue(status.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned a status outside the selected team scope", 0, "invalid_response", requestId);
+        if (event && stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned an event outside the selected team scope", 0, "invalid_response", requestId);
+        if (event) appendProvisioningEvent(event);
+        const team = selectedTeam();
+        if (status && team) {
+          team.provisioning = status;
+          syncProvisioningSnapshot(team);
+          renderTeamList();
+          renderSelectedTeamSummary();
+        }
+        setSourceState(ui.activityState, session.activityAbort ? "Sources live" : "Provisioning live", "success");
+      }
+      if (!controller.signal.aborted && generation === session.workspaceGeneration) ui.activityRetry.hidden = false;
+    } catch (error) {
+      if (controller.signal.aborted || generation !== session.workspaceGeneration) return;
+      ui.activityRetry.hidden = false;
+      if (!session.activityEvents.length && !session.provisioningEvents.length && !session.activityProjections.size) {
+        setEmptyState(ui.activityEmpty, "Provisioning stream unavailable", apiErrorMessage(error, "Provisioning updates could not be streamed."));
+      }
+    } finally {
+      if (session.provisioningAbort === controller) session.provisioningAbort = null;
+    }
+  }
+
+  function changeActivityFilter(event) {
+    const button = event.target.closest("[data-activity-filter]");
+    const filter = stringValue(button?.dataset.activityFilter);
+    if (!button || !activityCategories.has(filter)) return;
+    session.activityFilter = filter;
+    renderActivityLedger();
   }
 
   function timestampDate(timestamp) {
@@ -1568,7 +4136,10 @@
       if (status) team.provisioning = status;
       team._pollingMessage = "";
       renderTeamList();
-      if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
+      if (teamId === session.selectedTeamId) {
+        syncProvisioningSnapshot(team);
+        renderSelectedTeamSummary();
+      }
       if (!launchContract.provisioningTerminal(team.provisioning || {})) startProvisioningPolling(team, 5000);
     } catch (error) {
       team._pollingMessage = apiErrorMessage(error, "Provisioning status is temporarily unavailable. Use Refresh status to retry.");
@@ -1696,32 +4267,174 @@
       if (!portal && !session.billingPlanAvailable) throw new ApiError("The public billing plan is not available", 0, "plan_not_available", "");
       const fingerprint = `${session.organizationId}:${portal ? "portal" : planId}`;
       const idempotencyKey = mutationKeys.for(portal ? "billingPortal" : "checkout", fingerprint);
-      const result = portal
-        ? await apiRequest("billing_portal", { organizationId: session.organizationId, returnUrl: appUrl, idempotencyKey })
-        : await apiRequest("checkout", {
+      if (portal) {
+        const result = await apiRequest("billing_portal", { organizationId: session.organizationId, returnUrl: appUrl, idempotencyKey });
+        const destination = validatedRedirect(result.portalUrl || result.portal_url, ["billing.stripe.com"]);
+        if (!destination) throw new ApiError("Billing service returned an untrusted portal redirect", 0, "invalid_redirect", "");
+        window.location.assign(destination);
+        return;
+      }
+      if (!stripeClient) throw new ApiError("Embedded Stripe Checkout is not configured", 0, "not_configured", "");
+      const returnUrl = embeddedCheckoutReturnUrl();
+      const result = await apiRequest("checkout", {
           organizationId: session.organizationId,
           planId,
-          successUrl: `${appUrl}?billing=success`,
-          cancelUrl: `${appUrl}?billing=cancelled`,
+          returnUrl,
           idempotencyKey
         });
-      const candidate = portal ? (result.portalUrl || result.portal_url) : (result.checkoutUrl || result.checkout_url);
-      const destination = validatedRedirect(candidate, ["checkout.stripe.com", "billing.stripe.com"]);
-      if (!destination) throw new ApiError("Billing service returned an untrusted redirect", 0, "invalid_redirect", "");
-      window.location.assign(destination);
+      validateEmbeddedSession(result, returnUrl);
+      await openEmbeddedCheckout({
+        clientSecret: result.clientSecret,
+        kind: "subscription",
+        mutationName: "checkout",
+        title: "Activate your team subscription",
+        subtitle: "Complete the $599 monthly team subscription without leaving deep navy.",
+        summary: `${stringValue(session.billingPlan?.name) || "Founding Team"} · ${formatMoney(session.billingPlan?.recurringPrice, session.billingPlan?.interval)} · ${formatCredits(session.billingPlan?.includedCreditMicros)}`
+      });
     } catch (error) {
       toast(apiErrorMessage(error, session.subscriptionManageable ? "The API could not open the billing portal." : "The API could not create a Stripe Checkout Session. No purchase was started."), "error");
       ui.subscriptionAction.disabled = false;
     }
   }
 
+  function embeddedCheckoutReturnUrl() {
+    return `${appUrl}?billing=return&session_id={CHECKOUT_SESSION_ID}`;
+  }
+
+  function validCheckoutClientSecret(value) {
+    const secret = stringValue(value);
+    if (!/^cs_(?:test|live)_[A-Za-z0-9_]{16,500}$/.test(secret)) return "";
+    if (environment === "development" && !secret.startsWith("cs_test_")) return "";
+    if (environment === "production" && !secret.startsWith("cs_live_")) return "";
+    return secret;
+  }
+
+  function validateEmbeddedSession(result, returnUrl) {
+    if (!validCheckoutClientSecret(result?.clientSecret)) throw new ApiError("Billing service returned an invalid embedded Checkout secret", 0, "invalid_response", "");
+    if (stringValue(result?.returnUrl) !== returnUrl) throw new ApiError("Billing service returned an unexpected Checkout return URL", 0, "invalid_response", "");
+    if (!/^cs_(?:test|live)_[A-Za-z0-9_]{8,}$/.test(stringValue(result?.checkoutSessionId))) throw new ApiError("Billing service returned an invalid Checkout Session", 0, "invalid_response", "");
+    if (stringValue(result?.checkoutUrl)) throw new ApiError("Billing service returned a hosted Checkout URL for an embedded flow", 0, "invalid_response", "");
+  }
+
+  async function openEmbeddedCheckout({ clientSecret, kind, mutationName, title, subtitle, summary, teamId = "" }) {
+    if (!stripeClient || typeof stripeClient.initEmbeddedCheckout !== "function") throw new ApiError("Embedded Stripe Checkout is unavailable", 0, "not_configured", "");
+    if (checkoutOpening) throw new ApiError("Embedded Checkout is already opening", 0, "already_opening", "");
+    if (embeddedCheckout) closeEmbeddedCheckout();
+    checkoutOpening = true;
+    renderCreditPackControls();
+    ui.checkoutTitle.textContent = title;
+    ui.checkoutSubtitle.textContent = subtitle;
+    ui.checkoutSummary.textContent = summary;
+    ui.checkoutStatus.textContent = "Preparing encrypted payment fields…";
+    ui.checkoutStatus.hidden = false;
+    ui.checkoutMount.replaceChildren();
+    if (!ui.checkoutDialog.open) ui.checkoutDialog.showModal();
+    const safeSecret = validCheckoutClientSecret(clientSecret);
+    if (!safeSecret) throw new ApiError("Embedded Checkout secret is invalid", 0, "invalid_response", "");
+    try {
+      embeddedCheckout = await stripeClient.initEmbeddedCheckout({
+        fetchClientSecret: async () => safeSecret,
+        onComplete: () => { void handleEmbeddedCheckoutComplete(kind, mutationName, teamId); }
+      });
+      embeddedCheckout.mount(ui.checkoutMount);
+      ui.checkoutStatus.hidden = true;
+    } catch (error) {
+      embeddedCheckout = null;
+      ui.checkoutStatus.textContent = "Stripe could not render the secure payment form. Close this panel and retry.";
+      ui.checkoutStatus.hidden = false;
+      throw error;
+    } finally {
+      checkoutOpening = false;
+      renderCreditPackControls();
+    }
+  }
+
+  function destroyEmbeddedCheckout() {
+    if (embeddedCheckout) {
+      try { embeddedCheckout.destroy(); } catch { /* Stripe may already have completed the frame */ }
+    }
+    embeddedCheckout = null;
+    ui.checkoutMount.replaceChildren();
+  }
+
+  function closeEmbeddedCheckout() {
+    destroyEmbeddedCheckout();
+    checkoutOpening = false;
+    if (ui.checkoutDialog.open) ui.checkoutDialog.close();
+    ui.subscriptionAction.disabled = session.subscriptionManageable ? false : !session.billingPlanAvailable || !stripeClient;
+    renderCreditPackControls();
+  }
+
+  async function handleEmbeddedCheckoutComplete(kind, mutationName, teamId) {
+    destroyEmbeddedCheckout();
+    mutationKeys.clear(mutationName);
+    ui.checkoutStatus.textContent = "Payment submitted. Verifying Stripe’s signed webhook before changing access or credits…";
+    ui.checkoutStatus.hidden = false;
+    try {
+      if (kind === "subscription") await refreshOnboarding();
+      else if (teamId === session.selectedTeamId) await refreshSelectedTeam();
+    } catch {
+      /* The normal refresh controls remain available if reconciliation is delayed. */
+    }
+    ui.checkoutStatus.textContent = kind === "subscription" && session.subscriptionActive
+      ? "Subscription verified. Paid team capacity is now active."
+      : "Payment is processing. This panel never grants access or credits; the verified webhook does.";
+    toast(kind === "subscription" && session.subscriptionActive
+      ? "Subscription verified and team capacity activated."
+      : "Payment submitted. Webhook-confirmed credits will appear in the selected team ledger.", kind === "subscription" && session.subscriptionActive ? "success" : "info");
+  }
+
+  async function startCreditPackCheckout(event) {
+    event.preventDefault();
+    const team = selectedTeam();
+    const pack = selectedCreditPack();
+    const quantity = int64Value(ui.creditPackQuantity.value);
+    const maximum = int64Value(pack?.maximumQuantity);
+    setFieldError(ui.creditPackError, "");
+    if (!session.subscriptionActive || !team || !pack || !activeCreditPack(pack) || quantity === null || maximum === null || quantity < 1n || quantity > maximum) {
+      setFieldError(ui.creditPackError, "Choose an active team, a prepaid pack, and a valid quantity.");
+      return;
+    }
+    if (!stripeClient) {
+      setFieldError(ui.creditPackError, "Secure checkout is not configured in this deployment.");
+      return;
+    }
+    ui.creditPackSubmit.disabled = true;
+    const returnUrl = embeddedCheckoutReturnUrl();
+    const fingerprint = `${session.organizationId}:${team.id}:${pack.id}:${quantity.toString()}`;
+    try {
+      const result = await apiRequest("credit_pack_checkout", {
+        organizationId: session.organizationId,
+        teamId: team.id,
+        creditPackId: pack.id,
+        quantity: quantity.toString(),
+        returnUrl,
+        idempotencyKey: mutationKeys.for("creditPackCheckout", fingerprint)
+      });
+      validateEmbeddedSession(result, returnUrl);
+      await openEmbeddedCheckout({
+        clientSecret: result.clientSecret,
+        kind: "credit_pack",
+        mutationName: "creditPackCheckout",
+        teamId: team.id,
+        title: "Add prepaid engineering credits",
+        subtitle: `Apply purchased credits only to ${stringValue(team.name) || "the selected team"}.`,
+        summary: `${quantity.toString()} × ${stringValue(pack.name) || formatCredits(pack.creditMicros)} · ${formatCanonicalMoney(pack.price)} each`
+      });
+    } catch (error) {
+      const message = apiErrorMessage(error, "The API could not create a prepaid credit Checkout Session. No purchase was started.");
+      setFieldError(ui.creditPackError, message);
+      toast(message, "error");
+      ui.creditPackSubmit.disabled = false;
+    }
+  }
+
   function validatedRedirect(value, requiredHosts) {
     try {
       const url = new URL(stringValue(value));
-      if (url.protocol !== "https:" || url.username || url.password) return "";
-      const configured = Array.isArray(config.allowed_redirect_hosts) ? config.allowed_redirect_hosts.map(stringValue).filter(Boolean) : [];
-      const allowed = new Set([...configured, ...requiredHosts]);
-      const hostAccepted = allowed.has(url.hostname);
+      if (url.protocol !== "https:" || url.username || url.password || url.hash) return "";
+      const allowed = new Set(requiredHosts.map(stringValue).filter(Boolean));
+      const hostAccepted = allowed.has(url.host);
       return hostAccepted ? url.toString() : "";
     } catch {
       return "";
@@ -1748,6 +4461,12 @@
       toast(message, "error");
       return;
     }
+    if (session.availableTeamSlots < 1n) {
+      const message = "No paid team slot is available. Increase the subscription quantity before creating another team.";
+      setFieldError(ui.teamError, message);
+      toast(message, "error");
+      return;
+    }
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
     ui.teamSubmit.textContent = "Creating…";
@@ -1770,7 +4489,7 @@
       const message = apiErrorMessage(error, "The team was not confirmed as created. It is safe to retry; the request uses an idempotency key.");
       setFieldError(ui.teamError, message);
       toast(message, "error");
-      if (error instanceof ApiError && error.code === "failed_precondition") await refreshOnboarding();
+      if (error instanceof ApiError && ["failed_precondition", "resource_exhausted"].includes(error.code)) await refreshOnboarding();
       updateTeamAction();
     } finally {
       ui.teamSubmit.textContent = "Create engineering team";
@@ -1792,6 +4511,7 @@
   }
 
   function signOut() {
+    closeEmbeddedCheckout();
     stopProvisioningPolling();
     stopActivityStream();
     session.accessToken = "";
@@ -1800,9 +4520,17 @@
     session.user = null;
     session.organizationId = "";
     session.selectedTeamId = "";
+    session.creditPacks = [];
+    session.creditControl = null;
+    resetInvoiceHistory("Sign in and select an organization to load verified billing records.", "Waiting");
+    resetSubscriptionCapacity();
+    session.objectivesByTeam.clear();
+    session.objectiveListsByTeam.clear();
+    resetApprovalView("Sign in and select a team to load pending decisions.", "Waiting");
     ui.contextOrganization.textContent = "Not selected";
     ui.contextRepositories.textContent = "Not loaded";
     ui.contextTeam.textContent = "Not selected";
+    resetWorkspaceViews("Sign in and select a team to load its workspace.");
     setAuthPhase("signed_out");
     clearOAuthTransaction();
     clearGitHubFlow();
@@ -1828,20 +4556,47 @@
   ui.repositoryModes.forEach((input) => input.addEventListener("change", updateRepositoryControls));
   ui.repositoryList.addEventListener("change", updateRepositoryControls);
   ui.subscriptionAction.addEventListener("click", startBillingAction);
+  ui.invoiceMore.addEventListener("click", loadMoreInvoices);
+  ui.creditPackForm.addEventListener("submit", startCreditPackCheckout);
+  ui.creditPackSelect.addEventListener("change", updateCreditPackSummary);
+  ui.creditPackQuantity.addEventListener("input", updateCreditPackSummary);
+  ui.creditControlForm.addEventListener("submit", saveCreditControl);
+  ui.economicsGroup.addEventListener("change", selectEconomicsGroup);
+  ui.creditHardLimitInput.addEventListener("input", updateCreditControlSummary);
+  ui.creditCustomerPaused.addEventListener("change", updateCreditControlSummary);
+  ui.checkoutClose.addEventListener("click", closeEmbeddedCheckout);
+  ui.checkoutDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeEmbeddedCheckout();
+  });
   ui.teamForm.addEventListener("submit", createTeam);
+  ui.objectiveForm.addEventListener("submit", createObjective);
+  ui.objectiveSelect.addEventListener("change", selectObjective);
+  ui.approvalList.addEventListener("submit", decideApproval);
+  ui.approvalsMore.addEventListener("click", loadMoreApprovals);
+  ui.sessionsMore.addEventListener("click", loadMoreSessions);
+  ui.workspaceMore.addEventListener("click", loadMoreWorkspaceChanges);
+  ui.deliveryRepository.addEventListener("change", reloadGitHubDelivery);
+  ui.issuesMore.addEventListener("click", loadMoreGitHubIssues);
+  ui.pullRequestsMore.addEventListener("click", loadMoreGitHubPullRequests);
   ui.refresh.addEventListener("click", refreshOnboarding);
   ui.teamSelect.addEventListener("change", () => {
     session.selectedTeamId = stringValue(ui.teamSelect.value);
     refreshSelectedTeam();
   });
+  ui.activityFilters.addEventListener("click", changeActivityFilter);
   ui.activityRetry.addEventListener("click", () => {
     const team = selectedTeam();
-    if (team) startActivityStream(team.id, session.workspaceGeneration);
+    if (team) {
+      startActivityStream(team.id, session.workspaceGeneration);
+      startProvisioningStream(team.id, session.workspaceGeneration);
+    }
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") session.teams.forEach((team) => startProvisioningPolling(team, 250));
   });
   window.addEventListener("beforeunload", () => {
+    destroyEmbeddedCheckout();
     stopProvisioningPolling();
     stopActivityStream();
   });
@@ -1860,7 +4615,7 @@
   if (githubCallback) {
     try {
       if (!captureGitHubCallback(callbackParams)) throw new Error("github_callback_missing");
-      setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub returned securely", "Re-authenticate with Deep Navy to bind the one-time GitHub authorization to the same account and organization.");
+      setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub returned securely", "Re-authenticate with deep navy to bind the one-time GitHub authorization to the same account and organization.");
       if (!identity.ready) showAuthError("Cannot complete GitHub connection", "This environment is missing its public Cognito configuration. The one-time callback is held only in this browser tab and will expire soon.");
       else beginSignIn("github_completion");
     } catch (error) {
@@ -1874,9 +4629,8 @@
     if (!identity.ready) showAuthError("Cannot complete sign-in", "This deployment is missing the same public Cognito configuration that initiated the flow. No token request was sent.");
     else completeCallback(callbackParams);
   } else if (readGitHubCompletion()) {
-    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in again before the one-time GitHub authorization expires. Deep Navy will verify it server-side before showing a connection.");
+    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in again before the one-time GitHub authorization expires. deep navy will verify it server-side before showing a connection.");
   } else if (billingReturn) {
-    const returned = storageRead(billingReturnStorageKey);
-    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "warning", returned?.value === "success" ? "Confirm your subscription" : "Checkout was cancelled", returned?.value === "success" ? "Sign in to let the API confirm the signed Stripe webhook before team creation is unlocked." : "No subscription completion was assumed. Sign in when you are ready to continue.");
+    setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "warning", "Confirm your payment", "Sign in to refresh the webhook-confirmed subscription and team credit records. A Stripe return alone never changes access or balances.");
   }
 })();

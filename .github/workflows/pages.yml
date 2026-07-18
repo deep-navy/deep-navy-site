@@ -23,6 +23,8 @@ jobs:
           cache: npm
       - run: npm install --global npm@11.18.0
       - run: npm ci
+      - name: Check generated API reference
+        run: npm run check:api-docs
       - name: Check pinned generated API consumer
         run: npm run check:vendor
       - name: Type-check browser API client
@@ -53,7 +55,10 @@ jobs:
         run: ruby scripts/check_site.rb _site
 
   deploy:
-    if: github.event_name == 'push'
+    # GitHub Pages has one deployment slot per repository. Keep it bound to
+    # develop until the deliberate production cutover switches the custom
+    # domain and deployment policy together.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     needs: ci
     runs-on: ubuntu-latest
     permissions:
@@ -61,7 +66,7 @@ jobs:
       pages: write
       id-token: write
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+      name: development
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
@@ -73,6 +78,8 @@ jobs:
           cache: npm
       - run: npm install --global npm@11.18.0
       - run: npm ci
+      - name: Check generated API reference
+        run: npm run check:api-docs
       - name: Build generated browser API client
         run: npm run build
       - uses: ruby/setup-ruby@v1
@@ -81,21 +88,25 @@ jobs:
           bundler-cache: true
       - name: Write public environment configuration
         env:
-          DEEP_NAVY_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          DEEP_NAVY_ENVIRONMENT: development
+          # Pages can report the repository project URL while a custom-domain
+          # certificate is still provisioning. Pin the environment's public
+          # origin so Jekyll never emits repository-project paths in development.
+          SITE_URL: https://dev.deep.navy
           SITE_API_BASE_URL: ${{ vars.SITE_API_BASE_URL }}
           SITE_COGNITO_DOMAIN: ${{ vars.SITE_COGNITO_DOMAIN }}
           SITE_COGNITO_CLIENT_ID: ${{ vars.SITE_COGNITO_CLIENT_ID }}
           SITE_COGNITO_CALLBACK_URL: ${{ vars.SITE_COGNITO_CALLBACK_URL }}
           SITE_COGNITO_LOGOUT_URL: ${{ vars.SITE_COGNITO_LOGOUT_URL }}
           SITE_PLAN_ID: ${{ vars.SITE_PLAN_ID || 'founding-team' }}
+          SITE_STRIPE_PUBLISHABLE_KEY: ${{ vars.SITE_STRIPE_PUBLISHABLE_KEY }}
         run: ruby scripts/write_runtime_config.rb
       - name: Build environment site
         env:
-          JEKYLL_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
-        run: bundle exec jekyll build --strict_front_matter --config _config.yml,_config.runtime.yml --baseurl "${{ steps.pages.outputs.base_path }}"
+          JEKYLL_ENV: development
+        run: bundle exec jekyll build --strict_front_matter --config _config.yml,_config.runtime.yml --baseurl ""
       - name: Check rendered deployment
-        run: ruby scripts/check_site.rb _site "${{ steps.pages.outputs.base_path }}"
+        run: ruby scripts/check_site.rb _site ""
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

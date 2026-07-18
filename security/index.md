@@ -1,6 +1,6 @@
 ---
 title: Security
-description: Review Deep Navy trust boundaries, credential handling, resource scopes, request enforcement, runtime isolation, and disclosure process.
+description: Review deep navy trust boundaries, credential handling, resource scopes, request enforcement, runtime isolation, and disclosure process.
 updated: 2026-07-17
 hide_cta: true
 ---
@@ -85,7 +85,7 @@ hide_cta: true
               <td>Stripe server secret and webhook signature</td>
               <td>Organization checkout and subscription records</td>
               <td>Checkout Session lifetime and configured key rotation</td>
-              <td>Stripe-hosted checkout, signed webhook verification, and idempotent event processing</td>
+              <td>Stripe Embedded Checkout iframe, signed webhook verification, server-owned prices, idempotent event processing, and exact-origin hosted-invoice links</td>
               <td>Deployment dependent</td>
             </tr>
             <tr>
@@ -146,11 +146,12 @@ hide_cta: true
             <tr><td>ID token</td><td>JavaScript memory</td><td>Cleared on refresh or sign-out; rejected after token expiration</td><td>Used to establish the displayed user identity</td></tr>
             <tr><td>GitHub App private key and installation token</td><td>Server-side secret store and integration service</td><td>Installation tokens expire; key rotation follows deployment procedure</td><td>Excluded</td></tr>
             <tr><td>Stripe secret and webhook signing secret</td><td>Server-side secret store and billing service</td><td>Rotation follows deployment procedure</td><td>Excluded</td></tr>
+            <tr><td>Stripe publishable key and Checkout client secret</td><td>Public runtime configuration and JavaScript memory</td><td>Client secret expires with the Checkout Session and is cleared when the iframe is destroyed</td><td>Used only to initialize Stripe.js; never persisted or logged</td></tr>
             <tr><td>Model, runtime, and telemetry provider credentials</td><td>AWS Secrets Manager and the authorized runtime</td><td>Secret-version and rotation policy set by deployment</td><td>Excluded</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Public runtime configuration contains the API origin, Cognito domain, public client ID, callback URLs, OAuth scopes, plan ID, and build revision. Provider credentials, GitHub App keys, Stripe secrets, and runtime keys do not belong in that configuration.</p>
+      <p>Public runtime configuration contains the API origin, Cognito domain, public client ID, callback URLs, OAuth scopes, plan ID, Stripe publishable key, and build revision. Provider credentials, GitHub App keys, Stripe secret/restricted keys, webhook signing secrets, and runtime keys do not belong in that configuration.</p>
     </div>
   </div>
 </section>
@@ -164,7 +165,7 @@ hide_cta: true
     <div class="prose">
       <p>Send the affected surface, impact, and reproducible steps to <a href="mailto:security@deep.navy">security@deep.navy</a>. Do not access another customer's data, interrupt service, or publish the issue before coordination.</p>
       <p>Request an encrypted reporting channel before sending sensitive material. Do not send credentials, access tokens, authorization codes, private keys, customer source code, or payment information by email.</p>
-      <p>Deep Navy currently makes no claim of SOC 2 certification, ISO 27001 certification, a published penetration-test attestation, or a contractual uptime commitment. The <a href="{{ '/trust/#status-index' | relative_url }}">status index</a> records the current statement for each item.</p>
+      <p>deep navy currently makes no claim of SOC 2 certification, ISO 27001 certification, a published penetration-test attestation, or a contractual uptime commitment. The <a href="{{ '/trust/#status-index' | relative_url }}">status index</a> records the current statement for each item.</p>
     </div>
   </div>
 </section>

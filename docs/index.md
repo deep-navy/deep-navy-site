@@ -1,6 +1,6 @@
 ---
 title: Documentation
-description: Follow the Deep Navy onboarding procedure and review authentication, GitHub, billing, team provisioning, runtime, and recovery behavior.
+description: Follow the deep navy onboarding procedure and review authentication, GitHub, billing, team provisioning, runtime, and recovery behavior.
 updated: 2026-07-17
 hide_cta: true
 ---
@@ -30,11 +30,12 @@ hide_cta: true
       <a href="#runtime">Runtime views</a>
       <a href="#readiness">State reference</a>
       <a href="#support">Support record</a>
+      <a href="{{ '/docs/api/' | relative_url }}">Generated API reference</a>
     </nav>
 
     <article class="prose">
       <h2 id="quickstart">Six-step quickstart</h2>
-      <p>Complete the rows in order. The browser does not infer completion from a redirect, a button click, or local storage; each durable state comes from the platform API.</p>
+      <p>Complete the rows in order. The browser does not infer completion from a redirect, a button click, or local storage; each durable state comes from the platform API. Engineers can inspect the current messages, enums, services, and RPCs in the <a href="{{ '/docs/api/' | relative_url }}">generated API reference</a>.</p>
 
       <div class="data-table-wrap">
         <table class="data-table">
@@ -59,8 +60,8 @@ hide_cta: true
             <tr>
               <td><code>03 / GitHub</code></td>
               <td>A current organization is selected.</td>
-              <td>Request an installation link, install the Deep Navy GitHub App in the intended GitHub organization, and return to the customer application.</td>
-              <td>The API reports an active installation bound to the current Deep Navy organization.</td>
+              <td>Request an installation link, install the deep navy GitHub App in the intended GitHub organization, and return to the customer application.</td>
+              <td>The API reports an active installation bound to the current deep navy organization.</td>
               <td>Restart the installation from the customer application if the continuation expires or the organization changes. Do not reuse a callback URL.</td>
             </tr>
             <tr>
@@ -105,11 +106,12 @@ hide_cta: true
       </div>
 
       <h2 id="github">GitHub installation</h2>
-      <p>The application requests a short-lived, organization-bound installation link from the API. GitHub performs installation and repository authorization. Deep Navy retains the installation mapping; the customer does not provide a personal access token.</p>
+      <p>The application requests a short-lived, organization-bound installation link from the API. GitHub performs installation and repository authorization. deep navy retains the installation mapping; the customer does not provide a personal access token.</p>
       <p>Select <strong>only selected repositories</strong> unless the GitHub organization owner has approved access to all repositories. The <a href="{{ '/integrations/github/' | relative_url }}">GitHub integration reference</a> records the permission and callback model.</p>
 
       <h2 id="billing">Subscription</h2>
-      <p>The billing API creates the Stripe Checkout Session. Stripe collects payment details on its hosted page. The platform changes subscription state after a verified, idempotently processed Stripe webhook; the browser return is a reconciliation signal.</p>
+      <p>The billing API creates a short-lived Stripe Checkout Session and returns only the client secret required to mount Stripe Embedded Checkout inside the deep navy purchase dialog. The platform changes subscription state after a verified, idempotently processed Stripe webhook; the embedded completion callback is only a reconciliation signal.</p>
+      <p>For a selected team, <code>BillingService.GetCreditBalance</code> returns the authoritative prepaid ledger balance. The dashboard keeps that balance separate from open reservations and the paid-period hard limit, reconciles it with the credit-control projection when both are available, and displays unavailable rather than inventing a zero.</p>
 
       <h2 id="team">Team provisioning</h2>
       <p>The create request contains the organization ID, team name, and a one-time idempotency key. The backend checks the active subscription, GitHub installation, and repository selection before it accepts provisioning.</p>
@@ -120,12 +122,12 @@ hide_cta: true
         <table class="data-table">
           <thead><tr><th>View</th><th>Source</th><th>Current contract</th></tr></thead>
           <tbody>
-            <tr><td>Teams</td><td><code>TeamService</code> and <code>ProvisioningService</code></td><td>Returns organization-scoped teams and durable provisioning state.</td></tr>
+            <tr><td>Teams</td><td><code>TeamService</code> and <code>ProvisioningService</code></td><td>Returns organization-scoped teams and resumes durable provisioning updates from a team cursor.</td></tr>
             <tr><td>Roles</td><td><code>AgentService</code></td><td>Lists the six provisioned role records for the selected team.</td></tr>
-            <tr><td>Activity</td><td><code>ActivityService.StreamTeamActivity</code></td><td>Streams normalized, team-scoped summaries. Hidden model reasoning is excluded.</td></tr>
-            <tr><td>Economics</td><td><code>EconomicsService</code></td><td>Returns attributable cost, credits used, and credits remaining for the selected scope.</td></tr>
-            <tr><td>Approvals</td><td><code>ApprovalService</code></td><td>Can record a decision for a known approval ID. The current contract has no pending-approval discovery method, so the customer application does not render approve or deny controls.</td></tr>
-            <tr><td>Objectives</td><td>Contract gap</td><td>The current generated client has no objective or initiative discovery method. The application reports that absence as unavailable.</td></tr>
+            <tr><td>Activity</td><td><code>ActivityService</code>, <code>ProvisioningService</code>, <code>ApprovalService</code>, and <code>EconomicsService</code></td><td>Filters typed A2A, session, tool, workspace/diff, delivery, approval, provisioning, and cost records while preserving each source’s cursor or snapshot semantics. Hidden model reasoning is excluded.</td></tr>
+            <tr><td>Economics</td><td><code>EconomicsService</code> and <code>BillingService.GetCreditBalance</code></td><td>Returns attributable cost and measured usage for the selected scope, plus the selected team’s authoritative prepaid ledger balance with explicit unavailable handling.</td></tr>
+            <tr><td>Approvals</td><td><code>ApprovalService.ListApprovals</code> and <code>DecideApproval</code></td><td>Lists team-scoped pending safe summaries with snapshot pagination. Authorized owners or administrators can approve; denial requires a bounded reason.</td></tr>
+            <tr><td>Objectives</td><td><code>ObjectiveService.ListBusinessObjectives</code>, <code>CreateBusinessObjective</code>, and <code>InitiativeService.ListInitiatives</code></td><td>Recovers durable team objectives through snapshot pagination, reports the durable TPM handoff state, reviews validated KPI definitions, creates objectives idempotently, and lists the full proposal context for selected-objective initiatives. Decisions remain in the real ApprovalService queue.</td></tr>
           </tbody>
         </table>
       </div>

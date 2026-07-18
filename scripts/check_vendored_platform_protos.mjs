@@ -18,6 +18,7 @@ if (revision !== expectedRevision) throw new Error(`Vendored platform-protos rev
 const manifestLines = readFileSync(resolve(vendorRoot, "MANIFEST.sha256"), "utf8").trim().split("\n");
 const required = new Set([
   "activity",
+  "admin",
   "agents",
   "approvals",
   "auth",
@@ -25,10 +26,16 @@ const required = new Set([
   "common",
   "economics",
   "github",
+  "github_delivery",
+  "initiatives",
+  "objectives",
   "organizations",
   "provisioning",
   "repositories",
-  "teams"
+  "sessions",
+  "teams",
+  "work",
+  "workspaces"
 ].map((name) => `deepnavy/v1/${name}_pb.ts`));
 for (const line of manifestLines) {
   const match = line.match(/^([a-f0-9]{64})  (deepnavy\/v1\/[a-z_]+_pb\.ts)$/);

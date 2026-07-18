@@ -1,5 +1,5 @@
 ---
-title: Deep Navy
+title: deep navy
 description: A coordinated engineering team that carries a business objective through reviewed GitHub work, explicit decisions, and measured cost.
 body_class: home
 schema_type: Organization
@@ -11,7 +11,7 @@ updated: 2026-07-17
     <div class="hero-copy">
       <span class="eyebrow">Early access / founding teams</span>
       <h1>Engineering work, organized around an objective.</h1>
-      <p class="hero-lead">Deep Navy provisions six persistent responsibilities around one objective. You see the plan, GitHub delivery, protected decisions, normalized activity, and attributable cost.</p>
+      <p class="hero-lead">deep navy provisions six persistent responsibilities around one objective. You see the plan, GitHub delivery, protected decisions, normalized activity, and attributable cost.</p>
       <div class="button-row hero-actions">
         <a class="button button-primary button-large" href="{{ '/app/' | relative_url }}">Start onboarding <span aria-hidden="true">→</span></a>
         <a class="button button-secondary button-large" href="{{ '/product/' | relative_url }}">Read the operating model</a>
@@ -23,7 +23,7 @@ updated: 2026-07-17
       </dl>
     </div>
 
-    <aside class="operating-brief" aria-label="Illustrative Deep Navy operating record">
+    <aside class="operating-brief" aria-label="Illustrative deep navy operating record">
       <header><span>Operating record / illustrative</span><span>OBJ-014</span></header>
       <div class="brief-objective"><span>Objective</span><strong>Reduce the time from repository connection to a reviewed change</strong><small>Current phase / pull request review</small></div>
       <ol class="run-ledger">

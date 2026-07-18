@@ -2,8 +2,10 @@
 // @generated from file deepnavy/v1/approvals.proto (package deepnavy.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { PageRequest, PageResponse } from "./common_pb.js";
+import { file_deepnavy_v1_common } from "./common_pb.js";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file deepnavy/v1/approvals.proto.
  */
 export const file_deepnavy_v1_approvals: GenFile = /*@__PURE__*/
-  fileDesc("ChtkZWVwbmF2eS92MS9hcHByb3ZhbHMucHJvdG8SC2RlZXBuYXZ5LnYxIv8BCghBcHByb3ZhbBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhMKC2FjdGlvbl90eXBlGAMgASgJEhQKDHNhZmVfc3VtbWFyeRgEIAEoCRIOCgZzdGF0dXMYBSABKAkSHQoVcmVxdWVzdGVkX2J5X2FnZW50X2lkGAYgASgJEhoKEmRlY2lkZWRfYnlfdXNlcl9pZBgHIAEoCRIwCgxyZXF1ZXN0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCmRlY2lkZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIkUKFURlY2lkZUFwcHJvdmFsUmVxdWVzdBIKCgJpZBgBIAEoCRIQCghhcHByb3ZlZBgCIAEoCBIOCgZyZWFzb24YAyABKAkiQQoWRGVjaWRlQXBwcm92YWxSZXNwb25zZRInCghhcHByb3ZhbBgBIAEoCzIVLmRlZXBuYXZ5LnYxLkFwcHJvdmFsMmwKD0FwcHJvdmFsU2VydmljZRJZCg5EZWNpZGVBcHByb3ZhbBIiLmRlZXBuYXZ5LnYxLkRlY2lkZUFwcHJvdmFsUmVxdWVzdBojLmRlZXBuYXZ5LnYxLkRlY2lkZUFwcHJvdmFsUmVzcG9uc2VCRFpCZ2l0aHViLmNvbS9kZWVwLW5hdnkvcGxhdGZvcm0tcHJvdG9zL2dlbi9nby9kZWVwbmF2eS92MTtkZWVwbmF2eXYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChtkZWVwbmF2eS92MS9hcHByb3ZhbHMucHJvdG8SC2RlZXBuYXZ5LnYxIrkCCghBcHByb3ZhbBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEhMKC2FjdGlvbl90eXBlGAMgASgJEhQKDHNhZmVfc3VtbWFyeRgEIAEoCRISCgZzdGF0dXMYBSABKAlCAhgBEh0KFXJlcXVlc3RlZF9ieV9hZ2VudF9pZBgGIAEoCRIaChJkZWNpZGVkX2J5X3VzZXJfaWQYByABKAkSMAoMcmVxdWVzdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpkZWNpZGVkX2F0GAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI0Cg9hcHByb3ZhbF9zdGF0dXMYCiABKA4yGy5kZWVwbmF2eS52MS5BcHByb3ZhbFN0YXR1cyKFAQoUTGlzdEFwcHJvdmFsc1JlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRI0Cg9hcHByb3ZhbF9zdGF0dXMYAiABKA4yGy5kZWVwbmF2eS52MS5BcHByb3ZhbFN0YXR1cxImCgRwYWdlGAMgASgLMhguZGVlcG5hdnkudjEuUGFnZVJlcXVlc3QiagoVTGlzdEFwcHJvdmFsc1Jlc3BvbnNlEigKCWFwcHJvdmFscxgBIAMoCzIVLmRlZXBuYXZ5LnYxLkFwcHJvdmFsEicKBHBhZ2UYAiABKAsyGS5kZWVwbmF2eS52MS5QYWdlUmVzcG9uc2UiRQoVRGVjaWRlQXBwcm92YWxSZXF1ZXN0EgoKAmlkGAEgASgJEhAKCGFwcHJvdmVkGAIgASgIEg4KBnJlYXNvbhgDIAEoCSJBChZEZWNpZGVBcHByb3ZhbFJlc3BvbnNlEicKCGFwcHJvdmFsGAEgASgLMhUuZGVlcG5hdnkudjEuQXBwcm92YWwq3wEKDkFwcHJvdmFsU3RhdHVzEh8KG0FQUFJPVkFMX1NUQVRVU19VTlNQRUNJRklFRBAAEhsKF0FQUFJPVkFMX1NUQVRVU19QRU5ESU5HEAESHAoYQVBQUk9WQUxfU1RBVFVTX0FQUFJPVkVEEAISGgoWQVBQUk9WQUxfU1RBVFVTX0RFTklFRBADEhsKF0FQUFJPVkFMX1NUQVRVU19FWFBJUkVEEAQSHAoYQVBQUk9WQUxfU1RBVFVTX0VYRUNVVEVEEAUSGgoWQVBQUk9WQUxfU1RBVFVTX0ZBSUxFRBAGMsQBCg9BcHByb3ZhbFNlcnZpY2USVgoNTGlzdEFwcHJvdmFscxIhLmRlZXBuYXZ5LnYxLkxpc3RBcHByb3ZhbHNSZXF1ZXN0GiIuZGVlcG5hdnkudjEuTGlzdEFwcHJvdmFsc1Jlc3BvbnNlElkKDkRlY2lkZUFwcHJvdmFsEiIuZGVlcG5hdnkudjEuRGVjaWRlQXBwcm92YWxSZXF1ZXN0GiMuZGVlcG5hdnkudjEuRGVjaWRlQXBwcm92YWxSZXNwb25zZUJEWkJnaXRodWIuY29tL2RlZXAtbmF2eS9wbGF0Zm9ybS1wcm90b3MvZ2VuL2dvL2RlZXBuYXZ5L3YxO2RlZXBuYXZ5djFiBnByb3RvMw", [file_deepnavy_v1_common, file_google_protobuf_timestamp]);
 
 /**
  * @generated from message deepnavy.v1.Approval
@@ -39,7 +41,10 @@ export type Approval = Message<"deepnavy.v1.Approval"> & {
   safeSummary: string;
 
   /**
-   * @generated from field: string status = 5;
+   * Deprecated compatibility field. New clients use approval_status.
+   *
+   * @generated from field: string status = 5 [deprecated = true];
+   * @deprecated
    */
   status: string;
 
@@ -62,6 +67,11 @@ export type Approval = Message<"deepnavy.v1.Approval"> & {
    * @generated from field: google.protobuf.Timestamp decided_at = 9;
    */
   decidedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: deepnavy.v1.ApprovalStatus approval_status = 10;
+   */
+  approvalStatus: ApprovalStatus;
 };
 
 /**
@@ -70,6 +80,62 @@ export type Approval = Message<"deepnavy.v1.Approval"> & {
  */
 export const ApprovalSchema: GenMessage<Approval> = /*@__PURE__*/
   messageDesc(file_deepnavy_v1_approvals, 0);
+
+/**
+ * @generated from message deepnavy.v1.ListApprovalsRequest
+ */
+export type ListApprovalsRequest = Message<"deepnavy.v1.ListApprovalsRequest"> & {
+  /**
+   * The authenticated principal must be a current member of the team.
+   *
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * UNSPECIFIED returns every status. Customer launch clients request PENDING.
+   *
+   * @generated from field: deepnavy.v1.ApprovalStatus approval_status = 2;
+   */
+  approvalStatus: ApprovalStatus;
+
+  /**
+   * Pages are a principal-bound consistent snapshot ordered by requested_at
+   * descending, then id descending. Default page size is 50; maximum is 100.
+   *
+   * @generated from field: deepnavy.v1.PageRequest page = 3;
+   */
+  page?: PageRequest | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.ListApprovalsRequest.
+ * Use `create(ListApprovalsRequestSchema)` to create a new message.
+ */
+export const ListApprovalsRequestSchema: GenMessage<ListApprovalsRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_approvals, 1);
+
+/**
+ * @generated from message deepnavy.v1.ListApprovalsResponse
+ */
+export type ListApprovalsResponse = Message<"deepnavy.v1.ListApprovalsResponse"> & {
+  /**
+   * @generated from field: repeated deepnavy.v1.Approval approvals = 1;
+   */
+  approvals: Approval[];
+
+  /**
+   * @generated from field: deepnavy.v1.PageResponse page = 2;
+   */
+  page?: PageResponse | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.ListApprovalsResponse.
+ * Use `create(ListApprovalsResponseSchema)` to create a new message.
+ */
+export const ListApprovalsResponseSchema: GenMessage<ListApprovalsResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_approvals, 2);
 
 /**
  * @generated from message deepnavy.v1.DecideApprovalRequest
@@ -96,7 +162,7 @@ export type DecideApprovalRequest = Message<"deepnavy.v1.DecideApprovalRequest">
  * Use `create(DecideApprovalRequestSchema)` to create a new message.
  */
 export const DecideApprovalRequestSchema: GenMessage<DecideApprovalRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_approvals, 1);
+  messageDesc(file_deepnavy_v1_approvals, 3);
 
 /**
  * @generated from message deepnavy.v1.DecideApprovalResponse
@@ -113,12 +179,66 @@ export type DecideApprovalResponse = Message<"deepnavy.v1.DecideApprovalResponse
  * Use `create(DecideApprovalResponseSchema)` to create a new message.
  */
 export const DecideApprovalResponseSchema: GenMessage<DecideApprovalResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_approvals, 2);
+  messageDesc(file_deepnavy_v1_approvals, 4);
+
+/**
+ * @generated from enum deepnavy.v1.ApprovalStatus
+ */
+export enum ApprovalStatus {
+  /**
+   * @generated from enum value: APPROVAL_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_PENDING = 1;
+   */
+  PENDING = 1,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_APPROVED = 2;
+   */
+  APPROVED = 2,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_DENIED = 3;
+   */
+  DENIED = 3,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_EXPIRED = 4;
+   */
+  EXPIRED = 4,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_EXECUTED = 5;
+   */
+  EXECUTED = 5,
+
+  /**
+   * @generated from enum value: APPROVAL_STATUS_FAILED = 6;
+   */
+  FAILED = 6,
+}
+
+/**
+ * Describes the enum deepnavy.v1.ApprovalStatus.
+ */
+export const ApprovalStatusSchema: GenEnum<ApprovalStatus> = /*@__PURE__*/
+  enumDesc(file_deepnavy_v1_approvals, 0);
 
 /**
  * @generated from service deepnavy.v1.ApprovalService
  */
 export const ApprovalService: GenService<{
+  /**
+   * @generated from rpc deepnavy.v1.ApprovalService.ListApprovals
+   */
+  listApprovals: {
+    methodKind: "unary";
+    input: typeof ListApprovalsRequestSchema;
+    output: typeof ListApprovalsResponseSchema;
+  },
   /**
    * @generated from rpc deepnavy.v1.ApprovalService.DecideApproval
    */
