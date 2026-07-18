@@ -182,6 +182,8 @@
     selectedEconomicsGroup: "initiative",
     teamServiceAvailable: false,
     teams: [],
+    teamLifecycleBusy: new Set(),
+    teamLifecyclePendingDelete: "",
     completingGitHub: false,
     authPhase: "signed_out",
     selectedTeamId: "",
@@ -1667,6 +1669,8 @@
       const copy = document.createElement("div");
       const name = document.createElement("strong");
       const detail = document.createElement("p");
+      const side = document.createElement("div");
+      side.className = "status-row-side";
       const status = document.createElement("span");
       name.textContent = stringValue(team.name) || "Unnamed team";
       const provisioning = launchContract.provisioningPresentation(team.provisioning || {});
@@ -1680,9 +1684,162 @@
       else if (!provisioning.terminal && provisioning.state) status.classList.add("planned");
       status.textContent = provisioning.label || lifecycleLabel(team.state) || "created";
       copy.append(name, detail);
-      row.append(copy, status);
+      side.append(status);
+      const actions = renderTeamLifecycleActions(team);
+      if (actions) side.append(actions);
+      row.append(copy, side);
       ui.teamList.append(row);
     });
+  }
+
+  function teamLifecycleControls(team) {
+    const state = lifecycleLabel(team?.state);
+    // A team already being torn down or fully removed exposes no controls.
+    if (["deleting", "deleted"].includes(state)) return [];
+    const controls = [];
+    if (state === "active") controls.push("suspend");
+    if (state === "suspended") controls.push("resume");
+    // Delete stays available for any team that is not already deleting/deleted,
+    // including pending and failed provisioning, so a stuck team can be removed.
+    controls.push("delete");
+    return controls;
+  }
+
+  function lifecycleButton(action, teamId, label, variant, disabled) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `button ${variant} button-small`;
+    button.dataset.teamAction = action;
+    button.dataset.teamId = teamId;
+    button.textContent = label;
+    button.disabled = Boolean(disabled);
+    return button;
+  }
+
+  function renderTeamLifecycleActions(team) {
+    const teamId = stringValue(team?.id);
+    if (!teamId || !session.teamServiceAvailable) return null;
+    const controls = teamLifecycleControls(team);
+    if (!controls.length) return null;
+    const busy = session.teamLifecycleBusy.has(teamId);
+
+    // A pending delete replaces the row's controls with an explicit confirmation.
+    if (session.teamLifecyclePendingDelete === teamId && controls.includes("delete")) {
+      const container = document.createElement("div");
+      container.className = "team-actions-confirm";
+      container.setAttribute("role", "group");
+      container.setAttribute("aria-label", "Confirm team deletion");
+      const note = document.createElement("p");
+      note.className = "team-actions-note";
+      note.id = `team-delete-confirm-${teamId}`;
+      note.textContent = `Delete “${stringValue(team.name) || "this team"}” for good? Running agents stop and this cannot be undone.`;
+      const group = document.createElement("div");
+      group.className = "team-actions";
+      const confirmButton = lifecycleButton("delete-confirm", teamId, "Confirm delete", "button-danger", busy);
+      confirmButton.setAttribute("aria-describedby", note.id);
+      group.append(confirmButton, lifecycleButton("delete-cancel", teamId, "Keep team", "button-quiet", busy));
+      container.append(note, group);
+      return container;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "team-actions";
+    if (controls.includes("suspend")) actions.append(lifecycleButton("suspend", teamId, "Suspend", "button-quiet", busy));
+    if (controls.includes("resume")) actions.append(lifecycleButton("resume", teamId, "Resume", "button-secondary", busy));
+    if (controls.includes("delete")) actions.append(lifecycleButton("delete", teamId, "Delete", "button-danger", busy));
+    return actions;
+  }
+
+  function handleTeamLifecycleClick(event) {
+    const button = event.target.closest("[data-team-action]");
+    if (!button || !ui.teamList.contains(button)) return;
+    const action = stringValue(button.dataset.teamAction);
+    const teamId = stringValue(button.dataset.teamId);
+    const team = session.teams.find((candidate) => stringValue(candidate.id) === teamId);
+    if (!team) return;
+    if (action === "suspend") { suspendTeamLifecycle(team); return; }
+    if (action === "resume") { resumeTeamLifecycle(team); return; }
+    if (action === "delete") { requestTeamDeletion(team); return; }
+    if (action === "delete-cancel") { cancelTeamDeletion(); return; }
+    if (action === "delete-confirm") { confirmTeamDeletion(team); return; }
+  }
+
+  function requestTeamDeletion(team) {
+    const teamId = stringValue(team.id);
+    if (!teamId || session.teamLifecycleBusy.has(teamId)) return;
+    session.teamLifecyclePendingDelete = teamId;
+    renderTeamList();
+    ui.teamList.querySelector('[data-team-action="delete-confirm"]')?.focus();
+  }
+
+  function cancelTeamDeletion() {
+    if (!session.teamLifecyclePendingDelete) return;
+    session.teamLifecyclePendingDelete = "";
+    renderTeamList();
+  }
+
+  function suspendTeamLifecycle(team) {
+    return runTeamLifecycleMutation(team, {
+      procedure: "suspend_team",
+      payload: { id: stringValue(team.id), reason: "Suspended from the customer console." },
+      verify: (response) => stringValue(response?.team?.id) === stringValue(team.id) && stringValue(response.team.organizationId) === session.organizationId,
+      successMessage: `Suspend confirmed by TeamService for “${stringValue(team.name) || "the team"}”. State refreshed from ListTeams.`,
+      failureMessage: "The team was not suspended. No state change was assumed; it is safe to retry."
+    });
+  }
+
+  function resumeTeamLifecycle(team) {
+    return runTeamLifecycleMutation(team, {
+      procedure: "resume_team",
+      payload: { id: stringValue(team.id) },
+      verify: (response) => stringValue(response?.team?.id) === stringValue(team.id) && stringValue(response.team.organizationId) === session.organizationId,
+      successMessage: `Resume confirmed by TeamService for “${stringValue(team.name) || "the team"}”. State refreshed from ListTeams.`,
+      failureMessage: "The team was not resumed. No state change was assumed; it is safe to retry."
+    });
+  }
+
+  function confirmTeamDeletion(team) {
+    return runTeamLifecycleMutation(team, {
+      procedure: "delete_team",
+      payload: { id: stringValue(team.id) },
+      successMessage: `Deletion accepted by TeamService for “${stringValue(team.name) || "the team"}”. State refreshed from ListTeams.`,
+      failureMessage: "The team was not deleted. No state change was assumed; it is safe to retry."
+    });
+  }
+
+  async function runTeamLifecycleMutation(team, { procedure, payload, verify, successMessage, failureMessage }) {
+    const teamId = stringValue(team.id);
+    if (!teamId || session.teamLifecycleBusy.has(teamId)) return;
+    session.teamLifecycleBusy.add(teamId);
+    session.teamLifecyclePendingDelete = "";
+    renderTeamList();
+    try {
+      const response = await apiRequest(procedure, payload);
+      if (verify && !verify(response)) {
+        throw new ApiError("TeamService did not confirm the lifecycle change in the current organization scope", 0, "invalid_response", "");
+      }
+      session.teamLifecycleBusy.delete(teamId);
+      // Reflect only server truth: reload the authoritative team list rather
+      // than synthesizing the post-mutation state in the browser.
+      await reloadTeamsAfterLifecycle();
+      toast(successMessage, "success");
+    } catch (error) {
+      session.teamLifecycleBusy.delete(teamId);
+      renderTeamList();
+      toast(apiErrorMessage(error, failureMessage), "error");
+      // A precondition/capacity/not-found error means the browser's view is
+      // stale; re-read the authoritative list so controls reflect reality.
+      if (error instanceof ApiError && ["failed_precondition", "resource_exhausted", "not_found"].includes(error.code)) {
+        await reloadTeamsAfterLifecycle();
+      }
+    }
+  }
+
+  async function reloadTeamsAfterLifecycle() {
+    const [teamsResult] = await Promise.allSettled([listAllTeams()]);
+    renderTeamsResult(teamsResult);
+    updateTeamAction();
+    await refreshSelectedTeam();
   }
 
   function renderTeamSelector(preferredId = "") {
@@ -4570,6 +4727,7 @@
     closeEmbeddedCheckout();
   });
   ui.teamForm.addEventListener("submit", createTeam);
+  ui.teamList.addEventListener("click", handleTeamLifecycleClick);
   ui.objectiveForm.addEventListener("submit", createObjective);
   ui.objectiveSelect.addEventListener("change", selectObjective);
   ui.approvalList.addEventListener("submit", decideApproval);

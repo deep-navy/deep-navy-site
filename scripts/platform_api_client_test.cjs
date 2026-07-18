@@ -17,6 +17,9 @@ test("the browser bundle exposes the pinned generated contract", () => {
   assert.equal(generated.PLATFORM_PROTOS_REVISION, "fa01d7cc4c68c1e7ee606a44677ad70d16f4c563");
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("suspend_team"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("resume_team"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("delete_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("provisioning_status"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("agents"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("economics"));
@@ -82,6 +85,61 @@ test("generated objective and initiative clients preserve team and objective sco
   assert.deepEqual(calls[1].body, { teamId: "team-1", page: { pageSize: 100 } });
   assert.equal(calls[2].input, "https://dev.api.deep.navy/deepnavy.v1.InitiativeService/ListInitiatives");
   assert.deepEqual(calls[2].body, { objectiveId: "objective-1", page: { pageSize: 100 } });
+});
+
+test("team lifecycle mutations dispatch to the pinned TeamService RPCs with contract fields", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      const path = String(input);
+      const response = path.endsWith("/DeleteTeam")
+        ? {}
+        : { team: { id: "team-1", organizationId: "org-1", name: "Product engineering", state: path.endsWith("/SuspendTeam") ? "LIFECYCLE_STATE_SUSPENDED" : "LIFECYCLE_STATE_ACTIVE" } };
+      return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const suspended = await api.request("suspend_team", { id: "team-1", reason: "Paused from the customer console." }, {
+    accessToken: "access-token",
+    requestId: "suspend-request"
+  });
+  await api.request("resume_team", { id: "team-1" }, { accessToken: "access-token", requestId: "resume-request" });
+  const deleted = await api.request("delete_team", { id: "team-1" }, { accessToken: "access-token", requestId: "delete-request" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/SuspendTeam");
+  assert.deepEqual(calls[0].body, { id: "team-1", reason: "Paused from the customer console." });
+  assert.equal(suspended.team.state, 3);
+  assert.equal(calls[1].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/ResumeTeam");
+  assert.deepEqual(calls[1].body, { id: "team-1" });
+  assert.equal(calls[2].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/DeleteTeam");
+  assert.deepEqual(calls[2].body, { id: "team-1" });
+  assert.equal(deleted.$typeName, "deepnavy.v1.DeleteTeamResponse");
+  assert.deepEqual(Object.keys(deleted).filter((key) => key !== "$typeName"), [], "DeleteTeamResponse carries no fields");
+  assert.equal(JSON.stringify(calls).includes("idempotencyKey"), false, "the pinned suspend/resume/delete requests carry no idempotency_key field");
+});
+
+test("suspend requires a team id and omits an empty reason from the canonical request", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({ team: { id: "team-1", organizationId: "org-1", state: "LIFECYCLE_STATE_SUSPENDED" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  });
+
+  await assert.rejects(
+    api.request("suspend_team", { id: "" }, { accessToken: "access-token", requestId: "suspend-missing-id" }),
+    /id is required/
+  );
+  await api.request("suspend_team", { id: "team-1" }, { accessToken: "access-token", requestId: "suspend-no-reason" });
+  assert.equal(calls.length, 1, "the invalid request never reaches the network");
+  assert.deepEqual(calls[0].body, { id: "team-1" });
 });
 
 test("generated economics client requests a team-scoped measured summary", async () => {
