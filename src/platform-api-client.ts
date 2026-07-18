@@ -27,7 +27,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "fa01d7cc4c68c1e7ee606a44677ad70d16f4c563";
+export const PLATFORM_PROTOS_REVISION = "b128f096be863f542eeb422c148d95f37fee0741";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
@@ -68,7 +68,15 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "github_issues",
   "github_pull_requests",
   "approvals",
-  "decide_approval"
+  "decide_approval",
+  "sign_out"
+] as const);
+
+// Public sign-in procedures are called before a session exists, so they carry
+// no bearer token and are routed through signIn() rather than request().
+export const PUBLIC_PROCEDURES = Object.freeze([
+  "github_sign_in_start",
+  "github_sign_in_complete"
 ] as const);
 
 export const PLATFORM_CAPABILITIES = Object.freeze({
@@ -88,10 +96,16 @@ export const PLATFORM_CAPABILITIES = Object.freeze({
 });
 
 type ProcedureName = (typeof SUPPORTED_PROCEDURES)[number];
+type PublicProcedureName = (typeof PUBLIC_PROCEDURES)[number];
 type InputRecord = Record<string, unknown>;
 
 export interface PlatformCallOptions {
   accessToken: string;
+  requestId: string;
+  signal?: AbortSignal;
+}
+
+export interface PublicCallOptions {
   requestId: string;
   signal?: AbortSignal;
 }
@@ -473,6 +487,8 @@ export function createPlatformApi(options: PlatformApiOptions) {
             approved: booleanField(payload, "approved"),
             reason: textField(payload, "reason", false)
           }, callOptions);
+        case "sign_out":
+          return await auth.signOut({}, callOptions);
         default:
           throw new PlatformClientError("The requested generated procedure is not available.", "not_configured", 0, requestId);
       }
@@ -483,6 +499,40 @@ export function createPlatformApi(options: PlatformApiOptions) {
       const safeMessage = connectError.code === Code.Unknown
         ? "The browser could not reach the platform service."
         : connectError.rawMessage.slice(0, 300) || "The platform service rejected the request.";
+      throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
+    }
+  }
+
+  async function signIn(name: PublicProcedureName, input: unknown, options: PublicCallOptions): Promise<unknown> {
+    const payload = inputRecord(input);
+    const requestId = options.requestId.trim();
+    if (!requestId) throw new PlatformClientError("A request ID is required.", "invalid_argument", 400, "");
+    const callOptions: CallOptions = {
+      headers: { "X-Request-ID": requestId },
+      signal: options.signal
+    };
+
+    try {
+      switch (name) {
+        case "github_sign_in_start":
+          return await auth.startGitHubSignIn({ returnTo: textField(payload, "returnTo", false) }, callOptions);
+        case "github_sign_in_complete":
+          return await auth.completeGitHubSignIn({
+            authorizationCode: textField(payload, "authorizationCode"),
+            stateToken: textField(payload, "stateToken"),
+            installationId: int64Field(payload.installationId ?? 0, "installationId"),
+            returnTo: textField(payload, "returnTo", false)
+          }, callOptions);
+        default:
+          throw new PlatformClientError("The requested public procedure is not available.", "not_configured", 0, requestId);
+      }
+    } catch (error) {
+      if (error instanceof PlatformClientError) throw error;
+      const connectError = ConnectError.from(error);
+      const responseRequestId = connectError.metadata.get("x-request-id") || requestId;
+      const safeMessage = connectError.code === Code.Unknown
+        ? "The browser could not reach the platform service."
+        : connectError.rawMessage.slice(0, 300) || "The platform service rejected the sign-in request.";
       throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
     }
   }
@@ -551,5 +601,5 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
-  return Object.freeze({ request, streamTeamActivity, streamProvisioningStatus });
+  return Object.freeze({ request, signIn, streamTeamActivity, streamProvisioningStatus });
 }
