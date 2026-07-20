@@ -9,7 +9,12 @@ const shell = readFileSync("_includes/app-shell.html", "utf8");
 const layout = readFileSync("_layouts/app.html", "utf8");
 
 test("subscription and prepaid purchases use Stripe Embedded Checkout", () => {
-  assert.match(layout, /https:\/\/js\.stripe\.com\/clover\/stripe\.js/);
+  // Stripe.js loads lazily (only when a checkout actually runs) and is never
+  // eagerly loaded in the app layout, so it is absent from sign-in and
+  // repository onboarding. It is pinned to the current documented version.
+  assert.doesNotMatch(layout, /<script[^>]*js\.stripe\.com/, "stripe.js must not be eagerly loaded in the app layout");
+  assert.match(app, /https:\/\/js\.stripe\.com\/dahlia\/stripe\.js/);
+  assert.match(app, /await ensureStripe\(\)/);
   assert.match(layout, /frame-src[^;]*https:\/\/checkout\.stripe\.com/);
   assert.match(app, /stripeClient\.initEmbeddedCheckout/);
   assert.match(app, /fetchClientSecret:\s*async \(\) => safeSecret/);
