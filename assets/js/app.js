@@ -39,12 +39,24 @@
     repositorySave: document.querySelector("[data-repository-save]"),
     repositoryRefresh: document.querySelector("[data-repository-refresh]"),
     repositoryModes: [...document.querySelectorAll('input[name="repositoryMode"]')],
-    subscriptionAction: document.querySelector("[data-subscription-action]"),
     planSummary: document.querySelector("[data-plan-summary]"),
     planName: document.querySelector("[data-plan-name]"),
     planPrice: document.querySelector("[data-plan-price]"),
     planCredits: document.querySelector("[data-plan-credits]"),
     planSlots: document.querySelector("[data-plan-slots]"),
+    settingsAccountName: document.querySelector("[data-settings-account-name]"),
+    settingsAccountLogin: document.querySelector("[data-settings-account-login]"),
+    settingsAccountOrg: document.querySelector("[data-settings-account-org]"),
+    settingsMembers: document.querySelector("[data-settings-members]"),
+    settingsMembersEmpty: document.querySelector("[data-settings-members-empty]"),
+    settingsMembersCount: document.querySelector("[data-settings-members-count]"),
+    settingsBillingState: document.querySelector("[data-settings-billing-state]"),
+    settingsTeamCount: document.querySelector("[data-settings-team-count]"),
+    settingsBillingAmount: document.querySelector("[data-settings-billing-amount]"),
+    settingsBillingUnit: document.querySelector("[data-settings-billing-unit]"),
+    settingsPaymentMethod: document.querySelector("[data-settings-payment-method]"),
+    settingsBillingNote: document.querySelector("[data-settings-billing-note]"),
+    settingsBillingManage: document.querySelector("[data-settings-billing-manage]"),
     teamForm: document.querySelector("[data-team-form]"),
     teamInput: document.querySelector("[data-team-form] input"),
     teamSubmit: document.querySelector("[data-team-form] button"),
@@ -155,6 +167,8 @@
     user: null,
     claims: {},
     organizationId: "",
+    organizationName: "",
+    members: [],
     githubInstalled: false,
     repositories: [],
     repositorySelection: null,
@@ -253,6 +267,9 @@
   let embeddedCheckout = null;
   let checkoutOpening = false;
   const provisioningTimers = new Map();
+  // Pending teams from RequestTeam are polled with GetTeam until they leave
+  // LIFECYCLE_STATE_PENDING (a verified Stripe webhook provisions them).
+  const pendingTeamTimers = new Map();
   const mutationKeys = launchContract?.createMutationKeys(() => window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18));
   const organizationCoordinator = organizationContract?.createCoordinator({
     request: apiRequest,
@@ -323,10 +340,11 @@
     return key;
   }
 
-  // Stripe is only needed for the Subscription step (step 5) and prepaid credit
-  // packs — never for sign-in or repository onboarding. We treat the presence of
-  // a publishable key as "billing is configured" (synchronous, gates the UI) and
-  // load Stripe.js lazily the first time a checkout actually runs.
+  // Stripe is only needed when creating a team (the paid action, via embedded
+  // Checkout) and for prepaid credit packs — never for sign-in or repository
+  // onboarding. We treat the presence of a publishable key as "billing is
+  // configured" (synchronous, gates the UI) and load Stripe.js lazily the first
+  // time a checkout actually runs.
   function stripeConfigured() {
     return Boolean(stripePublishableKey);
   }
@@ -665,6 +683,7 @@
     ui.userName.textContent = name;
     ui.userLogin.textContent = login;
     ui.userInitial.textContent = name.charAt(0).toUpperCase();
+    renderSettingsAccount();
   }
 
   function resetOrganizationControls() {
@@ -687,6 +706,13 @@
     session.creditControl = null;
     resetInvoiceHistory("Select an organization to load its verified billing records.", "Waiting");
     resetSubscriptionCapacity();
+    session.organizationName = "";
+    session.members = [];
+    session.subscription = null;
+    session.subscriptionActive = false;
+    session.subscriptionManageable = false;
+    renderSettingsAccount();
+    renderSettingsBilling();
     ui.contextOrganization.textContent = "Not selected";
     ui.organizationDependent.hidden = true;
 
@@ -721,6 +747,10 @@
     if (!organizationId) throw new organizationContract.ContractError("The ready organization has no ID.");
     session.organizationId = organizationId;
     const organizationName = stringValue(state.organization.name) || "your organization";
+    session.organizationName = organizationName;
+    session.members = buildOrganizationMembers(state);
+    renderSettingsAccount();
+    renderSettingsBilling();
     ui.contextOrganization.textContent = organizationName;
     setStep("organization", "complete", "Ready", `${organizationName} is the current server-confirmed organization for this session.`);
     ui.organizationDependent.hidden = false;
@@ -861,7 +891,6 @@
   async function refreshOnboarding() {
     setStep("github", "loading", "Checking", "Checking for an organization-bound GitHub App installation.");
     setStep("repositories", "loading", "Checking", "Loading the repositories that the GitHub App makes available.");
-    setStep("subscription", "loading", "Checking", "Checking the server-verified subscription status.");
     setStep("team", "loading", "Checking", "Checking existing engineering teams and prerequisites.");
     resetInvoiceHistory("Loading the signed-webhook-backed invoice projection.", "Loading", "loading");
     ui.refresh.disabled = true;
@@ -1119,6 +1148,10 @@
     session.availableTeamSlots = 0n;
   }
 
+  // The subscription is no longer an onboarding step: it is the billing record
+  // behind the Settings page and the paid-slot capacity backing team creation.
+  // This keeps the full billing data model (subscription, active flag, slot
+  // balance, default payment method) while rendering it only in Settings.
   function renderSubscriptionResult(result) {
     if (result.status === "fulfilled") {
       const subscription = result.value.subscription;
@@ -1126,8 +1159,8 @@
         session.subscription = null;
         session.subscriptionManageable = false;
         session.subscriptionActive = false;
-        setStep("subscription", "error", "Invalid response", "The billing service returned a subscription outside the current organization scope. No billing state was displayed.");
-        ui.subscriptionAction.disabled = true;
+        resetSubscriptionCapacity();
+        renderSettingsBilling("The billing service returned a subscription outside the current organization scope. No billing state was displayed.", "error");
         return;
       }
       if (result.value.plan?.id) renderBillingPlanResult({ status: "fulfilled", value: { plan: result.value.plan } });
@@ -1140,42 +1173,148 @@
       const available = int64Value(subscription?.availableTeamSlots);
       const validCapacity = paid !== null && used !== null && available !== null && paid > 0n && used + available === paid;
       session.subscriptionActive = status === "active" && validCapacity;
-      if (status === "active" && !validCapacity) {
-        setStep("subscription", "error", "Invalid capacity", "The billing service did not return a consistent paid team-slot balance. Team creation remains locked.");
-        ui.subscriptionAction.textContent = "Manage billing";
-        ui.subscriptionAction.disabled = !session.subscriptionManageable;
-        return;
-      }
       if (validCapacity) {
         session.paidTeamSlots = paid;
         session.usedTeamSlots = used;
         session.availableTeamSlots = available;
         ui.planSlots.textContent = `${paid.toString()} paid · ${used.toString()} in use · ${available.toString()} available`;
       }
-      if (session.subscriptionActive) {
-        setStep("subscription", "complete", "Active", `The signed billing record confirms ${used.toString()} of ${paid.toString()} paid team ${paid === 1n ? "slot" : "slots"} in use.`);
-        ui.subscriptionAction.textContent = "Manage billing";
-        ui.subscriptionAction.disabled = false;
-      } else {
-        setStep("subscription", "action", "Needs action", status ? `The subscription is ${status}; team creation requires a paid active billing period.` : "No active subscription is recorded for this organization.");
-        ui.subscriptionAction.textContent = session.subscriptionManageable ? "Manage billing" : "Review and subscribe";
-        ui.subscriptionAction.disabled = !session.subscriptionManageable && (!session.billingPlanAvailable || !stripeConfigured());
-      }
+      renderSettingsBilling(status === "active" && !validCapacity
+        ? "The billing service did not return a consistent paid team-slot balance. Manage billing in the Stripe portal."
+        : "", status === "active" && !validCapacity ? "error" : "");
       return;
     }
     session.subscription = null;
     session.subscriptionManageable = false;
     session.subscriptionActive = false;
     resetSubscriptionCapacity();
-    if (isMissingResource(result.reason)) {
-      const planMessage = session.billingPlanAvailable ? "The billing service creates a short-lived Stripe session rendered inside deep navy." : session.billingPlanError;
-      setStep("subscription", session.billingPlanAvailable ? "action" : "error", session.billingPlanAvailable ? "Needs action" : "Plan unavailable", `No subscription is recorded. ${planMessage}`);
-      ui.subscriptionAction.textContent = "Review and subscribe";
-      ui.subscriptionAction.disabled = !session.billingPlanAvailable || !stripeConfigured();
-    } else {
-      setStep("subscription", "error", "Unavailable", apiErrorMessage(result.reason, "The billing service is not ready. No subscription state was assumed."));
-      ui.subscriptionAction.disabled = true;
+    renderSettingsBilling(isMissingResource(result.reason)
+      ? ""
+      : apiErrorMessage(result.reason, "The billing service is not ready. No subscription state was assumed."),
+      isMissingResource(result.reason) ? "" : "error");
+  }
+
+  function buildOrganizationMembers(state) {
+    const organizationId = stringValue(state?.organization?.id);
+    const membership = Array.isArray(state?.memberships)
+      ? state.memberships.find((entry) => stringValue(entry?.id) === organizationId)
+      : null;
+    const user = session.user || {};
+    const name = stringValue(user.displayName) || stringValue(session.claims.displayName) || stringValue(user.githubLogin) || stringValue(session.claims.githubLogin) || "Signed-in user";
+    const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(session.claims.githubLogin) || stringValue(user.email) || stringValue(session.claims.email);
+    return [{ name, login, role: membershipRoleLabel(membership?.role), self: true }];
+  }
+
+  function membershipRoleLabel(value) {
+    const cleaned = stringValue(value).replace(/^MEMBERSHIP_ROLE_/, "").replaceAll("_", " ").toLowerCase();
+    return cleaned || "member";
+  }
+
+  function renderSettingsAccount() {
+    if (!ui.settingsAccountName) return;
+    const user = session.user || {};
+    const name = stringValue(user.displayName) || stringValue(session.claims.displayName) || stringValue(session.claims.email) || (session.accessToken ? "Signed-in user" : "—");
+    const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email) || "—";
+    ui.settingsAccountName.textContent = name;
+    ui.settingsAccountLogin.textContent = login;
+    ui.settingsAccountOrg.textContent = stringValue(session.organizationName) || "Not selected";
+    renderSettingsMembers();
+  }
+
+  function renderSettingsMembers() {
+    if (!ui.settingsMembers) return;
+    ui.settingsMembers.replaceChildren();
+    const members = Array.isArray(session.members) ? session.members : [];
+    ui.settingsMembersCount.textContent = members.length ? `${members.length} ${members.length === 1 ? "member" : "members"}` : "—";
+    if (ui.settingsMembersEmpty) ui.settingsMembersEmpty.hidden = members.length > 0;
+    members.forEach((member) => {
+      const item = document.createElement("li");
+      const avatar = document.createElement("span");
+      avatar.className = "user-avatar";
+      avatar.setAttribute("aria-hidden", "true");
+      avatar.textContent = (stringValue(member.name).charAt(0) || "?").toUpperCase();
+      const copy = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = stringValue(member.name) + (member.self ? " (you)" : "");
+      const login = document.createElement("small");
+      login.textContent = stringValue(member.login) || "—";
+      copy.append(name, login);
+      const role = document.createElement("span");
+      role.className = "settings-member-role";
+      role.textContent = stringValue(member.role) || "member";
+      item.append(avatar, copy, role);
+      ui.settingsMembers.append(item);
+    });
+  }
+
+  function teamUnitAmountCents() {
+    const money = session.billingPlan?.recurringPrice;
+    const units = signedInt64Value(money?.units);
+    const nanos = Number(money?.nanos || 0);
+    if (units !== null && units >= 0n && Number.isInteger(nanos) && Math.abs(nanos) <= 999_999_999) {
+      const cents = units * 100n + BigInt(Math.round(nanos / 10_000_000));
+      if (cents > 0n) return cents;
     }
+    return 59900n; // $599.00/month founding-team default
+  }
+
+  function formatCents(cents) {
+    const value = typeof cents === "bigint" ? cents : 0n;
+    const currency = stringValue(session.billingPlan?.recurringPrice?.currencyCode) || "USD";
+    const dollars = Number(value) / 100;
+    try { return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(dollars); }
+    catch { return `$${dollars.toFixed(2)}`; }
+  }
+
+  function paymentMethodSummary(pm) {
+    const brand = stringValue(pm?.brand);
+    const last4 = stringValue(pm?.last4);
+    if (!brand && !last4) return "";
+    const brandLabel = brand ? `${brand.charAt(0).toUpperCase()}${brand.slice(1)}` : "Card";
+    const digits = /^[0-9]{4}$/.test(last4) ? last4 : "";
+    const month = Number(pm?.expMonth);
+    const year = Number(pm?.expYear);
+    const exp = Number.isInteger(month) && month >= 1 && month <= 12 && Number.isInteger(year) && year >= 2000 && year <= 2100
+      ? ` · exp ${String(month).padStart(2, "0")}/${String(year).slice(-2)}`
+      : "";
+    return digits ? `${brandLabel} •••• ${digits}${exp}` : brandLabel;
+  }
+
+  function renderSettingsBilling(errorMessage = "", tone = "") {
+    if (!ui.settingsBillingState) return;
+    // A pending team is not yet paid or provisioned, so it is not billed.
+    const activeTeams = session.teams.filter((team) => !["pending", "deleting", "deleted"].includes(lifecycleLabel(team?.state))).length;
+    // Prefer the signed subscription's used-slot count (the billed quantity) when
+    // it is present and consistent; otherwise fall back to the visible team count.
+    const billedTeams = session.subscriptionManageable && session.paidTeamSlots > 0n
+      ? Number(session.usedTeamSlots)
+      : activeTeams;
+    const count = Number.isSafeInteger(billedTeams) && billedTeams >= 0 ? billedTeams : 0;
+    ui.settingsTeamCount.textContent = String(count);
+    const unitCents = teamUnitAmountCents();
+    ui.settingsBillingUnit.textContent = `${formatCents(unitCents)}/month`;
+    ui.settingsBillingAmount.textContent = `${formatCents(unitCents * BigInt(count))}/month`;
+
+    const pm = paymentMethodSummary(session.subscription?.defaultPaymentMethod);
+    ui.settingsPaymentMethod.textContent = pm || "No card on file";
+
+    if (errorMessage) {
+      setSourceState(ui.settingsBillingState, "Unavailable", tone || "error");
+      ui.settingsBillingNote.textContent = errorMessage;
+    } else if (!session.organizationId) {
+      setSourceState(ui.settingsBillingState, "Waiting", "");
+      ui.settingsBillingNote.textContent = "Select an organization to load its billing.";
+    } else if (session.subscriptionManageable) {
+      const status = subscriptionStatusLabel(session.subscription) || "active";
+      setSourceState(ui.settingsBillingState, session.subscriptionActive ? "Active" : capitalize(status), session.subscriptionActive ? "success" : "");
+      ui.settingsBillingNote.textContent = pm
+        ? "Your card is on file and reused for every team. Manage billing opens the Stripe Customer Portal to update the card, view invoices, or cancel."
+        : "Manage billing opens the Stripe Customer Portal to view invoices and update payment.";
+    } else {
+      setSourceState(ui.settingsBillingState, "No card yet", "");
+      ui.settingsBillingNote.textContent = "Billing starts when you create your first team. A card is collected once in secure Stripe checkout, then reused for every additional team.";
+    }
+    ui.settingsBillingManage.disabled = !session.subscriptionManageable || checkoutOpening;
   }
 
   function subscriptionStatusLabel(subscription) {
@@ -1500,41 +1639,42 @@
       session.teams = teams;
       renderTeamList();
       renderTeamSelector();
-      session.teams.forEach((team) => startProvisioningPolling(team));
+      renderSettingsBilling();
+      session.teams.forEach((team) => {
+        // A team still in LIFECYCLE_STATE_PENDING is awaiting the payment
+        // webhook, so it is followed with GetTeam rather than provisioning status.
+        if (lifecycleLabel(team.state) === "pending") startPendingTeamPoll(team.id, 1500);
+        else startProvisioningPolling(team);
+      });
       return;
     }
     session.teamServiceAvailable = false;
     session.teams = [];
     renderTeamList();
     renderTeamSelector();
+    renderSettingsBilling();
     setStep("team", "error", "Unavailable", apiErrorMessage(result.reason, "The team service is not ready. No team state was assumed."));
   }
 
+  // Creating a team is the paid action now, so the only prerequisites are an
+  // active GitHub installation and a durable repository selection. There is no
+  // subscription/slot gate: RequestTeam drives the payment (embedded Checkout
+  // for the first team, the saved card off-session for the rest).
   function updateTeamAction() {
     if (!session.teamServiceAvailable) {
       ui.teamInput.disabled = true;
       ui.teamSubmit.disabled = true;
       return;
     }
-    const returnedTeamCount = BigInt(session.teams.length);
-    if (session.subscriptionActive && session.usedTeamSlots < returnedTeamCount) {
-      setStep("team", "error", "Invalid capacity", "The team list exceeds the signed billing capacity record. Creation remains locked.");
-      ui.teamInput.disabled = true;
-      ui.teamSubmit.disabled = true;
-      return;
-    }
     const missing = launchContract.missingTeamPrerequisites({
       githubInstalled: session.githubInstalled,
-      repositorySelectionReady: session.repositorySelectionReady,
-      subscriptionActive: session.subscriptionActive
+      repositorySelectionReady: session.repositorySelectionReady
     });
-    const capacityAvailable = session.availableTeamSlots > 0n;
-    const ready = missing.length === 0 && capacityAvailable;
-    if (ready) {
+    const ready = missing.length === 0 && !checkoutOpening;
+    if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
-      setStep("team", "action", "Slot available", `${existing}${session.availableTeamSlots.toString()} paid ${session.availableTeamSlots === 1n ? "slot remains" : "slots remain"}. Choose a durable team name.`);
-    } else if (missing.length === 0) {
-      setStep("team", "complete", "Capacity used", `${session.usedTeamSlots.toString()} of ${session.paidTeamSlots.toString()} paid team ${session.paidTeamSlots === 1n ? "slot is" : "slots are"} in use. Increase subscription quantity before creating another team.`);
+      const firstTeam = !session.subscriptionManageable;
+      setStep("team", "action", "Ready", `${existing}Creating a team is $599/month${firstTeam ? " and collects your card in secure Stripe checkout" : ", charged to the card on file"}. Choose a durable team name.`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
       setStep("team", "blocked", "Blocked", `Complete the ${requirements} before creating a team. The API enforces these prerequisites.`);
@@ -1545,11 +1685,10 @@
 
   function setAllStepsUnavailable(message, stateValue = "error") {
     const label = stateValue === "blocked" ? "Waiting" : "Unavailable";
-    ["github", "repositories", "subscription", "team"].forEach((name) => setStep(name, stateValue, label, message));
+    ["github", "repositories", "team"].forEach((name) => setStep(name, stateValue, label, message));
     ui.githubAction.disabled = true;
     ui.repositorySave.disabled = true;
     ui.repositoryRefresh.disabled = true;
-    ui.subscriptionAction.disabled = true;
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
     ui.refresh.disabled = true;
@@ -4342,42 +4481,25 @@
     }
   }
 
-  async function startBillingAction() {
-    ui.subscriptionAction.disabled = true;
+  // Settings → Manage billing opens the Stripe Customer Portal. It is available
+  // only once a subscription exists (created by the first team's checkout); no
+  // card is ever collected here. Team creation is what drives payment.
+  async function manageBilling() {
+    if (!session.subscriptionManageable) {
+      toast("Billing opens after you create your first team.", "info");
+      return;
+    }
+    ui.settingsBillingManage.disabled = true;
     try {
-      const planId = stringValue(session.billingPlan?.id) || stringValue(config.plan_id) || "founding-team";
-      const portal = session.subscriptionManageable;
-      if (!portal && !session.billingPlanAvailable) throw new ApiError("The public billing plan is not available", 0, "plan_not_available", "");
-      const fingerprint = `${session.organizationId}:${portal ? "portal" : planId}`;
-      const idempotencyKey = mutationKeys.for(portal ? "billingPortal" : "checkout", fingerprint);
-      if (portal) {
-        const result = await apiRequest("billing_portal", { organizationId: session.organizationId, returnUrl: appUrl, idempotencyKey });
-        const destination = validatedRedirect(result.portalUrl || result.portal_url, ["billing.stripe.com"]);
-        if (!destination) throw new ApiError("Billing service returned an untrusted portal redirect", 0, "invalid_redirect", "");
-        window.location.assign(destination);
-        return;
-      }
-      await ensureStripe();
-      if (!stripeClient) throw new ApiError("Embedded Stripe Checkout is not configured", 0, "not_configured", "");
-      const returnUrl = embeddedCheckoutReturnUrl();
-      const result = await apiRequest("checkout", {
-          organizationId: session.organizationId,
-          planId,
-          returnUrl,
-          idempotencyKey
-        });
-      validateEmbeddedSession(result, returnUrl);
-      await openEmbeddedCheckout({
-        clientSecret: result.clientSecret,
-        kind: "subscription",
-        mutationName: "checkout",
-        title: "Activate your team subscription",
-        subtitle: "Complete the $599 monthly team subscription without leaving deep navy.",
-        summary: `${stringValue(session.billingPlan?.name) || "Founding Team"} · ${formatMoney(session.billingPlan?.recurringPrice, session.billingPlan?.interval)} · ${formatCredits(session.billingPlan?.includedCreditMicros)}`
-      });
+      const fingerprint = `${session.organizationId}:portal`;
+      const idempotencyKey = mutationKeys.for("billingPortal", fingerprint);
+      const result = await apiRequest("billing_portal", { organizationId: session.organizationId, returnUrl: appUrl, idempotencyKey });
+      const destination = validatedRedirect(result.portalUrl || result.portal_url, ["billing.stripe.com"]);
+      if (!destination) throw new ApiError("Billing service returned an untrusted portal redirect", 0, "invalid_redirect", "");
+      window.location.assign(destination);
     } catch (error) {
-      toast(apiErrorMessage(error, session.subscriptionManageable ? "The API could not open the billing portal." : "The API could not create a Stripe Checkout Session. No purchase was started."), "error");
-      ui.subscriptionAction.disabled = false;
+      toast(apiErrorMessage(error, "The API could not open the Stripe billing portal."), "error");
+      ui.settingsBillingManage.disabled = false;
     }
   }
 
@@ -4446,7 +4568,8 @@
     destroyEmbeddedCheckout();
     checkoutOpening = false;
     if (ui.checkoutDialog.open) ui.checkoutDialog.close();
-    ui.subscriptionAction.disabled = session.subscriptionManageable ? false : !session.billingPlanAvailable || !stripeConfigured();
+    updateTeamAction();
+    renderSettingsBilling();
     renderCreditPackControls();
   }
 
@@ -4455,18 +4578,27 @@
     mutationKeys.clear(mutationName);
     ui.checkoutStatus.textContent = "Payment submitted. Verifying Stripe’s signed webhook before changing access or credits…";
     ui.checkoutStatus.hidden = false;
+    if (kind === "team") {
+      // The first team's card is now saved; the pending team provisions only
+      // after the signed Stripe webhook confirms payment. Poll GetTeam for it.
+      const team = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+      if (team) {
+        team._pollingMessage = "Payment received. Waiting for the signed Stripe webhook to provision the team.";
+        renderTeamList();
+        if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
+      }
+      startPendingTeamPoll(teamId, 1500);
+      ui.checkoutStatus.textContent = "Payment submitted. This panel never grants access; the verified webhook provisions your team.";
+      toast("Payment submitted. Your team provisions after the signed Stripe webhook confirms it.", "info");
+      return;
+    }
     try {
-      if (kind === "subscription") await refreshOnboarding();
-      else if (teamId === session.selectedTeamId) await refreshSelectedTeam();
+      if (teamId === session.selectedTeamId) await refreshSelectedTeam();
     } catch {
       /* The normal refresh controls remain available if reconciliation is delayed. */
     }
-    ui.checkoutStatus.textContent = kind === "subscription" && session.subscriptionActive
-      ? "Subscription verified. Paid team capacity is now active."
-      : "Payment is processing. This panel never grants access or credits; the verified webhook does.";
-    toast(kind === "subscription" && session.subscriptionActive
-      ? "Subscription verified and team capacity activated."
-      : "Payment submitted. Webhook-confirmed credits will appear in the selected team ledger.", kind === "subscription" && session.subscriptionActive ? "success" : "info");
+    ui.checkoutStatus.textContent = "Payment is processing. This panel never grants access or credits; the verified webhook does.";
+    toast("Payment submitted. Webhook-confirmed credits will appear in the selected team ledger.", "info");
   }
 
   async function startCreditPackCheckout(event) {
@@ -4527,6 +4659,22 @@
     }
   }
 
+  const REQUEST_TEAM_SETTLEMENT = Object.freeze({
+    CHECKOUT_REQUIRED: "checkout_required",
+    CHARGED_OFF_SESSION: "charged_off_session",
+    AUTHENTICATION_REQUIRED: "authentication_required"
+  });
+
+  function requestTeamSettlement(value) {
+    if (typeof value === "number") return ["unspecified", "checkout_required", "charged_off_session", "authentication_required"][value] || "unspecified";
+    return stringValue(value).replace(/^REQUEST_TEAM_SETTLEMENT_/, "").toLowerCase();
+  }
+
+  // Creating a team is the paid action. RequestTeam captures the pending team and
+  // returns how it is settled: the first team collects + saves a card via
+  // embedded Checkout; subsequent teams charge the saved card off-session (or
+  // require 3-D Secure). The team is provisioned only by the signed Stripe
+  // webhook, so every path polls GetTeam until the pending team goes active.
   async function createTeam(event) {
     event.preventDefault();
     const name = stringValue(new FormData(ui.teamForm).get("teamName"));
@@ -4538,8 +4686,7 @@
     }
     const missing = launchContract.missingTeamPrerequisites({
       githubInstalled: session.githubInstalled,
-      repositorySelectionReady: session.repositorySelectionReady,
-      subscriptionActive: session.subscriptionActive
+      repositorySelectionReady: session.repositorySelectionReady
     });
     if (missing.length) {
       const message = `Complete ${missing.join(", ")} before team creation.`;
@@ -4547,38 +4694,137 @@
       toast(message, "error");
       return;
     }
-    if (session.availableTeamSlots < 1n) {
-      const message = "No paid team slot is available. Increase the subscription quantity before creating another team.";
-      setFieldError(ui.teamError, message);
-      toast(message, "error");
-      return;
-    }
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
-    ui.teamSubmit.textContent = "Creating…";
+    ui.teamSubmit.textContent = "Requesting…";
     try {
       const fingerprint = `${session.organizationId}:${name.toLowerCase()}`;
-      const result = await apiRequest("create_team", { organizationId: session.organizationId, name, idempotencyKey: mutationKeys.for("createTeam", fingerprint) });
-      if (!result.team?.id || stringValue(result.team.organizationId) !== session.organizationId) throw new ApiError("Team service did not return a resource in the current organization scope", 0, "invalid_response", "");
-      mutationKeys.clear("createTeam");
+      const result = await apiRequest("request_team", {
+        organizationId: session.organizationId,
+        name,
+        idempotencyKey: mutationKeys.for("requestTeam", fingerprint)
+      });
+      const pending = result.pendingTeam || result.pending_team;
+      if (!pending?.id || stringValue(pending.organizationId) !== session.organizationId) {
+        throw new ApiError("Team service did not return a pending team in the current organization scope", 0, "invalid_response", "");
+      }
+      const settlement = requestTeamSettlement(result.settlement);
+      // Reflect the pending team immediately; the webhook provisions it.
       session.teamServiceAvailable = true;
-      session.teams = [result.team, ...session.teams];
+      const existing = session.teams.find((team) => stringValue(team.id) === stringValue(pending.id));
+      if (existing) Object.assign(existing, pending);
+      else session.teams = [pending, ...session.teams];
       renderTeamList();
-      renderTeamSelector(result.team.id);
-      startProvisioningPolling(result.team);
-      updateTeamAction();
+      renderTeamSelector(pending.id);
+      renderSettingsBilling();
       ui.teamForm.reset();
-      const provisioning = launchContract.provisioningPresentation(result.team.provisioning || {});
-      toast(`Team “${stringValue(result.team.name) || name}” was created by the API${provisioning.state ? ` and provisioning is ${provisioning.label}` : "; provisioning status is pending"}.`, "success");
-      await refreshSelectedTeam();
+
+      if (settlement === REQUEST_TEAM_SETTLEMENT.CHECKOUT_REQUIRED) {
+        const secret = validCheckoutClientSecret(result.checkoutClientSecret || result.checkout_client_secret);
+        if (!secret) throw new ApiError("Billing service returned an invalid embedded Checkout secret for the first team", 0, "invalid_response", "");
+        await ensureStripe();
+        if (!stripeClient) throw new ApiError("Embedded Stripe Checkout is not configured", 0, "not_configured", "");
+        await openEmbeddedCheckout({
+          clientSecret: secret,
+          kind: "team",
+          mutationName: "requestTeam",
+          teamId: stringValue(pending.id),
+          title: "Start your team subscription",
+          subtitle: "Enter a card to start the $599/month team subscription. It is saved and reused for every additional team.",
+          summary: `${stringValue(pending.name) || name} · ${formatCents(teamUnitAmountCents())}/month · card saved for future teams`
+        });
+        toast(`Team “${stringValue(pending.name) || name}” is pending. Complete secure checkout to provision it.`, "info");
+      } else if (settlement === REQUEST_TEAM_SETTLEMENT.CHARGED_OFF_SESSION) {
+        const team = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(pending.id));
+        if (team) { team._pollingMessage = "Card on file charged. Waiting for the signed webhook to provision the team."; renderTeamList(); }
+        startPendingTeamPoll(pending.id, 1500);
+        toast(`The saved card was charged for “${stringValue(pending.name) || name}”. Provisioning starts after the signed webhook confirms payment.`, "success");
+      } else if (settlement === REQUEST_TEAM_SETTLEMENT.AUTHENTICATION_REQUIRED) {
+        const destination = validatedRedirect(result.authenticationUrl || result.authentication_url, ["invoice.stripe.com"]);
+        if (!destination) throw new ApiError("Billing service returned an untrusted authentication URL", 0, "invalid_redirect", "");
+        const opened = window.open(destination, "_blank", "noopener,noreferrer");
+        const team = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(pending.id));
+        if (team) { team._pollingMessage = "Authenticate the payment in the opened Stripe tab; the team provisions once it clears."; renderTeamList(); }
+        startPendingTeamPoll(pending.id, 3000);
+        toast(opened
+          ? "Authenticate the payment in the new Stripe tab. The team provisions once the charge clears."
+          : "Allow pop-ups, then reopen this action to authenticate the payment for this team.", "info");
+      } else {
+        throw new ApiError("Team service returned an unrecognized settlement for the requested team", 0, "invalid_response", "");
+      }
+      // Switch the live workspace to the pending team; a workspace load error
+      // must not mask the successful team request.
+      try { await refreshSelectedTeam(); } catch { /* workspace loads recover on their own */ }
     } catch (error) {
-      const message = apiErrorMessage(error, "The team was not confirmed as created. It is safe to retry; the request uses an idempotency key.");
+      const message = apiErrorMessage(error, "The team was not confirmed as requested. It is safe to retry; the request uses an idempotency key.");
       setFieldError(ui.teamError, message);
       toast(message, "error");
       if (error instanceof ApiError && ["failed_precondition", "resource_exhausted"].includes(error.code)) await refreshOnboarding();
-      updateTeamAction();
     } finally {
       ui.teamSubmit.textContent = "Create engineering team";
+      updateTeamAction();
+    }
+  }
+
+  function startPendingTeamPoll(teamId, delay = 2500) {
+    const id = stringValue(teamId);
+    if (!id || pendingTeamTimers.has(id)) return;
+    const timer = window.setTimeout(() => pollPendingTeam(id), delay);
+    pendingTeamTimers.set(id, timer);
+  }
+
+  function stopPendingTeamPolling() {
+    pendingTeamTimers.forEach((timer) => window.clearTimeout(timer));
+    pendingTeamTimers.clear();
+  }
+
+  async function pollPendingTeam(teamId) {
+    pendingTeamTimers.delete(teamId);
+    if (!session.accessToken) return;
+    if (document.visibilityState === "hidden") { startPendingTeamPoll(teamId, 5000); return; }
+    try {
+      const response = await apiRequest("team", { id: teamId });
+      const team = response.team;
+      if (!team || stringValue(team.id) !== stringValue(teamId) || stringValue(team.organizationId) !== session.organizationId) {
+        throw new ApiError("The team service returned a resource outside the selected organization scope", 0, "invalid_response", "");
+      }
+      const target = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+      if (target) { Object.assign(target, team); target._pollingMessage = ""; }
+      else session.teams = [team, ...session.teams];
+      const lifecycle = lifecycleLabel(team.state);
+      const provisioning = team.provisioning ? launchContract.provisioningPresentation(team.provisioning) : null;
+      const activated = lifecycle === "active" || provisioning?.state === launchContract.PROVISIONING_STATE.SUCCEEDED;
+      const failed = lifecycle === "failed" || Boolean(provisioning?.failed);
+      renderTeamList();
+      renderSettingsBilling();
+      if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
+      if (activated) {
+        mutationKeys.clear("requestTeam");
+        toast(`Team “${stringValue(team.name) || "the team"}” is provisioned and billing is active.`, "success");
+        await refreshOnboarding();
+        return;
+      }
+      if (failed) {
+        const stalled = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+        if (stalled) { stalled._pollingMessage = "Provisioning failed. Delete this team and try again, or contact support."; renderTeamList(); }
+        return;
+      }
+      if (lifecycle === "pending" || lifecycle === "" || Boolean(team.provisioning)) {
+        const waiting = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+        if (waiting && !stringValue(waiting._pollingMessage)) {
+          waiting._pollingMessage = "Waiting for the signed Stripe webhook to confirm payment and provision the team.";
+          renderTeamList();
+        }
+        startPendingTeamPoll(teamId, 5000);
+      } else {
+        // Left pending into another lifecycle (e.g. suspended); hand off to the
+        // standard provisioning poll and stop pending polling.
+        startProvisioningPolling(team);
+      }
+    } catch (error) {
+      const stalled = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+      if (stalled) { stalled._pollingMessage = apiErrorMessage(error, "The team status is temporarily unavailable. Retrying."); renderTeamList(); }
+      if (isRetryableApiError(error)) startPendingTeamPoll(teamId, 8000);
     }
   }
 
@@ -4599,17 +4845,26 @@
   async function signOut() {
     closeEmbeddedCheckout();
     stopProvisioningPolling();
+    stopPendingTeamPolling();
     stopActivityStream();
     const revokedToken = session.accessToken;
     session.accessToken = "";
     session.claims = {};
     session.user = null;
     session.organizationId = "";
+    session.organizationName = "";
+    session.members = [];
     session.selectedTeamId = "";
+    session.teams = [];
+    session.subscription = null;
+    session.subscriptionActive = false;
+    session.subscriptionManageable = false;
     session.creditPacks = [];
     session.creditControl = null;
     resetInvoiceHistory("Sign in and select an organization to load verified billing records.", "Waiting");
     resetSubscriptionCapacity();
+    renderSettingsAccount();
+    renderSettingsBilling();
     session.objectivesByTeam.clear();
     session.objectiveListsByTeam.clear();
     resetApprovalView("Sign in and select a team to load pending decisions.", "Waiting");
@@ -4649,7 +4904,7 @@
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
   ui.repositoryModes.forEach((input) => input.addEventListener("change", updateRepositoryControls));
   ui.repositoryList.addEventListener("change", updateRepositoryControls);
-  ui.subscriptionAction.addEventListener("click", startBillingAction);
+  ui.settingsBillingManage.addEventListener("click", manageBilling);
   ui.invoiceMore.addEventListener("click", loadMoreInvoices);
   ui.creditPackForm.addEventListener("submit", startCreditPackCheckout);
   ui.creditPackSelect.addEventListener("change", updateCreditPackSummary);
@@ -4688,11 +4943,16 @@
     }
   });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") session.teams.forEach((team) => startProvisioningPolling(team, 250));
+    if (document.visibilityState !== "visible") return;
+    session.teams.forEach((team) => {
+      if (lifecycleLabel(team.state) === "pending") startPendingTeamPoll(team.id, 250);
+      else startProvisioningPolling(team, 250);
+    });
   });
   window.addEventListener("beforeunload", () => {
     destroyEmbeddedCheckout();
     stopProvisioningPolling();
+    stopPendingTeamPolling();
     stopActivityStream();
   });
 

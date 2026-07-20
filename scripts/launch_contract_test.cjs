@@ -163,9 +163,23 @@ test("provisioning presentation preserves terminal and safe failure states", () 
 });
 
 test("team readiness lists every missing server-confirmed prerequisite", () => {
+  // Creating a team is now the paid action, so an active subscription is no
+  // longer a prerequisite: only the GitHub install and a durable repository
+  // selection gate team requests. Even an explicit subscriptionActive:false is
+  // ignored and never surfaces "active subscription".
   assert.deepEqual(missingTeamPrerequisites({
     githubInstalled: true,
     repositorySelectionReady: false,
     subscriptionActive: false
-  }), ["repository selection", "active subscription"]);
+  }), ["repository selection"]);
+
+  assert.deepEqual(missingTeamPrerequisites({
+    githubInstalled: false,
+    repositorySelectionReady: false
+  }), ["GitHub installation", "repository selection"]);
+
+  assert.deepEqual(missingTeamPrerequisites({
+    githubInstalled: true,
+    repositorySelectionReady: true
+  }), []);
 });

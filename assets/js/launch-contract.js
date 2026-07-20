@@ -244,11 +244,14 @@
     };
   }
 
-  function missingTeamPrerequisites({ githubInstalled, repositorySelectionReady: repositoriesReady, subscriptionActive: billingReady }) {
+  // Team creation is now the paid action (RequestTeam collects the card), so an
+  // active subscription is no longer a prerequisite: it is the *result* of
+  // creating the first team. Only the GitHub install and a durable repository
+  // selection must be ready before a team can be requested.
+  function missingTeamPrerequisites({ githubInstalled, repositorySelectionReady: repositoriesReady }) {
     return [
       !githubInstalled ? "GitHub installation" : "",
-      !repositoriesReady ? "repository selection" : "",
-      !billingReady ? "active subscription" : ""
+      !repositoriesReady ? "repository selection" : ""
     ].filter(Boolean);
   }
 

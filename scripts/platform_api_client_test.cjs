@@ -17,6 +17,7 @@ test("the browser bundle exposes the pinned generated contract", () => {
   assert.equal(generated.PLATFORM_PROTOS_REVISION, "f4463a6fec905bf4f7886e1e56424879d9a173f7");
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("request_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("suspend_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("resume_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("delete_team"));
@@ -118,6 +119,52 @@ test("team lifecycle mutations dispatch to the pinned TeamService RPCs with cont
   assert.equal(deleted.$typeName, "deepnavy.v1.DeleteTeamResponse");
   assert.deepEqual(Object.keys(deleted).filter((key) => key !== "$typeName"), [], "DeleteTeamResponse carries no fields");
   assert.equal(JSON.stringify(calls).includes("idempotencyKey"), false, "the pinned suspend/resume/delete requests carry no idempotency_key field");
+});
+
+test("RequestTeam is the paid customer entry point and decodes the settlement + pending team", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        pendingTeam: { id: "team-1", organizationId: "org-1", name: "Product engineering", state: "LIFECYCLE_STATE_PENDING" },
+        settlement: "REQUEST_TEAM_SETTLEMENT_CHECKOUT_REQUIRED",
+        checkoutClientSecret: "cs_test_requestteam1234_secret_abcdef"
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const result = await api.request("request_team", {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-1"
+  }, { accessToken: "access-token", requestId: "request-team-request" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/RequestTeam");
+  assert.deepEqual(calls[0].body, {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-1"
+  });
+  // The pending team stays in LIFECYCLE_STATE_PENDING until the signed webhook
+  // provisions it, and the settlement decodes to the checkout-required enum.
+  assert.equal(result.pendingTeam.state, 1);
+  assert.equal(result.settlement, 1);
+  assert.equal(result.checkoutClientSecret, "cs_test_requestteam1234_secret_abcdef");
+});
+
+test("RequestTeam requires an organization, name, and idempotency key before any network access", async () => {
+  let called = false;
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async () => { called = true; throw new Error("must not run"); }
+  });
+  await assert.rejects(
+    api.request("request_team", { organizationId: "org-1", name: "Product engineering", idempotencyKey: "" }, { accessToken: "access-token", requestId: "request-team-missing-key" }),
+    /idempotencyKey is required/
+  );
+  assert.equal(called, false, "an incomplete paid request never reaches the network");
 });
 
 test("suspend requires a team id and omits an empty reason from the canonical request", async () => {

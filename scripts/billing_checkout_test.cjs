@@ -32,11 +32,20 @@ test("browser requests only public catalog IDs and never fulfills payment", () =
   assert.doesNotMatch(app, /(?:console\.|toast\()[^\n]*clientSecret/);
 });
 
-test("team capacity is rendered from the signed subscription snapshot", () => {
+test("team billing is rendered from the signed subscription snapshot in Settings", () => {
+  // The full billing data model survives (subscription, active flag, slot
+  // balance, default payment method) even though onboarding no longer has a
+  // Subscription step — it now backs the Settings billing panel.
   assert.match(app, /subscription\?\.paidTeamSlots/);
   assert.match(app, /used \+ available === paid/);
-  assert.match(app, /session\.availableTeamSlots < 1n/);
+  assert.match(app, /subscription\?\.defaultPaymentMethod/);
+  assert.match(app, /function renderSettingsBilling/);
   assert.match(shell, /data-plan-slots/);
+  assert.match(shell, /data-settings-billing-manage/);
+  // The old availableTeamSlots gate on team creation is gone: creating a team
+  // drives payment instead of requiring a pre-existing paid slot.
+  assert.doesNotMatch(app, /availableTeamSlots < 1n/);
+  assert.doesNotMatch(app, /Increase subscription quantity/);
 });
 
 test("visible team budget controls map to typed authenticated API calls", () => {

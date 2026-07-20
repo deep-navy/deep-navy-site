@@ -53,6 +53,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "team",
   "teams",
   "create_team",
+  "request_team",
   "suspend_team",
   "resume_team",
   "delete_team",
@@ -407,6 +408,8 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await teams.listTeams({ organizationId: textField(payload, "organizationId"), page: pageRequest(payload.page) }, callOptions);
         case "create_team":
           return await teams.createTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
+        case "request_team":
+          return await teams.requestTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
         case "suspend_team":
           return await teams.suspendTeam({ id: textField(payload, "id"), reason: textField(payload, "reason", false) }, callOptions);
         case "resume_team":

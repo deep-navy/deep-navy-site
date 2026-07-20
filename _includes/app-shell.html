@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Customer workspace</span>
       <h1 id="app-title">Organization setup and team activity.</h1>
-      <p data-app-subtitle>Configure the account, repository scope, plan, and team. Service responses populate the workspace below.</p>
+      <p data-app-subtitle>Configure the account, repository scope, and team. Service responses populate the workspace below.</p>
     </div>
     <div class="user-summary" data-user-summary hidden>
       <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
@@ -26,9 +26,9 @@
   <section class="signed-out-card" data-signed-out aria-labelledby="sign-in-title">
     <div class="signed-out-inner">
       <span class="signed-out-mark" aria-hidden="true">↗</span>
-      <span class="eyebrow">Step 1 of 6 · Account</span>
+      <span class="eyebrow">Step 1 of 5 · Account</span>
       <h2 id="sign-in-title">Sign in to start onboarding</h2>
-      <p>Sign in with your GitHub account. The same authorization lets deep navy install its GitHub App on the repositories your engineering team will work on. This static site holds no client secret.</p>
+      <p>Sign in with your GitHub account — free, no card required. The same authorization lets deep navy install its GitHub App on the repositories your engineering team will work on. This static site holds no client secret.</p>
       <button class="button button-github button-large" type="button" data-sign-in>
         <svg class="github-mark" width="20" height="20" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         Sign in with GitHub
@@ -40,16 +40,15 @@
   <div data-authenticated hidden>
     <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
       <div class="progress-copy">
-        <div><span class="eyebrow">Onboarding status</span><h2 id="onboarding-progress-title">Six server-verified prerequisites.</h2></div>
-        <p data-progress-summary role="status" aria-live="polite">1 of 6 steps complete</p>
+        <div><span class="eyebrow">Onboarding status</span><h2 id="onboarding-progress-title">Five server-verified prerequisites.</h2></div>
+        <p data-progress-summary role="status" aria-live="polite">1 of 5 steps complete</p>
       </div>
       <ol class="progress-steps">
         <li data-progress-step="identity" data-state="complete"><span>01</span><strong>Account</strong><small>Authenticated</small></li>
         <li data-progress-step="organization" data-state="loading"><span>02</span><strong>Organization</strong><small>Checking</small></li>
         <li data-progress-step="github" data-state="blocked"><span>03</span><strong>GitHub</strong><small>Waiting</small></li>
         <li data-progress-step="repositories" data-state="blocked"><span>04</span><strong>Repositories</strong><small>Waiting</small></li>
-        <li data-progress-step="subscription" data-state="blocked"><span>05</span><strong>Plan</strong><small>Waiting</small></li>
-        <li data-progress-step="team" data-state="blocked"><span>06</span><strong>Team</strong><small>Waiting</small></li>
+        <li data-progress-step="team" data-state="blocked"><span>05</span><strong>Team</strong><small>Waiting</small></li>
       </ol>
     </section>
 
@@ -106,27 +105,14 @@
             </form>
           </article>
 
-          <article class="onboarding-card" data-step="subscription" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">STEP 05 · PLAN</span><span class="step-state" data-step-state>Checking</span></div>
-            <h2>Activate subscription</h2>
-            <p data-step-message>Checking the server-verified subscription status.</p>
-            <dl class="plan-summary" data-plan-summary hidden>
-              <div><dt>Plan</dt><dd data-plan-name></dd></div>
-              <div><dt>Price</dt><dd data-plan-price></dd></div>
-              <div><dt>Included</dt><dd data-plan-credits></dd></div>
-              <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot</dd></div>
-            </dl>
-            <div class="card-action"><button class="button button-secondary" type="button" data-subscription-action disabled>Review and subscribe</button></div>
-          </article>
-
           <article class="onboarding-card" data-step="team" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">STEP 06 · TEAM</span><span class="step-state" data-step-state>Checking</span></div>
+            <div class="step-header"><span class="step-number">STEP 05 · TEAM</span><span class="step-state" data-step-state>Checking</span></div>
             <h2>Create your team</h2>
-            <p data-step-message>Team creation unlocks after GitHub, repository access, and the subscription are ready.</p>
+            <p data-step-message>Team creation unlocks after GitHub and repository access are ready.</p>
             <form class="inline-form card-action" data-team-form>
               <label for="team-name">Team name</label>
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
-              <p class="form-help form-help-neutral" id="team-name-help">Choose a durable name tied to the team’s product area.</p>
+              <p class="form-help form-help-neutral" id="team-name-help">Creating a team is $599/month. The first team collects a card in secure Stripe checkout; more teams reuse the saved card.</p>
               <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
               <button class="button button-primary" type="submit" disabled>Create engineering team</button>
             </form>
@@ -312,6 +298,45 @@
         </section>
       </aside>
     </div>
+
+    <section id="workspace-settings" class="workspace-section" aria-labelledby="workspace-settings-title">
+      <div class="workspace-section-heading">
+        <div><span class="eyebrow">Account &amp; billing</span><h2 id="workspace-settings-title">Settings</h2></div>
+        <p>Manage the signed-in GitHub account, your organization, and the card Stripe keeps on file for your teams. deep navy never stores card details — Stripe does.</p>
+      </div>
+      <div class="settings-grid">
+        <article class="app-dashboard settings-card" aria-labelledby="settings-account-title">
+          <div class="app-dashboard-header"><h3 id="settings-account-title">Account</h3><span class="data-source-badge">GitHub identity</span></div>
+          <dl class="settings-list">
+            <div><dt>Signed in as</dt><dd data-settings-account-name>—</dd></div>
+            <div><dt>GitHub login</dt><dd data-settings-account-login>—</dd></div>
+            <div><dt>Organization</dt><dd data-settings-account-org>Not selected</dd></div>
+          </dl>
+          <div class="settings-members">
+            <div class="credit-pack-heading"><div><span class="eyebrow">Members</span><strong>Organization members</strong></div><span class="data-source-badge" data-settings-members-count>—</span></div>
+            <ul class="settings-member-list" data-settings-members aria-live="polite"></ul>
+            <p class="form-help form-help-neutral" data-settings-members-empty>Select an organization to list its members.</p>
+          </div>
+        </article>
+        <article class="app-dashboard settings-card" aria-labelledby="settings-billing-title">
+          <div class="app-dashboard-header"><h3 id="settings-billing-title">Billing</h3><span class="data-source-badge" data-settings-billing-state>Waiting</span></div>
+          <dl class="settings-list">
+            <div><dt>Active teams</dt><dd data-settings-team-count>0</dd></div>
+            <div><dt>Monthly total</dt><dd class="settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
+            <div><dt>Price per team</dt><dd data-settings-billing-unit>$599.00/month</dd></div>
+            <div><dt>Payment method</dt><dd data-settings-payment-method>No card on file</dd></div>
+          </dl>
+          <dl class="plan-summary" data-plan-summary hidden>
+            <div><dt>Plan</dt><dd data-plan-name></dd></div>
+            <div><dt>Price</dt><dd data-plan-price></dd></div>
+            <div><dt>Included</dt><dd data-plan-credits></dd></div>
+            <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
+          </dl>
+          <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
+          <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing</button></div>
+        </article>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -320,7 +345,7 @@
     <header class="checkout-header">
       <div>
         <span class="eyebrow">deep navy / secure payment</span>
-        <h2 id="checkout-title" data-checkout-title>Complete subscription</h2>
+        <h2 id="checkout-title" data-checkout-title>Secure checkout</h2>
         <p data-checkout-subtitle>Stripe renders the encrypted payment fields inside this deep navy checkout.</p>
       </div>
       <button class="checkout-close" type="button" data-checkout-close aria-label="Close checkout">Close</button>

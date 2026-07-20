@@ -45,16 +45,30 @@ test("the GitHub sign-in lifecycle only reveals the workspace once a session tok
   assert.equal(signedIn.userVisible, true);
 });
 
-test("onboarding progress follows the canonical six-step sequence", () => {
+test("onboarding progress follows the canonical five-step sequence with no Subscription step", () => {
+  const { ONBOARDING_STEPS } = require("../assets/js/app-state.js");
+  // Signup is free; creating a team is the paid action, so onboarding has no
+  // Subscription step. Billing lives in Settings, never the wizard.
+  assert.deepEqual(ONBOARDING_STEPS, ["identity", "organization", "github", "repositories", "team"]);
+  assert.equal(ONBOARDING_STEPS.includes("subscription"), false);
+
   assert.deepEqual(progressSummary({
     identity: "complete",
     organization: "complete",
     github: "complete",
     repositories: "action",
-    subscription: "blocked",
     team: "blocked"
-  }), { completed: 3, total: 6, next: "repositories" });
+  }), { completed: 3, total: 5, next: "repositories" });
 
+  assert.deepEqual(progressSummary({
+    identity: "complete",
+    organization: "complete",
+    github: "complete",
+    repositories: "complete",
+    team: "complete"
+  }), { completed: 5, total: 5, next: "complete" });
+
+  // A stray subscription key can never inflate the count past the five steps.
   assert.deepEqual(progressSummary({
     identity: "complete",
     organization: "complete",
@@ -62,5 +76,5 @@ test("onboarding progress follows the canonical six-step sequence", () => {
     repositories: "complete",
     subscription: "complete",
     team: "complete"
-  }), { completed: 6, total: 6, next: "complete" });
+  }), { completed: 5, total: 5, next: "complete" });
 });

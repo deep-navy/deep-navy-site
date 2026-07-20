@@ -104,6 +104,7 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.BillingErrorDetail`](#deepnavy-v1-billingerrordetail)
   - [Message `deepnavy.v1.BillingPlan`](#deepnavy-v1-billingplan)
   - [Message `deepnavy.v1.Subscription`](#deepnavy-v1-subscription)
+  - [Message `deepnavy.v1.PaymentMethodSummary`](#deepnavy-v1-paymentmethodsummary)
   - [Message `deepnavy.v1.GetBillingPlanRequest`](#deepnavy-v1-getbillingplanrequest)
   - [Message `deepnavy.v1.GetBillingPlanResponse`](#deepnavy-v1-getbillingplanresponse)
   - [Message `deepnavy.v1.GetSubscriptionRequest`](#deepnavy-v1-getsubscriptionrequest)
@@ -275,7 +276,10 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse)
   - [Message `deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest)
   - [Message `deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse)
+  - [Message `deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest)
+  - [Message `deepnavy.v1.RequestTeamResponse`](#deepnavy-v1-requestteamresponse)
   - [Enum `deepnavy.v1.TeamErrorReason`](#deepnavy-v1-teamerrorreason)
+  - [Enum `deepnavy.v1.RequestTeamSettlement`](#deepnavy-v1-requestteamsettlement)
   - [Service `deepnavy.v1.TeamService`](#deepnavy-v1-teamservice)
 - [deepnavy/v1/work.proto](#deepnavy-v1-work-proto)
   - [Message `deepnavy.v1.WorkErrorDetail`](#deepnavy-v1-workerrordetail)
@@ -1499,6 +1503,20 @@ BillingErrorDetail is attached to a non-OK Connect/gRPC status. safe_message
 | `paid_team_slots` | 10 | `int64` | singular | Stripe licensed quantity is the paid upper bound for non-deleted teams. |
 | `used_team_slots` | 11 | `int64` | singular | — |
 | `available_team_slots` | 12 | `int64` | singular | — |
+| `default_payment_method` | 13 | [`deepnavy.v1.PaymentMethodSummary`](#deepnavy-v1-paymentmethodsummary) | singular | default_payment_method summarizes the card on file (for the Settings page).<br> Absent until the first team's checkout saves a card. Never carries the raw<br> PAN — only the network brand and last four digits Stripe returns. |
+
+<a id="deepnavy-v1-paymentmethodsummary"></a>
+### Message `deepnavy.v1.PaymentMethodSummary`
+
+PaymentMethodSummary is a non-sensitive description of the saved card shown in
+ Settings. It is derived from Stripe and never includes the full card number.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `brand` | 1 | `string` | singular | — |
+| `last4` | 2 | `string` | singular | — |
+| `exp_month` | 3 | `uint32` | singular | — |
+| `exp_year` | 4 | `uint32` | singular | — |
 
 <a id="deepnavy-v1-getbillingplanrequest"></a>
 ### Message `deepnavy.v1.GetBillingPlanRequest`
@@ -3361,6 +3379,25 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 
 This message has no fields.
 
+<a id="deepnavy-v1-requestteamrequest"></a>
+### Message `deepnavy.v1.RequestTeamRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or admin membership. The<br> server verifies the GitHub installation and durable repository selection;<br> browser state is never sufficient authorization. |
+| `name` | 2 | `string` | singular | — |
+| `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with the<br> same key returns the original pending team + settlement without opening a<br> second Checkout Session or charging the saved card twice. |
+
+<a id="deepnavy-v1-requestteamresponse"></a>
+### Message `deepnavy.v1.RequestTeamResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `pending_team` | 1 | [`deepnavy.v1.Team`](#deepnavy-v1-team) | singular | pending_team is the team in LIFECYCLE_STATE_PENDING. It becomes active only<br> after the signed Stripe webhook confirms payment and provisioning succeeds. |
+| `settlement` | 2 | [`deepnavy.v1.RequestTeamSettlement`](#deepnavy-v1-requestteamsettlement) | singular | — |
+| `checkout_client_secret` | 3 | `string` | singular | Set only when settlement == CHECKOUT_REQUIRED. Feed to Stripe Embedded<br> Checkout (initEmbeddedCheckout). A short-lived credential — never log it. |
+| `authentication_url` | 4 | `string` | singular | Set only when settlement == AUTHENTICATION_REQUIRED. A short-lived hosted<br> Stripe invoice URL for 3-D Secure. A credential — never log it. |
+
 <a id="deepnavy-v1-teamerrorreason"></a>
 ### Enum `deepnavy.v1.TeamErrorReason`
 
@@ -3375,6 +3412,20 @@ This message has no fields.
 | `TEAM_ERROR_REASON_IDEMPOTENCY_KEY_REUSED` | 6 | The key was previously used with a different normalized request. Returned<br> with FAILED_PRECONDITION. |
 | `TEAM_ERROR_REASON_NOT_AUTHORIZED` | 7 | Returned with PERMISSION_DENIED when the authenticated member lacks the<br> owner or admin role required for a team mutation. |
 | `TEAM_ERROR_REASON_PAID_TEAM_SLOTS_EXHAUSTED` | 8 | Returned with RESOURCE_EXHAUSTED when non-deleted teams already consume<br> every paid Stripe licensed-quantity slot. |
+| `TEAM_ERROR_REASON_PAYMENT_DECLINED` | 9 | Returned with FAILED_PRECONDITION when the off-session charge for an<br> additional team was declined by the saved card. No pending team is created. |
+| `TEAM_ERROR_REASON_PAYMENT_METHOD_REQUIRED` | 10 | Returned with FAILED_PRECONDITION when the organization has no saved<br> payment method on file for an off-session charge (should not occur after<br> the first team's checkout). |
+
+<a id="deepnavy-v1-requestteamsettlement"></a>
+### Enum `deepnavy.v1.RequestTeamSettlement`
+
+RequestTeamSettlement describes how a RequestTeam call is paid for.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `REQUEST_TEAM_SETTLEMENT_UNSPECIFIED` | 0 | — |
+| `REQUEST_TEAM_SETTLEMENT_CHECKOUT_REQUIRED` | 1 | First team on the organization (no subscription yet). Mount Stripe Embedded<br> Checkout with checkout_client_secret to collect + save the card and start<br> the $599/month subscription. The team provisions after the signed webhook<br> confirms payment. |
+| `REQUEST_TEAM_SETTLEMENT_CHARGED_OFF_SESSION` | 2 | A subscription with a saved card already exists: its quantity was<br> incremented and the prorated amount charged off-session. Poll GetTeam until<br> the pending team goes active. |
+| `REQUEST_TEAM_SETTLEMENT_AUTHENTICATION_REQUIRED` | 3 | The off-session charge requires 3-D Secure. Open authentication_url (a<br> hosted Stripe invoice) to authenticate; the team provisions once paid. |
 
 <a id="deepnavy-v1-teamservice"></a>
 ### Service `deepnavy.v1.TeamService`
@@ -3383,7 +3434,8 @@ This message has no fields.
 | --- | --- | --- | --- | --- |
 | `GetTeam` | [`deepnavy.v1.GetTeamRequest`](#deepnavy-v1-getteamrequest) | [`deepnavy.v1.GetTeamResponse`](#deepnavy-v1-getteamresponse) | unary | — |
 | `ListTeams` | [`deepnavy.v1.ListTeamsRequest`](#deepnavy-v1-listteamsrequest) | [`deepnavy.v1.ListTeamsResponse`](#deepnavy-v1-listteamsresponse) | unary | — |
-| `CreateTeam` | [`deepnavy.v1.CreateTeamRequest`](#deepnavy-v1-createteamrequest) | [`deepnavy.v1.CreateTeamResponse`](#deepnavy-v1-createteamresponse) | unary | CreateTeam requires an owner or admin membership and is idempotent by the<br> authenticated principal and idempotency_key. |
+| `CreateTeam` | [`deepnavy.v1.CreateTeamRequest`](#deepnavy-v1-createteamrequest) | [`deepnavy.v1.CreateTeamResponse`](#deepnavy-v1-createteamresponse) | unary | CreateTeam requires an owner or admin membership and is idempotent by the<br> authenticated principal and idempotency_key. It is the internal/legacy path<br> that requires a pre-existing paid slot; customer flows use RequestTeam. |
+| `RequestTeam` | [`deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest) | [`deepnavy.v1.RequestTeamResponse`](#deepnavy-v1-requestteamresponse) | unary | RequestTeam is the customer entry point for creating a team and is the<br> moment payment is collected. It captures the team, then either starts the<br> subscription (first team, via embedded Checkout) or charges the saved card<br> off-session (subsequent teams, incrementing the licensed quantity). The<br> team row is provisioned by the signed Stripe webhook, never inline. It is<br> idempotent by the authenticated principal and idempotency_key. |
 | `SuspendTeam` | [`deepnavy.v1.SuspendTeamRequest`](#deepnavy-v1-suspendteamrequest) | [`deepnavy.v1.SuspendTeamResponse`](#deepnavy-v1-suspendteamresponse) | unary | — |
 | `ResumeTeam` | [`deepnavy.v1.ResumeTeamRequest`](#deepnavy-v1-resumeteamrequest) | [`deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse) | unary | — |
 | `DeleteTeam` | [`deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest) | [`deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse) | unary | — |

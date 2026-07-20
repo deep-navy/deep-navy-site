@@ -11,12 +11,13 @@
     AUTHENTICATED: "authenticated"
   });
 
+  // Signup is free: creating a team is the paid action, so onboarding has no
+  // Subscription step. Billing lives in Settings, not the wizard.
   const ONBOARDING_STEPS = Object.freeze([
     "identity",
     "organization",
     "github",
     "repositories",
-    "subscription",
     "team"
   ]);
 
