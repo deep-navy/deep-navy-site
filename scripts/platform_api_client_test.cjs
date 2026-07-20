@@ -14,7 +14,7 @@ function parseRequestBody(body) {
 }
 
 test("the browser bundle exposes the pinned generated contract", () => {
-  assert.equal(generated.PLATFORM_PROTOS_REVISION, "b128f096be863f542eeb422c148d95f37fee0741");
+  assert.equal(generated.PLATFORM_PROTOS_REVISION, "f4463a6fec905bf4f7886e1e56424879d9a173f7");
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("suspend_team"));
