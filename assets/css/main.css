@@ -147,6 +147,12 @@ p { color: var(--muted); }
 .button-secondary:hover { border-color: rgba(121, 242, 210, .5); background: var(--navy-750); }
 .button-quiet { color: var(--muted-bright); background: transparent; }
 .button-quiet:hover { color: var(--ink); background: var(--navy-800); }
+/* "Sign in with GitHub" — GitHub brand button: unmodified white Invertocat on
+   GitHub's near-black surface, per brand.github.com (mark shown white/black only,
+   not recolored, kept no more prominent than the deep navy wordmark). */
+.button-github { color: #ffffff; background: #1f2328; border: 1px solid rgba(244, 247, 245, .2); }
+.button-github:hover { background: #2b3138; border-color: rgba(244, 247, 245, .38); }
+.github-mark { flex: 0 0 auto; }
 .button-small { min-height: 44px; padding: .55rem .85rem; font-size: .82rem; }
 .button-large { min-height: 54px; padding: .9rem 1.4rem; }
 .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
