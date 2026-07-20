@@ -248,7 +248,8 @@
   const platformApi = createPlatformApi();
   const identity = identityConfiguration();
   const stripePublishableKey = validatedStripePublishableKey(config.stripe_publishable_key);
-  const stripeClient = createStripeClient();
+  let stripeClient = null;
+  let stripeLoadPromise = null;
   let embeddedCheckout = null;
   let checkoutOpening = false;
   const provisioningTimers = new Map();
@@ -322,13 +323,37 @@
     return key;
   }
 
-  function createStripeClient() {
-    if (!stripePublishableKey || typeof window.Stripe !== "function") return null;
-    try {
-      return window.Stripe(stripePublishableKey);
-    } catch {
-      return null;
+  // Stripe is only needed for the Subscription step (step 5) and prepaid credit
+  // packs — never for sign-in or repository onboarding. We treat the presence of
+  // a publishable key as "billing is configured" (synchronous, gates the UI) and
+  // load Stripe.js lazily the first time a checkout actually runs.
+  function stripeConfigured() {
+    return Boolean(stripePublishableKey);
+  }
+
+  // Inject Stripe.js on demand. Stripe requires loading it directly from
+  // js.stripe.com (no bundling, self-hosting, or SRI — the file updates
+  // continuously), so we add the current pinned version as a script tag the
+  // first time it is needed and reuse the single resolved client instance.
+  function ensureStripe() {
+    if (stripeClient) return Promise.resolve(stripeClient);
+    if (!stripePublishableKey) return Promise.resolve(null);
+    if (!stripeLoadPromise) {
+      stripeLoadPromise = new Promise((resolve) => {
+        if (typeof window.Stripe === "function") { resolve(); return; }
+        const script = document.createElement("script");
+        script.src = "https://js.stripe.com/dahlia/stripe.js";
+        script.async = true;
+        script.addEventListener("load", () => resolve());
+        script.addEventListener("error", () => resolve());
+        document.head.appendChild(script);
+      }).then(() => {
+        if (typeof window.Stripe !== "function") return null;
+        try { stripeClient = window.Stripe(stripePublishableKey); } catch { stripeClient = null; }
+        return stripeClient;
+      });
     }
+    return stripeLoadPromise;
   }
 
   function createPlatformApi() {
@@ -351,7 +376,7 @@
     const missing = [];
     if (!apiBaseUrl) missing.push("platform API origin");
     if (!platformApi) missing.push("platform API client");
-    if (!stripeClient) missing.push("Stripe publishable configuration");
+    if (!stripeConfigured()) missing.push("Stripe publishable configuration");
 
     if (missing.length === 0) {
       ui.configBanner.hidden = true;
@@ -1134,7 +1159,7 @@
       } else {
         setStep("subscription", "action", "Needs action", status ? `The subscription is ${status}; team creation requires a paid active billing period.` : "No active subscription is recorded for this organization.");
         ui.subscriptionAction.textContent = session.subscriptionManageable ? "Manage billing" : "Review and subscribe";
-        ui.subscriptionAction.disabled = !session.subscriptionManageable && (!session.billingPlanAvailable || !stripeClient);
+        ui.subscriptionAction.disabled = !session.subscriptionManageable && (!session.billingPlanAvailable || !stripeConfigured());
       }
       return;
     }
@@ -1146,7 +1171,7 @@
       const planMessage = session.billingPlanAvailable ? "The billing service creates a short-lived Stripe session rendered inside deep navy." : session.billingPlanError;
       setStep("subscription", session.billingPlanAvailable ? "action" : "error", session.billingPlanAvailable ? "Needs action" : "Plan unavailable", `No subscription is recorded. ${planMessage}`);
       ui.subscriptionAction.textContent = "Review and subscribe";
-      ui.subscriptionAction.disabled = !session.billingPlanAvailable || !stripeClient;
+      ui.subscriptionAction.disabled = !session.billingPlanAvailable || !stripeConfigured();
     } else {
       setStep("subscription", "error", "Unavailable", apiErrorMessage(result.reason, "The billing service is not ready. No subscription state was assumed."));
       ui.subscriptionAction.disabled = true;
@@ -1429,11 +1454,11 @@
     });
     if (session.creditPacks.some((pack) => stringValue(pack.id) === previous)) ui.creditPackSelect.value = previous;
     const controlReady = stringValue(session.creditControl?.teamId) === stringValue(team.id);
-    const ready = Boolean(session.creditPacks.length && stripeClient && controlReady && !checkoutOpening);
+    const ready = Boolean(session.creditPacks.length && stripeConfigured() && controlReady && !checkoutOpening);
     ui.creditPackSelect.disabled = !ready;
     ui.creditPackQuantity.disabled = !ready;
     ui.creditPackSubmit.disabled = !ready;
-    setFieldError(ui.creditPackError, errorMessage || (!stripeClient
+    setFieldError(ui.creditPackError, errorMessage || (!stripeConfigured()
       ? "Secure checkout is not configured in this deployment."
       : !controlReady
         ? "The team credit control is unavailable; purchases remain fail-closed."
@@ -1456,7 +1481,7 @@
     ui.creditPackSummary.textContent = valid
       ? `${formatCanonicalMoney(pack.price)} each · ${formatCredits(totalCredits)} added to ${stringValue(selectedTeam()?.name) || "this team"}`
       : `Enter a quantity from 1 to ${maximum.toString()}.`;
-    ui.creditPackSubmit.disabled = !valid || !stripeClient || checkoutOpening;
+    ui.creditPackSubmit.disabled = !valid || !stripeConfigured() || checkoutOpening;
   }
 
   function renderTeamsResult(result) {
@@ -4332,6 +4357,7 @@
         window.location.assign(destination);
         return;
       }
+      await ensureStripe();
       if (!stripeClient) throw new ApiError("Embedded Stripe Checkout is not configured", 0, "not_configured", "");
       const returnUrl = embeddedCheckoutReturnUrl();
       const result = await apiRequest("checkout", {
@@ -4375,6 +4401,7 @@
   }
 
   async function openEmbeddedCheckout({ clientSecret, kind, mutationName, title, subtitle, summary, teamId = "" }) {
+    await ensureStripe();
     if (!stripeClient || typeof stripeClient.initEmbeddedCheckout !== "function") throw new ApiError("Embedded Stripe Checkout is unavailable", 0, "not_configured", "");
     if (checkoutOpening) throw new ApiError("Embedded Checkout is already opening", 0, "already_opening", "");
     if (embeddedCheckout) closeEmbeddedCheckout();
@@ -4419,7 +4446,7 @@
     destroyEmbeddedCheckout();
     checkoutOpening = false;
     if (ui.checkoutDialog.open) ui.checkoutDialog.close();
-    ui.subscriptionAction.disabled = session.subscriptionManageable ? false : !session.billingPlanAvailable || !stripeClient;
+    ui.subscriptionAction.disabled = session.subscriptionManageable ? false : !session.billingPlanAvailable || !stripeConfigured();
     renderCreditPackControls();
   }
 
@@ -4453,6 +4480,7 @@
       setFieldError(ui.creditPackError, "Choose an active team, a prepaid pack, and a valid quantity.");
       return;
     }
+    await ensureStripe();
     if (!stripeClient) {
       setFieldError(ui.creditPackError, "Secure checkout is not configured in this deployment.");
       return;
