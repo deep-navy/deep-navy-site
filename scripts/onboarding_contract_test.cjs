@@ -188,9 +188,12 @@ test("team onboarding exhausts stable organization-scoped pages before enforcing
 
 test("customer sign-in uses the platform-owned GitHub round trip instead of Cognito hosted UI", () => {
   // beginSignIn asks the platform API to start a GitHub sign-in and redirects to
-  // the returned authorization URL rather than building a Cognito PKCE URL.
+  // the returned authorization URL (login) or installation URL (new user connecting
+  // repositories) rather than building a Cognito PKCE URL.
   assert.match(appSource, /platformApi\.signIn\("github_sign_in_start", \{ returnTo: appPath \}/);
-  assert.match(appSource, /const destination = validatedRedirect\(result\?\.authorizationUrl, \["github\.com"\]\)/);
+  assert.match(appSource, /result\?\.authorizationUrl/);
+  assert.match(appSource, /result\?\.installationUrl \|\| result\?\.installation_url/);
+  assert.match(appSource, /const destination = validatedRedirect\(url, \["github\.com"\]\)/);
   assert.match(appSource, /storageWrite\(signInStorageKey, \{ purpose: "sign_in", createdAt: Date\.now\(\) \}\)/);
   // The Cognito hosted-UI OAuth + PKCE token exchange is fully removed.
   assert.doesNotMatch(appSource, /oauth2\//);

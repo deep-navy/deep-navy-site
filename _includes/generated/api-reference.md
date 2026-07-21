@@ -1410,7 +1410,8 @@ This message has no fields.
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `authorization_url` | 1 | `string` | singular | — |
+| `authorization_url` | 1 | `string` | singular | authorization_url is the GitHub user-authorization (OAuth) login URL. A<br> returning user is redirected straight back; this is the sign-in handoff. |
+| `installation_url` | 2 | `string` | singular | installation_url is the GitHub App installation URL carrying the same one-time<br> state. A newly signed-in user who has not installed the App yet is sent here<br> to connect their repositories; installing also authorizes, so the callback<br> completes sign-in and derives the organization. A short-lived credential. |
 
 <a id="deepnavy-v1-completegithubsigninrequest"></a>
 ### Message `deepnavy.v1.CompleteGitHubSignInRequest`

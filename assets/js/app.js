@@ -25,6 +25,7 @@
     userName: document.querySelector("[data-user-name]"),
     userLogin: document.querySelector("[data-user-login]"),
     organizationDependent: document.querySelector("[data-organization-dependent]"),
+    organizationConnect: document.querySelector("[data-organization-connect]"),
     organizationBootstrapForm: document.querySelector("[data-organization-bootstrap]"),
     organizationBootstrapInput: document.querySelector("[data-organization-bootstrap] input"),
     organizationBootstrapSubmit: document.querySelector("[data-organization-bootstrap] button"),
@@ -375,7 +376,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "f4463a6fec905bf4f7886e1e56424879d9a173f7" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "4087963e8b1ca19797e9ef688d7d597ca642920e" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -424,7 +425,11 @@
     return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
 
-  async function beginSignIn() {
+  // target "authorization" is the normal OAuth login; "installation" sends a
+  // newly signed-in user who has not installed the App yet to install it and
+  // connect repositories. Installing authorizes too, so the same callback
+  // completes sign-in and derives the organization.
+  async function beginSignIn(target = "authorization") {
     hideAuthError();
     if (!identity.ready || !platformApi) {
       showAuthError("Sign-in is not available", "This deployment is missing its platform API configuration or the generated client bundle. No sign-in request was sent.");
@@ -445,7 +450,10 @@
         throw new Error("secure_storage_unavailable");
       }
       const result = await platformApi.signIn("github_sign_in_start", { returnTo: appPath }, { requestId, signal: controller.signal });
-      const destination = validatedRedirect(result?.authorizationUrl, ["github.com"]);
+      const url = target === "installation"
+        ? (result?.installationUrl || result?.installation_url)
+        : result?.authorizationUrl;
+      const destination = validatedRedirect(url, ["github.com"]);
       if (!destination) throw new Error("untrusted_authorization_url");
       window.location.assign(destination);
     } catch {
@@ -687,6 +695,7 @@
   }
 
   function resetOrganizationControls() {
+    if (ui.organizationConnect) { ui.organizationConnect.hidden = true; ui.organizationConnect.disabled = true; }
     ui.organizationBootstrapForm.hidden = true;
     ui.organizationBootstrapInput.disabled = true;
     ui.organizationBootstrapSubmit.disabled = true;
@@ -717,6 +726,19 @@
     ui.organizationDependent.hidden = true;
 
     if (state.kind === "needs_bootstrap") {
+      // Your Deep Navy organization is derived from the GitHub organization you
+      // connect, so a signed-in user with no membership simply hasn't installed
+      // the App yet. Offer to connect repositories (install) — installing also
+      // authorizes, so the callback completes sign-in and creates the workspace
+      // automatically. The manual name-your-organization form stays available as
+      // a fallback for environments without a configured GitHub App.
+      if (ui.organizationConnect) {
+        setStep("organization", "action", "Connect GitHub", "Install the deep navy GitHub App on your organization to connect the repositories your team will work on. Your organization and workspace are created automatically.");
+        ui.organizationConnect.hidden = false;
+        ui.organizationConnect.disabled = false;
+        setAllStepsUnavailable("Connect your GitHub repositories to create your workspace.", "blocked");
+        return;
+      }
       setStep("organization", "action", "Needs action", "Name your organization. The API will create the organization and your owner membership atomically; safe retries reuse the same idempotency key.");
       ui.organizationBootstrapForm.hidden = false;
       ui.organizationBootstrapInput.disabled = false;
@@ -4903,6 +4925,7 @@
   ui.signIn.addEventListener("click", () => beginSignIn());
   ui.retrySignIn.addEventListener("click", () => beginSignIn());
   ui.signOut.addEventListener("click", signOut);
+  if (ui.organizationConnect) ui.organizationConnect.addEventListener("click", () => beginSignIn("installation"));
   ui.organizationBootstrapForm.addEventListener("submit", bootstrapOrganization);
   ui.organizationSelectForm.addEventListener("submit", selectOrganization);
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
