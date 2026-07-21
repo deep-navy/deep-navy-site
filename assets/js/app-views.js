@@ -37,9 +37,11 @@
   const VIEWS = ["overview", "activity", "economics", "approvals", "settings"];
   let currentView = "overview";
   let newTeamRequested = false;
+  let teamCountAtRequest = 0;
 
   const isAuthenticated = () => authenticated && authenticated.hidden === false;
   const teamsExist = () => Boolean(teamsEmpty && teamsEmpty.hidden === true);
+  const teamCount = () => (teamList ? teamList.childElementCount : 0);
 
   function computeMode() {
     if (!isAuthenticated()) return "signedout";
@@ -93,6 +95,7 @@
   if (newTeamButton) {
     newTeamButton.addEventListener("click", () => {
       newTeamRequested = true;
+      teamCountAtRequest = teamCount();
       applyMode();
       if (teamInput && !teamInput.disabled) { teamInput.focus(); teamInput.select(); }
     });
@@ -101,10 +104,12 @@
     cancelButton.addEventListener("click", () => { newTeamRequested = false; applyMode(); });
   }
 
-  // React to app.js's coarse signals. A team appearing, or checkout opening,
-  // means the "New team" intent is satisfied — fall back to the workspace.
+  // React to app.js's coarse signals. Only drop the "New team" intent once a
+  // genuinely new team appears (team count grows past what it was when the
+  // button was tapped) — NOT merely because teams already exist, which would
+  // snap the create screen back to the workspace on every background re-render.
   const observer = new MutationObserver(() => {
-    if (teamsExist() && newTeamRequested) newTeamRequested = false;
+    if (newTeamRequested && teamCount() > teamCountAtRequest) newTeamRequested = false;
     applyMode();
     refreshApprovalsCount();
   });
