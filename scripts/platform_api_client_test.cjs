@@ -167,6 +167,75 @@ test("RequestTeam requires an organization, name, and idempotency key before any
   assert.equal(called, false, "an incomplete paid request never reaches the network");
 });
 
+test("RequestTeam carries the engineer count and objective the setup screen collects", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        pendingTeam: { id: "team-1", organizationId: "org-1", name: "Product engineering", engineerCount: 5, state: "LIFECYCLE_STATE_PENDING" },
+        settlement: "REQUEST_TEAM_SETTLEMENT_CHARGED_OFF_SESSION"
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  await api.request("request_team", {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-2",
+    engineerCount: 5,
+    objective: "Cut trial-to-paid friction."
+  }, { accessToken: "access-token", requestId: "request-team-fields" });
+
+  assert.deepEqual(calls[0].body, {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-2",
+    engineerCount: 5,
+    objective: "Cut trial-to-paid friction."
+  });
+});
+
+test("SetTeamEngineerCount changes an existing team's engineering capacity and decodes the settlement", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        team: { id: "team-1", organizationId: "org-1", name: "Product engineering", engineerCount: 6 },
+        settlement: "REQUEST_TEAM_SETTLEMENT_CHARGED_OFF_SESSION"
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("set_team_engineer_count"));
+  const result = await api.request("set_team_engineer_count", {
+    teamId: "team-1",
+    engineerCount: 6,
+    idempotencyKey: "set-engineers-1"
+  }, { accessToken: "access-token", requestId: "set-engineers-request" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/SetTeamEngineerCount");
+  assert.deepEqual(calls[0].body, { teamId: "team-1", engineerCount: 6, idempotencyKey: "set-engineers-1" });
+  assert.equal(result.team.engineerCount, 6);
+  assert.equal(result.settlement, 2);
+});
+
+test("SetTeamEngineerCount rejects a zero or missing count before any network access", async () => {
+  let called = false;
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async () => { called = true; throw new Error("must not run"); }
+  });
+  await assert.rejects(
+    api.request("set_team_engineer_count", { teamId: "team-1", engineerCount: 0, idempotencyKey: "set-engineers-zero" }, { accessToken: "access-token", requestId: "set-engineers-zero" }),
+    /engineerCount must be positive/
+  );
+  assert.equal(called, false, "an invalid engineer count never reaches the network");
+});
+
 test("suspend requires a team id and omits an empty reason from the canonical request", async () => {
   const calls = [];
   const api = generated.createPlatformApi({

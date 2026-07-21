@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  ENGINEER_FLOOR,
+  ENGINEER_MAX,
   GITHUB_INSTALLATION_STATE,
   LaunchContractError,
   PROVISIONING_STATE,
@@ -12,11 +14,51 @@ const {
   createMutationKeys,
   githubInstallationActive,
   missingTeamPrerequisites,
+  normalizeEngineerCount,
   parseGitHubCallback,
   provisioningPresentation,
   repositorySelectionReady,
-  subscriptionActive
+  subscriptionActive,
+  teamPricing,
+  teamRoster
 } = require("../assets/js/launch-contract.js");
+
+test("engineer count is floored at three, capped at fifty, and defaults to the floor", () => {
+  assert.equal(ENGINEER_FLOOR, 3);
+  assert.equal(ENGINEER_MAX, 50);
+  assert.equal(normalizeEngineerCount(3), 3);
+  assert.equal(normalizeEngineerCount(1), 3, "below the adversarial-review floor snaps up to three");
+  assert.equal(normalizeEngineerCount(7.8), 7, "fractional counts floor to a whole engineer");
+  assert.equal(normalizeEngineerCount(99), 50, "above the ceiling clamps to fifty");
+  assert.equal(normalizeEngineerCount("8"), 8);
+  assert.equal(normalizeEngineerCount("nonsense"), 3, "an unparseable count falls back to the floor");
+});
+
+test("team pricing is $599 base including three engineers plus $199 per engineer above the floor", () => {
+  const floor = teamPricing({ engineerCount: 3 });
+  assert.equal(floor.totalCents, 59900n);
+  assert.equal(floor.additionalEngineers, 0);
+
+  const five = teamPricing({ engineerCount: 5 });
+  assert.equal(five.additionalEngineers, 2);
+  assert.equal(five.addonTotalCents, 39800n);
+  assert.equal(five.totalCents, 99700n, "$599 + 2 × $199 = $997/mo");
+
+  // Below the floor is treated as the floor: never priced under the base.
+  assert.equal(teamPricing({ engineerCount: 2 }).totalCents, 59900n);
+  // The base can be overridden by the signed billing plan; the add-on is per-seat.
+  assert.equal(teamPricing({ engineerCount: 4, baseCents: 60000n }).totalCents, 79900n);
+});
+
+test("the roster a count implies is PM + EM + Designer + the chosen engineers", () => {
+  const roster = teamRoster(4);
+  assert.deepEqual(roster.map((entry) => entry.code), ["PM", "EM", "PD", "ENG"]);
+  assert.deepEqual(roster.map((entry) => entry.count), [1, 1, 1, 4]);
+  assert.equal(roster[3].scope, "Code + MCP docs");
+  assert.equal(roster[0].scope, "GitHub issues");
+  assert.equal(roster[1].scope, "Triage & routing");
+  assert.equal(roster[2].scope, "Figma");
+});
 
 test("GitHub callback preserves documented OAuth fields and optional setup metadata", () => {
   // 987654321 is an intentionally non-production installation fixture.

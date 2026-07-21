@@ -660,6 +660,37 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .team-price .form-help{ flex:1; min-width:220px; text-align:right; }
 .app-body .team-form .button-primary{ width:100%; height:50px; font-size:.95rem; margin-top:.3rem; }
 .app-body .firstrun-back{ width:fit-content !important; margin-top:.4rem; }
+.label-optional{ margin-left:.4rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.04em; }
+
+/* engineer stepper: a compact, keyboard-usable count control */
+.team-engineers{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  margin:.35rem 0 .1rem; padding-top:.85rem; border-top:1px solid var(--line-soft); }
+.team-engineers-head{ display:flex; flex-direction:column; gap:.15rem; min-width:200px; }
+.team-engineers-head label{ color:var(--muted-bright); font-size:.72rem; }
+.stepper{ display:inline-flex; align-items:stretch; border:1px solid var(--line-mid); border-radius:var(--ra); background:var(--navy-900); overflow:hidden; }
+.stepper-btn{ width:42px; min-height:44px; padding:0; border:0; background:transparent; color:var(--ink);
+  font-size:1.2rem; line-height:1; cursor:pointer; }
+.stepper-btn:hover{ background:var(--panel-2); color:var(--aqua); }
+.stepper-btn:disabled{ color:var(--muted); cursor:not-allowed; background:transparent; }
+.stepper-value{ width:64px !important; min-height:44px; text-align:center; border:0 !important; border-inline:1px solid var(--line-mid) !important;
+  border-radius:0 !important; background:transparent !important; color:var(--ink); font-family:var(--font-mono); font-size:1rem; -moz-appearance:textfield; }
+.stepper-value::-webkit-outer-spin-button, .stepper-value::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+.team-price-breakdown{ margin:.25rem 0 0; color:var(--muted); font-family:var(--font-mono); font-size:.68rem; }
+
+/* roster the chosen count implies */
+.team-roster{ list-style:none; display:grid; gap:.4rem; margin:.4rem 0 0; padding:0; }
+.team-roster li{ display:flex; align-items:baseline; justify-content:space-between; gap:.75rem;
+  padding:.5rem 0; border-bottom:1px solid var(--line-soft); }
+.team-roster li:last-child{ border-bottom:0; }
+.team-roster .roster-role{ display:flex; align-items:baseline; gap:.55rem; }
+.team-roster .roster-count{ font-family:var(--font-mono); font-size:.72rem; color:var(--aqua); min-width:1.6rem; }
+.team-roster .roster-label{ font-size:.82rem; color:var(--ink); font-weight:560; }
+.team-roster .roster-scope{ color:var(--muted); font-size:.72rem; text-align:right; }
+.app-body .team-price > div:first-child{ min-width:220px; }
+
+/* settings engineering-capacity card */
+[data-engineer-settings] .team-engineers{ border-top:0; padding-top:.2rem; }
 
 /* ---- workspace: sidebar + one view ---- */
 .app-body .workspace{ grid-template-columns:238px minmax(0,1fr); gap:clamp(18px,2.4vw,34px); align-items:start; }

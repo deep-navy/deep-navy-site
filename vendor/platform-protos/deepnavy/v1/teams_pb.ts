@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file deepnavy/v1/teams.proto.
  */
 export const file_deepnavy_v1_teams: GenFile = /*@__PURE__*/
-  fileDesc("ChdkZWVwbmF2eS92MS90ZWFtcy5wcm90bxILZGVlcG5hdnkudjEiVQoPVGVhbUVycm9yRGV0YWlsEiwKBnJlYXNvbhgBIAEoDjIcLmRlZXBuYXZ5LnYxLlRlYW1FcnJvclJlYXNvbhIUCgxzYWZlX21lc3NhZ2UYAiABKAki+QEKBFRlYW0SCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgEIAEoCRIqCgVzdGF0ZRgFIAEoDjIbLmRlZXBuYXZ5LnYxLkxpZmVjeWNsZVN0YXRlEhEKCW5hbWVzcGFjZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1Cgxwcm92aXNpb25pbmcYCCABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMiHAoOR2V0VGVhbVJlcXVlc3QSCgoCaWQYASABKAkiMgoPR2V0VGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIlMKEExpc3RUZWFtc1JlcXVlc3QSFwoPb3JnYW5pemF0aW9uX2lkGAEgASgJEiYKBHBhZ2UYAiABKAsyGC5kZWVwbmF2eS52MS5QYWdlUmVxdWVzdCJeChFMaXN0VGVhbXNSZXNwb25zZRIgCgV0ZWFtcxgBIAMoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SJwoEcGFnZRgCIAEoCzIZLmRlZXBuYXZ5LnYxLlBhZ2VSZXNwb25zZSJTChFDcmVhdGVUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkiNQoSQ3JlYXRlVGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIjAKElN1c3BlbmRUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCRIOCgZyZWFzb24YAiABKAkiNgoTU3VzcGVuZFRlYW1SZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSIfChFSZXN1bWVUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCSI1ChJSZXN1bWVUZWFtUmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0iHwoRRGVsZXRlVGVhbVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlVGVhbVJlc3BvbnNlIlQKElJlcXVlc3RUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkisgEKE1JlcXVlc3RUZWFtUmVzcG9uc2USJwoMcGVuZGluZ190ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbRI2CgpzZXR0bGVtZW50GAIgASgOMiIuZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1TZXR0bGVtZW50Eh4KFmNoZWNrb3V0X2NsaWVudF9zZWNyZXQYAyABKAkSGgoSYXV0aGVudGljYXRpb25fdXJsGAQgASgJKoMECg9UZWFtRXJyb3JSZWFzb24SIQodVEVBTV9FUlJPUl9SRUFTT05fVU5TUEVDSUZJRUQQABIkCiBURUFNX0VSUk9SX1JFQVNPTl9OT1RfQUNDRVNTSUJMRRABEjIKLlRFQU1fRVJST1JfUkVBU09OX0dJVEhVQl9JTlNUQUxMQVRJT05fUkVRVUlSRUQQAhIzCi9URUFNX0VSUk9SX1JFQVNPTl9SRVBPU0lUT1JZX1NFTEVDVElPTl9SRVFVSVJFRBADEjIKLlRFQU1fRVJST1JfUkVBU09OX0FDVElWRV9TVUJTQ1JJUFRJT05fUkVRVUlSRUQQBBIuCipURUFNX0VSUk9SX1JFQVNPTl9JREVNUE9URU5DWV9LRVlfUkVRVUlSRUQQBRIsCihURUFNX0VSUk9SX1JFQVNPTl9JREVNUE9URU5DWV9LRVlfUkVVU0VEEAYSJAogVEVBTV9FUlJPUl9SRUFTT05fTk9UX0FVVEhPUklaRUQQBxIvCitURUFNX0VSUk9SX1JFQVNPTl9QQUlEX1RFQU1fU0xPVFNfRVhIQVVTVEVEEAgSJgoiVEVBTV9FUlJPUl9SRUFTT05fUEFZTUVOVF9ERUNMSU5FRBAJEi0KKVRFQU1fRVJST1JfUkVBU09OX1BBWU1FTlRfTUVUSE9EX1JFUVVJUkVEEAoq1QEKFVJlcXVlc3RUZWFtU2V0dGxlbWVudBInCiNSRVFVRVNUX1RFQU1fU0VUVExFTUVOVF9VTlNQRUNJRklFRBAAEi0KKVJFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX0NIRUNLT1VUX1JFUVVJUkVEEAESLworUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQ0hBUkdFRF9PRkZfU0VTU0lPThACEjMKL1JFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX0FVVEhFTlRJQ0FUSU9OX1JFUVVJUkVEEAMysAQKC1RlYW1TZXJ2aWNlEkQKB0dldFRlYW0SGy5kZWVwbmF2eS52MS5HZXRUZWFtUmVxdWVzdBocLmRlZXBuYXZ5LnYxLkdldFRlYW1SZXNwb25zZRJKCglMaXN0VGVhbXMSHS5kZWVwbmF2eS52MS5MaXN0VGVhbXNSZXF1ZXN0Gh4uZGVlcG5hdnkudjEuTGlzdFRlYW1zUmVzcG9uc2USTQoKQ3JlYXRlVGVhbRIeLmRlZXBuYXZ5LnYxLkNyZWF0ZVRlYW1SZXF1ZXN0Gh8uZGVlcG5hdnkudjEuQ3JlYXRlVGVhbVJlc3BvbnNlElAKC1JlcXVlc3RUZWFtEh8uZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1SZXF1ZXN0GiAuZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1SZXNwb25zZRJQCgtTdXNwZW5kVGVhbRIfLmRlZXBuYXZ5LnYxLlN1c3BlbmRUZWFtUmVxdWVzdBogLmRlZXBuYXZ5LnYxLlN1c3BlbmRUZWFtUmVzcG9uc2USTQoKUmVzdW1lVGVhbRIeLmRlZXBuYXZ5LnYxLlJlc3VtZVRlYW1SZXF1ZXN0Gh8uZGVlcG5hdnkudjEuUmVzdW1lVGVhbVJlc3BvbnNlEk0KCkRlbGV0ZVRlYW0SHi5kZWVwbmF2eS52MS5EZWxldGVUZWFtUmVxdWVzdBofLmRlZXBuYXZ5LnYxLkRlbGV0ZVRlYW1SZXNwb25zZUJEWkJnaXRodWIuY29tL2RlZXAtbmF2eS9wbGF0Zm9ybS1wcm90b3MvZ2VuL2dvL2RlZXBuYXZ5L3YxO2RlZXBuYXZ5djFiBnByb3RvMw", [file_deepnavy_v1_common, file_deepnavy_v1_provisioning, file_google_protobuf_timestamp]);
+  fileDesc("ChdkZWVwbmF2eS92MS90ZWFtcy5wcm90bxILZGVlcG5hdnkudjEiVQoPVGVhbUVycm9yRGV0YWlsEiwKBnJlYXNvbhgBIAEoDjIcLmRlZXBuYXZ5LnYxLlRlYW1FcnJvclJlYXNvbhIUCgxzYWZlX21lc3NhZ2UYAiABKAkikQIKBFRlYW0SCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgEIAEoCRIqCgVzdGF0ZRgFIAEoDjIbLmRlZXBuYXZ5LnYxLkxpZmVjeWNsZVN0YXRlEhEKCW5hbWVzcGFjZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1Cgxwcm92aXNpb25pbmcYCCABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMSFgoOZW5naW5lZXJfY291bnQYCSABKAUiHAoOR2V0VGVhbVJlcXVlc3QSCgoCaWQYASABKAkiMgoPR2V0VGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIlMKEExpc3RUZWFtc1JlcXVlc3QSFwoPb3JnYW5pemF0aW9uX2lkGAEgASgJEiYKBHBhZ2UYAiABKAsyGC5kZWVwbmF2eS52MS5QYWdlUmVxdWVzdCJeChFMaXN0VGVhbXNSZXNwb25zZRIgCgV0ZWFtcxgBIAMoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SJwoEcGFnZRgCIAEoCzIZLmRlZXBuYXZ5LnYxLlBhZ2VSZXNwb25zZSJTChFDcmVhdGVUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkiNQoSQ3JlYXRlVGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIjAKElN1c3BlbmRUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCRIOCgZyZWFzb24YAiABKAkiNgoTU3VzcGVuZFRlYW1SZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSIfChFSZXN1bWVUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCSI1ChJSZXN1bWVUZWFtUmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0iHwoRRGVsZXRlVGVhbVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlVGVhbVJlc3BvbnNlIn8KElJlcXVlc3RUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkSFgoOZW5naW5lZXJfY291bnQYBCABKAUSEQoJb2JqZWN0aXZlGAUgASgJIrIBChNSZXF1ZXN0VGVhbVJlc3BvbnNlEicKDHBlbmRpbmdfdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SNgoKc2V0dGxlbWVudBgCIAEoDjIiLmRlZXBuYXZ5LnYxLlJlcXVlc3RUZWFtU2V0dGxlbWVudBIeChZjaGVja291dF9jbGllbnRfc2VjcmV0GAMgASgJEhoKEmF1dGhlbnRpY2F0aW9uX3VybBgEIAEoCSJfChtTZXRUZWFtRW5naW5lZXJDb3VudFJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIWCg5lbmdpbmVlcl9jb3VudBgCIAEoBRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkikwEKHFNldFRlYW1FbmdpbmVlckNvdW50UmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SNgoKc2V0dGxlbWVudBgCIAEoDjIiLmRlZXBuYXZ5LnYxLlJlcXVlc3RUZWFtU2V0dGxlbWVudBIaChJhdXRoZW50aWNhdGlvbl91cmwYAyABKAkqgwQKD1RlYW1FcnJvclJlYXNvbhIhCh1URUFNX0VSUk9SX1JFQVNPTl9VTlNQRUNJRklFRBAAEiQKIFRFQU1fRVJST1JfUkVBU09OX05PVF9BQ0NFU1NJQkxFEAESMgouVEVBTV9FUlJPUl9SRUFTT05fR0lUSFVCX0lOU1RBTExBVElPTl9SRVFVSVJFRBACEjMKL1RFQU1fRVJST1JfUkVBU09OX1JFUE9TSVRPUllfU0VMRUNUSU9OX1JFUVVJUkVEEAMSMgouVEVBTV9FUlJPUl9SRUFTT05fQUNUSVZFX1NVQlNDUklQVElPTl9SRVFVSVJFRBAEEi4KKlRFQU1fRVJST1JfUkVBU09OX0lERU1QT1RFTkNZX0tFWV9SRVFVSVJFRBAFEiwKKFRFQU1fRVJST1JfUkVBU09OX0lERU1QT1RFTkNZX0tFWV9SRVVTRUQQBhIkCiBURUFNX0VSUk9SX1JFQVNPTl9OT1RfQVVUSE9SSVpFRBAHEi8KK1RFQU1fRVJST1JfUkVBU09OX1BBSURfVEVBTV9TTE9UU19FWEhBVVNURUQQCBImCiJURUFNX0VSUk9SX1JFQVNPTl9QQVlNRU5UX0RFQ0xJTkVEEAkSLQopVEVBTV9FUlJPUl9SRUFTT05fUEFZTUVOVF9NRVRIT0RfUkVRVUlSRUQQCirVAQoVUmVxdWVzdFRlYW1TZXR0bGVtZW50EicKI1JFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX1VOU1BFQ0lGSUVEEAASLQopUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQ0hFQ0tPVVRfUkVRVUlSRUQQARIvCitSRVFVRVNUX1RFQU1fU0VUVExFTUVOVF9DSEFSR0VEX09GRl9TRVNTSU9OEAISMwovUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQQAzKdBQoLVGVhbVNlcnZpY2USRAoHR2V0VGVhbRIbLmRlZXBuYXZ5LnYxLkdldFRlYW1SZXF1ZXN0GhwuZGVlcG5hdnkudjEuR2V0VGVhbVJlc3BvbnNlEkoKCUxpc3RUZWFtcxIdLmRlZXBuYXZ5LnYxLkxpc3RUZWFtc1JlcXVlc3QaHi5kZWVwbmF2eS52MS5MaXN0VGVhbXNSZXNwb25zZRJNCgpDcmVhdGVUZWFtEh4uZGVlcG5hdnkudjEuQ3JlYXRlVGVhbVJlcXVlc3QaHy5kZWVwbmF2eS52MS5DcmVhdGVUZWFtUmVzcG9uc2USUAoLUmVxdWVzdFRlYW0SHy5kZWVwbmF2eS52MS5SZXF1ZXN0VGVhbVJlcXVlc3QaIC5kZWVwbmF2eS52MS5SZXF1ZXN0VGVhbVJlc3BvbnNlElAKC1N1c3BlbmRUZWFtEh8uZGVlcG5hdnkudjEuU3VzcGVuZFRlYW1SZXF1ZXN0GiAuZGVlcG5hdnkudjEuU3VzcGVuZFRlYW1SZXNwb25zZRJNCgpSZXN1bWVUZWFtEh4uZGVlcG5hdnkudjEuUmVzdW1lVGVhbVJlcXVlc3QaHy5kZWVwbmF2eS52MS5SZXN1bWVUZWFtUmVzcG9uc2USTQoKRGVsZXRlVGVhbRIeLmRlZXBuYXZ5LnYxLkRlbGV0ZVRlYW1SZXF1ZXN0Gh8uZGVlcG5hdnkudjEuRGVsZXRlVGVhbVJlc3BvbnNlEmsKFFNldFRlYW1FbmdpbmVlckNvdW50EiguZGVlcG5hdnkudjEuU2V0VGVhbUVuZ2luZWVyQ291bnRSZXF1ZXN0GikuZGVlcG5hdnkudjEuU2V0VGVhbUVuZ2luZWVyQ291bnRSZXNwb25zZUJEWkJnaXRodWIuY29tL2RlZXAtbmF2eS9wbGF0Zm9ybS1wcm90b3MvZ2VuL2dvL2RlZXBuYXZ5L3YxO2RlZXBuYXZ5djFiBnByb3RvMw", [file_deepnavy_v1_common, file_deepnavy_v1_provisioning, file_google_protobuf_timestamp]);
 
 /**
  * TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
@@ -90,6 +90,15 @@ export type Team = Message<"deepnavy.v1.Team"> & {
    * @generated from field: deepnavy.v1.ProvisioningStatus provisioning = 8;
    */
   provisioning?: ProvisioningStatus | undefined;
+
+  /**
+   * engineer_count is the number of engineering agents on the team (>= 3, the
+   * adversarial-review floor). The base subscription covers 3; each engineer above
+   * 3 bills as a per-seat add-on. Changed via SetTeamEngineerCount.
+   *
+   * @generated from field: int32 engineer_count = 9;
+   */
+  engineerCount: number;
 };
 
 /**
@@ -366,6 +375,28 @@ export type RequestTeamRequest = Message<"deepnavy.v1.RequestTeamRequest"> & {
    * @generated from field: string idempotency_key = 3;
    */
   idempotencyKey: string;
+
+  /**
+   * engineer_count is the number of engineering agents on the team. The minimum
+   * is 3 — the adversarial-review floor (an engineer completes a ticket, then
+   * two peers can review). The base subscription includes 3 engineers; each
+   * engineer above 3 is billed as a recurring add-on. Values below 3 are
+   * rejected. A team also always includes one Product Manager, one Engineering
+   * Manager, and one Designer, which are not counted here.
+   *
+   * @generated from field: int32 engineer_count = 4;
+   */
+  engineerCount: number;
+
+  /**
+   * objective is the team's imperative — the outcome its agents pursue. The
+   * Product Manager turns it into acceptance criteria and Gherkin; the
+   * Engineering Manager triages and tags work from it. Optional at request time
+   * and refinable later via ObjectiveService.
+   *
+   * @generated from field: string objective = 5;
+   */
+  objective: string;
 };
 
 /**
@@ -415,6 +446,84 @@ export type RequestTeamResponse = Message<"deepnavy.v1.RequestTeamResponse"> & {
  */
 export const RequestTeamResponseSchema: GenMessage<RequestTeamResponse> = /*@__PURE__*/
   messageDesc(file_deepnavy_v1_teams, 15);
+
+/**
+ * @generated from message deepnavy.v1.SetTeamEngineerCountRequest
+ */
+export type SetTeamEngineerCountRequest = Message<"deepnavy.v1.SetTeamEngineerCountRequest"> & {
+  /**
+   * The team whose engineering-agent count changes. The authenticated principal
+   * must hold an owner or admin membership on the team's organization.
+   *
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * engineer_count is the new number of engineering agents (minimum 3 — the
+   * adversarial-review floor; bounded above by the server). Increasing it charges
+   * the saved card off-session for the prorated remainder of the current period;
+   * decreasing it credits the unused portion to the next invoice. Values below the
+   * floor or above the maximum are rejected with INVALID_ARGUMENT.
+   *
+   * @generated from field: int32 engineer_count = 2;
+   */
+  engineerCount: number;
+
+  /**
+   * idempotency_key is required. Repeating the same normalized request with the
+   * same key returns the same outcome without charging the saved card twice.
+   *
+   * @generated from field: string idempotency_key = 3;
+   */
+  idempotencyKey: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.SetTeamEngineerCountRequest.
+ * Use `create(SetTeamEngineerCountRequestSchema)` to create a new message.
+ */
+export const SetTeamEngineerCountRequestSchema: GenMessage<SetTeamEngineerCountRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_teams, 16);
+
+/**
+ * @generated from message deepnavy.v1.SetTeamEngineerCountResponse
+ */
+export type SetTeamEngineerCountResponse = Message<"deepnavy.v1.SetTeamEngineerCountResponse"> & {
+  /**
+   * team carries the updated engineer_count once the change is applied.
+   *
+   * @generated from field: deepnavy.v1.Team team = 1;
+   */
+  team?: Team | undefined;
+
+  /**
+   * settlement reports how the change settled. CHARGED_OFF_SESSION: applied — an
+   * increase was charged, or a decrease was credited to the next invoice.
+   * AUTHENTICATION_REQUIRED: the off-session increase needs 3-D Secure; open
+   * authentication_url. CHECKOUT_REQUIRED is never returned (the team already has a
+   * subscription). A hard decline returns FAILED_PRECONDITION (PAYMENT_DECLINED),
+   * not a response, and leaves the engineer_count unchanged.
+   *
+   * @generated from field: deepnavy.v1.RequestTeamSettlement settlement = 2;
+   */
+  settlement: RequestTeamSettlement;
+
+  /**
+   * Set only when settlement == AUTHENTICATION_REQUIRED. A short-lived hosted
+   * Stripe invoice URL for 3-D Secure. A credential — never log it.
+   *
+   * @generated from field: string authentication_url = 3;
+   */
+  authenticationUrl: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.SetTeamEngineerCountResponse.
+ * Use `create(SetTeamEngineerCountResponseSchema)` to create a new message.
+ */
+export const SetTeamEngineerCountResponseSchema: GenMessage<SetTeamEngineerCountResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_teams, 17);
 
 /**
  * @generated from enum deepnavy.v1.TeamErrorReason
@@ -626,6 +735,19 @@ export const TeamService: GenService<{
     methodKind: "unary";
     input: typeof DeleteTeamRequestSchema;
     output: typeof DeleteTeamResponseSchema;
+  },
+  /**
+   * SetTeamEngineerCount changes the number of engineering agents on an existing
+   * team and settles the difference on the org's subscription: an increase charges
+   * the saved card off-session (prorated), a decrease credits the next invoice. The
+   * team must already have an active subscription. Idempotent by principal + key.
+   *
+   * @generated from rpc deepnavy.v1.TeamService.SetTeamEngineerCount
+   */
+  setTeamEngineerCount: {
+    methodKind: "unary";
+    input: typeof SetTeamEngineerCountRequestSchema;
+    output: typeof SetTeamEngineerCountResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_deepnavy_v1_teams, 0);

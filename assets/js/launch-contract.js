@@ -255,6 +255,62 @@
     ].filter(Boolean);
   }
 
+  // Team pricing mirrors the server: $599/month per team includes the floor of
+  // three engineering agents; every engineer above the floor is a $199/month
+  // add-on. The floor of three keeps two peer reviewers on every shipped ticket.
+  const ENGINEER_FLOOR = 3;
+  const ENGINEER_MAX = 50;
+  const TEAM_BASE_CENTS = 59900n;
+  const ENGINEER_ADDON_CENTS = 19900n;
+
+  function normalizeEngineerCount(value, { floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
+    const parsed = typeof value === "number"
+      ? Math.floor(value)
+      : typeof value === "string" && value.trim() !== ""
+        ? Math.floor(Number(value.trim()))
+        : NaN;
+    if (!Number.isFinite(parsed)) return floor;
+    return Math.min(max, Math.max(floor, parsed));
+  }
+
+  function toCents(value) {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number" && Number.isSafeInteger(value)) return BigInt(value);
+    return null;
+  }
+
+  // Pure price calculation: base + addon × max(0, engineerCount − floor). The base
+  // and add-on can be overridden (e.g. from the signed billing plan) but default
+  // to the founding-team figures.
+  function teamPricing({ engineerCount, baseCents, addonCents, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
+    const count = normalizeEngineerCount(engineerCount, { floor, max });
+    const additional = Math.max(0, count - floor);
+    const base = toCents(baseCents) ?? TEAM_BASE_CENTS;
+    const addon = toCents(addonCents) ?? ENGINEER_ADDON_CENTS;
+    const addonTotal = addon * BigInt(additional);
+    return Object.freeze({
+      engineerCount: count,
+      includedEngineers: floor,
+      additionalEngineers: additional,
+      baseCents: base,
+      addonCents: addon,
+      addonTotalCents: addonTotal,
+      totalCents: base + addonTotal
+    });
+  }
+
+  // The roster a given engineer count implies: one Product Manager, one
+  // Engineering Manager, one Designer, and the chosen number of Engineers.
+  function teamRoster(engineerCount, options) {
+    const count = normalizeEngineerCount(engineerCount, options);
+    return [
+      Object.freeze({ code: "PM", label: "Product Manager", scope: "GitHub issues", count: 1 }),
+      Object.freeze({ code: "EM", label: "Engineering Manager", scope: "Triage & routing", count: 1 }),
+      Object.freeze({ code: "PD", label: "Designer", scope: "Figma", count: 1 }),
+      Object.freeze({ code: "ENG", label: count === 1 ? "Engineer" : "Engineers", scope: "Code + MCP docs", count })
+    ];
+  }
+
   function createMutationKeys(createKey) {
     if (typeof createKey !== "function") throw new TypeError("createKey must be a function");
     const entries = new Map();
@@ -271,13 +327,20 @@
   }
 
   return {
+    ENGINEER_ADDON_CENTS,
+    ENGINEER_FLOOR,
+    ENGINEER_MAX,
     GITHUB_INSTALLATION_STATE,
     LaunchContractError,
     PROVISIONING_STATE,
     REPOSITORY_SELECTION_MODE,
+    TEAM_BASE_CENTS,
     accessibleRepositories,
     buildRepositorySelectionRequest,
     createMutationKeys,
+    normalizeEngineerCount,
+    teamPricing,
+    teamRoster,
     githubInstallationActive,
     missingTeamPrerequisites,
     parseGitHubCallback,

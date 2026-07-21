@@ -54,6 +54,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "teams",
   "create_team",
   "request_team",
+  "set_team_engineer_count",
   "suspend_team",
   "resume_team",
   "delete_team",
@@ -155,6 +156,17 @@ function int64Field(value: unknown, name: string, allowZero = true): bigint {
   const parsed = BigInt(normalized);
   if (parsed > 9_223_372_036_854_775_807n) throw new PlatformClientError(`${name} exceeds int64.`, "invalid_argument", 400, "");
   return parsed;
+}
+
+function int32Field(value: unknown, name: string, allowZero = true): number {
+  const normalized = typeof value === "number"
+    ? value
+    : typeof value === "string" && value.trim() !== ""
+      ? Number(value.trim())
+      : NaN;
+  if (!Number.isInteger(normalized) || normalized < 0 || normalized > 2_147_483_647) throw new PlatformClientError(`${name} is invalid.`, "invalid_argument", 400, "");
+  if (!allowZero && normalized === 0) throw new PlatformClientError(`${name} must be positive.`, "invalid_argument", 400, "");
+  return normalized;
 }
 
 function pageRequest(value: unknown): { pageSize: number; pageToken: string } | undefined {
@@ -409,7 +421,19 @@ export function createPlatformApi(options: PlatformApiOptions) {
         case "create_team":
           return await teams.createTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
         case "request_team":
-          return await teams.requestTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
+          return await teams.requestTeam({
+            organizationId: textField(payload, "organizationId"),
+            name: textField(payload, "name"),
+            idempotencyKey: textField(payload, "idempotencyKey"),
+            engineerCount: int32Field(payload.engineerCount ?? 0, "engineerCount"),
+            objective: textField(payload, "objective", false)
+          }, callOptions);
+        case "set_team_engineer_count":
+          return await teams.setTeamEngineerCount({
+            teamId: textField(payload, "teamId"),
+            engineerCount: int32Field(payload.engineerCount, "engineerCount", false),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
         case "suspend_team":
           return await teams.suspendTeam({ id: textField(payload, "id"), reason: textField(payload, "reason", false) }, callOptions);
         case "resume_team":

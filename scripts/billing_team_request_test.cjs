@@ -49,6 +49,54 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
 
+test("the team setup screen collects an objective, an engineer stepper, a live price, and the roster", () => {
+  // Objective: an optional, encouraged imperative the PM turns into criteria.
+  assert.match(shell, /data-team-objective/);
+  assert.match(shell, /What should this team accomplish\?/);
+  assert.match(shell, /turns this into acceptance criteria/i);
+  // Engineer stepper: floor 3, default 3, max 50.
+  assert.match(shell, /<input[^>]*data-engineer-input[^>]*>/);
+  assert.match(shell, /name="engineerCount"[^>]*min="3"[^>]*max="50"[^>]*value="3"/);
+  assert.match(shell, /data-engineer-decrement/);
+  assert.match(shell, /data-engineer-increment/);
+  // Live price + breakdown + the implied roster container.
+  assert.match(shell, /data-team-price-amount/);
+  assert.match(shell, /data-team-price-breakdown/);
+  assert.match(shell, /data-team-roster/);
+  // The price is computed from the stepper against the plan base + per-engineer add-on.
+  assert.match(app, /function renderTeamSetupPricing/);
+  assert.match(app, /teamPricingFor\(/);
+  assert.match(app, /function pricingBreakdown/);
+  // The floor keeps two peer reviewers on every shipped ticket.
+  assert.match(shell, /two peer reviewers/i);
+});
+
+test("RequestTeam now sends the collected engineer count and objective", () => {
+  assert.match(app, /const engineerCount = normalizeEngineerCount\(form\.get\("engineerCount"\)\)/);
+  assert.match(app, /const objective = stringValue\(form\.get\("teamObjective"\)\)/);
+  assert.match(app, /apiRequest\("request_team", \{[\s\S]*?engineerCount,\s*\n\s*objective\s*\n\s*\}\)/);
+});
+
+test("Settings exposes an engineer-count control that calls SetTeamEngineerCount with proration", () => {
+  // A dedicated Engineering capacity card in the Settings view.
+  assert.match(shell, /data-engineer-settings\b/);
+  assert.match(shell, /Engineering capacity/);
+  assert.match(shell, /<input[^>]*data-settings-engineer-input[^>]*>/);
+  assert.match(shell, /id="settings-engineer-count"[^>]*min="3"[^>]*max="50"/);
+  assert.match(shell, /data-settings-engineer-apply/);
+  // The proration note the customer sees before applying.
+  assert.match(shell, /increasing charges the prorated remainder now; decreasing credits your next invoice/i);
+  // The control calls the new RPC with an idempotency key and reflects team.engineerCount.
+  assert.match(app, /apiRequest\("set_team_engineer_count", \{/);
+  assert.match(app, /engineerCount: target,/);
+  assert.match(app, /idempotencyKey: mutationKeys\.for\("setEngineerCount"/);
+  assert.match(app, /normalizeEngineerCount\(updated\.engineerCount/);
+  // AUTHENTICATION_REQUIRED opens the hosted Stripe invoice; a hard decline is an
+  // inline error handled like the RequestTeam off-session path.
+  assert.match(app, /REQUEST_TEAM_SETTLEMENT\.AUTHENTICATION_REQUIRED/);
+  assert.match(app, /validatedRedirect\(result\.authenticationUrl[^,]*, \["invoice\.stripe\.com"\]\)/);
+});
+
 test("creating a team calls RequestTeam with a uuid idempotency key and reflects the pending team", () => {
   assert.match(app, /apiRequest\("request_team", \{/);
   assert.match(app, /organizationId: session\.organizationId,\s*\n\s*name,\s*\n\s*idempotencyKey: mutationKeys\.for\("requestTeam", fingerprint\)/);

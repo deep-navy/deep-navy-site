@@ -120,8 +120,30 @@
             <form class="inline-form team-form card-action" data-team-form>
               <label for="team-name">Team name</label>
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
+
+              <label for="team-objective">What should this team accomplish? <span class="label-optional">Optional</span></label>
+              <textarea id="team-objective" name="teamObjective" data-team-objective maxlength="2000" rows="3" placeholder="e.g. Cut trial-to-paid friction — ship a guided onboarding and instrument activation." aria-describedby="team-objective-help"></textarea>
+              <p class="form-help form-help-neutral" id="team-objective-help">Your Product Manager turns this into acceptance criteria. Encouraged, but you can refine it later.</p>
+
+              <div class="team-engineers" data-engineer-field>
+                <div class="team-engineers-head">
+                  <label id="team-engineer-label" for="team-engineer-count">Engineers</label>
+                  <p class="form-help form-help-neutral">Floor of three, so every shipped ticket gets two peer reviewers.</p>
+                </div>
+                <div class="stepper" role="group" aria-labelledby="team-engineer-label">
+                  <button class="stepper-btn" type="button" data-engineer-decrement aria-label="Remove an engineer">&minus;</button>
+                  <input class="stepper-value" id="team-engineer-count" name="engineerCount" type="number" inputmode="numeric" min="3" max="50" step="1" value="3" data-engineer-input>
+                  <button class="stepper-btn" type="button" data-engineer-increment aria-label="Add an engineer">+</button>
+                </div>
+              </div>
+
+              <ul class="team-roster" data-team-roster aria-label="Who joins this team"></ul>
+
               <div class="team-price">
-                <div class="team-price-amt">$599<small> / month</small></div>
+                <div>
+                  <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
+                  <p class="team-price-breakdown" data-team-price-breakdown>$599 team (includes 3 engineers)</p>
+                </div>
                 <p class="form-help form-help-neutral" id="team-name-help">Card collected once in secure Stripe checkout; every additional team reuses the saved card.</p>
               </div>
               <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
@@ -375,6 +397,25 @@
               </dl>
               <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
               <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing in Stripe</button></div>
+            </article>
+            <article class="app-dashboard settings-card" data-engineer-settings aria-labelledby="settings-engineers-title">
+              <div class="app-dashboard-header"><h3 id="settings-engineers-title">Engineering capacity</h3><span class="data-source-badge" data-engineer-settings-state>Waiting</span></div>
+              <p class="form-help form-help-neutral" data-engineer-settings-team>Select a team to change how many engineers it runs.</p>
+              <div class="team-engineers" data-engineer-settings-field hidden>
+                <div class="team-engineers-head">
+                  <label id="settings-engineer-label" for="settings-engineer-count">Engineers</label>
+                  <p class="form-help form-help-neutral">Minimum three — a shipped ticket always keeps two peer reviewers.</p>
+                </div>
+                <div class="stepper" role="group" aria-labelledby="settings-engineer-label">
+                  <button class="stepper-btn" type="button" data-settings-engineer-decrement aria-label="Remove an engineer">&minus;</button>
+                  <input class="stepper-value" id="settings-engineer-count" type="number" inputmode="numeric" min="3" max="50" step="1" value="3" data-settings-engineer-input>
+                  <button class="stepper-btn" type="button" data-settings-engineer-increment aria-label="Add an engineer">+</button>
+                </div>
+              </div>
+              <p class="team-price-breakdown" data-settings-engineer-price hidden></p>
+              <p class="form-help form-help-neutral" data-settings-engineer-note hidden>Increasing charges the prorated remainder now; decreasing credits your next invoice.</p>
+              <p class="form-error" data-settings-engineer-error role="alert" hidden></p>
+              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-engineer-apply disabled>Update engineering capacity</button></div>
             </article>
           </div>
         </section>

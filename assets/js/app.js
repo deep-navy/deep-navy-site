@@ -59,9 +59,27 @@
     settingsBillingNote: document.querySelector("[data-settings-billing-note]"),
     settingsBillingManage: document.querySelector("[data-settings-billing-manage]"),
     teamForm: document.querySelector("[data-team-form]"),
-    teamInput: document.querySelector("[data-team-form] input"),
-    teamSubmit: document.querySelector("[data-team-form] button"),
+    teamInput: document.querySelector('[data-team-form] input[name="teamName"]'),
+    teamSubmit: document.querySelector('[data-team-form] button[type="submit"]'),
     teamError: document.querySelector("[data-team-error]"),
+    teamObjective: document.querySelector("[data-team-objective]"),
+    engineerInput: document.querySelector("[data-engineer-input]"),
+    engineerDecrement: document.querySelector("[data-engineer-decrement]"),
+    engineerIncrement: document.querySelector("[data-engineer-increment]"),
+    teamRoster: document.querySelector("[data-team-roster]"),
+    teamPriceAmount: document.querySelector("[data-team-price-amount]"),
+    teamPriceBreakdown: document.querySelector("[data-team-price-breakdown]"),
+    engineerSettings: document.querySelector("[data-engineer-settings]"),
+    engineerSettingsState: document.querySelector("[data-engineer-settings-state]"),
+    engineerSettingsTeam: document.querySelector("[data-engineer-settings-team]"),
+    engineerSettingsField: document.querySelector("[data-engineer-settings-field]"),
+    settingsEngineerInput: document.querySelector("[data-settings-engineer-input]"),
+    settingsEngineerDecrement: document.querySelector("[data-settings-engineer-decrement]"),
+    settingsEngineerIncrement: document.querySelector("[data-settings-engineer-increment]"),
+    settingsEngineerPrice: document.querySelector("[data-settings-engineer-price]"),
+    settingsEngineerNote: document.querySelector("[data-settings-engineer-note]"),
+    settingsEngineerError: document.querySelector("[data-settings-engineer-error]"),
+    settingsEngineerApply: document.querySelector("[data-settings-engineer-apply]"),
     organizationError: document.querySelector("[data-organization-error]"),
     refresh: document.querySelector("[data-refresh]"),
     teamsEmpty: document.querySelector("[data-teams-empty]"),
@@ -272,6 +290,10 @@
   let teamPaymentElements = null;
   let checkoutTeamId = "";
   let checkoutOpening = false;
+  // The Settings engineer stepper resets to the team's confirmed count only when
+  // the selected team changes, so a background re-render never clobbers an edit.
+  let engineerControlTeamId = "";
+  let engineerControlBusy = false;
   const provisioningTimers = new Map();
   // Pending teams from RequestTeam are polled with GetTeam until they leave
   // LIFECYCLE_STATE_PENDING (a verified Stripe webhook provisions them).
@@ -1293,6 +1315,91 @@
     catch { return `$${dollars.toFixed(2)}`; }
   }
 
+  // Engineering-agent count: a floor of three (the adversarial-review floor) up to
+  // fifty. The team base price includes the three floor engineers; each engineer
+  // above the floor is a $199/month add-on, matched against the server.
+  const ENGINEER_FLOOR = launchContract?.ENGINEER_FLOOR ?? 3;
+  const ENGINEER_MAX = launchContract?.ENGINEER_MAX ?? 50;
+
+  function normalizeEngineerCount(value) {
+    if (launchContract) return launchContract.normalizeEngineerCount(value);
+    const parsed = Math.floor(Number(value));
+    if (!Number.isFinite(parsed)) return ENGINEER_FLOOR;
+    return Math.min(ENGINEER_MAX, Math.max(ENGINEER_FLOOR, parsed));
+  }
+
+  function teamPricingFor(engineerCount) {
+    if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents() });
+    const count = normalizeEngineerCount(engineerCount);
+    const additional = Math.max(0, count - ENGINEER_FLOOR);
+    const base = teamUnitAmountCents();
+    const addon = 19900n;
+    return { engineerCount: count, includedEngineers: ENGINEER_FLOOR, additionalEngineers: additional, baseCents: base, addonCents: addon, addonTotalCents: addon * BigInt(additional), totalCents: base + addon * BigInt(additional) };
+  }
+
+  // "$599 team (includes 3 engineers)" or, with add-ons,
+  // "$599 team + 2 × $199 engineers = $997/mo".
+  function pricingBreakdown(pricing) {
+    const base = `${formatCents(pricing.baseCents)} team`;
+    if (pricing.additionalEngineers <= 0) return `${base} (includes ${pricing.includedEngineers} engineers)`;
+    const engineers = `${pricing.additionalEngineers} × ${formatCents(pricing.addonCents)} engineers`;
+    return `${base} + ${engineers} = ${formatCents(pricing.totalCents)}/mo`;
+  }
+
+  function renderTeamRoster(listEl, engineerCount) {
+    if (!listEl) return;
+    const roster = launchContract
+      ? launchContract.teamRoster(engineerCount)
+      : [
+          { code: "PM", label: "Product Manager", scope: "GitHub issues", count: 1 },
+          { code: "EM", label: "Engineering Manager", scope: "Triage & routing", count: 1 },
+          { code: "PD", label: "Designer", scope: "Figma", count: 1 },
+          { code: "ENG", label: normalizeEngineerCount(engineerCount) === 1 ? "Engineer" : "Engineers", scope: "Code + MCP docs", count: normalizeEngineerCount(engineerCount) }
+        ];
+    listEl.replaceChildren();
+    roster.forEach((entry) => {
+      const item = document.createElement("li");
+      const role = document.createElement("span");
+      role.className = "roster-role";
+      const count = document.createElement("span");
+      count.className = "roster-count";
+      count.textContent = `${entry.count}×`;
+      const label = document.createElement("span");
+      label.className = "roster-label";
+      label.textContent = entry.label;
+      role.append(count, label);
+      const scope = document.createElement("span");
+      scope.className = "roster-scope";
+      scope.textContent = entry.scope;
+      item.append(role, scope);
+      listEl.append(item);
+    });
+  }
+
+  // Live price for the team-setup screen: reflects the stepper as it changes.
+  function renderTeamSetupPricing() {
+    if (!ui.engineerInput) return;
+    const pricing = teamPricingFor(ui.engineerInput.value);
+    if (ui.teamPriceAmount) {
+      ui.teamPriceAmount.replaceChildren();
+      ui.teamPriceAmount.append(document.createTextNode(formatCents(pricing.totalCents)));
+      const per = document.createElement("small");
+      per.textContent = " / month";
+      ui.teamPriceAmount.append(per);
+    }
+    if (ui.teamPriceBreakdown) ui.teamPriceBreakdown.textContent = pricingBreakdown(pricing);
+    renderTeamRoster(ui.teamRoster, pricing.engineerCount);
+    if (ui.engineerDecrement) ui.engineerDecrement.disabled = pricing.engineerCount <= ENGINEER_FLOOR;
+    if (ui.engineerIncrement) ui.engineerIncrement.disabled = pricing.engineerCount >= ENGINEER_MAX;
+  }
+
+  // Nudge a stepper input by ±1 within the engineer bounds, then re-render.
+  function stepEngineerInput(input, delta, afterChange) {
+    if (!input) return;
+    input.value = String(normalizeEngineerCount(Number(input.value || ENGINEER_FLOOR) + delta));
+    if (typeof afterChange === "function") afterChange();
+  }
+
   function paymentMethodSummary(pm) {
     const brand = stringValue(pm?.brand);
     const last4 = stringValue(pm?.last4);
@@ -1342,6 +1449,128 @@
       ui.settingsBillingNote.textContent = "Billing starts when you create your first team. A card is collected once in secure Stripe checkout, then reused for every additional team.";
     }
     ui.settingsBillingManage.disabled = !session.subscriptionManageable || checkoutOpening;
+    renderEngineerControl();
+  }
+
+  // Settings → Engineering capacity: change how many engineering agents the
+  // selected, active team runs. SetTeamEngineerCount charges the prorated
+  // remainder off-session (or asks for 3-D Secure); a hard decline surfaces the
+  // FAILED_PRECONDITION as an inline error, exactly like the RequestTeam path.
+  function renderEngineerControl() {
+    if (!ui.engineerSettings) return;
+    const team = selectedTeam();
+    if (!team) {
+      engineerControlTeamId = "";
+      setSourceState(ui.engineerSettingsState, "Waiting", "");
+      ui.engineerSettingsTeam.hidden = false;
+      ui.engineerSettingsTeam.textContent = "Select a team to change how many engineers it runs.";
+      ui.engineerSettingsField.hidden = true;
+      ui.settingsEngineerPrice.hidden = true;
+      ui.settingsEngineerNote.hidden = true;
+      setFieldError(ui.settingsEngineerError, "");
+      ui.settingsEngineerApply.disabled = true;
+      return;
+    }
+    const teamId = stringValue(team.id);
+    const current = normalizeEngineerCount(team.engineerCount ?? ENGINEER_FLOOR);
+    // Reset the stepper to the team's confirmed count when the team changes.
+    if (engineerControlTeamId !== teamId) {
+      engineerControlTeamId = teamId;
+      ui.settingsEngineerInput.value = String(current);
+      setFieldError(ui.settingsEngineerError, "");
+    }
+    const active = lifecycleLabel(team.state) === "active";
+    ui.engineerSettingsField.hidden = false;
+    ui.settingsEngineerNote.hidden = false;
+    ui.engineerSettingsTeam.hidden = false;
+    ui.engineerSettingsTeam.textContent = active
+      ? `${stringValue(team.name) || "This team"} runs ${current} engineer${current === 1 ? "" : "s"} today.`
+      : `${stringValue(team.name) || "This team"} must be active before its engineering capacity can change.`;
+    setSourceState(ui.engineerSettingsState, active ? "Active" : capitalize(lifecycleLabel(team.state) || "pending"), active ? "success" : "");
+    syncEngineerControl();
+  }
+
+  function renderEngineerControlPricing(currentCount) {
+    if (!ui.settingsEngineerPrice) return;
+    const target = normalizeEngineerCount(ui.settingsEngineerInput.value);
+    const pricing = teamPricingFor(target);
+    ui.settingsEngineerPrice.hidden = false;
+    if (target === currentCount) {
+      ui.settingsEngineerPrice.textContent = pricingBreakdown(pricing);
+      return;
+    }
+    const currentPricing = teamPricingFor(currentCount);
+    const increase = target > currentCount;
+    const delta = formatCents(increase ? pricing.totalCents - currentPricing.totalCents : currentPricing.totalCents - pricing.totalCents);
+    ui.settingsEngineerPrice.textContent = `New: ${pricingBreakdown(pricing)} · ${increase ? "increase" : "decrease"} of ${delta}/mo`;
+  }
+
+  // Recompute price + button states from the current input without resetting it.
+  function syncEngineerControl() {
+    const team = selectedTeam();
+    if (!team || !ui.engineerSettingsField || ui.engineerSettingsField.hidden) return;
+    const current = normalizeEngineerCount(team.engineerCount ?? ENGINEER_FLOOR);
+    const target = normalizeEngineerCount(ui.settingsEngineerInput.value);
+    const manageable = lifecycleLabel(team.state) === "active" && session.subscriptionManageable && !checkoutOpening && !engineerControlBusy;
+    renderEngineerControlPricing(current);
+    ui.settingsEngineerInput.disabled = !manageable;
+    ui.settingsEngineerDecrement.disabled = !manageable || target <= ENGINEER_FLOOR;
+    ui.settingsEngineerIncrement.disabled = !manageable || target >= ENGINEER_MAX;
+    ui.settingsEngineerApply.disabled = !manageable || target === current;
+  }
+
+  async function applyEngineerCount() {
+    const team = selectedTeam();
+    if (!team) return;
+    const teamId = stringValue(team.id);
+    const current = normalizeEngineerCount(team.engineerCount ?? ENGINEER_FLOOR);
+    const target = normalizeEngineerCount(ui.settingsEngineerInput.value);
+    setFieldError(ui.settingsEngineerError, "");
+    if (target === current) return;
+    engineerControlBusy = true;
+    ui.settingsEngineerApply.disabled = true;
+    ui.settingsEngineerApply.textContent = "Updating…";
+    try {
+      const result = await apiRequest("set_team_engineer_count", {
+        teamId,
+        engineerCount: target,
+        idempotencyKey: mutationKeys.for("setEngineerCount", `${teamId}:${target}`)
+      });
+      const updated = result.team;
+      if (!updated || stringValue(updated.id) !== teamId || stringValue(updated.organizationId) !== session.organizationId) {
+        throw new ApiError("Team service returned a team outside the selected organization scope", 0, "invalid_response", "");
+      }
+      const settlement = requestTeamSettlement(result.settlement);
+      const record = session.teams.find((candidate) => stringValue(candidate.id) === teamId);
+      if (record) Object.assign(record, updated);
+      const confirmed = normalizeEngineerCount(updated.engineerCount ?? target);
+      ui.settingsEngineerInput.value = String(confirmed);
+      if (settlement === REQUEST_TEAM_SETTLEMENT.AUTHENTICATION_REQUIRED) {
+        const destination = validatedRedirect(result.authenticationUrl || result.authentication_url, ["invoice.stripe.com"]);
+        if (!destination) throw new ApiError("Billing service returned an untrusted authentication URL", 0, "invalid_redirect", "");
+        const opened = window.open(destination, "_blank", "noopener,noreferrer");
+        toast(opened
+          ? "Authenticate the payment in the new Stripe tab to apply the new engineer count."
+          : "Allow pop-ups, then retry to authenticate the payment for this change.", "info");
+      } else {
+        mutationKeys.clear("setEngineerCount");
+        const changed = Math.abs(confirmed - current);
+        toast(confirmed > current
+          ? `Added ${changed} engineer${changed === 1 ? "" : "s"}. The prorated remainder was charged to the card on file.`
+          : `Reduced to ${confirmed} engineer${confirmed === 1 ? "" : "s"}. The unused portion is credited to your next invoice.`, "success");
+      }
+      renderTeamList();
+      renderSelectedTeamSummary();
+      renderSettingsBilling();
+    } catch (error) {
+      const message = apiErrorMessage(error, "The engineering capacity was not changed. It is safe to retry; the request uses an idempotency key.");
+      setFieldError(ui.settingsEngineerError, message);
+      toast(message, "error");
+    } finally {
+      engineerControlBusy = false;
+      ui.settingsEngineerApply.textContent = "Update engineering capacity";
+      renderEngineerControl();
+    }
   }
 
   function subscriptionStatusLabel(subscription) {
@@ -1975,12 +2204,14 @@
     if (!team) {
       ui.contextTeam.textContent = "Not selected";
       ui.dashboardState.textContent = "Select a server-confirmed team to load its live workspace.";
+      renderEngineerControl();
       return;
     }
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
     const state = provisioning.label || lifecycleLabel(team.state) || "created";
     ui.contextTeam.textContent = stringValue(team.name) || stringValue(team.id);
     ui.dashboardState.textContent = `${stringValue(team.name) || "Selected team"} is ${state}. Workspace data below comes from versioned services.`;
+    renderEngineerControl();
   }
 
   async function refreshSelectedTeam() {
@@ -4828,7 +5059,10 @@
   // webhook, so every path polls GetTeam until the pending team goes active.
   async function createTeam(event) {
     event.preventDefault();
-    const name = stringValue(new FormData(ui.teamForm).get("teamName"));
+    const form = new FormData(ui.teamForm);
+    const name = stringValue(form.get("teamName"));
+    const objective = stringValue(form.get("teamObjective")).slice(0, 2000);
+    const engineerCount = normalizeEngineerCount(form.get("engineerCount"));
     setFieldError(ui.teamError, "");
     if (name.length < 2 || name.length > 80) {
       setFieldError(ui.teamError, "Enter a team name between 2 and 80 characters.");
@@ -4849,11 +5083,13 @@
     ui.teamSubmit.disabled = true;
     ui.teamSubmit.textContent = "Requesting…";
     try {
-      const fingerprint = `${session.organizationId}:${name.toLowerCase()}`;
+      const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${objective}`;
       const result = await apiRequest("request_team", {
         organizationId: session.organizationId,
         name,
-        idempotencyKey: mutationKeys.for("requestTeam", fingerprint)
+        idempotencyKey: mutationKeys.for("requestTeam", fingerprint),
+        engineerCount,
+        objective
       });
       const pending = result.pendingTeam || result.pending_team;
       if (!pending?.id || stringValue(pending.organizationId) !== session.organizationId) {
@@ -4869,7 +5105,9 @@
       renderTeamSelector(pending.id);
       renderSettingsBilling();
       ui.teamForm.reset();
+      renderTeamSetupPricing();
 
+      const pricing = teamPricingFor(engineerCount);
       if (settlement === REQUEST_TEAM_SETTLEMENT.CHECKOUT_REQUIRED) {
         await ensureStripe();
         if (!stripeClient) throw new ApiError("Stripe is not configured for this deployment", 0, "not_configured", "");
@@ -4877,8 +5115,8 @@
           clientSecret: result.checkoutClientSecret || result.checkout_client_secret,
           teamId: stringValue(pending.id),
           title: "Start your team subscription",
-          subtitle: "Enter your card to start the $599/month team subscription. It is saved and reused for every additional team.",
-          summary: `${stringValue(pending.name) || name} · ${formatCents(teamUnitAmountCents())}/month · card saved for future teams`
+          subtitle: `Enter your card to start the ${formatCents(pricing.totalCents)}/month team subscription. It is saved and reused for every additional team.`,
+          summary: `${stringValue(pending.name) || name} · ${pricingBreakdown(pricing)} · card saved for future teams`
         });
         toast(`Team “${stringValue(pending.name) || name}” is pending. Enter your card to provision it.`, "info");
       } else if (settlement === REQUEST_TEAM_SETTLEMENT.CHARGED_OFF_SESSION) {
@@ -5068,6 +5306,19 @@
     closeEmbeddedCheckout();
   });
   ui.teamForm.addEventListener("submit", createTeam);
+  if (ui.engineerInput) {
+    ui.engineerInput.addEventListener("input", renderTeamSetupPricing);
+    ui.engineerInput.addEventListener("change", () => { ui.engineerInput.value = String(normalizeEngineerCount(ui.engineerInput.value)); renderTeamSetupPricing(); });
+  }
+  if (ui.engineerDecrement) ui.engineerDecrement.addEventListener("click", () => stepEngineerInput(ui.engineerInput, -1, renderTeamSetupPricing));
+  if (ui.engineerIncrement) ui.engineerIncrement.addEventListener("click", () => stepEngineerInput(ui.engineerInput, 1, renderTeamSetupPricing));
+  if (ui.settingsEngineerInput) {
+    ui.settingsEngineerInput.addEventListener("input", syncEngineerControl);
+    ui.settingsEngineerInput.addEventListener("change", () => { ui.settingsEngineerInput.value = String(normalizeEngineerCount(ui.settingsEngineerInput.value)); syncEngineerControl(); });
+  }
+  if (ui.settingsEngineerDecrement) ui.settingsEngineerDecrement.addEventListener("click", () => stepEngineerInput(ui.settingsEngineerInput, -1, syncEngineerControl));
+  if (ui.settingsEngineerIncrement) ui.settingsEngineerIncrement.addEventListener("click", () => stepEngineerInput(ui.settingsEngineerInput, 1, syncEngineerControl));
+  if (ui.settingsEngineerApply) ui.settingsEngineerApply.addEventListener("click", applyEngineerCount);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
   ui.objectiveForm.addEventListener("submit", createObjective);
   ui.objectiveSelect.addEventListener("change", selectObjective);
@@ -5107,6 +5358,8 @@
 
   setAuthPhase("signed_out");
   renderProgressSummary();
+  renderTeamSetupPricing();
+  renderEngineerControl();
   renderConfiguration();
   const initialQuery = typeof window.deepNavyInitialQuery === "string" ? window.deepNavyInitialQuery : window.location.search;
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }
