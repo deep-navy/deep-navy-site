@@ -10,22 +10,29 @@ const layout = readFileSync("_layouts/app.html", "utf8");
 const { ONBOARDING_STEPS } = require("../assets/js/app-state.js");
 const { missingTeamPrerequisites } = require("../assets/js/launch-contract.js");
 
-test("onboarding has no Subscription step in the wizard, progress list, or step cards", () => {
-  // The paid action moved to team creation, so the wizard is five steps:
-  // Account, Organization, GitHub, Repositories, Team.
+test("onboarding has no Subscription step, and reads as sign in then create team", () => {
+  // The internal model still tracks org/GitHub/repos (they auto-complete), but
+  // the customer-facing flow is two actions — sign in, then create a team — with
+  // the GitHub organization and repositories connected automatically.
   assert.deepEqual(ONBOARDING_STEPS, ["identity", "organization", "github", "repositories", "team"]);
   assert.doesNotMatch(shell, /data-progress-step="subscription"/);
   assert.doesNotMatch(shell, /data-step="subscription"/);
   assert.doesNotMatch(shell, /data-subscription-action/);
   assert.doesNotMatch(shell, /Activate subscription/);
-  // Team is the fifth and final step, shown as "STEP 05 · TEAM".
-  assert.match(shell, /STEP 05 · TEAM/);
-  assert.doesNotMatch(shell, /STEP 06/);
-  assert.match(shell, /Step 1 of 5 · Account/);
-  assert.match(shell, /1 of 5 steps complete/);
-  // The wizard no longer sets or renders a subscription step in app.js.
+  // No numbered five-step framing: the primary bar is two steps and the rest is
+  // an auto-connected status row.
+  assert.doesNotMatch(shell, /STEP 0[0-9]/);
+  assert.match(shell, /CREATE TEAM/);
+  assert.match(shell, /Step 1 of 2 · Sign in/);
+  assert.match(shell, /class="progress-auto"/);
+  assert.match(shell, /connect automatically|connected automatically/i);
+  // The organization is auto-derived, not a manual "establish" form step.
+  assert.doesNotMatch(shell, /Establish your organization/);
+  // The wizard no longer sets or renders a subscription step in app.js, and the
+  // progress summary reflects the auto-connect framing, not an "N of 5" count.
   assert.doesNotMatch(app, /setStep\("subscription"/);
   assert.doesNotMatch(app, /ui\.subscriptionAction/);
+  assert.doesNotMatch(app, /steps complete`/);
   // Team creation no longer requires an active subscription up front.
   assert.deepEqual(missingTeamPrerequisites({ githubInstalled: true, repositorySelectionReady: true }), []);
 });

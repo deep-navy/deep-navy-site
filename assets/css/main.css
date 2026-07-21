@@ -282,6 +282,21 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .progress-steps li::before { position: absolute; top: -5px; left: 0; width: 8px; height: 8px; content: ""; border: 2px solid var(--navy-700); background: var(--navy-850); }
 .progress-steps li[data-state="complete"]::before { border-color: var(--aqua); background: var(--aqua); }.progress-steps li[data-state="action"]::before { border-color: var(--muted-bright); }.progress-steps li[data-state="error"]::before { border-color: var(--ink); background: var(--ink); }
 .progress-steps span { color: #8499a8; font-family: var(--font-mono); font-size: .58rem; }.progress-steps strong { font-size: .72rem; }.progress-steps small { color: var(--muted); font-size: .62rem; line-height: 1.35; }
+/* Two real actions — sign in, create team — so the compact bar is 2 columns. */
+.progress-steps-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 480px; }
+/* GitHub org / App / repositories connect automatically: a quiet status row. */
+.progress-auto { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.progress-auto li { display: flex; align-items: baseline; gap: .5rem; }
+.progress-auto strong { font-family: var(--font-mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.progress-auto small { font-size: .68rem; color: var(--muted-bright); }
+.progress-auto li[data-state="complete"] strong { color: var(--aqua); }
+.progress-auto li[data-state="complete"] strong::after { content: " ✓"; }
+.progress-auto li[data-state="error"] strong, .progress-auto li[data-state="action"] strong { color: var(--ink); }
+/* Auto-connected cards are secondary; the team card is the primary action. */
+.onboarding-card.is-auto { padding-top: 1rem; padding-bottom: 1rem; opacity: .82; }
+.onboarding-card.is-auto h2 { font-size: 1rem; }
+.onboarding-card.is-primary { padding: 1.75rem 0; }
+.onboarding-card.is-primary h2 { font-size: 1.45rem; }
 .workspace-section { scroll-margin-top: 92px; margin-top: 4rem; padding: 2rem 0 0; border-top: 1px solid var(--line); }
 .workspace-section + .workspace-section { margin-top: 1.25rem; }
 .workspace-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; margin-bottom: 1.35rem; }.workspace-section-heading .eyebrow { margin-bottom: .6rem; }.workspace-section-heading h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 2.15rem); }.workspace-section-heading p { max-width: 550px; margin: .55rem 0 0; font-size: .82rem; }

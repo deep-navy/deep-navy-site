@@ -26,7 +26,7 @@
   <section class="signed-out-card" data-signed-out aria-labelledby="sign-in-title">
     <div class="signed-out-inner">
       <span class="signed-out-mark" aria-hidden="true">↗</span>
-      <span class="eyebrow">Step 1 of 5 · Account</span>
+      <span class="eyebrow">Step 1 of 2 · Sign in</span>
       <h2 id="sign-in-title">Sign in to start onboarding</h2>
       <p>Sign in with your GitHub account — free, no card required. The same authorization lets deep navy install its GitHub App on the repositories your engineering team will work on. This static site holds no client secret.</p>
       <button class="button button-github button-large" type="button" data-sign-in>
@@ -40,27 +40,29 @@
   <div data-authenticated hidden>
     <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
       <div class="progress-copy">
-        <div><span class="eyebrow">Onboarding status</span><h2 id="onboarding-progress-title">Five server-verified prerequisites.</h2></div>
-        <p data-progress-summary role="status" aria-live="polite">1 of 5 steps complete</p>
+        <div><span class="eyebrow">Getting started</span><h2 id="onboarding-progress-title">Sign in, then create your team.</h2></div>
+        <p data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
       </div>
-      <ol class="progress-steps">
-        <li data-progress-step="identity" data-state="complete"><span>01</span><strong>Account</strong><small>Authenticated</small></li>
-        <li data-progress-step="organization" data-state="loading"><span>02</span><strong>Organization</strong><small>Checking</small></li>
-        <li data-progress-step="github" data-state="blocked"><span>03</span><strong>GitHub</strong><small>Waiting</small></li>
-        <li data-progress-step="repositories" data-state="blocked"><span>04</span><strong>Repositories</strong><small>Waiting</small></li>
-        <li data-progress-step="team" data-state="blocked"><span>05</span><strong>Team</strong><small>Waiting</small></li>
+      <ol class="progress-steps progress-steps-compact">
+        <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Authenticated</small></li>
+        <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create team</strong><small>$599/team · month</small></li>
       </ol>
+      <ul class="progress-auto" aria-label="Connected automatically from your GitHub sign-in">
+        <li data-progress-step="organization" data-state="loading"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></li>
+        <li data-progress-step="github" data-state="loading"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></li>
+        <li data-progress-step="repositories" data-state="loading"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></li>
+      </ul>
     </section>
 
     <section id="workspace-setup" class="workspace-section" aria-labelledby="workspace-setup-title">
       <div class="workspace-section-heading">
-        <div><span class="eyebrow">Setup procedure</span><h2 id="workspace-setup-title">Account to provisioned team.</h2></div>
-        <p>Each row reflects a platform API resource. The active row contains the available action.</p>
+        <div><span class="eyebrow">Your workspace</span><h2 id="workspace-setup-title">Create your engineering team.</h2></div>
+        <p>Your GitHub organization and repositories are already connected from sign-in. Just name your team.</p>
       </div>
 
-      <section class="onboarding-card organization-card" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
-        <div class="step-header"><span class="step-number">STEP 02 · ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
-        <h2 id="organization-title">Establish your organization</h2>
+      <section class="onboarding-card organization-card is-auto" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
+        <div class="step-header"><span class="step-number">ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
+        <h2 id="organization-title">Organization</h2>
         <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
         <form class="inline-form organization-form" data-organization-bootstrap hidden>
           <label for="organization-name">Organization name</label>
@@ -79,17 +81,17 @@
 
       <div data-organization-dependent hidden>
         <section class="onboarding-grid" aria-label="Remaining onboarding steps">
-          <article class="onboarding-card" data-step="github" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">STEP 03 · GITHUB</span><span class="step-state" data-step-state>Checking</span></div>
-            <h2>Connect GitHub</h2>
+          <article class="onboarding-card is-auto" data-step="github" data-state="loading" tabindex="-1">
+            <div class="step-header"><span class="step-number">GITHUB</span><span class="step-state" data-step-state>Checking</span></div>
+            <h2>GitHub App</h2>
             <p data-step-message>Checking for an organization-bound GitHub App installation.</p>
-            <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Install GitHub App</button></div>
+            <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Manage GitHub access</button></div>
           </article>
 
-          <article class="onboarding-card repository-card" data-step="repositories" data-state="blocked" tabindex="-1">
-            <div class="step-header"><span class="step-number">STEP 04 · REPOSITORIES</span><span class="step-state" data-step-state>Blocked</span></div>
-            <h2>Choose repositories</h2>
-            <p data-step-message>Connect GitHub before choosing which accessible repositories the team may use.</p>
+          <article class="onboarding-card repository-card is-auto" data-step="repositories" data-state="blocked" tabindex="-1">
+            <div class="step-header"><span class="step-number">REPOSITORIES</span><span class="step-state" data-step-state>Blocked</span></div>
+            <h2>Repositories</h2>
+            <p data-step-message>The repositories you granted the GitHub App are connected. You can adjust which ones your team uses below.</p>
             <form class="repository-form" data-repository-form hidden>
               <fieldset class="repository-modes">
                 <legend>deep navy access</legend>
@@ -105,10 +107,10 @@
             </form>
           </article>
 
-          <article class="onboarding-card" data-step="team" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">STEP 05 · TEAM</span><span class="step-state" data-step-state>Checking</span></div>
+          <article class="onboarding-card team-card is-primary" data-step="team" data-state="loading" tabindex="-1">
+            <div class="step-header"><span class="step-number">CREATE TEAM</span><span class="step-state" data-step-state>Checking</span></div>
             <h2>Create your team</h2>
-            <p data-step-message>Team creation unlocks after GitHub and repository access are ready.</p>
+            <p data-step-message>Name your engineering team to get started.</p>
             <form class="inline-form card-action" data-team-form>
               <label for="team-name">Team name</label>
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>

@@ -1716,12 +1716,12 @@
   function renderProgressSummary() {
     if (!ui.progressSummary) return;
     const states = Object.fromEntries(ui.progressSteps.map((step) => [step.dataset.progressStep, step.dataset.state]));
-    const summary = appState?.progressSummary
-      ? appState.progressSummary(states)
-      : { completed: Object.values(states).filter((stateValue) => stateValue === "complete").length, total: ui.progressSteps.length };
-    ui.progressSummary.textContent = summary.completed === summary.total
-      ? "Setup complete · team workspace ready"
-      : `${summary.completed} of ${summary.total} steps complete`;
+    // The GitHub organization, App installation, and repositories connect
+    // automatically from sign-in, so onboarding is really two actions — sign in
+    // and create a team. Reflect that instead of a multi-step progress count.
+    ui.progressSummary.textContent = states.team === "complete"
+      ? "Your team workspace is ready."
+      : "Your GitHub organization and repositories connect automatically.";
   }
 
   function renderTeamList() {
