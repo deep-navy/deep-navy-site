@@ -23,7 +23,9 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // an auto-connected status row.
   assert.doesNotMatch(shell, /STEP 0[0-9]/);
   assert.match(shell, /CREATE TEAM/);
-  assert.match(shell, /Step 1 of 2 · Sign in/);
+  // The signed-out card invites GitHub sign-in as the single first action.
+  assert.match(shell, /Sign in to build your engineering team/);
+  assert.match(shell, /data-sign-in/);
   assert.match(shell, /class="progress-auto"/);
   assert.match(shell, /connect automatically|connected automatically/i);
   // The organization is auto-derived, not a manual "establish" form step.
@@ -91,9 +93,9 @@ test("pending teams are provisioned only by the signed webhook, polled via GetTe
 });
 
 test("Settings surface renders the account, billing, and Customer Portal", () => {
-  // A dedicated Settings section, reachable from the header nav.
+  // A dedicated Settings view, reachable from the workspace sidebar nav.
   assert.match(shell, /id="workspace-settings"/);
-  assert.match(layout, /<a href="#workspace-settings">Settings<\/a>/);
+  assert.match(shell, /data-view-link="settings"[^>]*href="#workspace-settings"/);
   // Account: GitHub identity, organization, members.
   assert.match(shell, /data-settings-account-name/);
   assert.match(shell, /data-settings-account-login/);

@@ -1,16 +1,4 @@
-<div class="app-shell">
-  <section class="app-intro" aria-labelledby="app-title">
-    <div>
-      <span class="eyebrow">Workspace</span>
-      <h1 id="app-title">Your engineering teams.</h1>
-      <p data-app-subtitle>Autonomous AI engineering teams that work on your GitHub repositories — planning, writing code, and opening pull requests.</p>
-    </div>
-    <div class="user-summary" data-user-summary hidden>
-      <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
-      <div><strong data-user-name></strong><span data-user-login></span></div>
-    </div>
-  </section>
-
+<div class="app-shell" data-shell data-shell-mode="signedout">
   <section class="config-banner" data-config-banner data-tone="warning" aria-live="polite" aria-atomic="true">
     <span class="banner-icon" aria-hidden="true">!</span>
     <div><strong data-config-title>Checking environment configuration</strong><p data-config-message>The application is verifying its public API and identity settings.</p></div>
@@ -23,68 +11,80 @@
     <button class="button button-secondary button-small" type="button" data-retry-sign-in>Try again</button>
   </section>
 
+  <!-- ============ SIGNED OUT ============ -->
   <section class="signed-out-card" data-signed-out aria-labelledby="sign-in-title">
     <div class="signed-out-inner">
-      <span class="signed-out-mark" aria-hidden="true">↗</span>
-      <span class="eyebrow">Step 1 of 2 · Sign in</span>
-      <h2 id="sign-in-title">Sign in to get started</h2>
+      <span class="eyebrow">Get started</span>
+      <h2 id="sign-in-title">Sign in to build your engineering team</h2>
       <p>Sign in with GitHub — free, no card required. The same authorization connects the repositories your team will work on. You only add a card when you create a team.</p>
       <button class="button button-github button-large" type="button" data-sign-in>
         <svg class="github-mark" width="20" height="20" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         Sign in with GitHub
       </button>
-      <p class="security-note">The session stays in memory and is never written to local storage. A page refresh requires signing in again during early access.</p>
+      <p class="security-note">Your session stays in memory and is never written to local storage. A page refresh asks you to sign in again during early access.</p>
     </div>
   </section>
 
+  <!-- ============ AUTHENTICATED ============ -->
   <div data-authenticated hidden>
-    <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
-      <div class="progress-copy">
-        <div><span class="eyebrow">Getting started</span><h2 id="onboarding-progress-title">Sign in, then create your team.</h2></div>
-        <p data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
-      </div>
-      <ol class="progress-steps progress-steps-compact">
-        <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Authenticated</small></li>
-        <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create team</strong><small>$599/team · month</small></li>
-      </ol>
-      <ul class="progress-auto" aria-label="Connected automatically from your GitHub sign-in">
-        <li data-progress-step="organization" data-state="loading"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></li>
-        <li data-progress-step="github" data-state="loading"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></li>
-        <li data-progress-step="repositories" data-state="loading"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></li>
-      </ul>
-    </section>
 
-    <section id="workspace-setup" class="workspace-section" aria-labelledby="workspace-setup-title">
-      <div class="workspace-section-heading">
-        <div><span class="eyebrow">Your workspace</span><h2 id="workspace-setup-title">Create your engineering team.</h2></div>
-        <p>Your GitHub organization and repositories are already connected from sign-in. Just name your team.</p>
-      </div>
+    <!-- ---------- FIRST RUN / CREATE TEAM ---------- -->
+    <section class="firstrun" data-firstrun aria-labelledby="firstrun-title">
+      <div class="firstrun-inner">
+        <div class="firstrun-head">
+          <span class="eyebrow" data-firstrun-eyebrow>Get started</span>
+          <h1 id="firstrun-title" data-firstrun-title>Create your first engineering team</h1>
+          <p data-app-subtitle>An autonomous team that plans the work, writes the code, and opens pull requests on your repositories — while you review.</p>
+        </div>
 
-      <section class="onboarding-card organization-card is-auto" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
-        <div class="step-header"><span class="step-number">ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
-        <h2 id="organization-title">Organization</h2>
-        <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
-        <button class="button button-github" type="button" data-organization-connect hidden>
-          <svg class="github-mark" width="18" height="18" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-          Connect GitHub repositories
-        </button>
-        <form class="inline-form organization-form" data-organization-bootstrap hidden>
-          <label for="organization-name">Organization name</label>
-          <input id="organization-name" name="organizationName" minlength="2" maxlength="80" autocomplete="organization" aria-describedby="organization-name-help organization-name-error" placeholder="Acme Engineering" required disabled>
-          <p class="form-help form-help-neutral" id="organization-name-help">Use the customer or company name your members will recognize.</p>
-          <p class="form-error" id="organization-name-error" data-organization-error role="alert" hidden></p>
-          <button class="button button-primary" type="submit" disabled>Create organization</button>
-        </form>
-        <form class="inline-form organization-form" data-organization-select hidden>
-          <label for="organization-selection">Organization</label>
-          <select id="organization-selection" name="organizationId" required disabled></select>
-          <button class="button button-primary" type="submit" disabled>Continue with organization</button>
-        </form>
-        <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
-      </section>
+        <div class="user-summary" data-user-summary hidden>
+          <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
+          <div><strong data-user-name></strong><span data-user-login></span></div>
+        </div>
 
-      <div data-organization-dependent hidden>
-        <section class="onboarding-grid" aria-label="Remaining onboarding steps">
+        <!-- Progress: two real actions; GitHub context connects automatically -->
+        <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
+          <div class="progress-copy">
+            <div><span class="eyebrow">Getting started</span><h2 id="onboarding-progress-title">Sign in, then create your team.</h2></div>
+            <p data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
+          </div>
+          <ol class="progress-steps progress-steps-compact">
+            <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Authenticated</small></li>
+            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create team</strong><small>$599/team · month</small></li>
+          </ol>
+          <ul class="progress-auto" aria-label="Connected automatically from your GitHub sign-in">
+            <li data-progress-step="organization" data-state="loading"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></li>
+            <li data-progress-step="github" data-state="loading"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></li>
+            <li data-progress-step="repositories" data-state="loading"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></li>
+          </ul>
+        </section>
+
+        <!-- Organization: auto-derived; connect / bootstrap / select handle edge cases -->
+        <section class="onboarding-card organization-card is-auto" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
+          <div class="step-header"><span class="step-number">ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
+          <h2 id="organization-title">Organization</h2>
+          <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
+          <button class="button button-github" type="button" data-organization-connect hidden>
+            <svg class="github-mark" width="18" height="18" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            Connect GitHub repositories
+          </button>
+          <form class="inline-form organization-form" data-organization-bootstrap hidden>
+            <label for="organization-name">Organization name</label>
+            <input id="organization-name" name="organizationName" minlength="2" maxlength="80" autocomplete="organization" aria-describedby="organization-name-help organization-name-error" placeholder="Acme Engineering" required disabled>
+            <p class="form-help form-help-neutral" id="organization-name-help">Use the customer or company name your members will recognize.</p>
+            <p class="form-error" id="organization-name-error" data-organization-error role="alert" hidden></p>
+            <button class="button button-primary" type="submit" disabled>Create organization</button>
+          </form>
+          <form class="inline-form organization-form" data-organization-select hidden>
+            <label for="organization-selection">Organization</label>
+            <select id="organization-selection" name="organizationId" required disabled></select>
+            <button class="button button-primary" type="submit" disabled>Continue with organization</button>
+          </form>
+          <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
+        </section>
+
+        <div data-organization-dependent hidden>
+          <!-- GitHub App status (auto) -->
           <article class="onboarding-card is-auto" data-step="github" data-state="loading" tabindex="-1">
             <div class="step-header"><span class="step-number">GITHUB</span><span class="step-state" data-step-state>Checking</span></div>
             <h2>GitHub App</h2>
@@ -92,6 +92,7 @@
             <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Manage GitHub access</button></div>
           </article>
 
+          <!-- Repositories (auto; adjustable behind a disclosure) -->
           <article class="onboarding-card repository-card is-auto" data-step="repositories" data-state="blocked" tabindex="-1">
             <div class="step-header"><span class="step-number">REPOSITORIES</span><span class="step-state" data-step-state>Blocked</span></div>
             <h2>Repositories</h2>
@@ -111,113 +112,148 @@
             </form>
           </article>
 
+          <!-- The focal action -->
           <article class="onboarding-card team-card is-primary" data-step="team" data-state="loading" tabindex="-1">
             <div class="step-header"><span class="step-number">CREATE TEAM</span><span class="step-state" data-step-state>Checking</span></div>
-            <h2>Create your team</h2>
+            <h2 data-team-card-title>Name your team</h2>
             <p data-step-message>Name your engineering team to get started.</p>
-            <form class="inline-form card-action" data-team-form>
+            <form class="inline-form team-form card-action" data-team-form>
               <label for="team-name">Team name</label>
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
-              <p class="form-help form-help-neutral" id="team-name-help">Creating a team is $599/month. The first team collects a card in secure Stripe checkout; more teams reuse the saved card.</p>
+              <div class="team-price">
+                <div class="team-price-amt">$599<small> / month</small></div>
+                <p class="form-help form-help-neutral" id="team-name-help">Card collected once in secure Stripe checkout; every additional team reuses the saved card.</p>
+              </div>
               <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
               <button class="button button-primary" type="submit" disabled>Create engineering team</button>
             </form>
+            <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
           </article>
-        </section>
+        </div>
       </div>
     </section>
 
-    <section id="workspace-overview" class="workspace-context" aria-labelledby="workspace-overview-title">
-      <div><span class="eyebrow">Current context</span><h2 id="workspace-overview-title">Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p></div>
-      <div class="dashboard-controls">
-        <label for="workspace-team">Team</label>
-        <select id="workspace-team" data-team-select disabled><option value="">No teams available</option></select>
-        <button class="button button-quiet button-small" type="button" data-refresh>Refresh</button>
-      </div>
-      <dl class="context-ledger">
-        <div><dt>Environment</dt><dd data-environment>Local</dd></div>
-        <div><dt>Organization</dt><dd data-context-organization>Not selected</dd></div>
-        <div><dt>Repository scope</dt><dd data-context-repositories>Not loaded</dd></div>
-        <div><dt>Team</dt><dd data-context-team>Not selected</dd></div>
-      </dl>
-    </section>
-
-    <div class="product-workspace">
-      <aside class="workspace-rail" aria-label="Team context">
-        <article class="app-dashboard" aria-labelledby="teams-title">
-          <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">API response</span></div>
-          <div class="empty-state" data-teams-empty><strong>No team resource</strong><p>Complete setup to create the first team.</p></div>
-          <div class="status-list" data-team-list aria-live="polite" hidden></div>
-        </article>
-
-        <article class="app-dashboard" aria-labelledby="agents-title">
-          <div class="app-dashboard-header"><h3 id="agents-title">Runtime roles</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
-          <div class="empty-state" data-agents-empty><strong>No roster loaded</strong><p>Select a team to query AgentService.</p></div>
-          <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
-        </article>
-
-        <article class="app-dashboard" aria-labelledby="objectives-title">
-          <div class="app-dashboard-header"><h3 id="objectives-title">Objective / initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
-          <div class="empty-state" data-objective-empty><strong>No objective loaded</strong><p>Select a team to load its durable objectives or submit a new business outcome.</p></div>
-          <div class="objective-select" data-objective-select-control hidden>
-            <label for="objective-select">Objective</label>
-            <select id="objective-select" data-objective-select disabled></select>
-          </div>
-          <form class="inline-form objective-form" data-objective-form hidden>
-            <label for="objective-title">Business objective</label>
-            <input id="objective-title" name="objectiveTitle" minlength="3" maxlength="160" placeholder="Improve trial-to-paid conversion" required disabled>
-            <label for="objective-description">Context and outcome</label>
-            <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="4" placeholder="Describe the customer problem, current baseline, desired outcome, and constraints." required disabled></textarea>
-            <p class="form-error" data-objective-error role="alert" hidden></p>
-            <button class="button button-primary" type="submit" disabled>Submit objective</button>
-          </form>
-          <div class="objective-record" data-objective-record hidden>
-            <span class="eyebrow">Selected objective</span>
-            <strong data-objective-title></strong>
-            <p data-objective-description></p>
-            <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not reported</span><p data-objective-dispatch-detail>Waiting for the durable TPM handoff status.</p></div>
-            <section class="objective-kpis" aria-labelledby="objective-kpis-title">
-              <div><strong id="objective-kpis-title">Proposed KPIs</strong><span class="data-source-badge" data-objective-kpi-state>Waiting</span></div>
-              <div class="empty-state objective-kpi-empty" data-objective-kpi-empty><strong>No KPIs proposed</strong><p>ObjectiveService has not returned KPI definitions for this objective.</p></div>
-              <ol data-objective-kpi-list hidden></ol>
-              <p class="objective-review-note">KPI definitions are read-only here. Any real acceptance request appears in the <a href="#workspace-approvals">ApprovalService queue</a>.</p>
-            </section>
-            <div class="initiative-stack"><div><strong>Proposed initiatives</strong><span class="data-source-badge" data-initiative-state>Waiting</span></div><ol data-initiative-list></ol><p>Initiatives are reviewed here; any protected decision appears in the <a href="#workspace-approvals">ApprovalService queue</a>.</p></div>
-          </div>
-        </article>
+    <!-- ---------- WORKSPACE ---------- -->
+    <div class="workspace" data-workspace>
+      <aside class="wsnav" data-authenticated-nav aria-label="Workspace navigation">
+        <div class="wsnav-team">
+          <label class="visually-hidden" for="workspace-team">Team</label>
+          <select id="workspace-team" data-team-select disabled><option value="">No teams available</option></select>
+          <button class="button button-quiet button-small wsnav-refresh" type="button" data-refresh aria-label="Refresh">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11A8 8 0 0 0 6.3 5.3L2 9m0 0h5m-5 0V4m2 9a8 8 0 0 0 13.7 5.7L22 15m0 0h-5m5 0v5"/></svg>
+          </button>
+        </div>
+        <nav class="wsnav-links">
+          <a class="wsnav-link" data-view-link="overview" aria-current="true" href="#workspace-overview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            <span>Overview</span></a>
+          <a class="wsnav-link" data-view-link="activity" href="#workspace-activity">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+            <span>Activity</span></a>
+          <a class="wsnav-link" data-view-link="economics" href="#workspace-economics">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6M4 20h16M9 20v-6M14 20V9M19 20v-9"/></svg>
+            <span>Economics</span></a>
+          <a class="wsnav-link" data-view-link="approvals" href="#workspace-approvals">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span>Approvals</span><span class="wsnav-count" data-approvals-count hidden>0</span></a>
+          <a class="wsnav-link" data-view-link="settings" href="#workspace-settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3 1a7.6 7.6 0 0 0-1.7-1l-.4-2.6H9.9l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7.6 7.6 0 0 0 1.7 1l.4 2.6h4.2l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5Z"/></svg>
+            <span>Settings</span></a>
+        </nav>
+        <button class="button button-secondary button-small wsnav-new" type="button" data-new-team>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          New team</button>
       </aside>
 
-      <section id="workspace-activity" class="workspace-section workspace-center" aria-labelledby="activity-title">
-        <div class="workspace-section-heading dashboard-heading">
-          <div><span class="eyebrow">Activity ledger</span><h2 id="activity-title">Team work, from authoritative services</h2><p>Runtime events keep their ActivityService sequence; approvals, provisioning, and cost retain their own source and timestamp semantics.</p></div>
-          <div class="live-control"><span class="stream-state" data-activity-state>Waiting for a team</span><button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button></div>
-        </div>
-        <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
-          <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
-          <button type="button" data-activity-filter="conversations" aria-pressed="false">A2A <span data-activity-filter-count="conversations">0</span></button>
-          <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
-          <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
-          <button type="button" data-activity-filter="workspace" aria-pressed="false">Workspace / diffs <span data-activity-filter-count="workspace">0</span></button>
-          <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues / PRs <span data-activity-filter-count="delivery">0</span></button>
-          <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
-          <button type="button" data-activity-filter="provisioning" aria-pressed="false">Provisioning <span data-activity-filter-count="provisioning">0</span></button>
-          <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
-        </div>
-        <div class="activity-source-pages" aria-label="Snapshot source coverage">
-          <div><span><strong>Session history</strong><small data-session-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-sessions-more hidden>Load more sessions</button></div>
-          <div><span><strong>Workspace changes</strong><small data-workspace-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-workspace-more hidden>Load more changes</button></div>
-          <div class="delivery-source"><span><strong>GitHub delivery</strong><small data-delivery-history-state>Waiting for a team</small></span><label><span class="visually-hidden">Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label><span class="delivery-page-actions"><button class="button button-quiet button-small" type="button" data-issues-more hidden>More issues</button><button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>More PRs</button></span></div>
-        </div>
-        <div class="activity-workspace">
-          <div class="empty-state" data-activity-empty><strong>No activity loaded</strong><p>Select a team to connect the event stream.</p></div>
-          <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
-        </div>
-      </section>
+      <div class="wsmain">
+        <!-- ===== OVERVIEW ===== -->
+        <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-overview-title" data-context-team>Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p></div>
+          </div>
+          <dl class="context-ledger">
+            <div><dt>Environment</dt><dd data-environment>Local</dd></div>
+            <div><dt>Organization</dt><dd data-context-organization>Not selected</dd></div>
+            <div><dt>Repository scope</dt><dd data-context-repositories>Not loaded</dd></div>
+          </dl>
 
-      <aside class="workspace-side" aria-label="Approvals and economics">
-        <section id="workspace-economics" class="workspace-section" aria-labelledby="workspace-economics-title">
-          <div class="workspace-section-heading dashboard-heading">
-            <div><span class="eyebrow">Team economics</span><h2 id="workspace-economics-title">Cost and credits</h2><p data-economics-message>Select a team to query EconomicsService.</p></div>
+          <div class="overview-grid">
+            <article class="app-dashboard" aria-labelledby="teams-title">
+              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">API response</span></div>
+              <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Create your first team to begin.</p></div>
+              <div class="status-list" data-team-list aria-live="polite" hidden></div>
+            </article>
+
+            <article class="app-dashboard" aria-labelledby="agents-title">
+              <div class="app-dashboard-header"><h3 id="agents-title">Runtime roles</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
+              <div class="empty-state" data-agents-empty><strong>No roster loaded</strong><p>Select a team to load its agents.</p></div>
+              <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
+            </article>
+
+            <article class="app-dashboard overview-objective" aria-labelledby="objectives-title">
+              <div class="app-dashboard-header"><h3 id="objectives-title">Objective &amp; initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
+              <div class="empty-state" data-objective-empty><strong>No objective loaded</strong><p>Select a team to load its durable objectives, or submit a new business outcome.</p></div>
+              <div class="objective-select" data-objective-select-control hidden>
+                <label for="objective-select">Objective</label>
+                <select id="objective-select" data-objective-select disabled></select>
+              </div>
+              <form class="inline-form objective-form" data-objective-form hidden>
+                <label for="objective-title">Business objective</label>
+                <input id="objective-title" name="objectiveTitle" minlength="3" maxlength="160" placeholder="Improve trial-to-paid conversion" required disabled>
+                <label for="objective-description">Context and outcome</label>
+                <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="4" placeholder="Describe the customer problem, current baseline, desired outcome, and constraints." required disabled></textarea>
+                <p class="form-error" data-objective-error role="alert" hidden></p>
+                <button class="button button-primary" type="submit" disabled>Submit objective</button>
+              </form>
+              <div class="objective-record" data-objective-record hidden>
+                <span class="eyebrow">Selected objective</span>
+                <strong data-objective-title></strong>
+                <p data-objective-description></p>
+                <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not reported</span><p data-objective-dispatch-detail>Waiting for the durable TPM handoff status.</p></div>
+                <section class="objective-kpis" aria-labelledby="objective-kpis-title">
+                  <div><strong id="objective-kpis-title">Proposed KPIs</strong><span class="data-source-badge" data-objective-kpi-state>Waiting</span></div>
+                  <div class="empty-state objective-kpi-empty" data-objective-kpi-empty><strong>No KPIs proposed</strong><p>ObjectiveService has not returned KPI definitions for this objective.</p></div>
+                  <ol data-objective-kpi-list hidden></ol>
+                  <p class="objective-review-note">KPI definitions are read-only here. Any real acceptance request appears in the <a href="#workspace-approvals" data-view-link="approvals">approvals queue</a>.</p>
+                </section>
+                <div class="initiative-stack"><div><strong>Proposed initiatives</strong><span class="data-source-badge" data-initiative-state>Waiting</span></div><ol data-initiative-list></ol><p>Initiatives are reviewed here; any protected decision appears in the <a href="#workspace-approvals" data-view-link="approvals">approvals queue</a>.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ===== ACTIVITY ===== -->
+        <section class="wview" data-view="activity" id="workspace-activity" aria-labelledby="activity-title">
+          <div class="wview-head">
+            <div><h2 id="activity-title">Activity</h2><p>Every event your team produces, in order — planning through delivery. Filter to what you care about.</p></div>
+            <div class="live-control"><span class="stream-state" data-activity-state>Waiting for a team</span><button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button></div>
+          </div>
+          <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
+            <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
+            <button type="button" data-activity-filter="conversations" aria-pressed="false">A2A <span data-activity-filter-count="conversations">0</span></button>
+            <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
+            <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
+            <button type="button" data-activity-filter="workspace" aria-pressed="false">Workspace / diffs <span data-activity-filter-count="workspace">0</span></button>
+            <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues / PRs <span data-activity-filter-count="delivery">0</span></button>
+            <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
+            <button type="button" data-activity-filter="provisioning" aria-pressed="false">Provisioning <span data-activity-filter-count="provisioning">0</span></button>
+            <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
+          </div>
+          <div class="activity-source-pages" aria-label="Snapshot source coverage">
+            <div><span><strong>Session history</strong><small data-session-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-sessions-more hidden>Load more sessions</button></div>
+            <div><span><strong>Workspace changes</strong><small data-workspace-history-state>Waiting for a team</small></span><button class="button button-quiet button-small" type="button" data-workspace-more hidden>Load more changes</button></div>
+            <div class="delivery-source"><span><strong>GitHub delivery</strong><small data-delivery-history-state>Waiting for a team</small></span><label><span class="visually-hidden">Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label><span class="delivery-page-actions"><button class="button button-quiet button-small" type="button" data-issues-more hidden>More issues</button><button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>More PRs</button></span></div>
+          </div>
+          <div class="activity-workspace">
+            <div class="empty-state" data-activity-empty><strong>No activity yet</strong><p>Select a team to connect the event stream.</p></div>
+            <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
+          </div>
+        </section>
+
+        <!-- ===== ECONOMICS ===== -->
+        <section class="wview" data-view="economics" id="workspace-economics" aria-labelledby="workspace-economics-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-economics-title">Economics</h2><p data-economics-message>Measured cost and prepaid credits for this team, calculated server-side.</p></div>
             <span class="data-source-badge" data-economics-state>Waiting</span>
           </div>
           <div class="empty-state" data-economics-empty><strong>No economics summary</strong><p>The measured team response will populate this ledger.</p></div>
@@ -293,56 +329,57 @@
           </section>
         </section>
 
-        <section id="workspace-approvals" class="workspace-section" aria-labelledby="workspace-approvals-title">
-          <div class="workspace-section-heading dashboard-heading">
-            <div><span class="eyebrow">Approval queue</span><h2 id="workspace-approvals-title">Pending decisions</h2><p>Only safe action summaries returned for the selected team are shown.</p></div>
+        <!-- ===== APPROVALS ===== -->
+        <section class="wview" data-view="approvals" id="workspace-approvals" aria-labelledby="workspace-approvals-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-approvals-title">Approvals</h2><p>Protected actions your team wants to take. Nothing runs until you approve it.</p></div>
             <span class="data-source-badge" data-approvals-state>Waiting</span>
           </div>
-          <div class="empty-state" data-approvals-empty><strong>No approval queue loaded</strong><p>Select a team to request its pending approvals.</p></div>
+          <div class="empty-state" data-approvals-empty><strong>No pending approvals</strong><p>Select a team to load its pending decisions.</p></div>
           <ol class="approval-list" data-approval-list aria-live="polite" hidden></ol>
           <button class="button button-quiet button-small approval-more" type="button" data-approvals-more hidden>Load more pending approvals</button>
         </section>
-      </aside>
-    </div>
 
-    <section id="workspace-settings" class="workspace-section" aria-labelledby="workspace-settings-title">
-      <div class="workspace-section-heading">
-        <div><span class="eyebrow">Account &amp; billing</span><h2 id="workspace-settings-title">Settings</h2></div>
-        <p>Manage the signed-in GitHub account, your organization, and the card Stripe keeps on file for your teams. deep navy never stores card details — Stripe does.</p>
-      </div>
-      <div class="settings-grid">
-        <article class="app-dashboard settings-card" aria-labelledby="settings-account-title">
-          <div class="app-dashboard-header"><h3 id="settings-account-title">Account</h3><span class="data-source-badge">GitHub identity</span></div>
-          <dl class="settings-list">
-            <div><dt>Signed in as</dt><dd data-settings-account-name>—</dd></div>
-            <div><dt>GitHub login</dt><dd data-settings-account-login>—</dd></div>
-            <div><dt>Organization</dt><dd data-settings-account-org>Not selected</dd></div>
-          </dl>
-          <div class="settings-members">
-            <div class="credit-pack-heading"><div><span class="eyebrow">Members</span><strong>Organization members</strong></div><span class="data-source-badge" data-settings-members-count>—</span></div>
-            <ul class="settings-member-list" data-settings-members aria-live="polite"></ul>
-            <p class="form-help form-help-neutral" data-settings-members-empty>Select an organization to list its members.</p>
+        <!-- ===== SETTINGS ===== -->
+        <section class="wview" data-view="settings" id="workspace-settings" aria-labelledby="workspace-settings-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-settings-title">Settings</h2><p>Your GitHub account, organization, and the card Stripe keeps on file. deep navy never stores card details — Stripe does.</p></div>
           </div>
-        </article>
-        <article class="app-dashboard settings-card" aria-labelledby="settings-billing-title">
-          <div class="app-dashboard-header"><h3 id="settings-billing-title">Billing</h3><span class="data-source-badge" data-settings-billing-state>Waiting</span></div>
-          <dl class="settings-list">
-            <div><dt>Active teams</dt><dd data-settings-team-count>0</dd></div>
-            <div><dt>Monthly total</dt><dd class="settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
-            <div><dt>Price per team</dt><dd data-settings-billing-unit>$599.00/month</dd></div>
-            <div><dt>Payment method</dt><dd data-settings-payment-method>No card on file</dd></div>
-          </dl>
-          <dl class="plan-summary" data-plan-summary hidden>
-            <div><dt>Plan</dt><dd data-plan-name></dd></div>
-            <div><dt>Price</dt><dd data-plan-price></dd></div>
-            <div><dt>Included</dt><dd data-plan-credits></dd></div>
-            <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
-          </dl>
-          <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
-          <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing</button></div>
-        </article>
+          <div class="settings-grid">
+            <article class="app-dashboard settings-card" aria-labelledby="settings-account-title">
+              <div class="app-dashboard-header"><h3 id="settings-account-title">Account</h3><span class="data-source-badge">GitHub identity</span></div>
+              <dl class="settings-list">
+                <div><dt>Signed in as</dt><dd data-settings-account-name>—</dd></div>
+                <div><dt>GitHub login</dt><dd data-settings-account-login>—</dd></div>
+                <div><dt>Organization</dt><dd data-settings-account-org>Not selected</dd></div>
+              </dl>
+              <div class="settings-members">
+                <div class="credit-pack-heading"><div><span class="eyebrow">Members</span><strong>Organization members</strong></div><span class="data-source-badge" data-settings-members-count>—</span></div>
+                <ul class="settings-member-list" data-settings-members aria-live="polite"></ul>
+                <p class="form-help form-help-neutral" data-settings-members-empty>Select an organization to list its members.</p>
+              </div>
+            </article>
+            <article class="app-dashboard settings-card" aria-labelledby="settings-billing-title">
+              <div class="app-dashboard-header"><h3 id="settings-billing-title">Billing</h3><span class="data-source-badge" data-settings-billing-state>Waiting</span></div>
+              <dl class="settings-list">
+                <div><dt>Active teams</dt><dd data-settings-team-count>0</dd></div>
+                <div><dt>Monthly total</dt><dd class="settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
+                <div><dt>Price per team</dt><dd data-settings-billing-unit>$599.00/month</dd></div>
+                <div><dt>Payment method</dt><dd data-settings-payment-method>No card on file</dd></div>
+              </dl>
+              <dl class="plan-summary" data-plan-summary hidden>
+                <div><dt>Plan</dt><dd data-plan-name></dd></div>
+                <div><dt>Price</dt><dd data-plan-price></dd></div>
+                <div><dt>Included</dt><dd data-plan-credits></dd></div>
+                <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
+              </dl>
+              <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
+              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing in Stripe</button></div>
+            </article>
+          </div>
+        </section>
       </div>
-    </section>
+    </div>
   </div>
 </div>
 
