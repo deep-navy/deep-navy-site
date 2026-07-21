@@ -4509,7 +4509,14 @@
 
   function validCheckoutClientSecret(value) {
     const secret = stringValue(value);
-    if (!/^cs_(?:test|live)_[A-Za-z0-9_]{16,500}$/.test(secret)) return "";
+    // Stripe's embedded_page Checkout client secret embeds a URL-encoded return
+    // URL, so it is long (~400+ chars) and contains characters beyond
+    // [A-Za-z0-9_] such as "%". Guard on the prefix, a sane length, and the
+    // absence of unsafe characters (whitespace, control, quotes, angle brackets,
+    // backslash) rather than an over-strict charset that rejects valid secrets.
+    if (secret.length < 16 || secret.length > 2048) return "";
+    if (!/^cs_(?:test|live)_/.test(secret)) return "";
+    if (/[\s<>"\'`\\]/.test(secret)) return "";
     if (environment === "development" && !secret.startsWith("cs_test_")) return "";
     if (environment === "production" && !secret.startsWith("cs_live_")) return "";
     return secret;
