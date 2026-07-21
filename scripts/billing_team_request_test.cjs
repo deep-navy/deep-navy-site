@@ -60,12 +60,14 @@ test("creating a team calls RequestTeam with a uuid idempotency key and reflects
 });
 
 test("RequestTeam settlement drives each payment path", () => {
-  // CHECKOUT_REQUIRED → mount embedded checkout via the existing ensureStripe +
-  // initEmbeddedCheckout path with the returned client secret.
+  // CHECKOUT_REQUIRED → mount a custom Stripe Payment Element (card fields in deep
+  // navy's own UI) with the invoice confirmation secret, then confirm the payment.
   assert.match(app, /REQUEST_TEAM_SETTLEMENT\.CHECKOUT_REQUIRED/);
-  assert.match(app, /validCheckoutClientSecret\(result\.checkoutClientSecret/);
-  assert.match(app, /await ensureStripe\(\)/);
-  assert.match(app, /kind: "team"/);
+  assert.match(app, /await openTeamPaymentElement\(\{/);
+  assert.match(app, /clientSecret: result\.checkoutClientSecret \|\| result\.checkout_client_secret/);
+  assert.match(app, /stripeClient\.elements\(\{ clientSecret: secret, appearance: teamCheckoutAppearance\(\) \}\)/);
+  assert.match(app, /stripeClient\.confirmPayment\(\{/);
+  assert.match(app, /redirect: "if_required"/);
   // CHARGED_OFF_SESSION → show provisioning and poll GetTeam until active.
   assert.match(app, /REQUEST_TEAM_SETTLEMENT\.CHARGED_OFF_SESSION/);
   assert.match(app, /startPendingTeamPoll\(pending\.id/);

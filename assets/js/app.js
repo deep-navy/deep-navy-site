@@ -157,6 +157,9 @@
     checkoutSummary: document.querySelector("[data-checkout-summary]"),
     checkoutStatus: document.querySelector("[data-checkout-status]"),
     checkoutMount: document.querySelector("[data-checkout-mount]"),
+    checkoutForm: document.querySelector("[data-checkout-form]"),
+    checkoutSubmit: document.querySelector("[data-checkout-submit]"),
+    checkoutError: document.querySelector("[data-checkout-error]"),
     checkoutClose: document.querySelector("[data-checkout-close]"),
     toast: document.querySelector("[data-toast]")
   };
@@ -266,6 +269,8 @@
   let stripeClient = null;
   let stripeLoadPromise = null;
   let embeddedCheckout = null;
+  let teamPaymentElements = null;
+  let checkoutTeamId = "";
   let checkoutOpening = false;
   const provisioningTimers = new Map();
   // Pending teams from RequestTeam are polled with GetTeam until they leave
@@ -4564,6 +4569,10 @@
     ui.checkoutStatus.textContent = "Preparing encrypted payment fields…";
     ui.checkoutStatus.hidden = false;
     ui.checkoutMount.replaceChildren();
+    // Embedded Checkout renders its own submit control, so the form's button stays
+    // hidden; only the custom Payment Element (team subscription) uses it.
+    if (ui.checkoutForm) ui.checkoutForm.hidden = false;
+    if (ui.checkoutSubmit) ui.checkoutSubmit.hidden = true;
     if (!ui.checkoutDialog.open) ui.checkoutDialog.showModal();
     const safeSecret = validCheckoutClientSecret(clientSecret);
     if (!safeSecret) throw new ApiError("Embedded Checkout secret is invalid", 0, "invalid_response", "");
@@ -4590,7 +4599,120 @@
       try { embeddedCheckout.destroy(); } catch { /* Stripe may already have completed the frame */ }
     }
     embeddedCheckout = null;
+    teamPaymentElements = null;
+    checkoutTeamId = "";
+    if (ui.checkoutForm) ui.checkoutForm.hidden = true;
+    if (ui.checkoutError) setFieldError(ui.checkoutError, "");
     ui.checkoutMount.replaceChildren();
+  }
+
+  // The team subscription uses a custom Stripe Payment Element (card fields in
+  // deep navy's own dark UI), styled to the brand with the Appearance API. The
+  // browser confirms the invoice's confirmation secret; the signed webhook
+  // provisions the pending team. This replaces Stripe's hosted embedded Checkout.
+  function validPaymentClientSecret(value) {
+    const secret = stringValue(value);
+    if (secret.length < 16 || secret.length > 2048) return "";
+    if (!/^(?:pi|seti)_[A-Za-z0-9]+_secret_/.test(secret)) return "";
+    if (/[\s<>"'`\\]/.test(secret)) return "";
+    return secret;
+  }
+
+  function teamCheckoutAppearance() {
+    return {
+      theme: "night",
+      variables: {
+        colorPrimary: "#79f2d2",
+        colorBackground: "#050a10",
+        colorText: "#f4f7f5",
+        colorTextSecondary: "#9aa6aa",
+        colorDanger: "#ff6b6b",
+        borderRadius: "8px",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
+        fontSizeBase: "15px",
+        spacingUnit: "3px"
+      },
+      rules: {
+        ".Input": { backgroundColor: "#02060b", border: "1px solid rgba(244,247,245,0.14)" },
+        ".Input:focus": { border: "1px solid #79f2d2", boxShadow: "none" },
+        ".Label": { color: "#9aa6aa" },
+        ".Tab": { border: "1px solid rgba(244,247,245,0.14)" },
+        ".Tab--selected": { borderColor: "#79f2d2" }
+      }
+    };
+  }
+
+  async function openTeamPaymentElement({ clientSecret, teamId, title, subtitle, summary }) {
+    await ensureStripe();
+    if (!stripeClient || typeof stripeClient.elements !== "function") throw new ApiError("Stripe Elements is unavailable", 0, "not_configured", "");
+    const secret = validPaymentClientSecret(clientSecret);
+    if (!secret) throw new ApiError("Billing service returned an invalid payment secret for the first team", 0, "invalid_response", "");
+    if (checkoutOpening) throw new ApiError("Checkout is already opening", 0, "already_opening", "");
+    destroyEmbeddedCheckout();
+    checkoutOpening = true;
+    ui.checkoutTitle.textContent = title;
+    ui.checkoutSubtitle.textContent = subtitle;
+    ui.checkoutSummary.textContent = summary;
+    ui.checkoutStatus.textContent = "Loading the secure card fields…";
+    ui.checkoutStatus.hidden = false;
+    ui.checkoutMount.replaceChildren();
+    setFieldError(ui.checkoutError, "");
+    ui.checkoutForm.hidden = false;
+    ui.checkoutSubmit.hidden = false;
+    ui.checkoutSubmit.disabled = true;
+    ui.checkoutSubmit.textContent = "Start subscription";
+    checkoutTeamId = stringValue(teamId);
+    if (!ui.checkoutDialog.open) ui.checkoutDialog.showModal();
+    try {
+      teamPaymentElements = stripeClient.elements({ clientSecret: secret, appearance: teamCheckoutAppearance() });
+      const paymentElement = teamPaymentElements.create("payment", { layout: "tabs" });
+      paymentElement.on("ready", () => { ui.checkoutStatus.hidden = true; ui.checkoutSubmit.disabled = false; });
+      paymentElement.on("loaderror", () => {
+        ui.checkoutStatus.textContent = "Stripe could not load the payment fields. Close this panel and retry.";
+        ui.checkoutStatus.hidden = false;
+      });
+      paymentElement.mount(ui.checkoutMount);
+    } catch (error) {
+      teamPaymentElements = null;
+      ui.checkoutStatus.textContent = "Stripe could not load the payment fields. Close this panel and retry.";
+      ui.checkoutStatus.hidden = false;
+      throw error;
+    } finally {
+      checkoutOpening = false;
+    }
+  }
+
+  async function submitTeamPayment(event) {
+    event.preventDefault();
+    if (!teamPaymentElements || !stripeClient) return;
+    const teamId = checkoutTeamId;
+    ui.checkoutSubmit.disabled = true;
+    ui.checkoutSubmit.textContent = "Processing…";
+    setFieldError(ui.checkoutError, "");
+    try {
+      const outcome = await stripeClient.confirmPayment({
+        elements: teamPaymentElements,
+        confirmParams: { return_url: `${appUrl}?billing=return` },
+        redirect: "if_required"
+      });
+      if (outcome?.error) {
+        setFieldError(ui.checkoutError, stringValue(outcome.error.message) || "Your card could not be charged. Check the details and try again.");
+        ui.checkoutSubmit.disabled = false;
+        ui.checkoutSubmit.textContent = "Start subscription";
+        return;
+      }
+      // Payment confirmed without a redirect. The signed invoice.paid webhook
+      // provisions the pending team; poll until it is active.
+      ui.checkoutStatus.textContent = "Payment confirmed. Provisioning your team…";
+      ui.checkoutStatus.hidden = false;
+      closeEmbeddedCheckout();
+      if (teamId) startPendingTeamPoll(teamId, 1500);
+      toast("Payment confirmed. Your team is being provisioned.", "success");
+    } catch {
+      setFieldError(ui.checkoutError, "Payment could not be completed. Close this panel and try again.");
+      ui.checkoutSubmit.disabled = false;
+      ui.checkoutSubmit.textContent = "Start subscription";
+    }
   }
 
   function closeEmbeddedCheckout() {
@@ -4749,20 +4871,16 @@
       ui.teamForm.reset();
 
       if (settlement === REQUEST_TEAM_SETTLEMENT.CHECKOUT_REQUIRED) {
-        const secret = validCheckoutClientSecret(result.checkoutClientSecret || result.checkout_client_secret);
-        if (!secret) throw new ApiError("Billing service returned an invalid embedded Checkout secret for the first team", 0, "invalid_response", "");
         await ensureStripe();
-        if (!stripeClient) throw new ApiError("Embedded Stripe Checkout is not configured", 0, "not_configured", "");
-        await openEmbeddedCheckout({
-          clientSecret: secret,
-          kind: "team",
-          mutationName: "requestTeam",
+        if (!stripeClient) throw new ApiError("Stripe is not configured for this deployment", 0, "not_configured", "");
+        await openTeamPaymentElement({
+          clientSecret: result.checkoutClientSecret || result.checkout_client_secret,
           teamId: stringValue(pending.id),
           title: "Start your team subscription",
-          subtitle: "Enter a card to start the $599/month team subscription. It is saved and reused for every additional team.",
+          subtitle: "Enter your card to start the $599/month team subscription. It is saved and reused for every additional team.",
           summary: `${stringValue(pending.name) || name} · ${formatCents(teamUnitAmountCents())}/month · card saved for future teams`
         });
-        toast(`Team “${stringValue(pending.name) || name}” is pending. Complete secure checkout to provision it.`, "info");
+        toast(`Team “${stringValue(pending.name) || name}” is pending. Enter your card to provision it.`, "info");
       } else if (settlement === REQUEST_TEAM_SETTLEMENT.CHARGED_OFF_SESSION) {
         const team = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(pending.id));
         if (team) { team._pollingMessage = "Card on file charged. Waiting for the signed webhook to provision the team."; renderTeamList(); }
@@ -4943,6 +5061,7 @@
   ui.economicsGroup.addEventListener("change", selectEconomicsGroup);
   ui.creditHardLimitInput.addEventListener("input", updateCreditControlSummary);
   ui.creditCustomerPaused.addEventListener("change", updateCreditControlSummary);
+  if (ui.checkoutForm) ui.checkoutForm.addEventListener("submit", submitTeamPayment);
   ui.checkoutClose.addEventListener("click", closeEmbeddedCheckout);
   ui.checkoutDialog.addEventListener("cancel", (event) => {
     event.preventDefault();

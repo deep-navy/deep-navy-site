@@ -358,10 +358,14 @@
     </header>
     <div class="checkout-summary" data-checkout-summary></div>
     <div class="checkout-status" data-checkout-status role="status" aria-live="polite">Preparing secure payment…</div>
-    <div class="checkout-mount" data-checkout-mount></div>
+    <form class="checkout-form" data-checkout-form>
+      <div class="checkout-mount" data-checkout-mount></div>
+      <p class="form-error" data-checkout-error role="alert" hidden></p>
+      <button class="button button-primary button-large" type="submit" data-checkout-submit disabled>Start subscription</button>
+    </form>
     <footer class="checkout-footer">
-      <span>Payment fields are served by Stripe.</span>
-      <span>Activation and credits require a verified webhook.</span>
+      <span>Card details are encrypted by Stripe and never touch our servers.</span>
+      <span>Activation requires a verified webhook.</span>
     </footer>
   </div>
 </dialog>
