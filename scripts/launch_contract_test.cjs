@@ -17,6 +17,7 @@ const {
   normalizeEngineerCount,
   parseGitHubCallback,
   provisioningPresentation,
+  provisioningProgress,
   repositorySelectionReady,
   subscriptionActive,
   teamPricing,
@@ -224,4 +225,28 @@ test("team readiness lists every missing server-confirmed prerequisite", () => {
     githubInstalled: true,
     repositorySelectionReady: true
   }), []);
+});
+
+test("provisioning progress banks early, accelerates at the end, and never stalls near completion", () => {
+  // No command yet (awaiting the signed payment webhook): a visible first step.
+  const awaiting = provisioningProgress({});
+  assert.equal(awaiting.percent, 6);
+  assert.match(awaiting.message, /payment/i);
+  assert.ok(awaiting.eta.length > 0);
+
+  // Real steps advance monotonically, with the largest deltas banked early
+  // (Harrison et al.: early progress + terminal acceleration feel fastest).
+  const percents = [1, 2, 3, 4, 5, 6, 7].map((step) => provisioningProgress({ provisioningState: 2, provisioningStep: step }).percent);
+  assert.deepEqual([...percents].sort((a, b) => a - b), percents);
+  assert.ok(percents[0] >= 15, "first real step must bank visible progress");
+  // The pre-completion step parks at 92, never ~99 — a bar idling at the end is
+  // perceived as slower/stalled.
+  assert.equal(percents[5], 92);
+  assert.equal(percents[6], 100);
+
+  // Terminal states: success completes the bar; failure renders no bar at all
+  // (the error surfaces own that state — a frozen bar would misreport work).
+  assert.equal(provisioningProgress({ provisioningState: 4 }).percent, 100);
+  assert.equal(provisioningProgress({ provisioningState: 5 }), null);
+  assert.equal(provisioningProgress({ provisioningState: 6 }), null);
 });

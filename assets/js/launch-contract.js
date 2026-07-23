@@ -244,6 +244,52 @@
     };
   }
 
+  // Determinate progress for the 1-3 minute provisioning wait, built on cited
+  // wait-state research rather than a spinner:
+  //  - NN/g: waits over ~10s need a percent-done indicator plus a duration
+  //    expectation; Nah 2004 (N=70) measured ~3x longer tolerable waits with
+  //    visible progress feedback.
+  //  - Harrison et al., UIST 2007: bank progress early and accelerate toward
+  //    the end; a bar that pauses near completion is perceived as slower.
+  //  - Buell & Norton, Management Science 2011 (labor illusion): showing the
+  //    REAL work being performed makes the wait itself increase satisfaction.
+  // Percent milestones bank the largest deltas early, top out at 92% while
+  // waiting on the gateway (never idling at ~99%), and jump to 100 on success —
+  // the terminal acceleration Harrison found fastest-feeling. Messages name the
+  // actual provisioning steps the server reports, in customer language.
+  const PROVISIONING_PROGRESS_ETA = "Usually takes 1–3 minutes.";
+  const PROVISIONING_PROGRESS_BY_STEP = Object.freeze({
+    "PROVISIONING_STEP_QUEUED": Object.freeze({ percent: 18, message: "Payment confirmed — queueing your workspace build" }),
+    "PROVISIONING_STEP_VALIDATING_PREREQUISITES": Object.freeze({ percent: 34, message: "Validating repository access and your plan" }),
+    "PROVISIONING_STEP_CREATING_NAMESPACE": Object.freeze({ percent: 52, message: "Creating your team’s isolated workspace" }),
+    "PROVISIONING_STEP_CONFIGURING_RUNTIME": Object.freeze({ percent: 68, message: "Configuring the agent runtime" }),
+    "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE": Object.freeze({ percent: 82, message: "Starting your agents" }),
+    "PROVISIONING_STEP_WAITING_FOR_GATEWAY": Object.freeze({ percent: 92, message: "Waiting for your team’s gateway to come online" }),
+    "PROVISIONING_STEP_READY": Object.freeze({ percent: 100, message: "Your team is live" })
+  });
+
+  function provisioningProgress(status) {
+    const state = provisioningState(status);
+    if (state === PROVISIONING_STATE.FAILED || state === PROVISIONING_STATE.CANCELED) return null;
+    if (state === PROVISIONING_STATE.SUCCEEDED) {
+      return { percent: 100, message: "Your team is live", eta: "" };
+    }
+    const step = enumValue(status?.provisioningStep, {
+      1: "PROVISIONING_STEP_QUEUED",
+      2: "PROVISIONING_STEP_VALIDATING_PREREQUISITES",
+      3: "PROVISIONING_STEP_CREATING_NAMESPACE",
+      4: "PROVISIONING_STEP_CONFIGURING_RUNTIME",
+      5: "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE",
+      6: "PROVISIONING_STEP_WAITING_FOR_GATEWAY",
+      7: "PROVISIONING_STEP_READY"
+    });
+    const known = step ? PROVISIONING_PROGRESS_BY_STEP[step] : null;
+    if (known) return { percent: known.percent, message: known.message, eta: known.percent >= 100 ? "" : PROVISIONING_PROGRESS_ETA };
+    // No provisioning command yet: the capture exists but payment has not been
+    // confirmed by the signed webhook. Bank a visible first step immediately.
+    return { percent: 6, message: "Confirming payment with Stripe", eta: PROVISIONING_PROGRESS_ETA };
+  }
+
   // Team creation is now the paid action (RequestTeam collects the card), so an
   // active subscription is no longer a prerequisite: it is the *result* of
   // creating the first team. Only the GitHub install and a durable repository
@@ -345,6 +391,7 @@
     missingTeamPrerequisites,
     parseGitHubCallback,
     provisioningPresentation,
+    provisioningProgress,
     provisioningState,
     provisioningTerminal,
     repositorySelectionMode,

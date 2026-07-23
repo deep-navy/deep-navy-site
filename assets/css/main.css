@@ -436,7 +436,20 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .checkout-summary { grid-column: 1; padding: 1.5rem 1.4rem; color: var(--muted-bright); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: .72rem; line-height: 1.7; }
 .checkout-summary::before { display: block; margin-bottom: .65rem; color: var(--aqua); content: "ORDER / SERVER VERIFIED"; font-size: .55rem; letter-spacing: .08em; }
 .checkout-status { grid-column: 1; padding: 1.4rem; color: var(--muted); border-right: 1px solid var(--line); font-size: .74rem; }
-.checkout-mount { grid-column: 2; grid-row: 2 / 4; min-height: 560px; padding: clamp(16px, 3vw, 36px); background: var(--navy-900); }
+/* Baymard: users judge payment-field safety by VISUAL encapsulation, and trust
+   cues only register in close physical proximity to the card fields — so the
+   mount is a distinct bordered container with the lock line directly above it. */
+.checkout-mount { grid-column: 2; grid-row: 2 / 4; min-height: 560px; padding: clamp(16px, 3vw, 36px); background: var(--navy-900); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(121, 242, 210, .08); }
+.checkout-trust { display: flex; align-items: center; gap: .45rem; margin: 0; padding: .55rem .9rem; font-size: .82rem; color: var(--muted-bright); border: 1px solid var(--line); border-bottom: 0; background: rgba(121, 242, 210, .05); }
+.checkout-trust svg { color: var(--aqua); flex: none; }
+
+/* Determinate provisioning progress (NN/g percent-done for >10s waits; fill
+   eases out so banked jumps read as continuous motion). */
+.provisioning-progress { margin-top: .65rem; max-width: 460px; }
+.provisioning-track { height: 6px; background: rgba(244, 247, 245, .08); border: 1px solid var(--line); overflow: hidden; }
+.provisioning-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--aqua), var(--aqua-strong)); transition: width .9s cubic-bezier(.22, .61, .36, 1); }
+.provisioning-copy { margin: .4rem 0 0; font-size: .82rem; color: var(--muted-bright); }
+.provisioning-copy small { color: var(--muted); margin-left: .4rem; }
 .checkout-footer { display: flex; grid-column: 1 / -1; justify-content: space-between; gap: 1rem; padding: .85rem 1.4rem; color: var(--muted); border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: .55rem; text-transform: uppercase; }
 .workspace-context { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; margin-top: 4rem; padding: 1.4rem 0 0; border-top: 1px solid var(--line); }
 .workspace-context h2 { margin-bottom: .5rem; font-size: 1.65rem; }

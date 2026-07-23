@@ -191,7 +191,14 @@
         <!-- ===== OVERVIEW ===== -->
         <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
           <div class="wview-head">
-            <div><h2 id="workspace-overview-title" data-context-team>Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p></div>
+            <div><h2 id="workspace-overview-title" data-context-team>Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p>
+              <div class="provisioning-progress" data-provisioning-progress hidden>
+                <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
+                  <span class="provisioning-fill" data-provisioning-fill></span>
+                </div>
+                <p class="provisioning-copy"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
+              </div>
+            </div>
           </div>
           <dl class="context-ledger">
             <div><dt>Environment</dt><dd data-environment>Local</dd></div>
@@ -437,6 +444,10 @@
     <div class="checkout-summary" data-checkout-summary></div>
     <div class="checkout-status" data-checkout-status role="status" aria-live="polite">Preparing secure payment…</div>
     <form class="checkout-form" data-checkout-form>
+      <p class="checkout-trust">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 5H6V4.5a2 2 0 1 1 4 0V6Z"/></svg>
+        Encrypted by Stripe — your card details never touch deep navy’s servers.
+      </p>
       <div class="checkout-mount" data-checkout-mount></div>
       <p class="form-error" data-checkout-error role="alert" hidden></p>
       <button class="button button-primary button-large" type="submit" data-checkout-submit disabled>Start subscription</button>

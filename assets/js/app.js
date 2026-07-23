@@ -175,6 +175,11 @@
     checkoutSummary: document.querySelector("[data-checkout-summary]"),
     checkoutStatus: document.querySelector("[data-checkout-status]"),
     checkoutMount: document.querySelector("[data-checkout-mount]"),
+    provisioningProgress: document.querySelector("[data-provisioning-progress]"),
+    provisioningTrack: document.querySelector("[data-provisioning-track]"),
+    provisioningFill: document.querySelector("[data-provisioning-fill]"),
+    provisioningMessage: document.querySelector("[data-provisioning-message]"),
+    provisioningEta: document.querySelector("[data-provisioning-eta]"),
     checkoutForm: document.querySelector("[data-checkout-form]"),
     checkoutSubmit: document.querySelector("[data-checkout-submit]"),
     checkoutError: document.querySelector("[data-checkout-error]"),
@@ -289,6 +294,7 @@
   let embeddedCheckout = null;
   let teamPaymentElements = null;
   let checkoutTeamId = "";
+  let checkoutSubmitLabel = "Start subscription";
   let checkoutOpening = false;
   // The Settings engineer stepper resets to the team's confirmed count only when
   // the selected team changes, so a background re-render never clobbers an edit.
@@ -2304,6 +2310,7 @@
     session.workspaceGeneration += 1;
     stopActivityStream();
     ui.dashboardState.textContent = message;
+    if (ui.provisioningProgress) ui.provisioningProgress.hidden = true;
     resetAgentView(message, "Waiting");
     resetEconomicsView(message, "Waiting");
     resetCreditBalanceView(message, "Waiting");
@@ -4512,6 +4519,7 @@
   }
 
   function syncProvisioningSnapshot(team) {
+    renderProvisioningProgress(team);
     const status = team?.provisioning;
     if (!status || stringValue(team.id) !== session.selectedTeamId) {
       replaceActivityProjections("provisioning-snapshot:", []);
@@ -4521,6 +4529,30 @@
     const sequence = typeof status.sequence === "bigint" ? status.sequence : BigInt(status.sequence || 0);
     if (sequence > session.lastProvisioningSequence) session.lastProvisioningSequence = sequence;
     replaceActivityProjections("provisioning-snapshot:", [entry]);
+  }
+
+  // Determinate wait-state presentation for a team that is not active yet.
+  // Research basis lives with the milestone map in launch-contract.js
+  // (NN/g percent-done for >10s waits, Harrison's end-acceleration, and the
+  // Buell/Norton labor illusion of naming the real work in progress). Hidden
+  // the moment the team is active or provisioning fails — a failed build shows
+  // the error surfaces, never a stuck bar.
+  function renderProvisioningProgress(team) {
+    if (!ui.provisioningProgress) return;
+    const pendingStates = ["pending"];
+    const state = lifecycleLabel(team?.state);
+    const progress = team && pendingStates.includes(state)
+      ? launchContract?.provisioningProgress?.(team.provisioning || {})
+      : null;
+    if (!progress) {
+      ui.provisioningProgress.hidden = true;
+      return;
+    }
+    ui.provisioningProgress.hidden = false;
+    ui.provisioningFill.style.width = `${progress.percent}%`;
+    ui.provisioningTrack.setAttribute("aria-valuenow", String(progress.percent));
+    ui.provisioningMessage.textContent = progress.message;
+    ui.provisioningEta.textContent = progress.eta || "";
   }
 
   function appendProvisioningEvent(event) {
@@ -4911,7 +4943,7 @@
     };
   }
 
-  async function openTeamPaymentElement({ clientSecret, teamId, title, subtitle, summary }) {
+  async function openTeamPaymentElement({ clientSecret, teamId, title, subtitle, summary, submitLabel }) {
     await ensureStripe();
     if (!stripeClient || typeof stripeClient.elements !== "function") throw new ApiError("Stripe Elements is unavailable", 0, "not_configured", "");
     const secret = validPaymentClientSecret(clientSecret);
@@ -4919,6 +4951,9 @@
     if (checkoutOpening) throw new ApiError("Checkout is already opening", 0, "already_opening", "");
     destroyEmbeddedCheckout();
     checkoutOpening = true;
+    // Baymard: keep the exact recurring total visible at the moment of payment —
+    // the CTA itself carries the amount so the charge is never a surprise.
+    checkoutSubmitLabel = stringValue(submitLabel) || "Start subscription";
     ui.checkoutTitle.textContent = title;
     ui.checkoutSubtitle.textContent = subtitle;
     ui.checkoutSummary.textContent = summary;
@@ -4929,7 +4964,7 @@
     ui.checkoutForm.hidden = false;
     ui.checkoutSubmit.hidden = false;
     ui.checkoutSubmit.disabled = true;
-    ui.checkoutSubmit.textContent = "Start subscription";
+    ui.checkoutSubmit.textContent = checkoutSubmitLabel;
     checkoutTeamId = stringValue(teamId);
     if (!ui.checkoutDialog.open) ui.checkoutDialog.showModal();
     try {
@@ -4965,9 +5000,12 @@
         redirect: "if_required"
       });
       if (outcome?.error) {
-        setFieldError(ui.checkoutError, stringValue(outcome.error.message) || "Your card could not be charged. Check the details and try again.");
+        // Baymard: 10% of abandoners cite a declined card — recovery keeps the
+        // dialog open with state preserved and names the alternatives.
+        const declineReason = stringValue(outcome.error.message) || "Your card could not be charged.";
+        setFieldError(ui.checkoutError, `${declineReason} Everything you entered is preserved — try again, use another card, or pay with Apple Pay or Google Pay.`);
         ui.checkoutSubmit.disabled = false;
-        ui.checkoutSubmit.textContent = "Start subscription";
+        ui.checkoutSubmit.textContent = checkoutSubmitLabel;
         return;
       }
       // Payment confirmed without a redirect. The signed invoice.paid webhook
@@ -4980,7 +5018,7 @@
     } catch {
       setFieldError(ui.checkoutError, "Payment could not be completed. Close this panel and try again.");
       ui.checkoutSubmit.disabled = false;
-      ui.checkoutSubmit.textContent = "Start subscription";
+      ui.checkoutSubmit.textContent = checkoutSubmitLabel;
     }
   }
 
@@ -5154,7 +5192,8 @@
           teamId: stringValue(pending.id),
           title: "Start your team subscription",
           subtitle: `Enter your card to start the ${formatCents(pricing.totalCents)}/month team subscription. It is saved and reused for every additional team.`,
-          summary: `${stringValue(pending.name) || name} · ${pricingBreakdown(pricing)} · card saved for future teams`
+          summary: `${stringValue(pending.name) || name} · ${pricingBreakdown(pricing)} · No setup fees or hidden charges · Cancel any time from Settings`,
+          submitLabel: `Start subscription — ${formatCents(pricing.totalCents)}/month`
         });
         toast(`Team “${stringValue(pending.name) || name}” is pending. Enter your card to provision it.`, "info");
       } else if (settlement === REQUEST_TEAM_SETTLEMENT.CHARGED_OFF_SESSION) {
@@ -5218,6 +5257,9 @@
       const provisioning = team.provisioning ? launchContract.provisioningPresentation(team.provisioning) : null;
       const activated = lifecycle === "active" || provisioning?.state === launchContract.PROVISIONING_STATE.SUCCEEDED;
       const failed = lifecycle === "failed" || Boolean(provisioning?.failed);
+      // Advance the determinate wait bar on every poll tick while this team is
+      // the selected one, so each real provisioning step banks visible progress.
+      if (stringValue(teamId) === session.selectedTeamId) renderProvisioningProgress(team);
       renderTeamList();
       renderSettingsBilling();
       if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
