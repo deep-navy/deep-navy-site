@@ -86,7 +86,7 @@ hide_cta: true
               <td>Stripe server secret and webhook signature</td>
               <td>Organization checkout and subscription records</td>
               <td>Checkout Session lifetime and configured key rotation</td>
-              <td>Stripe Embedded Checkout iframe, signed webhook verification, server-owned prices, idempotent event processing, and exact-origin hosted-invoice links</td>
+              <td>Stripe Payment Element (Stripe-hosted encrypted fields inside deep navy’s checkout), signed webhook verification, server-owned prices, idempotent event processing, and exact-origin hosted-invoice links</td>
               <td>Deployment dependent</td>
             </tr>
             <tr>

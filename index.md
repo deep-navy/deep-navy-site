@@ -12,12 +12,13 @@ updated: 2026-07-17
     <div class="hero-copy">
       <span class="eyebrow">Early access / founding teams</span>
       <h1>Engineering work, organized around an objective.</h1>
-      <p class="hero-lead">deep navy provisions six persistent responsibilities around one objective. You see the plan, GitHub delivery, protected decisions, normalized activity, and attributable cost.</p>
+      <p class="hero-lead">deep navy provisions a persistent engineering team around one objective — a Product Manager, an Engineering Manager, a Designer, and as many engineers as the work needs. You see the plan, GitHub delivery, protected decisions, normalized activity, and attributable cost.</p>
       <div class="button-row hero-actions">
         <a class="button button-primary button-large" href="{{ '/app/' | relative_url }}">Start onboarding <span aria-hidden="true">→</span></a>
         <a class="button button-secondary button-large" href="{{ '/product/' | relative_url }}">Read the operating model</a>
       </div>
       <dl class="hero-facts" aria-label="Product facts">
+        <div><dt>Price</dt><dd>$599/mo per team · +$199 per added engineer</dd></div>
         <div><dt>Access</dt><dd>Selected GitHub repositories</dd></div>
         <div><dt>Control</dt><dd>Recorded approval decisions</dd></div>
         <div><dt>Accounting</dt><dd>Cost by team and initiative</dd></div>
@@ -28,11 +29,11 @@ updated: 2026-07-17
       <header><span>Operating record / illustrative</span><span>OBJ-014</span></header>
       <div class="brief-objective"><span>Objective</span><strong>Reduce the time from repository connection to a reviewed change</strong><small>Current phase / pull request review</small></div>
       <ol class="run-ledger">
-        <li><time>09:42</time><span>PLAN</span><p>Technical Product Manager proposed the KPI definition.</p></li>
-        <li><time>09:48</time><span>GIT</span><p>Staff Client Engineer opened draft pull request #284.</p></li>
+        <li><time>09:42</time><span>PLAN</span><p>Product Manager proposed the KPI definition.</p></li>
+        <li><time>09:48</time><span>GIT</span><p>Engineer 2 opened draft pull request #284; two peers queued to review.</p></li>
         <li><time>09:51</time><span>HOLD</span><p>Release to 10% is waiting for an authorized decision.</p></li>
       </ol>
-      <dl class="brief-totals"><div><dt>Repository scope</dt><dd>Selected</dd></div><div><dt>Roles provisioned</dt><dd>6</dd></div><div><dt>Approval state</dt><dd>Pending</dd></div></dl>
+      <dl class="brief-totals"><div><dt>Repository scope</dt><dd>Selected</dd></div><div><dt>Team</dt><dd>PM · EM · Designer · 3 engineers</dd></div><div><dt>Approval state</dt><dd>Pending</dd></div></dl>
       <p>Example record / values describe workflow state only.</p>
     </aside>
   </div>
@@ -42,17 +43,15 @@ updated: 2026-07-17
   <div class="shell editorial-split">
     <header class="section-heading">
       <span class="eyebrow">Operating model / 01</span>
-      <h2 id="organization-title">Six responsibilities. One shared record.</h2>
-      <p>Roles are durable responsibilities with explicit inputs and outputs. The objective stays attached to the work.</p>
+      <h2 id="organization-title">A whole team. One shared record.</h2>
+      <p>Roles are durable responsibilities with explicit inputs and outputs. The objective stays attached to the work, and every shipped change gets two peer reviews.</p>
     </header>
     <div class="role-register" role="table" aria-label="Default engineering roles">
       <div class="register-head" role="row"><span role="columnheader">Role</span><span role="columnheader">Owns</span><span role="columnheader">Produces</span></div>
-      <div role="row"><strong role="cell">Technical Product Manager</strong><span role="cell">Objective and KPIs</span><span role="cell">Initiative plan</span></div>
-      <div role="row"><strong role="cell">Product Designer</strong><span role="cell">User states</span><span role="cell">Interaction specification</span></div>
-      <div role="row"><strong role="cell">Engineering Manager</strong><span role="cell">Coordination and review</span><span role="cell">Delivery plan</span></div>
-      <div role="row"><strong role="cell">Staff Client Engineer</strong><span role="cell">Client experience</span><span role="cell">Client changes and tests</span></div>
-      <div role="row"><strong role="cell">Staff Backend Engineer</strong><span role="cell">Services and data</span><span role="cell">Contracts and migrations</span></div>
-      <div role="row"><strong role="cell">Staff Platform Engineer</strong><span role="cell">Runtime readiness</span><span role="cell">Deployment and observability</span></div>
+      <div role="row"><strong role="cell">Product Manager</strong><span role="cell">Objective, KPIs, and GitHub issues</span><span role="cell">Acceptance criteria and initiative plan</span></div>
+      <div role="row"><strong role="cell">Engineering Manager</strong><span role="cell">Triage, routing, and review</span><span role="cell">Work assigned to the engineer who knows that code best</span></div>
+      <div role="row"><strong role="cell">Product Designer</strong><span role="cell">User states and Figma</span><span role="cell">Interaction specification</span></div>
+      <div role="row"><strong role="cell">Engineers × 3–50</strong><span role="cell">Implementation and adversarial peer review</span><span role="cell">Reviewed changes, tests, and deployments — three included, add more for $199/month each</span></div>
     </div>
   </div>
 </section>

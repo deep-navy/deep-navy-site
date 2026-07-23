@@ -7,12 +7,12 @@ const root = path.resolve(__dirname, "..");
 const { CANONICAL_AGENT_ROLES, canonicalAgentRole } = require(path.join(root, "assets/js/agent-roles.js"));
 
 const expected = [
-  { value: 1, key: "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER", label: "Technical Product Manager", code: "TPM" },
+  { value: 1, key: "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER", label: "Product Manager", code: "PM" },
   { value: 2, key: "AGENT_ROLE_PRODUCT_DESIGNER", label: "Product Designer", code: "PD" },
   { value: 3, key: "AGENT_ROLE_ENGINEERING_MANAGER", label: "Engineering Manager", code: "EM" },
-  { value: 4, key: "AGENT_ROLE_STAFF_CLIENT", label: "Staff Client Engineer", code: "SCE" },
-  { value: 5, key: "AGENT_ROLE_STAFF_BACKEND", label: "Staff Backend Engineer", code: "SBE" },
-  { value: 6, key: "AGENT_ROLE_STAFF_PLATFORM", label: "Staff Platform Engineer", code: "SPE" }
+  { value: 4, key: "AGENT_ROLE_STAFF_CLIENT", label: "Engineer", code: "E1" },
+  { value: 5, key: "AGENT_ROLE_STAFF_BACKEND", label: "Engineer", code: "E2" },
+  { value: 6, key: "AGENT_ROLE_STAFF_PLATFORM", label: "Engineer", code: "E3" }
 ];
 
 function read(relativePath) {
@@ -31,10 +31,12 @@ test("canonical customer labels stay aligned with the pinned AgentRole enum", ()
   assert.equal(canonicalAgentRole("AGENT_ROLE_UNKNOWN"), null);
 });
 
-test("home role register uses the exact canonical labels in order", () => {
+test("home role register presents the customer team structure", () => {
   const home = read("index.md");
   const labels = [...home.matchAll(/<strong role="cell">([^<]+)<\/strong>/g)].map((match) => match[1]);
-  assert.deepEqual(labels, expected.map((role) => role.label));
+  assert.deepEqual(labels, ["Product Manager", "Engineering Manager", "Product Designer", "Engineers × 3–50"]);
+  // Marketing must not leak runtime jargon that no longer matches the product.
+  assert.doesNotMatch(home, /Staff (Client|Backend|Platform) Engineer|Technical Product Manager/);
 });
 
 test("customer app fails closed through the canonical role contract", () => {

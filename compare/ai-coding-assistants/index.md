@@ -1,7 +1,7 @@
 ---
 title: deep navy and AI coding assistants
 image: /assets/images/og/compare.png
-description: Compare task-level coding assistance with a persistent six-role deep navy team across scope, delivery, controls, and customer economics.
+description: Compare task-level coding assistance with a persistent role-structured deep navy team across scope, delivery, controls, and customer economics.
 updated: 2026-07-17
 ---
 

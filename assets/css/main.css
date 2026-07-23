@@ -787,3 +787,5 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .site-header, .site-footer, .cta-section, .button { display: none !important; }
   body { color: #000; background: #fff; }.page-hero, .content-section { padding: 30px 0; }.shell { width: 100%; }.prose p, .prose li, p { color: #333; }
 }
+
+.cta-reassure { margin-top: .5rem; font-size: .82rem; color: var(--muted); }

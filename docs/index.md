@@ -111,7 +111,7 @@ hide_cta: true
       <p>Select <strong>only selected repositories</strong> unless the GitHub organization owner has approved access to all repositories. The <a href="{{ '/integrations/github/' | relative_url }}">GitHub integration reference</a> records the permission and callback model.</p>
 
       <h2 id="billing">Subscription</h2>
-      <p>The billing API creates a short-lived Stripe Checkout Session and returns only the client secret required to mount Stripe Embedded Checkout inside the deep navy purchase dialog. The platform changes subscription state after a verified, idempotently processed Stripe webhook; the embedded completion callback is only a reconciliation signal.</p>
+      <p>The billing API starts the subscription and returns only the confirmation secret required to mount Stripe Embedded Checkout inside the deep navy purchase dialog. The platform changes subscription state after a verified, idempotently processed Stripe webhook; the embedded completion callback is only a reconciliation signal.</p>
       <p>For a selected team, <code>BillingService.GetCreditBalance</code> returns the authoritative prepaid ledger balance. The dashboard keeps that balance separate from open reservations and the paid-period hard limit, reconciles it with the credit-control projection when both are available, and displays unavailable rather than inventing a zero.</p>
 
       <h2 id="team">Team provisioning</h2>
@@ -124,7 +124,7 @@ hide_cta: true
           <thead><tr><th>View</th><th>Source</th><th>Current contract</th></tr></thead>
           <tbody>
             <tr><td>Teams</td><td><code>TeamService</code> and <code>ProvisioningService</code></td><td>Returns organization-scoped teams and resumes durable provisioning updates from a team cursor.</td></tr>
-            <tr><td>Roles</td><td><code>AgentService</code></td><td>Lists the six provisioned role records for the selected team.</td></tr>
+            <tr><td>Roles</td><td><code>AgentService</code></td><td>Lists the provisioned role records — PM, EM, Designer, and each engineer — for the selected team.</td></tr>
             <tr><td>Activity</td><td><code>ActivityService</code>, <code>ProvisioningService</code>, <code>ApprovalService</code>, and <code>EconomicsService</code></td><td>Filters typed A2A, session, tool, workspace/diff, delivery, approval, provisioning, and cost records while preserving each source’s cursor or snapshot semantics. Hidden model reasoning is excluded.</td></tr>
             <tr><td>Economics</td><td><code>EconomicsService</code> and <code>BillingService.GetCreditBalance</code></td><td>Returns attributable cost and measured usage for the selected scope, plus the selected team’s authoritative prepaid ledger balance with explicit unavailable handling.</td></tr>
             <tr><td>Approvals</td><td><code>ApprovalService.ListApprovals</code> and <code>DecideApproval</code></td><td>Lists team-scoped pending safe summaries with snapshot pagination. Authorized owners or administrators can approve; denial requires a bounded reason.</td></tr>
