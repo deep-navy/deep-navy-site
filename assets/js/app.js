@@ -2224,6 +2224,14 @@
     }
 
     renderSelectedTeamSummary();
+    if (["pending", "deleting"].includes(lifecycleLabel(team.state))) {
+      // A team that is not active yet cannot answer roster, objective, economics,
+      // or history calls — every versioned service correctly reports "team not
+      // found" until provisioning completes. Firing those requests only surfaces
+      // raw errors, so render guidance that leads to the next step instead.
+      renderPendingTeamGuidance(team);
+      return;
+    }
     resetAgentView("Loading the server-confirmed team roster.", "Loading", "loading");
     resetEconomicsView("Loading the measured economics summary for this team.", "Loading", "loading");
     resetCreditBalanceView("Loading the authoritative team ledger balance.", "Loading", "loading");
@@ -2267,6 +2275,29 @@
       renderGitHubPullRequestsResult(pullRequestsResult, team.id, deliveryRepository, "", false);
     }
     renderCreditPackControls();
+  }
+
+  function renderPendingTeamGuidance(team) {
+    const deleting = lifecycleLabel(team.state) === "deleting";
+    const headline = deleting
+      ? "This team is being removed. Its workspace data is no longer available."
+      : "Available after payment completes and your team is provisioned.";
+    const label = deleting ? "Removing" : "Pending";
+    ui.dashboardState.textContent = deleting
+      ? `${stringValue(team.name) || "This team"} is being removed.`
+      : `${stringValue(team.name) || "This team"} is awaiting payment confirmation. If you closed checkout before paying, delete this team and create it again — the roster, objective, and economics unlock the moment payment settles.`;
+    resetAgentView(deleting ? headline : "Your Product Manager, Engineering Manager, Designer, and engineers appear here once the team is provisioned.", label);
+    resetEconomicsView(headline, label);
+    resetCreditBalanceView(headline, label);
+    resetCreditControlView(headline, label);
+    resetApprovalView(headline, label);
+    resetActivityView(deleting ? headline : "The live activity stream starts when your agents do.", label);
+    resetSessionHistoryView(headline, label);
+    resetWorkspaceHistoryView(headline, label);
+    resetDeliveryHistoryView(headline, label);
+    syncProvisioningSnapshot(team);
+    resetObjectiveView(deleting ? headline : "Write your objective once the team is active — the Product Manager turns it into acceptance criteria for the engineers.");
+    setSourceState(ui.objectiveState, label);
   }
 
   function resetWorkspaceViews(message) {
@@ -2585,6 +2616,13 @@
     event.preventDefault();
     const team = selectedTeam();
     if (!team) return;
+    if (lifecycleLabel(team.state) !== "active") {
+      // The ObjectiveService only knows provisioned teams; submitting earlier
+      // would surface a raw "team not found". Explain the order of operations
+      // instead of letting the request fail.
+      setFieldError(ui.objectiveError, "This team is not active yet. Finish payment (or delete and recreate the team), and submit the objective once provisioning completes.");
+      return;
+    }
     const form = new FormData(ui.objectiveForm);
     const title = stringValue(form.get("objectiveTitle"));
     const description = stringValue(form.get("objectiveDescription"));
