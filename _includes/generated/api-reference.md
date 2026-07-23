@@ -278,6 +278,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse)
   - [Message `deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest)
   - [Message `deepnavy.v1.RequestTeamResponse`](#deepnavy-v1-requestteamresponse)
+  - [Message `deepnavy.v1.SetTeamEngineerCountRequest`](#deepnavy-v1-setteamengineercountrequest)
+  - [Message `deepnavy.v1.SetTeamEngineerCountResponse`](#deepnavy-v1-setteamengineercountresponse)
   - [Enum `deepnavy.v1.TeamErrorReason`](#deepnavy-v1-teamerrorreason)
   - [Enum `deepnavy.v1.RequestTeamSettlement`](#deepnavy-v1-requestteamsettlement)
   - [Service `deepnavy.v1.TeamService`](#deepnavy-v1-teamservice)
@@ -1275,6 +1277,7 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | `AGENT_ROLE_STAFF_CLIENT` | 4 | — |
 | `AGENT_ROLE_STAFF_BACKEND` | 5 | — |
 | `AGENT_ROLE_STAFF_PLATFORM` | 6 | — |
+| `AGENT_ROLE_ENGINEER` | 7 | An engineering agent added above the included floor of three (engineer-4<br> and up, to the team maximum of fifty). Unlike the singleton roles above, a<br> team may carry many agents with this role. |
 
 <a id="deepnavy-v1-agentservice"></a>
 ### Service `deepnavy.v1.AgentService`
@@ -2700,6 +2703,7 @@ ProvisioningCommand is the durable, credential-free desired-state record
 | `plan_id` | 10 | `string` | singular | plan_id is deep navy's stable public plan ID, never a Stripe price ID. |
 | `deduplication_key` | 11 | `string` | singular | deduplication_key is server-generated from team, operation, and desired<br> generation. The same key with different command content must fail. |
 | `requested_at` | 12 | `google.protobuf.Timestamp` | singular | — |
+| `engineer_count` | 13 | `int32` | singular | engineer_count is the team's number of engineering agents (>= 3). The<br> provisioner reconciles the running roster — 1 PM, 1 EM, 1 Designer, and this<br> many engineers — to it. Zero from a pre-field command means the floor (3). |
 
 <a id="deepnavy-v1-provisioningevent"></a>
 ### Message `deepnavy.v1.ProvisioningEvent`
@@ -3292,6 +3296,7 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 | `namespace` | 6 | `string` | singular | — |
 | `created_at` | 7 | `google.protobuf.Timestamp` | singular | — |
 | `provisioning` | 8 | [`deepnavy.v1.ProvisioningStatus`](#deepnavy-v1-provisioningstatus) | singular | provisioning reports the durable command observed for this team. A<br> pending Team is not active until provisioning_state is SUCCEEDED. |
+| `engineer_count` | 9 | `int32` | singular | engineer_count is the number of engineering agents on the team (>= 3, the<br> adversarial-review floor). The base subscription covers 3; each engineer above<br> 3 bills as a per-seat add-on. Changed via SetTeamEngineerCount. |
 
 <a id="deepnavy-v1-getteamrequest"></a>
 ### Message `deepnavy.v1.GetTeamRequest`
@@ -3388,6 +3393,8 @@ This message has no fields.
 | `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or admin membership. The<br> server verifies the GitHub installation and durable repository selection;<br> browser state is never sufficient authorization. |
 | `name` | 2 | `string` | singular | — |
 | `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with the<br> same key returns the original pending team + settlement without opening a<br> second Checkout Session or charging the saved card twice. |
+| `engineer_count` | 4 | `int32` | singular | engineer_count is the number of engineering agents on the team. The minimum<br> is 3 — the adversarial-review floor (an engineer completes a ticket, then<br> two peers can review). The base subscription includes 3 engineers; each<br> engineer above 3 is billed as a recurring add-on. Values below 3 are<br> rejected. A team also always includes one Product Manager, one Engineering<br> Manager, and one Designer, which are not counted here. |
+| `objective` | 5 | `string` | singular | objective is the team's imperative — the outcome its agents pursue. The<br> Product Manager turns it into acceptance criteria and Gherkin; the<br> Engineering Manager triages and tags work from it. Optional at request time<br> and refinable later via ObjectiveService. |
 
 <a id="deepnavy-v1-requestteamresponse"></a>
 ### Message `deepnavy.v1.RequestTeamResponse`
@@ -3398,6 +3405,24 @@ This message has no fields.
 | `settlement` | 2 | [`deepnavy.v1.RequestTeamSettlement`](#deepnavy-v1-requestteamsettlement) | singular | — |
 | `checkout_client_secret` | 3 | `string` | singular | Set only when settlement == CHECKOUT_REQUIRED. Feed to Stripe Embedded<br> Checkout (initEmbeddedCheckout). A short-lived credential — never log it. |
 | `authentication_url` | 4 | `string` | singular | Set only when settlement == AUTHENTICATION_REQUIRED. A short-lived hosted<br> Stripe invoice URL for 3-D Secure. A credential — never log it. |
+
+<a id="deepnavy-v1-setteamengineercountrequest"></a>
+### Message `deepnavy.v1.SetTeamEngineerCountRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team_id` | 1 | `string` | singular | The team whose engineering-agent count changes. The authenticated principal<br> must hold an owner or admin membership on the team's organization. |
+| `engineer_count` | 2 | `int32` | singular | engineer_count is the new number of engineering agents (minimum 3 — the<br> adversarial-review floor; bounded above by the server). Increasing it charges<br> the saved card off-session for the prorated remainder of the current period;<br> decreasing it credits the unused portion to the next invoice. Values below the<br> floor or above the maximum are rejected with INVALID_ARGUMENT. |
+| `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with the<br> same key returns the same outcome without charging the saved card twice. |
+
+<a id="deepnavy-v1-setteamengineercountresponse"></a>
+### Message `deepnavy.v1.SetTeamEngineerCountResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team` | 1 | [`deepnavy.v1.Team`](#deepnavy-v1-team) | singular | team carries the updated engineer_count once the change is applied. |
+| `settlement` | 2 | [`deepnavy.v1.RequestTeamSettlement`](#deepnavy-v1-requestteamsettlement) | singular | settlement reports how the change settled. CHARGED_OFF_SESSION: applied — an<br> increase was charged, or a decrease was credited to the next invoice.<br> AUTHENTICATION_REQUIRED: the off-session increase needs 3-D Secure; open<br> authentication_url. CHECKOUT_REQUIRED is never returned (the team already has a<br> subscription). A hard decline returns FAILED_PRECONDITION (PAYMENT_DECLINED),<br> not a response, and leaves the engineer_count unchanged. |
+| `authentication_url` | 3 | `string` | singular | Set only when settlement == AUTHENTICATION_REQUIRED. A short-lived hosted<br> Stripe invoice URL for 3-D Secure. A credential — never log it. |
 
 <a id="deepnavy-v1-teamerrorreason"></a>
 ### Enum `deepnavy.v1.TeamErrorReason`
@@ -3440,6 +3465,7 @@ RequestTeamSettlement describes how a RequestTeam call is paid for.
 | `SuspendTeam` | [`deepnavy.v1.SuspendTeamRequest`](#deepnavy-v1-suspendteamrequest) | [`deepnavy.v1.SuspendTeamResponse`](#deepnavy-v1-suspendteamresponse) | unary | — |
 | `ResumeTeam` | [`deepnavy.v1.ResumeTeamRequest`](#deepnavy-v1-resumeteamrequest) | [`deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse) | unary | — |
 | `DeleteTeam` | [`deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest) | [`deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse) | unary | — |
+| `SetTeamEngineerCount` | [`deepnavy.v1.SetTeamEngineerCountRequest`](#deepnavy-v1-setteamengineercountrequest) | [`deepnavy.v1.SetTeamEngineerCountResponse`](#deepnavy-v1-setteamengineercountresponse) | unary | SetTeamEngineerCount changes the number of engineering agents on an existing<br> team and settles the difference on the org's subscription: an increase charges<br> the saved card off-session (prorated), a decrease credits the next invoice. The<br> team must already have an active subscription. Idempotent by principal + key. |
 
 
 <a id="deepnavy-v1-work-proto"></a>
