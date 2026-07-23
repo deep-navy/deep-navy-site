@@ -2719,13 +2719,21 @@
       return;
     }
     const resolvedRoles = agents.map((agent) => agentRoleContract?.canonicalAgentRole?.(agent.role) || null);
-    const roleKeys = resolvedRoles.map((role) => role?.key).filter(Boolean);
-    if (resolvedRoles.some((role) => !role) || new Set(roleKeys).size !== roleKeys.length || agents.length > 6) {
-      resetAgentView("The AgentService returned a role outside the canonical six-role runtime contract. No roster was displayed.", "Invalid response", "error");
+    // Singleton roles (PM, Designer, EM, and the three included engineers) must be
+    // unique; the ENGINEER role is repeatable — one row per added engineer, up to
+    // the fifty-engineer team maximum plus the three leadership roles.
+    const singletonKeys = resolvedRoles.filter((role) => role && !role.repeatable).map((role) => role.key);
+    if (resolvedRoles.some((role) => !role) || new Set(singletonKeys).size !== singletonKeys.length || agents.length > 53) {
+      resetAgentView("The AgentService returned a role outside the canonical runtime contract. No roster was displayed.", "Invalid response", "error");
       return;
     }
+    let engineerOrdinal = 3;
     agents.forEach((agent, index) => {
-      const canonicalRole = resolvedRoles[index];
+      let canonicalRole = resolvedRoles[index];
+      if (canonicalRole.repeatable) {
+        engineerOrdinal += 1;
+        canonicalRole = { ...canonicalRole, code: `E${engineerOrdinal}` };
+      }
       const row = document.createElement("div");
       row.className = "agent-row";
       const ordinal = document.createElement("span");

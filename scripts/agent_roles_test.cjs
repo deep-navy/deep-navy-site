@@ -12,7 +12,8 @@ const expected = [
   { value: 3, key: "AGENT_ROLE_ENGINEERING_MANAGER", label: "Engineering Manager", code: "EM" },
   { value: 4, key: "AGENT_ROLE_STAFF_CLIENT", label: "Engineer", code: "E1" },
   { value: 5, key: "AGENT_ROLE_STAFF_BACKEND", label: "Engineer", code: "E2" },
-  { value: 6, key: "AGENT_ROLE_STAFF_PLATFORM", label: "Engineer", code: "E3" }
+  { value: 6, key: "AGENT_ROLE_STAFF_PLATFORM", label: "Engineer", code: "E3" },
+  { value: 7, key: "AGENT_ROLE_ENGINEER", label: "Engineer", code: "EN", repeatable: true }
 ];
 
 function read(relativePath) {
