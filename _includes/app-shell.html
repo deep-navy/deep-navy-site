@@ -113,6 +113,23 @@
             </form>
           </article>
 
+          <!-- Proof before the paywall: what actually happens after you pay -->
+          <details class="example-run" data-example-run>
+            <summary>
+              <span class="example-run-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3.5v17l14-8.5z" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="example-run-summary-copy">
+                <strong>See what happens after you pay</strong>
+                <small>An example run, start to merge — 30 seconds</small>
+              </span>
+            </summary>
+            <div class="example-run-body">
+              <p class="example-run-note">Example objective, real pipeline — this is the sequence your team follows on your repositories.</p>
+              <ol class="example-run-stages" data-example-run-stages></ol>
+            </div>
+          </details>
+
           <!-- The focal action -->
           <article class="onboarding-card team-card is-primary" data-step="team" data-state="loading" tabindex="-1">
             <div class="step-header"><span class="step-number">CREATE TEAM</span><span class="step-state" data-step-state>Checking</span></div>
@@ -214,19 +231,19 @@
           <div class="overview-grid">
             <article class="app-dashboard" aria-labelledby="teams-title">
               <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">Live</span></div>
-              <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Create your first team to begin.</p></div>
+              <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Your first team starts working minutes after checkout.</p></div>
               <div class="status-list" data-team-list aria-live="polite" hidden></div>
             </article>
 
             <article class="app-dashboard" aria-labelledby="agents-title">
               <div class="app-dashboard-header"><h3 id="agents-title">Your team</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
-              <div class="empty-state" data-agents-empty><strong>No roster loaded</strong><p>Select a team to load its agents.</p></div>
+              <div class="empty-state" data-agents-empty><strong>Your roster appears here</strong><p>Product Manager, Engineering Manager, Designer and your engineers — listed once provisioning finishes.</p></div>
               <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
             </article>
 
             <article class="app-dashboard overview-objective" aria-labelledby="objectives-title">
               <div class="app-dashboard-header"><h3 id="objectives-title">Objective &amp; initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
-              <div class="empty-state" data-objective-empty><strong>No objective loaded</strong><p>Select a team to load its durable objectives, or submit a new business outcome.</p></div>
+              <div class="empty-state" data-objective-empty><strong>Give your team an objective</strong><p>Describe the outcome you want. Your Product Manager turns it into acceptance criteria and files the issues — that is what starts the work.</p></div>
               <div class="objective-select" data-objective-select-control hidden>
                 <label for="objective-select">Objective</label>
                 <select id="objective-select" data-objective-select disabled></select>
@@ -279,7 +296,7 @@
             <div class="delivery-source"><span><strong>GitHub delivery</strong><small data-delivery-history-state>Waiting for a team</small></span><label><span class="visually-hidden">Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label><span class="delivery-page-actions"><button class="button button-quiet button-small" type="button" data-issues-more hidden>More issues</button><button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>More PRs</button></span></div>
           </div>
           <div class="activity-workspace">
-            <div class="empty-state" data-activity-empty><strong>No activity yet</strong><p>Select a team to connect the event stream.</p></div>
+            <div class="empty-state" data-activity-empty><strong>Nothing has happened yet</strong><p>Every plan, code change, review and pull request your team produces streams here in order. It starts the moment you submit an objective.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Submit an objective</a></div>
             <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
           </div>
         </section>
@@ -290,7 +307,7 @@
             <div><h2 id="workspace-economics-title">Economics</h2><p data-economics-message>Measured cost and prepaid credits for this team, calculated server-side.</p></div>
             <span class="data-source-badge" data-economics-state>Waiting</span>
           </div>
-          <div class="empty-state" data-economics-empty><strong>No economics summary</strong><p>The measured team response will populate this ledger.</p></div>
+          <div class="empty-state" data-economics-empty><strong>No spend yet</strong><p>Once your team works, every cost is attributed here — by agent and by issue — against your prepaid credits.</p></div>
           <dl class="economics-metrics" data-economics-metrics hidden>
             <div><dt>Attributable cost</dt><dd data-economics-direct-cost></dd></div>
             <div><dt>Credits used</dt><dd data-economics-credits-used></dd></div>
@@ -369,7 +386,7 @@
             <div><h2 id="workspace-approvals-title">Approvals</h2><p>Protected actions your team wants to take. Nothing runs until you approve it.</p></div>
             <span class="data-source-badge" data-approvals-state>Waiting</span>
           </div>
-          <div class="empty-state" data-approvals-empty><strong>No pending approvals</strong><p>Select a team to load its pending decisions.</p></div>
+          <div class="empty-state" data-approvals-empty><strong>Nothing needs you right now</strong><p>Protected actions wait here for your decision. Your team cannot merge or run anything destructive without you.</p></div>
           <ol class="approval-list" data-approval-list aria-live="polite" hidden></ol>
           <button class="button button-quiet button-small approval-more" type="button" data-approvals-more hidden>Load more pending approvals</button>
         </section>

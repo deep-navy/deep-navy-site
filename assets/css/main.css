@@ -685,6 +685,32 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .firstrun-back{ width:fit-content !important; margin-top:.4rem; }
 .label-optional{ margin-left:.4rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.04em; }
 
+/* ---- proof before the paywall: the example run ---- */
+.example-run{ border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:var(--panel); margin:.2rem 0 .1rem; overflow:hidden; }
+.example-run > summary{ display:flex; align-items:center; gap:.8rem; padding:14px 16px; cursor:pointer; list-style:none; }
+.example-run > summary::-webkit-details-marker{ display:none; }
+.example-run > summary:hover, .example-run > summary:focus-visible{ background:var(--panel-2); }
+.example-run-icon{ display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:999px;
+  border:1px solid var(--line-mid); color:var(--aqua); transition:transform .18s ease; }
+.example-run[open] .example-run-icon{ transform:rotate(90deg); }
+.example-run-summary-copy{ display:grid; gap:.1rem; }
+.example-run-summary-copy strong{ font-size:.9rem; }
+.example-run-summary-copy small{ color:var(--muted); font-size:.74rem; }
+.example-run-body{ padding:2px 16px 16px; border-top:1px solid var(--line-soft); }
+.example-run-note{ margin:.75rem 0 .9rem; color:var(--muted); font-size:.74rem; }
+.example-run-stages{ list-style:none; margin:0; padding:0; display:grid; gap:.15rem; }
+.example-run-stage{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:.7rem; padding:.7rem 0;
+  border-bottom:1px solid var(--line-soft); opacity:1; transform:none; transition:opacity .38s ease, transform .38s ease; }
+.example-run-stage:last-child{ border-bottom:0; }
+.example-run-stage.is-pending{ opacity:0; transform:translateY(6px); }
+.example-run-code{ align-self:start; padding:3px 0; border:1px solid var(--line-mid); border-radius:var(--ra);
+  color:var(--aqua); font-family:var(--font-mono); font-size:.58rem; text-align:center; letter-spacing:.04em; }
+.example-run-stage strong{ font-size:.85rem; }
+.example-run-actor{ margin-left:.5rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; }
+.example-run-stage p{ margin:.2rem 0 .3rem; color:var(--ink-dim); font-size:.78rem; }
+.example-run-artifact{ display:block; color:var(--muted); font-family:var(--font-mono); font-size:.66rem; line-height:1.5; }
+@media (prefers-reduced-motion: reduce){ .example-run-stage{ transition:none; } .example-run-icon{ transition:none; } }
+
 /* example-objective chips: one click beats a blank textarea */
 .objective-suggestions{ display:flex; flex-wrap:wrap; gap:.45rem; margin:.15rem 0 .5rem; }
 .objective-suggestions button{ padding:5px 12px; border:1px solid var(--line-mid); border-radius:999px; background:var(--panel);
@@ -763,6 +789,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .empty-state{ padding:2rem 0; }
 .app-body .empty-state strong{ font-family:var(--font-sans); font-size:.98rem; font-weight:600; }
 .app-body .empty-state p{ color:var(--muted); }
+/* NN/g: an empty container must offer a direct path to the key task */
+.app-body .empty-state .button{ margin-top:.9rem; width:fit-content; }
 
 /* data badges as calm pills */
 .app-body .data-source-badge{ padding:2px 9px; border:1px solid var(--line-soft); border-radius:999px; background:var(--panel-2); }

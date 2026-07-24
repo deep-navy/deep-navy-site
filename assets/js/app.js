@@ -87,6 +87,8 @@
     progressSummary: document.querySelector("[data-progress-summary]"),
     progressHeadline: document.querySelector("[data-progress-headline]"),
     revealStepButtons: [...document.querySelectorAll("[data-reveal-step]")],
+    exampleRun: document.querySelector("[data-example-run]"),
+    exampleRunStages: document.querySelector("[data-example-run-stages]"),
     progressSteps: [...document.querySelectorAll("[data-progress-step]")],
     dashboardState: document.querySelector("[data-dashboard-state]"),
     teamSelect: document.querySelector("[data-team-select]"),
@@ -5455,9 +5457,48 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  // The proof-of-work moment: an example run rendered from the launch contract,
+  // revealed a stage at a time so the pipeline reads as a sequence rather than a
+  // wall of text. Built once, on first open; motion is skipped entirely when the
+  // visitor prefers reduced motion (the content is identical either way).
+  let exampleRunBuilt = false;
+  function buildExampleRun() {
+    if (exampleRunBuilt || !ui.exampleRunStages || !launchContract?.exampleRun) return;
+    exampleRunBuilt = true;
+    const { stages } = launchContract.exampleRun();
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    ui.exampleRunStages.replaceChildren();
+    stages.forEach((stage, index) => {
+      const item = document.createElement("li");
+      item.className = "example-run-stage";
+      const badge = document.createElement("span");
+      badge.className = "example-run-code";
+      badge.textContent = stage.code;
+      const copy = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = stage.title;
+      const actor = document.createElement("span");
+      actor.className = "example-run-actor";
+      actor.textContent = stage.actor;
+      const detail = document.createElement("p");
+      detail.textContent = stage.detail;
+      const artifact = document.createElement("span");
+      artifact.className = "example-run-artifact";
+      artifact.textContent = stage.artifact;
+      copy.append(title, actor, detail, artifact);
+      item.append(badge, copy);
+      if (!reduceMotion) {
+        item.classList.add("is-pending");
+        window.setTimeout(() => item.classList.remove("is-pending"), 90 + index * 420);
+      }
+      ui.exampleRunStages.append(item);
+    });
+  }
+
   // Example-objective chips beat a blank textarea (NN/g suggestion-chip
   // guidance; the template pattern is near-universal in successful AI product
   // onboarding). Clicking fills the objective so the PM has something concrete.
+  if (ui.exampleRun) ui.exampleRun.addEventListener("toggle", () => { if (ui.exampleRun.open) buildExampleRun(); });
   document.querySelectorAll("[data-objective-suggestion]").forEach((button) => {
     button.addEventListener("click", () => {
       const field = ui.teamForm?.querySelector("[data-team-objective]");

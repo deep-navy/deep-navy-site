@@ -12,6 +12,7 @@ const {
   REPOSITORY_SELECTION_MODE,
   buildRepositorySelectionRequest,
   createMutationKeys,
+  exampleRun,
   githubInstallationActive,
   missingTeamPrerequisites,
   normalizeEngineerCount,
@@ -249,4 +250,32 @@ test("provisioning progress banks early, accelerates at the end, and never stall
   assert.equal(provisioningProgress({ provisioningState: 4 }).percent, 100);
   assert.equal(provisioningProgress({ provisioningState: 5 }), null);
   assert.equal(provisioningProgress({ provisioningState: 6 }), null);
+});
+
+test("the example run states the real pipeline and keeps the merge with the customer", () => {
+  const { objective, stages } = exampleRun();
+  assert.ok(objective.length > 20, "the example objective must be a real sentence");
+  assert.equal(stages.length, 6);
+  assert.deepEqual(stages.map((stage) => stage.code), ["YOU", "PM", "EM", "ENG", "REV", "YOU"]);
+  // The product's core promise: agents never merge; the first and last word are
+  // the customer's. If the pipeline ever changes, this proof must change with it.
+  assert.equal(stages[0].actor, "You");
+  assert.equal(stages[stages.length - 1].actor, "You");
+  assert.match(stages[stages.length - 1].detail, /never merge/i);
+  // Two peer reviews are what the three-engineer floor buys.
+  assert.match(stages[4].detail, /two independent reviews/i);
+  for (const stage of stages) {
+    for (const field of ["id", "actor", "code", "title", "detail", "artifact"]) {
+      assert.equal(typeof stage[field], "string");
+      assert.ok(stage[field].trim().length > 0, `${stage.id}.${field} must not be empty`);
+    }
+  }
+});
+
+test("the example run script cannot be mutated by a caller", () => {
+  const first = exampleRun();
+  assert.throws(() => { "use strict"; first.stages.push({ id: "injected" }); });
+  assert.throws(() => { "use strict"; first.stages[0].title = "tampered"; });
+  assert.equal(exampleRun().stages.length, 6);
+  assert.equal(exampleRun().stages[0].actor, "You");
 });

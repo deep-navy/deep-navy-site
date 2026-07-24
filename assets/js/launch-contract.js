@@ -290,6 +290,64 @@
     return { percent: 6, message: "Confirming payment with Stripe", eta: PROVISIONING_PROGRESS_ETA };
   }
 
+  // The example run: the proof-of-work moment shown BEFORE the paywall.
+  //
+  // Every measured source on this funnel points at the same weakness — the
+  // customer is asked for $599 before seeing any agent work. Navattic's 2025
+  // interactive-demo study (28,000+ demos) measured a 20-25% lift in qualified
+  // leads for interactive proof over static claims, and NN/g's first-10-seconds
+  // finding says the value proposition has to land immediately.
+  //
+  // This is deliberately the product's REAL mechanics (the same PM -> EM ->
+  // engineer -> two-review pipeline the runtime executes), rendered with an
+  // illustrative objective. It is labeled as an example everywhere it appears:
+  // it must never read as a customer record or a captured result.
+  const EXAMPLE_RUN_OBJECTIVE = "Add rate limiting to our public API so one client can’t exhaust capacity.";
+  const EXAMPLE_RUN_STAGES = Object.freeze([
+    Object.freeze({
+      id: "objective", actor: "You", code: "YOU",
+      title: "You submit the objective",
+      detail: "One business outcome, in your words. No tickets to write.",
+      artifact: EXAMPLE_RUN_OBJECTIVE
+    }),
+    Object.freeze({
+      id: "plan", actor: "Product Manager", code: "PM",
+      title: "The PM turns it into acceptance criteria",
+      detail: "Scope, success criteria, and the issues that get there — filed on your repository.",
+      artifact: "Opened 3 issues · #128 Token-bucket limiter · #129 Per-key quotas · #130 429 responses + retry-after"
+    }),
+    Object.freeze({
+      id: "assign", actor: "Engineering Manager", code: "EM",
+      title: "The EM routes each issue to an engineer",
+      detail: "Work is bound to an engineer server-side, which is what unlocks their model budget.",
+      artifact: "#128 → Backend · #129 → Platform · #130 → Backend"
+    }),
+    Object.freeze({
+      id: "build", actor: "Engineers", code: "ENG",
+      title: "Engineers write the code and the tests",
+      detail: "Each works in an isolated sandbox on its own branch, then opens a pull request.",
+      artifact: "PR #131 “Add token-bucket rate limiter” · 6 files · +214 −18 · tests passing"
+    }),
+    Object.freeze({
+      id: "review", actor: "Peer engineers", code: "REV",
+      title: "Two peers review before anything merges",
+      detail: "The floor of three engineers exists so every pull request gets two independent reviews.",
+      artifact: "2 reviews · 1 change requested → addressed · approved"
+    }),
+    Object.freeze({
+      id: "approve", actor: "You", code: "YOU",
+      title: "You review and merge",
+      detail: "Agents never merge. The final call — and the merge button — stays yours.",
+      artifact: "Awaiting your approval in the review queue"
+    })
+  ]);
+
+  // Pure accessor so the renderer cannot mutate the canonical script, and the
+  // contract test can assert the pipeline shape (it mirrors the runtime roles).
+  function exampleRun() {
+    return { objective: EXAMPLE_RUN_OBJECTIVE, stages: EXAMPLE_RUN_STAGES };
+  }
+
   // Team creation is now the paid action (RequestTeam collects the card), so an
   // active subscription is no longer a prerequisite: it is the *result* of
   // creating the first team. Only the GitHub install and a durable repository
@@ -384,6 +442,7 @@
     accessibleRepositories,
     buildRepositorySelectionRequest,
     createMutationKeys,
+    exampleRun,
     normalizeEngineerCount,
     teamPricing,
     teamRoster,
