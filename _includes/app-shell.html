@@ -123,6 +123,11 @@
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
 
               <label for="team-objective">What should this team accomplish? <span class="label-optional">Optional</span></label>
+              <div class="objective-suggestions" role="group" aria-label="Example objectives — click to use one">
+                <button type="button" data-objective-suggestion="Raise automated test coverage on our core service and wire the coverage gate into CI.">Raise test coverage</button>
+                <button type="button" data-objective-suggestion="Find and fix the top accessibility issues across the app, then add regression checks.">Fix accessibility</button>
+                <button type="button" data-objective-suggestion="Profile our slowest API endpoints and cut p95 latency in half, with before/after benchmarks.">Cut API latency</button>
+              </div>
               <textarea id="team-objective" name="teamObjective" data-team-objective maxlength="2000" rows="3" placeholder="e.g. Cut trial-to-paid friction — ship a guided onboarding and instrument activation." aria-describedby="team-objective-help"></textarea>
               <p class="form-help form-help-neutral" id="team-objective-help">Your Product Manager turns this into acceptance criteria. Encouraged, but you can refine it later.</p>
 

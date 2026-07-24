@@ -685,6 +685,12 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .firstrun-back{ width:fit-content !important; margin-top:.4rem; }
 .label-optional{ margin-left:.4rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.04em; }
 
+/* example-objective chips: one click beats a blank textarea */
+.objective-suggestions{ display:flex; flex-wrap:wrap; gap:.45rem; margin:.15rem 0 .5rem; }
+.objective-suggestions button{ padding:5px 12px; border:1px solid var(--line-mid); border-radius:999px; background:var(--panel);
+  color:var(--ink-dim); font-size:.74rem; cursor:pointer; }
+.objective-suggestions button:hover, .objective-suggestions button:focus-visible{ border-color:var(--aqua); color:var(--ink); }
+
 /* engineer stepper: a compact, keyboard-usable count control */
 .team-engineers{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
   margin:.35rem 0 .1rem; padding-top:.85rem; border-top:1px solid var(--line-soft); }

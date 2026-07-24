@@ -1404,6 +1404,15 @@
     });
   }
 
+  // True only when the server will actually charge the saved card off-session:
+  // a LIVE subscription plus a card on file. A canceled/incomplete subscription
+  // row re-opens checkout server-side (Stripe: canceled subscriptions cannot be
+  // reactivated), so the CTA must not promise a saved-card charge then.
+  function savedCardChargeExpected() {
+    const status = subscriptionStatusLabel(session.subscription);
+    return ["active", "trialing"].includes(status) && Boolean(session.subscription?.defaultPaymentMethod);
+  }
+
   // The primary CTA carries the exact total and what the click does (Baymard:
   // 12% abandon checkouts where the total isn't computable up front; naming
   // the next step removes the payment surprise). First team opens Stripe
@@ -1412,7 +1421,7 @@
     if (!ui.teamSubmit || ui.teamSubmit.dataset.busy === "1") return;
     const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
     const total = `${formatCents(pricing.totalCents)}/month`;
-    ui.teamSubmit.textContent = session.subscriptionManageable
+    ui.teamSubmit.textContent = savedCardChargeExpected()
       ? `Create team — ${total} on your saved card`
       : `Continue to payment — ${total}`;
   }
@@ -1971,10 +1980,9 @@
     const ready = missing.length === 0 && !checkoutOpening;
     if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
-      const firstTeam = !session.subscriptionManageable;
-      setStep("team", "action", "Ready", `${existing}${firstTeam
-        ? "Name your team — payment opens in secure Stripe checkout, and your team starts working minutes later."
-        : "Name your team — the card on file is charged and your team starts working minutes later."}`);
+      setStep("team", "action", "Ready", `${existing}${savedCardChargeExpected()
+        ? "Name your team — the card on file is charged and your team starts working minutes later."
+        : "Name your team — payment opens in secure Stripe checkout, and your team starts working minutes later."}`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
       setStep("team", "blocked", "Blocked", `Complete the ${requirements} above, then create your team here.`);
@@ -5236,7 +5244,7 @@
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
     ui.teamSubmit.dataset.busy = "1";
-    ui.teamSubmit.textContent = session.subscriptionManageable ? "Creating your team…" : "Opening secure payment…";
+    ui.teamSubmit.textContent = savedCardChargeExpected() ? "Creating your team…" : "Opening secure payment…";
     try {
       const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${objective}`;
       const result = await apiRequest("request_team", {
@@ -5447,6 +5455,17 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  // Example-objective chips beat a blank textarea (NN/g prompt-suggestion
+  // guidance; the template pattern is near-universal in successful AI product
+  // onboarding). Clicking fills the objective so the PM has something concrete.
+  document.querySelectorAll("[data-objective-suggestion]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const field = ui.teamForm?.querySelector("[data-team-objective]");
+      if (!field || field.disabled) return;
+      field.value = button.dataset.objectiveSuggestion;
+      field.focus();
+    });
+  });
   // Completed auto-connect cards collapse behind their chips; a chip click
   // reveals the card for review or adjustment (progressive disclosure).
   ui.revealStepButtons.forEach((button) => {
