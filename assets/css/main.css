@@ -290,10 +290,13 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .progress-steps li[data-state="complete"]::before { border-color: var(--aqua); background: var(--aqua); }.progress-steps li[data-state="action"]::before { border-color: var(--muted-bright); }.progress-steps li[data-state="error"]::before { border-color: var(--ink); background: var(--ink); }
 .progress-steps span { color: #8499a8; font-family: var(--font-mono); font-size: .58rem; }.progress-steps strong { font-size: .72rem; }.progress-steps small { color: var(--muted); font-size: .62rem; line-height: 1.35; }
 /* Two real actions — sign in, create team — so the compact bar is 2 columns. */
-.progress-steps-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 480px; }
+.progress-steps-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
 /* GitHub org / App / repositories connect automatically: a quiet status row. */
 .progress-auto { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .progress-auto li { display: flex; align-items: baseline; gap: .5rem; }
+/* each chip is a button that reveals its collapsed card for review/adjustment */
+.progress-auto button { display: flex; align-items: baseline; gap: .5rem; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.progress-auto button:hover small, .progress-auto button:focus-visible small { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .progress-auto strong { font-family: var(--font-mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .progress-auto small { font-size: .68rem; color: var(--muted-bright); }
 .progress-auto li[data-state="complete"] strong { color: var(--aqua); }
@@ -655,7 +658,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    progress-auto chips already report their status, so the collapsed card rows
    are redundant — hide them and let the create-team card follow the chips. */
 .app-body .firstrun .onboarding-card.is-auto{ opacity:1; margin:0; padding:.9rem 0; min-height:0; }
-.app-body .firstrun .onboarding-card.is-auto[data-state="complete"]{ display:none; }
+.app-body .firstrun .onboarding-card.is-auto[data-state="complete"]:not(.is-revealed){ display:none; }
 .app-body .firstrun .repository-card{ min-height:0; }
 .app-body .firstrun [data-organization-dependent]{ display:grid; gap:.2rem; }
 /* the team card: the focal action */

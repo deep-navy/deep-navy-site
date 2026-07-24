@@ -42,20 +42,21 @@
           <div><strong data-user-name></strong><span data-user-login></span></div>
         </div>
 
-        <!-- Progress: two real actions; GitHub context connects automatically -->
+        <!-- Progress: two real actions + the payoff step; GitHub context connects automatically -->
         <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
           <div class="progress-copy">
-            <div><span class="eyebrow">Getting started</span><h2 id="onboarding-progress-title">Sign in, then create your team.</h2></div>
+            <div><span class="eyebrow">Two-minute setup</span><h2 id="onboarding-progress-title" data-progress-headline>Sign in, then create your team.</h2></div>
             <p data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
           </div>
           <ol class="progress-steps progress-steps-compact">
             <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Authenticated</small></li>
-            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create team</strong><small>$599/team · month</small></li>
+            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create your team</strong><small>Name it, then pay</small></li>
+            <li data-progress-step="ship" data-state="pending"><span>3</span><strong>Watch it ship</strong><small>Issues, code, PRs</small></li>
           </ol>
           <ul class="progress-auto" aria-label="Connected automatically from your GitHub sign-in">
-            <li data-progress-step="organization" data-state="loading"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></li>
-            <li data-progress-step="github" data-state="loading"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></li>
-            <li data-progress-step="repositories" data-state="loading"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></li>
+            <li data-progress-step="organization" data-state="loading"><button type="button" data-reveal-step="organization" title="Review or change" aria-expanded="false"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></button></li>
+            <li data-progress-step="github" data-state="loading"><button type="button" data-reveal-step="github" title="Review or change" aria-expanded="false"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></button></li>
+            <li data-progress-step="repositories" data-state="loading"><button type="button" data-reveal-step="repositories" title="Review or change" aria-expanded="false"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></button></li>
           </ul>
         </section>
 
@@ -144,10 +145,10 @@
                   <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
                   <p class="team-price-breakdown" data-team-price-breakdown>$599 team (includes 3 engineers)</p>
                 </div>
-                <p class="form-help form-help-neutral" id="team-name-help">Card collected once in secure Stripe checkout; every additional team reuses the saved card.</p>
+                <p class="form-help form-help-neutral" id="team-name-help">No setup fees. Cancel anytime from Settings. Your card is collected once in secure Stripe checkout and reused for future teams.</p>
               </div>
               <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
-              <button class="button button-primary" type="submit" disabled>Create engineering team</button>
+              <button class="button button-primary" type="submit" disabled>Continue to payment — $599/month</button>
             </form>
             <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
           </article>
@@ -201,20 +202,19 @@
             </div>
           </div>
           <dl class="context-ledger">
-            <div><dt>Environment</dt><dd data-environment>Local</dd></div>
             <div><dt>Organization</dt><dd data-context-organization>Not selected</dd></div>
-            <div><dt>Repository scope</dt><dd data-context-repositories>Not loaded</dd></div>
+            <div><dt>Repositories</dt><dd data-context-repositories>Not loaded</dd></div>
           </dl>
 
           <div class="overview-grid">
             <article class="app-dashboard" aria-labelledby="teams-title">
-              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">API response</span></div>
+              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">Live</span></div>
               <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Create your first team to begin.</p></div>
               <div class="status-list" data-team-list aria-live="polite" hidden></div>
             </article>
 
             <article class="app-dashboard" aria-labelledby="agents-title">
-              <div class="app-dashboard-header"><h3 id="agents-title">Runtime roles</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
+              <div class="app-dashboard-header"><h3 id="agents-title">Your team</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
               <div class="empty-state" data-agents-empty><strong>No roster loaded</strong><p>Select a team to load its agents.</p></div>
               <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
             </article>

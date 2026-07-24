@@ -85,6 +85,8 @@
     teamsEmpty: document.querySelector("[data-teams-empty]"),
     teamList: document.querySelector("[data-team-list]"),
     progressSummary: document.querySelector("[data-progress-summary]"),
+    progressHeadline: document.querySelector("[data-progress-headline]"),
+    revealStepButtons: [...document.querySelectorAll("[data-reveal-step]")],
     progressSteps: [...document.querySelectorAll("[data-progress-step]")],
     dashboardState: document.querySelector("[data-dashboard-state]"),
     teamSelect: document.querySelector("[data-team-select]"),
@@ -333,11 +335,20 @@
     ui.signOut.hidden = !presentation.signOutVisible;
     ui.userSummary.hidden = !presentation.userVisible;
     ui.sessionState.textContent = presentation.sessionLabel;
+    // Once authenticated, the user card and Sign out button already say so; a
+    // "Signed in" pill is duplicate status that adds header noise.
+    ui.sessionState.hidden = presentation.authenticated;
     ui.signIn.disabled = presentation.phase === "authenticating" || !identity.ready;
   }
 
   function stringValue(value) {
     return typeof value === "string" ? value.trim() : "";
+  }
+
+  // Chips carry concrete data (an org name, a repo count); keep them scannable.
+  function shortLabel(value, maximum = 22) {
+    const label = stringValue(value);
+    return label.length > maximum ? `${label.slice(0, maximum - 1)}…` : label;
   }
 
   function deriveAppPath() {
@@ -656,7 +667,7 @@
     const name = stringValue(session.claims.displayName) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email) || "Signed-in user";
     const login = stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
     ui.userName.textContent = name;
-    ui.userLogin.textContent = login;
+    ui.userLogin.textContent = login === name ? "" : login;
     ui.userInitial.textContent = name.charAt(0).toUpperCase();
   }
 
@@ -722,7 +733,7 @@
     const name = stringValue(user.displayName) || stringValue(session.claims.displayName) || stringValue(session.claims.email) || "Signed-in user";
     const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(user.email) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
     ui.userName.textContent = name;
-    ui.userLogin.textContent = login;
+    ui.userLogin.textContent = login === name ? "" : login;
     ui.userInitial.textContent = name.charAt(0).toUpperCase();
     renderSettingsAccount();
   }
@@ -807,7 +818,8 @@
     renderSettingsAccount();
     renderSettingsBilling();
     ui.contextOrganization.textContent = organizationName;
-    setStep("organization", "complete", "Ready", `${organizationName} is the current server-confirmed organization for this session.`);
+    // The chip shows the concrete organization, not an abstract "Ready".
+    setStep("organization", "complete", shortLabel(organizationName), `${organizationName} is connected as your organization for this session.`);
     ui.organizationDependent.hidden = false;
     if (readGitHubCompletion()) await completePendingGitHubInstallation();
     await refreshOnboarding();
@@ -1110,9 +1122,19 @@
     updateRepositoryControls();
 
     if (session.repositorySelectionReady) {
-      const count = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? session.repositories.length : selected.size;
-      ui.contextRepositories.textContent = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? `${count} accessible` : `${count} selected`;
-      setStep("repositories", "complete", "Selected", `${count} accessible ${count === 1 ? "repository is" : "repositories are"} authorized for team provisioning.`);
+      const all = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL;
+      const connected = session.repositories.filter((repository) =>
+        all || selected.has(String(repository.githubRepositoryId)) || repository.selectedForTeams === true);
+      const count = all ? session.repositories.length : selected.size;
+      const names = connected.slice(0, 4).map((repository) => `${stringValue(repository.owner)}/${stringValue(repository.name)}`);
+      const preview = names.join(", ") + (connected.length > 4 ? ` and ${connected.length - 4} more` : "");
+      session.connectedRepositoryCount = count;
+      ui.contextRepositories.textContent = preview || `${count} connected`;
+      // Name the repositories: "Selected" alone can't tell the user WHICH
+      // repos their team will work on, which is the one thing they check here.
+      setStep("repositories", "complete", `${count} connected`, preview
+        ? `Your team can work on ${preview}. Adjust the selection below any time.`
+        : `${count} ${count === 1 ? "repository is" : "repositories are"} connected for your team.`);
     } else if (session.repositories.length === 0) {
       ui.contextRepositories.textContent = "No accessible repositories";
       setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
@@ -1382,6 +1404,19 @@
     });
   }
 
+  // The primary CTA carries the exact total and what the click does (Baymard:
+  // 12% abandon checkouts where the total isn't computable up front; naming
+  // the next step removes the payment surprise). First team opens Stripe
+  // checkout; later teams charge the saved card.
+  function updateTeamSubmitLabel() {
+    if (!ui.teamSubmit || ui.teamSubmit.dataset.busy === "1") return;
+    const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
+    const total = `${formatCents(pricing.totalCents)}/month`;
+    ui.teamSubmit.textContent = session.subscriptionManageable
+      ? `Create team — ${total} on your saved card`
+      : `Continue to payment — ${total}`;
+  }
+
   // Live price for the team-setup screen: reflects the stepper as it changes.
   function renderTeamSetupPricing() {
     if (!ui.engineerInput) return;
@@ -1397,6 +1432,7 @@
     renderTeamRoster(ui.teamRoster, pricing.engineerCount);
     if (ui.engineerDecrement) ui.engineerDecrement.disabled = pricing.engineerCount <= ENGINEER_FLOOR;
     if (ui.engineerIncrement) ui.engineerIncrement.disabled = pricing.engineerCount >= ENGINEER_MAX;
+    updateTeamSubmitLabel();
   }
 
   // Nudge a stepper input by ±1 within the engineer bounds, then re-render.
@@ -1936,13 +1972,16 @@
     if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
       const firstTeam = !session.subscriptionManageable;
-      setStep("team", "action", "Ready", `${existing}Creating a team is $599/month${firstTeam ? " and collects your card in secure Stripe checkout" : ", charged to the card on file"}. Choose a durable team name.`);
+      setStep("team", "action", "Ready", `${existing}${firstTeam
+        ? "Name your team — payment opens in secure Stripe checkout, and your team starts working minutes later."
+        : "Name your team — the card on file is charged and your team starts working minutes later."}`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
-      setStep("team", "blocked", "Blocked", `Complete the ${requirements} before creating a team. The API enforces these prerequisites.`);
+      setStep("team", "blocked", "Blocked", `Complete the ${requirements} above, then create your team here.`);
     }
     ui.teamInput.disabled = !ready;
     ui.teamSubmit.disabled = !ready;
+    updateTeamSubmitLabel();
   }
 
   function setAllStepsUnavailable(message, stateValue = "error") {
@@ -1980,13 +2019,44 @@
     const states = Object.fromEntries(ui.progressSteps.map((step) => [step.dataset.progressStep, step.dataset.state]));
     // The GitHub organization, App installation, and repositories connect
     // automatically from sign-in, so onboarding is really two actions — sign in
-    // and create a team. Reflect that instead of a multi-step progress count.
-    ui.progressSummary.textContent = states.team === "complete"
-      ? "Your team workspace is ready."
-      : "Your GitHub organization and repositories connect automatically.";
+    // and create a team. The headline always names the NEXT action, and the
+    // summary states the concrete connected context instead of a generic promise.
+    const autoConnected = ["organization", "github", "repositories"].every((name) => states[name] === "complete");
+    if (ui.progressHeadline) {
+      ui.progressHeadline.textContent = states.team === "complete"
+        ? "Your team is live — give it work."
+        : states.identity === "complete"
+          ? "One step left: create your team."
+          : "Sign in, then create your team.";
+    }
+    if (states.team === "complete") {
+      ui.progressSummary.textContent = "Your team workspace is ready. Submit a business objective to put it to work.";
+    } else if (autoConnected) {
+      const organization = stringValue(session.organizationName) || "Your organization";
+      const count = session.connectedRepositoryCount;
+      ui.progressSummary.textContent = `${organization} is connected${count ? ` with ${count} ${count === 1 ? "repository" : "repositories"}` : ""}. Name your team below — it starts working minutes after payment.`;
+    } else {
+      ui.progressSummary.textContent = "Your GitHub organization and repositories connect automatically.";
+    }
+  }
+
+  // Step 3 is the payoff the funnel pulls toward: name what the paid team is
+  // doing right now (goal-gradient — a visible end state pulls the user through
+  // step 2; Kivetz et al. 2006).
+  function updateShipStep() {
+    if (!session.teams.length) { updateProgressStep("ship", "pending", "After payment"); return; }
+    const provisioning = session.teams.some((team) => {
+      const state = lifecycleLabel(team.state);
+      if (["pending", ""].includes(state)) return true;
+      return Boolean(team.provisioning) && launchContract && !launchContract.provisioningTerminal(team.provisioning);
+    });
+    if (provisioning) updateProgressStep("ship", "loading", "Provisioning…");
+    else if (session.teams.some((team) => lifecycleLabel(team.state) === "active")) updateProgressStep("ship", "complete", "Shipping");
+    else updateProgressStep("ship", "pending", "After payment");
   }
 
   function renderTeamList() {
+    updateShipStep();
     ui.teamList.replaceChildren();
     ui.teamsEmpty.hidden = session.teams.length > 0;
     ui.teamList.hidden = session.teams.length === 0;
@@ -2209,14 +2279,14 @@
     const team = selectedTeam();
     if (!team) {
       ui.contextTeam.textContent = "Not selected";
-      ui.dashboardState.textContent = "Select a server-confirmed team to load its live workspace.";
+      ui.dashboardState.textContent = "Select a team to load its live workspace.";
       renderEngineerControl();
       return;
     }
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
     const state = provisioning.label || lifecycleLabel(team.state) || "created";
     ui.contextTeam.textContent = stringValue(team.name) || stringValue(team.id);
-    ui.dashboardState.textContent = `${stringValue(team.name) || "Selected team"} is ${state}. Workspace data below comes from versioned services.`;
+    ui.dashboardState.textContent = `${stringValue(team.name) || "Selected team"} is ${state}. This is the live view of what your team is planning, building, and shipping.`;
     renderEngineerControl();
   }
 
@@ -5165,7 +5235,8 @@
     }
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
-    ui.teamSubmit.textContent = "Requesting…";
+    ui.teamSubmit.dataset.busy = "1";
+    ui.teamSubmit.textContent = session.subscriptionManageable ? "Creating your team…" : "Opening secure payment…";
     try {
       const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${objective}`;
       const result = await apiRequest("request_team", {
@@ -5231,7 +5302,7 @@
       toast(message, "error");
       if (error instanceof ApiError && ["failed_precondition", "resource_exhausted"].includes(error.code)) await refreshOnboarding();
     } finally {
-      ui.teamSubmit.textContent = "Create engineering team";
+      delete ui.teamSubmit.dataset.busy;
       updateTeamAction();
     }
   }
@@ -5376,6 +5447,20 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  // Completed auto-connect cards collapse behind their chips; a chip click
+  // reveals the card for review or adjustment (progressive disclosure).
+  ui.revealStepButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const card = document.querySelector(`[data-step="${button.dataset.revealStep}"]`);
+      if (!card) return;
+      const revealed = card.classList.toggle("is-revealed");
+      button.setAttribute("aria-expanded", revealed ? "true" : "false");
+      if (revealed) {
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        card.focus({ preventScroll: true });
+      }
+    });
+  });
   ui.repositoryModes.forEach((input) => input.addEventListener("change", updateRepositoryControls));
   ui.repositoryList.addEventListener("change", updateRepositoryControls);
   ui.settingsBillingManage.addEventListener("click", manageBilling);
