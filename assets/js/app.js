@@ -5455,7 +5455,7 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
-  // Example-objective chips beat a blank textarea (NN/g prompt-suggestion
+  // Example-objective chips beat a blank textarea (NN/g suggestion-chip
   // guidance; the template pattern is near-universal in successful AI product
   // onboarding). Clicking fills the objective so the PM has something concrete.
   document.querySelectorAll("[data-objective-suggestion]").forEach((button) => {
