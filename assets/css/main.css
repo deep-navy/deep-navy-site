@@ -592,7 +592,14 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .footer-grid { grid-template-columns: 1fr; }.footer-brand { grid-column: auto; }.footer-bottom { align-items: flex-start; flex-direction: column; }
   .page-hero { padding: 65px 0 55px; }.page-hero h1 { font-size: 2.7rem; }.page-hero p { font-size: 1rem; }
   .app-header { padding-inline: 14px; }.app-header .brand > span:last-child, .environment-pill { display: none; }.app-header-actions { gap: .25rem; }.app-intro { flex-direction: column; }.config-banner, .auth-banner { grid-template-columns: auto 1fr; }.config-banner > .button, .auth-banner > .button { grid-column: 1 / -1; width: 100%; }
-  .workspace-section-heading, .progress-copy { flex-direction: column; gap: .7rem; }.progress-copy { align-items: flex-start; }.progress-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }.dashboard-controls { grid-template-columns: 1fr; }.dashboard-controls label { margin-bottom: -.25rem; }.dashboard-controls .button { width: 100%; }.customer-activity-item { grid-template-columns: 34px minmax(0, 1fr); }.customer-activity-item time { grid-column: 2; }
+  .workspace-section-heading, .progress-copy { flex-direction: column; gap: .7rem; }.progress-copy { align-items: flex-start; }.progress-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The 3-step tracker must stay one row on mobile: a 2-column grid orphans
+     step 3 and breaks the 1 -> 2 -> 3 progression the goal gradient depends on.
+     Declared inside this breakpoint because the generic rule above ties on
+     specificity and would otherwise win on source order. */
+  .progress-steps-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+  .progress-steps-compact strong { font-size: .68rem; }.progress-steps-compact small { font-size: .58rem; }
+  .dashboard-controls { grid-template-columns: 1fr; }.dashboard-controls label { margin-bottom: -.25rem; }.dashboard-controls .button { width: 100%; }.customer-activity-item { grid-template-columns: 34px minmax(0, 1fr); }.customer-activity-item time { grid-column: 2; }
   .activity-source-pages { grid-template-columns: 1fr; }.activity-source-pages > div + div { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
   .home-hero { padding-top: 72px; }
   .hero-copy h1 { font-size: clamp(2.7rem, 13vw, 4rem); }
