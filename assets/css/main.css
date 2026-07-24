@@ -649,8 +649,15 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .firstrun-head h1{ font-size:clamp(2rem,4.4vw,2.75rem); font-weight:680; margin-bottom:12px; }
 .app-body .firstrun-head p{ color:var(--ink-dim); font-size:1.02rem; max-width:48ch; }
 .app-body .firstrun .onboarding-progress{ border:0; padding:0; margin:0; }
-.app-body .firstrun .progress-copy{ margin-bottom:.9rem; }
-.app-body .firstrun .progress-copy h2{ font-size:1.15rem; }
+/* Stacked, sentence-case header: the summary is a real sentence with live data
+   (org name, repo count), not a short status code — the global mono/uppercase/
+   nowrap treatment can't wrap it and crushes the headline beside it. */
+.app-body .firstrun .progress-copy{ flex-direction:column; align-items:flex-start; gap:.45rem; margin-bottom:1.1rem; }
+.app-body .firstrun .progress-copy h2{ font-size:1.3rem; }
+.app-body .firstrun .progress-copy p{ font-family:inherit; font-size:.92rem; text-transform:none; white-space:normal; letter-spacing:0; color:var(--ink-dim); max-width:56ch; }
+.app-body .firstrun .progress-steps li[data-state="pending"]::before,
+.app-body .firstrun .progress-steps li[data-state="blocked"]::before,
+.app-body .firstrun .progress-steps li[data-state="loading"]::before{ border-color:var(--line-mid); }
 /* auto-connected steps: quiet confirmation chips */
 .app-body .firstrun .progress-auto{ gap:.6rem; }
 .app-body .firstrun .progress-auto li{ padding:6px 11px; border:1px solid var(--line-soft); border-radius:999px; background:var(--panel); }
