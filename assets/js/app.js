@@ -2101,8 +2101,16 @@
 
   function teamLifecycleControls(team) {
     const state = lifecycleLabel(team?.state);
-    // A team already being torn down or fully removed exposes no controls.
-    if (["deleting", "deleted"].includes(state)) return [];
+    if (state === "deleted") return [];
+    // A deletion in flight exposes no controls - but one whose command failed
+    // terminally leaves the team parked in "deleting" with a dead command and
+    // nothing to click, showing the same stale error forever. Offer the retry
+    // instead of an empty row: an empty row is how a stuck team becomes a
+    // support ticket.
+    if (state === "deleting") {
+      const provisioning = launchContract?.provisioningPresentation(team?.provisioning || {}) || {};
+      return provisioning.failed ? ["delete"] : [];
+    }
     const controls = [];
     if (state === "active") controls.push("suspend");
     if (state === "suspended") controls.push("resume");
@@ -2139,7 +2147,9 @@
       const note = document.createElement("p");
       note.className = "team-actions-note";
       note.id = `team-delete-confirm-${teamId}`;
-      note.textContent = `Delete “${stringValue(team.name) || "this team"}” for good? Running agents stop and this cannot be undone.`;
+      note.textContent = lifecycleLabel(team?.state) === "deleting"
+        ? `Retry removing “${stringValue(team.name) || "this team"}”? The previous attempt failed partway through.`
+        : `Delete “${stringValue(team.name) || "this team"}” for good? Running agents stop and this cannot be undone.`;
       const group = document.createElement("div");
       group.className = "team-actions";
       const confirmButton = lifecycleButton("delete-confirm", teamId, "Confirm delete", "button-danger", busy);
@@ -2153,7 +2163,10 @@
     actions.className = "team-actions";
     if (controls.includes("suspend")) actions.append(lifecycleButton("suspend", teamId, "Suspend", "button-quiet", busy));
     if (controls.includes("resume")) actions.append(lifecycleButton("resume", teamId, "Resume", "button-secondary", busy));
-    if (controls.includes("delete")) actions.append(lifecycleButton("delete", teamId, "Delete", "button-danger", busy));
+    if (controls.includes("delete")) {
+      const removing = lifecycleLabel(team?.state) === "deleting";
+      actions.append(lifecycleButton("delete", teamId, removing ? "Retry deletion" : "Delete", "button-danger", busy));
+    }
     return actions;
   }
 
