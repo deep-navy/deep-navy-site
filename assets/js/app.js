@@ -2082,14 +2082,20 @@
       name.textContent = stringValue(team.name) || "Unnamed team";
       const provisioning = launchContract.provisioningPresentation(team.provisioning || {});
       const namespace = stringValue(team.namespace) ? `Namespace ${team.namespace}` : "Runtime namespace pending";
-      const provisioningDetail = provisioning.state
-        ? `${capitalize(provisioning.label)} · ${provisioning.step}${provisioning.safeError ? ` · ${provisioning.safeError}` : ""}`
-        : stringValue(team._pollingMessage);
+      const removing = lifecycleLabel(team.state) === "deleting";
+      const removalProgress = removing ? launchContract.provisioningProgress(team.provisioning || {}) : null;
+      const provisioningDetail = removalProgress
+        ? `${removalProgress.message}${removalProgress.percent >= 100 ? "" : "…"}`
+        : provisioning.state
+          ? `${capitalize(provisioning.label)} · ${provisioning.step}${provisioning.safeError ? ` · ${provisioning.safeError}` : ""}`
+          : stringValue(team._pollingMessage);
       detail.textContent = provisioningDetail || namespace;
       status.className = "status-label";
       if (provisioning.failed) status.classList.add("failed");
       else if (!provisioning.terminal && provisioning.state) status.classList.add("planned");
-      status.textContent = provisioning.label || lifecycleLabel(team.state) || "created";
+      // "Running" is the command's state, not the customer's situation.
+      status.textContent = (removing && !provisioning.failed ? "removing" : provisioning.label)
+        || lifecycleLabel(team.state) || "created";
       copy.append(name, detail);
       side.append(status);
       const actions = renderTeamLifecycleActions(team);
@@ -2222,7 +2228,7 @@
     return runTeamLifecycleMutation(team, {
       procedure: "delete_team",
       payload: { id: stringValue(team.id) },
-      successMessage: `Deletion accepted by TeamService for “${stringValue(team.name) || "the team"}”. State refreshed from ListTeams.`,
+      successMessage: `Removing “${stringValue(team.name) || "the team"}” — backing up its workspace first. You can watch the progress here.`,
       failureMessage: "The team was not deleted. No state change was assumed; it is safe to retry."
     });
   }
@@ -4640,7 +4646,10 @@
   // the error surfaces, never a stuck bar.
   function renderProvisioningProgress(team) {
     if (!ui.provisioningProgress) return;
-    const pendingStates = ["pending"];
+    // Deletion is a multi-minute pipeline too (back up, revoke, tear down), and
+    // it was the one long wait with no indicator at all - the customer clicked
+    // Delete and the row went quiet. Same treatment as provisioning.
+    const pendingStates = ["pending", "deleting"];
     const state = lifecycleLabel(team?.state);
     const progress = team && pendingStates.includes(state)
       ? launchContract?.provisioningProgress?.(team.provisioning || {})
@@ -4791,7 +4800,20 @@
         syncProvisioningSnapshot(team);
         renderSelectedTeamSummary();
       }
-      if (!launchContract.provisioningTerminal(team.provisioning || {})) startProvisioningPolling(team, 5000);
+      const removing = lifecycleLabel(team.state) === "deleting";
+      if (!launchContract.provisioningTerminal(team.provisioning || {})) {
+        // Deletion is watched closely by whoever pressed the button; poll it
+        // twice as often so the bar actually moves while they are looking.
+        startProvisioningPolling(team, removing ? 2500 : 5000);
+      } else if (removing && !launchContract.provisioningPresentation(team.provisioning || {}).failed) {
+        // The delete command finished, but provisioning status carries the
+        // command - not the lifecycle. Without this re-read the row sat at
+        // "deleting" with a completed command until the customer reloaded,
+        // which is exactly how a finished deletion looked like a stuck one.
+        toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
+        await reloadTeamsAfterLifecycle();
+        return;
+      }
     } catch (error) {
       team._pollingMessage = apiErrorMessage(error, "Provisioning status is temporarily unavailable. Use Refresh status to retry.");
       renderTeamList();

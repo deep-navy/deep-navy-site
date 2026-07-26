@@ -268,11 +268,48 @@
     "PROVISIONING_STEP_READY": Object.freeze({ percent: 100, message: "Your team is live" })
   });
 
+  // Removing a team runs the same command pipeline as creating one, and it is
+  // not instant: the workspace is backed up, credentials are revoked, and the
+  // namespace is torn down. Without these milestones the row sat silent for
+  // minutes after the customer clicked delete, which reads as a hang. Same
+  // basis as the provisioning map - name the real work, bank progress early,
+  // and never idle at 99%.
+  const DELETION_PROGRESS_ETA = "Usually takes under a minute.";
+  const DELETION_PROGRESS_BY_STEP = Object.freeze({
+    "PROVISIONING_STEP_QUEUED": Object.freeze({ percent: 15, message: "Queued to remove your team" }),
+    "PROVISIONING_STEP_SUSPENDING": Object.freeze({ percent: 30, message: "Stopping your team’s agents" }),
+    "PROVISIONING_STEP_BACKING_UP": Object.freeze({ percent: 55, message: "Backing up your team’s workspace before removing it" }),
+    "PROVISIONING_STEP_DELETING": Object.freeze({ percent: 85, message: "Removing the workspace and revoking credentials" })
+  });
+
+  const PROVISIONING_OPERATION = Object.freeze({
+    PROVISION: "PROVISIONING_OPERATION_PROVISION",
+    SUSPEND: "PROVISIONING_OPERATION_SUSPEND",
+    RESUME: "PROVISIONING_OPERATION_RESUME",
+    DELETE: "PROVISIONING_OPERATION_DELETE"
+  });
+
+  // The operation arrives either as the enum or as the raw command verb.
+  function provisioningOperation(status) {
+    const fromEnum = enumValue(status?.operationType, {
+      1: PROVISIONING_OPERATION.PROVISION,
+      2: PROVISIONING_OPERATION.SUSPEND,
+      3: PROVISIONING_OPERATION.RESUME,
+      4: PROVISIONING_OPERATION.DELETE
+    });
+    if (fromEnum) return fromEnum;
+    const verb = stringValue(status?.operation).toUpperCase();
+    return verb ? `PROVISIONING_OPERATION_${verb}` : "";
+  }
+
   function provisioningProgress(status) {
     const state = provisioningState(status);
     if (state === PROVISIONING_STATE.FAILED || state === PROVISIONING_STATE.CANCELED) return null;
+    const deleting = provisioningOperation(status) === PROVISIONING_OPERATION.DELETE;
     if (state === PROVISIONING_STATE.SUCCEEDED) {
-      return { percent: 100, message: "Your team is live", eta: "" };
+      return deleting
+        ? { percent: 100, message: "Team removed", eta: "" }
+        : { percent: 100, message: "Your team is live", eta: "" };
     }
     const step = enumValue(status?.provisioningStep, {
       1: "PROVISIONING_STEP_QUEUED",
@@ -281,8 +318,17 @@
       4: "PROVISIONING_STEP_CONFIGURING_RUNTIME",
       5: "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE",
       6: "PROVISIONING_STEP_WAITING_FOR_GATEWAY",
-      7: "PROVISIONING_STEP_READY"
+      7: "PROVISIONING_STEP_READY",
+      8: "PROVISIONING_STEP_SUSPENDING",
+      9: "PROVISIONING_STEP_BACKING_UP",
+      10: "PROVISIONING_STEP_DELETING"
     });
+    if (deleting) {
+      const removing = step ? DELETION_PROGRESS_BY_STEP[step] : null;
+      return removing
+        ? { percent: removing.percent, message: removing.message, eta: DELETION_PROGRESS_ETA }
+        : { percent: 10, message: "Preparing to remove your team", eta: DELETION_PROGRESS_ETA };
+    }
     const known = step ? PROVISIONING_PROGRESS_BY_STEP[step] : null;
     if (known) return { percent: known.percent, message: known.message, eta: known.percent >= 100 ? "" : PROVISIONING_PROGRESS_ETA };
     // No provisioning command yet: the capture exists but payment has not been
@@ -449,6 +495,8 @@
     githubInstallationActive,
     missingTeamPrerequisites,
     parseGitHubCallback,
+    PROVISIONING_OPERATION,
+    provisioningOperation,
     provisioningPresentation,
     provisioningProgress,
     provisioningState,

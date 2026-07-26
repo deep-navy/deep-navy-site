@@ -252,6 +252,40 @@ test("provisioning progress banks early, accelerates at the end, and never stall
   assert.equal(provisioningProgress({ provisioningState: 6 }), null);
 });
 
+test("deleting a team reports its own progress instead of going silent", () => {
+  // The delete command runs through the same pipeline, so the customer needs
+  // the same determinate feedback. Recognised from either the enum or the raw
+  // command verb, since both reach the browser depending on the transport.
+  for (const removing of [{ operationType: 4 }, { operation: "delete" }]) {
+    const queued = provisioningProgress({ ...removing, provisioningState: 1, provisioningStep: 1 });
+    assert.match(queued.message, /remove/i);
+    assert.ok(queued.percent >= 10, "a pressed Delete button must bank progress at once");
+
+    // Named real work, monotonic, and it does not idle at the end.
+    const percents = [1, 8, 9, 10].map((step) =>
+      provisioningProgress({ ...removing, provisioningState: 2, provisioningStep: step }).percent);
+    assert.deepEqual([...percents].sort((a, b) => a - b), percents);
+    assert.ok(percents.at(-1) <= 90, "the final in-flight step must leave headroom");
+
+    const backingUp = provisioningProgress({ ...removing, provisioningState: 2, provisioningStep: 9 });
+    assert.match(backingUp.message, /back(ing)? up/i, "name the real work: the workspace is backed up first");
+    assert.ok(backingUp.eta.length > 0);
+
+    // An unrecognised step still shows motion rather than the provisioning copy.
+    const unknownStep = provisioningProgress({ ...removing, provisioningState: 2 });
+    assert.match(unknownStep.message, /remove/i);
+    assert.doesNotMatch(unknownStep.message, /payment|Stripe/i);
+
+    // Terminal: removal completes the bar and says so; a failed removal renders
+    // no bar, leaving the error surface (and the retry control) to own it.
+    assert.deepEqual(provisioningProgress({ ...removing, provisioningState: 4 }), { percent: 100, message: "Team removed", eta: "" });
+    assert.equal(provisioningProgress({ ...removing, provisioningState: 5 }), null);
+  }
+
+  // Provisioning is untouched by any of this.
+  assert.match(provisioningProgress({ operationType: 1, provisioningState: 4 }).message, /live/i);
+});
+
 test("the example run states the real pipeline and keeps the merge with the customer", () => {
   const { objective, stages } = exampleRun();
   assert.ok(objective.length > 20, "the example objective must be a real sentence");
