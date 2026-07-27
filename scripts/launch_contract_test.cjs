@@ -252,6 +252,22 @@ test("provisioning progress banks early, accelerates at the end, and never stall
   assert.equal(provisioningProgress({ provisioningState: 6 }), null);
 });
 
+test("confirming payment is not described as taking minutes", () => {
+  // A payment is a webhook round trip and settles in seconds. Quoting the
+  // workspace build's estimate here tells someone who has just paid that their
+  // money is in limbo for minutes, which reads as a fault rather than a wait.
+  const paying = provisioningProgress({});
+  assert.match(paying.message, /payment/i);
+  assert.match(paying.eta, /second/i, "the payment wait must be described in seconds");
+  assert.doesNotMatch(paying.eta, /minute/i);
+
+  // The build genuinely does take minutes, and must still say so - the two
+  // estimates are separate on purpose.
+  const building = provisioningProgress({ provisioningState: 2, provisioningStep: 3 });
+  assert.match(building.eta, /minute/i, "the workspace build must still set a minutes-scale expectation");
+  assert.notStrictEqual(paying.eta, building.eta, "the two waits must not share one estimate again");
+});
+
 test("deleting a team reports its own progress instead of going silent", () => {
   // The delete command runs through the same pipeline, so the customer needs
   // the same determinate feedback. Recognised from either the enum or the raw

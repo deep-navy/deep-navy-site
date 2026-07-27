@@ -257,7 +257,18 @@
   // waiting on the gateway (never idling at ~99%), and jump to 100 on success —
   // the terminal acceleration Harrison found fastest-feeling. Messages name the
   // actual provisioning steps the server reports, in customer language.
-  const PROVISIONING_PROGRESS_ETA = "Usually takes 1–3 minutes.";
+  // Two different waits, and they were sharing one estimate. Confirming payment
+  // is a webhook round trip - Stripe delivers, the endpoint records and answers
+  // 2xx, the drain worker is nudged awake immediately - and it settles in
+  // seconds. Building the workspace really does take minutes: a namespace,
+  // volumes, the agent runtime, then waiting on the gateway. Telling someone
+  // their PAYMENT will take 1-3 minutes reads as "this is stuck", right at the
+  // moment they have just handed over money and are least willing to doubt us.
+  const PAYMENT_CONFIRMATION_ETA = "Usually a few seconds.";
+  // Deliberately not a numeric range: no team has yet completed a full build
+  // here, so a precise-sounding estimate would be invented. Vague and true
+  // beats specific and wrong.
+  const PROVISIONING_PROGRESS_ETA = "Usually a few minutes.";
   const PROVISIONING_PROGRESS_BY_STEP = Object.freeze({
     "PROVISIONING_STEP_QUEUED": Object.freeze({ percent: 18, message: "Payment confirmed — queueing your workspace build" }),
     "PROVISIONING_STEP_VALIDATING_PREREQUISITES": Object.freeze({ percent: 34, message: "Validating repository access and your plan" }),
@@ -333,7 +344,7 @@
     if (known) return { percent: known.percent, message: known.message, eta: known.percent >= 100 ? "" : PROVISIONING_PROGRESS_ETA };
     // No provisioning command yet: the capture exists but payment has not been
     // confirmed by the signed webhook. Bank a visible first step immediately.
-    return { percent: 6, message: "Confirming payment with Stripe", eta: PROVISIONING_PROGRESS_ETA };
+    return { percent: 6, message: "Confirming payment with Stripe", eta: PAYMENT_CONFIRMATION_ETA };
   }
 
   // The example run: the proof-of-work moment shown BEFORE the paywall.
