@@ -487,6 +487,35 @@
     };
   }
 
+  // Which lifecycle controls a team row offers, given its state and the status
+  // of its last provisioning command.
+  //
+  // The rule that matters here is that a team must never be left with nothing
+  // to click. Setup that fails terminally parks the team in "pending" with a
+  // dead command; without a retry the only way past a transient outage during
+  // provisioning was to delete the team and pay again. Deletion already learned
+  // this lesson - a delete that failed terminally offers "Retry deletion"
+  // rather than an empty row - and provisioning is the same shape.
+  function teamLifecycleControls(state, status) {
+    const lifecycle = String(state || "").toLowerCase();
+    if (lifecycle === "deleted") return [];
+    const provisioning = provisioningPresentation(status || {});
+    if (lifecycle === "deleting") return provisioning.failed ? ["delete"] : [];
+    const controls = [];
+    if (lifecycle === "active") controls.push("suspend");
+    if (lifecycle === "suspended") controls.push("resume");
+    // Resume re-drives the whole provisioning path, which is what a retry of
+    // failed setup means. It is offered only on a terminal failure: a team
+    // still working through its steps must not be restarted underneath itself.
+    if (lifecycle !== "active" && lifecycle !== "suspended" && provisioning.failed) {
+      controls.push("resume");
+    }
+    // Delete stays available for anything not already deleting or deleted, so a
+    // stuck team can always be removed.
+    controls.push("delete");
+    return controls;
+  }
+
   return {
     ENGINEER_ADDON_CENTS,
     ENGINEER_FLOOR,
@@ -515,6 +544,7 @@
     repositorySelectionMode,
     repositorySelectionReady,
     selectedRepositoryIds,
-    subscriptionActive
+    subscriptionActive,
+    teamLifecycleControls
   };
 });

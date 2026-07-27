@@ -18,6 +18,7 @@ const {
   normalizeEngineerCount,
   parseGitHubCallback,
   provisioningPresentation,
+  teamLifecycleControls,
   provisioningProgress,
   repositorySelectionReady,
   subscriptionActive,
@@ -328,4 +329,27 @@ test("the example run script cannot be mutated by a caller", () => {
   assert.throws(() => { "use strict"; first.stages[0].title = "tampered"; });
   assert.equal(exampleRun().stages.length, 6);
   assert.equal(exampleRun().stages[0].actor, "You");
+});
+
+test("a team whose setup failed terminally always offers a way forward", () => {
+  const failed = { provisioningState: PROVISIONING_STATE.FAILED, provisioningStep: "PROVISIONING_STEP_CONFIGURING_RUNTIME", sequence: "10" };
+
+  // The bug this covers: a pending team whose provisioning command spent its
+  // attempts showed only "Delete". The only way past a transient outage during
+  // setup was to throw the team away and pay for a new one.
+  assert.deepEqual(teamLifecycleControls("pending", failed), ["resume", "delete"]);
+
+  // A team still working through its steps must not offer a retry - restarting
+  // provisioning underneath itself is not a recovery.
+  assert.deepEqual(
+    teamLifecycleControls("pending", { provisioningState: PROVISIONING_STATE.RUNNING, provisioningStep: "PROVISIONING_STEP_CONFIGURING_RUNTIME", sequence: "3" }),
+    ["delete"]
+  );
+
+  // Unchanged behaviour elsewhere.
+  assert.deepEqual(teamLifecycleControls("active", {}), ["suspend", "delete"]);
+  assert.deepEqual(teamLifecycleControls("suspended", {}), ["resume", "delete"]);
+  assert.deepEqual(teamLifecycleControls("deleted", failed), []);
+  assert.deepEqual(teamLifecycleControls("deleting", failed), ["delete"]);
+  assert.deepEqual(teamLifecycleControls("deleting", {}), []);
 });

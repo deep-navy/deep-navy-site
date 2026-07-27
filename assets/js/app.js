@@ -2105,25 +2105,12 @@
     });
   }
 
+  // The policy itself lives in the launch contract, where it is under test; an
+  // empty row is how a stuck team becomes a support ticket, so the rule that
+  // decides it is not something to keep in an untested DOM helper.
   function teamLifecycleControls(team) {
-    const state = lifecycleLabel(team?.state);
-    if (state === "deleted") return [];
-    // A deletion in flight exposes no controls - but one whose command failed
-    // terminally leaves the team parked in "deleting" with a dead command and
-    // nothing to click, showing the same stale error forever. Offer the retry
-    // instead of an empty row: an empty row is how a stuck team becomes a
-    // support ticket.
-    if (state === "deleting") {
-      const provisioning = launchContract?.provisioningPresentation(team?.provisioning || {}) || {};
-      return provisioning.failed ? ["delete"] : [];
-    }
-    const controls = [];
-    if (state === "active") controls.push("suspend");
-    if (state === "suspended") controls.push("resume");
-    // Delete stays available for any team that is not already deleting/deleted,
-    // including pending and failed provisioning, so a stuck team can be removed.
-    controls.push("delete");
-    return controls;
+    if (!launchContract?.teamLifecycleControls) return [];
+    return launchContract.teamLifecycleControls(lifecycleLabel(team?.state), team?.provisioning || {});
   }
 
   function lifecycleButton(action, teamId, label, variant, disabled) {
@@ -2168,7 +2155,12 @@
     const actions = document.createElement("div");
     actions.className = "team-actions";
     if (controls.includes("suspend")) actions.append(lifecycleButton("suspend", teamId, "Suspend", "button-quiet", busy));
-    if (controls.includes("resume")) actions.append(lifecycleButton("resume", teamId, "Resume", "button-secondary", busy));
+    if (controls.includes("resume")) {
+      // The same call means two different things to the reader: bringing a
+      // suspended team back, and retrying setup that failed.
+      const label = lifecycleLabel(team?.state) === "suspended" ? "Resume" : "Retry setup";
+      actions.append(lifecycleButton("resume", teamId, label, "button-secondary", busy));
+    }
     if (controls.includes("delete")) {
       const removing = lifecycleLabel(team?.state) === "deleting";
       actions.append(lifecycleButton("delete", teamId, removing ? "Retry deletion" : "Delete", "button-danger", busy));
