@@ -86,6 +86,13 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
+      # A hostname that does not resolve fails every call the app makes, and the
+      # only symptom is that sign-in cannot start. Catch it before publishing
+      # rather than in the browser.
+      - name: Check the API base URL resolves
+        env:
+          SITE_API_BASE_URL: ${{ vars.SITE_API_BASE_URL }}
+        run: npm run check:api-base-url
       - name: Write public environment configuration
         env:
           DEEP_NAVY_ENVIRONMENT: development

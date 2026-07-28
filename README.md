@@ -40,7 +40,7 @@ and generate the ignored runtime overlay:
 ```sh
 DEEP_NAVY_ENVIRONMENT=development \
 SITE_URL=http://localhost:4000 \
-SITE_API_BASE_URL=https://dev.api.deep.navy \
+SITE_API_BASE_URL=https://api.dev.deep.navy \
 SITE_COGNITO_DOMAIN=https://YOUR_DOMAIN.auth.us-west-2.amazoncognito.com \
 SITE_COGNITO_CLIENT_ID=YOUR_PUBLIC_CLIENT_ID \
 SITE_COGNITO_CALLBACK_URL=http://localhost:4000/app/callback/ \
@@ -64,7 +64,7 @@ deploys through `production`. Configure these public build inputs as GitHub
 
 | Variable | Example | Required |
 | --- | --- | --- |
-| `SITE_API_BASE_URL` | `https://dev.api.deep.navy` | for API-backed onboarding |
+| `SITE_API_BASE_URL` | `https://api.dev.deep.navy` | for API-backed onboarding |
 | `SITE_COGNITO_DOMAIN` | `https://deep-navy-dev.auth.us-west-2.amazoncognito.com` | for sign-in |
 | `SITE_COGNITO_CLIENT_ID` | Cognito public app-client ID | for sign-in |
 | `SITE_COGNITO_CALLBACK_URL` | exact deployed `/app/callback/` URL | for sign-in |
