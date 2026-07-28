@@ -422,7 +422,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "4087963e8b1ca19797e9ef688d7d597ca642920e" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "b5e762174d1a5ea6a92a50333489d994c2873042" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -508,6 +508,47 @@
       showAuthError("Could not start sign-in", "deep navy could not begin GitHub sign-in. No credentials were sent. Try again in a moment.");
       ui.signIn.disabled = !identity.ready;
       ui.retrySignIn.disabled = !identity.ready;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  // Pick the session back up on a page load.
+  //
+  // The bearer token lives in memory only, so a reload used to lose an
+  // eight-hour session and send the customer back through GitHub every single
+  // time. The server sets an httpOnly cookie at sign-in that the page cannot
+  // read; this asks the server to turn that cookie back into a token.
+  //
+  // Having no session is the ordinary state of a first visit, so a failure here
+  // is silent: it leaves the signed-out view exactly as it was and never shows
+  // an error for something the visitor did not do.
+  async function restoreSession() {
+    if (!platformApi || session.accessToken) return false;
+    setAuthPhase("authenticating");
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const result = await platformApi.signIn("refresh_session", {}, { requestId, signal: controller.signal });
+      const sessionToken = stringValue(result?.sessionToken);
+      if (!sessionToken) throw new Error("session_token_missing");
+      const user = result?.user || {};
+      session.accessToken = sessionToken;
+      session.claims = {
+        displayName: stringValue(user.displayName),
+        githubLogin: stringValue(user.githubLogin),
+        email: stringValue(user.email)
+      };
+      hideAuthError();
+      showAuthenticated();
+      await initializeAuthenticatedSession();
+      return true;
+    } catch {
+      session.accessToken = "";
+      session.claims = {};
+      setAuthPhase("signed_out");
+      return false;
     } finally {
       window.clearTimeout(timeout);
     }
@@ -5657,5 +5698,9 @@
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in with GitHub again before the one-time authorization expires. deep navy verifies it server-side before showing a connection.");
   } else if (billingReturn) {
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "warning", "Confirm your payment", "Sign in to refresh the webhook-confirmed subscription and team credit records. A Stripe return alone never changes access or balances.");
+  } else {
+    // Not a callback: this is an ordinary page load, so try to pick the session
+    // back up. Skipped above because a callback is already establishing one.
+    restoreSession();
   }
 })();

@@ -27,7 +27,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "4087963e8b1ca19797e9ef688d7d597ca642920e";
+export const PLATFORM_PROTOS_REVISION = "b5e762174d1a5ea6a92a50333489d994c2873042";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
@@ -78,7 +78,10 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
 // no bearer token and are routed through signIn() rather than request().
 export const PUBLIC_PROCEDURES = Object.freeze([
   "github_sign_in_start",
-  "github_sign_in_complete"
+  "github_sign_in_complete",
+  // Public because the httpOnly cookie IS the authorization: there is no bearer
+  // token yet on a fresh page load, which is exactly the case it exists for.
+  "refresh_session"
 ] as const);
 
 export const PLATFORM_CAPABILITIES = Object.freeze({
@@ -274,13 +277,31 @@ export function createPlatformApi(options: PlatformApiOptions) {
   if (!baseUrl) throw new PlatformClientError("The platform API origin is invalid.", "invalid_configuration", 0, "");
   const fetchImplementation = options.fetch || globalThis.fetch;
   if (typeof fetchImplementation !== "function") throw new PlatformClientError("Fetch is unavailable.", "invalid_configuration", 0, "");
-  const safeFetch: typeof globalThis.fetch = (input, init) => fetchImplementation(input, {
-    ...init,
-    cache: "no-store",
-    credentials: "omit",
-    redirect: "error",
-    referrerPolicy: "no-referrer"
-  });
+  // Every call sends and accepts nothing but its bearer token. The three
+  // exceptions below are the session cookie's whole lifecycle: sign-in receives
+  // it, refresh presents it, sign-out is told to drop it. "omit" would make the
+  // browser ignore Set-Cookie as well as withhold it, so the exception has to
+  // cover receiving the cookie and not only sending it.
+  //
+  // Scoped by procedure rather than switched on for the transport: the cookie is
+  // useless to any other endpoint, and a credential that travels further than it
+  // is needed is a credential with a wider blast radius.
+  const credentialedProcedures = Object.freeze([
+    "/deepnavy.v1.AuthService/CompleteGitHubSignIn",
+    "/deepnavy.v1.AuthService/RefreshSession",
+    "/deepnavy.v1.AuthService/SignOut"
+  ]);
+  const safeFetch: typeof globalThis.fetch = (input, init) => {
+    const target = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const credentialed = credentialedProcedures.some((procedure) => target.endsWith(procedure));
+    return fetchImplementation(input, {
+      ...init,
+      cache: "no-store",
+      credentials: credentialed ? "include" : "omit",
+      redirect: "error",
+      referrerPolicy: "no-referrer"
+    });
+  };
   const transport = createConnectTransport({
     baseUrl,
     defaultTimeoutMs: options.defaultTimeoutMs ?? 15_000,
@@ -543,6 +564,8 @@ export function createPlatformApi(options: PlatformApiOptions) {
       switch (name) {
         case "github_sign_in_start":
           return await auth.startGitHubSignIn({ returnTo: textField(payload, "returnTo", false) }, callOptions);
+        case "refresh_session":
+          return await auth.refreshSession({}, callOptions);
         case "github_sign_in_complete":
           return await auth.completeGitHubSignIn({
             authorizationCode: textField(payload, "authorizationCode"),

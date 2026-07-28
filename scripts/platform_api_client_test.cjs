@@ -14,7 +14,7 @@ function parseRequestBody(body) {
 }
 
 test("the browser bundle exposes the pinned generated contract", () => {
-  assert.equal(generated.PLATFORM_PROTOS_REVISION, "4087963e8b1ca19797e9ef688d7d597ca642920e");
+  assert.equal(generated.PLATFORM_PROTOS_REVISION, "b5e762174d1a5ea6a92a50333489d994c2873042");
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("request_team"));
@@ -711,4 +711,43 @@ test("Connect errors expose only the safe top-level message and request ID", asy
       return true;
     }
   );
+});
+
+// The session cookie must reach the three calls that manage its lifecycle and
+// nothing else. Sending it further would widen the blast radius of a credential
+// the page deliberately cannot read; not sending it at all - or sending it with
+// credentials "omit" - means the browser also ignores Set-Cookie, so sign-in
+// never stores the cookie and every reload signs the customer out again.
+test("only the session-cookie procedures are credentialed", async () => {
+  const seen = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://api.dev.deep.navy",
+    fetch: async (input, init) => {
+      const url = typeof input === "string" ? input : input.url;
+      seen.push({ url, credentials: init.credentials });
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  });
+
+  await api.signIn("refresh_session", {}, { requestId: "11111111-1111-4111-8111-111111111111" });
+  await api.request("teams", {}, {
+    accessToken: "token",
+    requestId: "22222222-2222-4222-8222-222222222222"
+  }).catch(() => {});
+
+  const refresh = seen.find((call) => call.url.endsWith("AuthService/RefreshSession"));
+  assert.ok(refresh, "RefreshSession was not called");
+  assert.equal(refresh.credentials, "include", "the refresh call must carry the session cookie");
+
+  for (const call of seen) {
+    if (call.url.endsWith("AuthService/RefreshSession")) continue;
+    assert.equal(
+      call.credentials,
+      "omit",
+      `${call.url} must not carry the session cookie`
+    );
+  }
 });

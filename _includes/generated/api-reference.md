@@ -97,6 +97,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.StartGitHubSignInResponse`](#deepnavy-v1-startgithubsigninresponse)
   - [Message `deepnavy.v1.CompleteGitHubSignInRequest`](#deepnavy-v1-completegithubsigninrequest)
   - [Message `deepnavy.v1.CompleteGitHubSignInResponse`](#deepnavy-v1-completegithubsigninresponse)
+  - [Message `deepnavy.v1.RefreshSessionRequest`](#deepnavy-v1-refreshsessionrequest)
+  - [Message `deepnavy.v1.RefreshSessionResponse`](#deepnavy-v1-refreshsessionresponse)
   - [Message `deepnavy.v1.SignOutRequest`](#deepnavy-v1-signoutrequest)
   - [Message `deepnavy.v1.SignOutResponse`](#deepnavy-v1-signoutresponse)
   - [Service `deepnavy.v1.AuthService`](#deepnavy-v1-authservice)
@@ -1370,7 +1372,7 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 
 Package: `deepnavy.v1`
 
-Imports: `deepnavy/v1/organizations.proto`, `deepnavy/v1/github.proto`, `google/protobuf/timestamp.proto`
+Imports: `deepnavy/v1/github.proto`, `deepnavy/v1/organizations.proto`, `google/protobuf/timestamp.proto`
 
 <a id="deepnavy-v1-currentuser"></a>
 ### Message `deepnavy.v1.CurrentUser`
@@ -1437,6 +1439,25 @@ This message has no fields.
 | `memberships` | 4 | [`deepnavy.v1.OrganizationMembership`](#deepnavy-v1-organizationmembership) | repeated | — |
 | `pending_installation` | 5 | [`deepnavy.v1.GitHubInstallation`](#deepnavy-v1-githubinstallation) | singular | pending_installation is the captured GitHub App installation, not yet bound<br> to an organization. Onboarding binds it when the organization is created. |
 
+<a id="deepnavy-v1-refreshsessionrequest"></a>
+### Message `deepnavy.v1.RefreshSessionRequest`
+
+RefreshSession carries no fields. The credential that authorizes it is a
+ browser cookie the server set and only the server can read, so there is
+ nothing for the caller to supply and nothing it could forge by supplying it.
+
+This message has no fields.
+
+<a id="deepnavy-v1-refreshsessionresponse"></a>
+### Message `deepnavy.v1.RefreshSessionResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `session_token` | 1 | `string` | singular | Same contract as CompleteGitHubSignInResponse.session_token: a credential<br> that lives in browser memory and nowhere else. |
+| `expires_at` | 2 | `google.protobuf.Timestamp` | singular | — |
+| `user` | 3 | [`deepnavy.v1.CurrentUser`](#deepnavy-v1-currentuser) | singular | — |
+| `memberships` | 4 | [`deepnavy.v1.OrganizationMembership`](#deepnavy-v1-organizationmembership) | repeated | — |
+
 <a id="deepnavy-v1-signoutrequest"></a>
 ### Message `deepnavy.v1.SignOutRequest`
 
@@ -1455,6 +1476,7 @@ This message has no fields.
 | `GetCurrentUser` | [`deepnavy.v1.GetCurrentUserRequest`](#deepnavy-v1-getcurrentuserrequest) | [`deepnavy.v1.GetCurrentUserResponse`](#deepnavy-v1-getcurrentuserresponse) | unary | GetCurrentUser resolves (and, on first sign-in, synchronizes) the user from<br> verified Cognito claims. It never accepts a principal or organization ID<br> and never creates an organization implicitly. |
 | `StartGitHubSignIn` | [`deepnavy.v1.StartGitHubSignInRequest`](#deepnavy-v1-startgithubsigninrequest) | [`deepnavy.v1.StartGitHubSignInResponse`](#deepnavy-v1-startgithubsigninresponse) | unary | — |
 | `CompleteGitHubSignIn` | [`deepnavy.v1.CompleteGitHubSignInRequest`](#deepnavy-v1-completegithubsigninrequest) | [`deepnavy.v1.CompleteGitHubSignInResponse`](#deepnavy-v1-completegithubsigninresponse) | unary | CompleteGitHubSignIn exchanges the one-time GitHub authorization code for a<br> deep navy customer session, capturing the GitHub identity and the App<br> installation selected during sign-in. It is public (no bearer required). |
+| `RefreshSession` | [`deepnavy.v1.RefreshSessionRequest`](#deepnavy-v1-refreshsessionrequest) | [`deepnavy.v1.RefreshSessionResponse`](#deepnavy-v1-refreshsessionresponse) | unary | RefreshSession mints a new bearer token from the httpOnly refresh cookie<br> CompleteGitHubSignIn set, so a reload does not cost the customer a round<br> trip through GitHub.<br><br> The session token deliberately lives in browser memory and is gone the<br> moment the page unloads. That protects it from theft by injected script,<br> but on its own it also threw away the whole eight-hour session on every<br> reload and made customers sign in again and again. The refresh cookie<br> restores continuity without weakening that: it is httpOnly, so script<br> cannot read it either, and it is the only credential this call accepts.<br><br> It is public (no bearer required) - the cookie IS the authorization. |
 | `SignOut` | [`deepnavy.v1.SignOutRequest`](#deepnavy-v1-signoutrequest) | [`deepnavy.v1.SignOutResponse`](#deepnavy-v1-signoutresponse) | unary | — |
 
 
