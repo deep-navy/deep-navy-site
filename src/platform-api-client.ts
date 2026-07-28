@@ -286,10 +286,15 @@ export function createPlatformApi(options: PlatformApiOptions) {
   // Scoped by procedure rather than switched on for the transport: the cookie is
   // useless to any other endpoint, and a credential that travels further than it
   // is needed is a credential with a wider blast radius.
+  //
+  // Sign-in and sign-out are deliberately NOT here yet. A credentialed request
+  // is blocked outright by the browser unless the server answers
+  // Access-Control-Allow-Credentials, so listing them before the API that does
+  // so is deployed would break sign-in for the length of the rollout. Refresh is
+  // safe to list early: against an older API it simply fails, and failing is
+  // already how it reports "no session". They are added once the API is live.
   const credentialedProcedures = Object.freeze([
-    "/deepnavy.v1.AuthService/CompleteGitHubSignIn",
-    "/deepnavy.v1.AuthService/RefreshSession",
-    "/deepnavy.v1.AuthService/SignOut"
+    "/deepnavy.v1.AuthService/RefreshSession"
   ]);
   const safeFetch: typeof globalThis.fetch = (input, init) => {
     const target = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
