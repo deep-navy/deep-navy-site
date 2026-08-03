@@ -1,0 +1,308 @@
+/* ============================================================================
+   deep navy — design tokens
+   ============================================================================
+
+   THIS FILE IS THE ONLY PLACE COLOR IS DEFINED. Reskinning the entire site
+   (marketing pages and the app shell alike) means editing the primitives in
+   tier 1 and nothing else. No other stylesheet may contain a hex value or a
+   raw rgba().
+
+   Three tiers, in dependency order:
+
+     1. PRIMITIVES   raw ramps. Theme-independent. Named for what they ARE
+                     (--abyss-4), never for what they do.
+     2. SEMANTIC     roles. Theme-DEPENDENT — every one is redefined per
+                     theme below. Named for what they DO (--surface-raised).
+                     Components may only ever reference this tier.
+     3. ALIASES      the legacy variable names main.css already consumes,
+                     mapped onto tier 2 so the existing stylesheet became
+                     theme-aware without touching its 800+ rules.
+
+   Theming: the OS preference arrives via prefers-color-scheme; an explicit
+   user choice arrives as data-theme on <html> and must beat the media query
+   in BOTH directions, which is why light is re-stated as its own block
+   rather than left to the :root default.
+   ========================================================================= */
+
+:root {
+  /* ---- TIER 1: PRIMITIVES ------------------------------------------------
+     The abyss ramp. Deliberately blue-black: at the top of the ramp you
+     cannot tell it from black, and the hue only declares itself as surfaces
+     rise. Each step is a real elevation — the previous palette collapsed
+     five of these to one value, which is why every "raised" surface in the
+     old build rendered perfectly flat. */
+  --abyss-0:  #02060b;   /* deepest ground — is it black? is it blue? */
+  --abyss-1:  #060c14;
+  --abyss-2:  #0a131d;
+  --abyss-3:  #0f1a26;
+  --abyss-4:  #16232f;
+  --abyss-5:  #1e2d3b;
+
+  /* Seafoam. --seafoam-4 is the signature; the darker steps exist because
+     seafoam on white is ~1.4:1 and cannot legally carry text. */
+  --seafoam-1: #0a3d33;
+  --seafoam-2: #0e7c63;
+  --seafoam-3: #3fd9b4;
+  --seafoam-4: #79f2d2;
+  --seafoam-5: #9affdf;
+
+  /* Neutrals, biased a few degrees toward the seafoam so they read as chosen
+     rather than inherited from a default grey. */
+  --white:    #ffffff;
+  --paper-0:  #f7faf9;
+  --paper-1:  #eef3f2;
+  --paper-2:  #dde5e4;
+  --slate-1:  #8297a5;
+  --slate-2:  #5a6b78;
+  --ink-0:    #f4f7f5;
+
+  /* Status hues. Separate from the accent on purpose: an accent that also
+     means "good" cannot also mean "neutral". */
+  --signal-warn-rgb: 245 201 123;
+  --signal-crit-rgb: 245 142 126;
+  --signal-ok-rgb:   121 242 210;
+
+  /* GitHub's brand colors. Fixed by GitHub, not by us — they do not theme. */
+  --brand-github-fg:       #ffffff;
+  --brand-github-bg:       #1f2328;
+  --brand-github-bg-hover: #2b3138;
+
+  /* Non-color primitives are theme-independent and live here so the whole
+     visual system has one home. */
+  --radius-sm: 0;
+  --radius:    0;
+  --radius-lg: 0;
+  --shell:     1180px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas, monospace;
+}
+
+/* ---- TIER 2: SEMANTIC — LIGHT (the :root default) -----------------------
+   White ground, navy text, per the brief's "vice versa for light mode".
+   The accent splits in two here: --accent-graphic keeps the bright seafoam
+   for fills and rules, while --accent-text drops to --seafoam-2 so links
+   and labels clear 4.5:1 on white. Using one value for both is the single
+   most common way a seafoam palette fails accessibility. */
+:root {
+  --surface:          var(--white);
+  --surface-sunken:   var(--paper-1);
+  --surface-raised:   var(--paper-0);
+  --surface-overlay:  rgb(255 255 255 / .82);
+
+  --text:             var(--abyss-1);
+  --text-muted:       var(--slate-2);
+  --text-bright:      var(--abyss-0);
+  --text-on-accent:   var(--abyss-0);
+
+  --accent:           var(--seafoam-2);
+  --accent-text:      var(--seafoam-2);
+  --accent-graphic:   var(--seafoam-4);
+  --accent-strong:    var(--seafoam-1);
+  --accent-rgb:       14 124 99;
+
+  --border:           rgb(2 6 11 / .14);
+  --border-strong:    rgb(2 6 11 / .24);
+  --text-rgb:         6 12 20;
+
+  /* App-shell panels — light. The console keeps its elevation ladder, just
+     inverted: paper tones rising toward white instead of navy rising from
+     black. Warn/crit darken because the dark-theme values are pastels that
+     fail contrast on paper. */
+  --panel-1:      var(--white);
+  --panel-2:      var(--paper-0);
+  --panel-3:      var(--paper-1);
+  --panel-deep:   var(--paper-2);
+  --text-dim:     var(--slate-2);
+  --signal-warn:  #8a6414;
+  --signal-crit:  #a33a28;
+  --scrim:        rgb(2 6 11 / .5);
+  --shadow-lg:    0 36px 120px rgb(2 6 11 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(2 6 11 / .35);
+
+  color-scheme: light;
+}
+
+/* ---- TIER 2: SEMANTIC — DARK -------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface:         var(--abyss-0);
+    --surface-sunken:  var(--abyss-0);
+    --surface-raised:  var(--abyss-2);
+    --surface-overlay: rgb(5 10 16 / .72);
+
+    --text:            var(--ink-0);
+    --text-muted:      var(--slate-1);
+    --text-bright:     var(--white);
+    --text-on-accent:  var(--abyss-0);
+
+    --accent:          var(--seafoam-4);
+    --accent-text:     var(--seafoam-4);
+    --accent-graphic:  var(--seafoam-4);
+    --accent-strong:   var(--seafoam-5);
+    --accent-rgb:      121 242 210;
+
+    --border:          rgb(244 247 245 / .12);
+    --border-strong:   rgb(244 247 245 / .2);
+    --text-rgb:        244 247 245;
+
+    /* App-shell panels. These were a second, dark-only palette inside
+       main.css (--panel/--amber/--coral); folding them in here is what lets
+       the operating console theme with the rest of the site. */
+    --panel-1:      var(--abyss-2);
+    --panel-2:      var(--abyss-3);
+    --panel-3:      var(--abyss-4);
+    --panel-deep:   #0a1119;
+    --text-dim:     #b7c4c8;
+    --signal-warn:  #f5c97b;
+    --signal-crit:  #f58e7e;
+    --scrim:        rgb(0 3 7 / .86);
+    --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
+    --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
+
+    color-scheme: dark;
+  }
+}
+
+/* ---- Explicit user choice. Must override the media query both ways. ----- */
+:root[data-theme="dark"] {
+  --surface:         var(--abyss-0);
+  --surface-sunken:  var(--abyss-0);
+  --surface-raised:  var(--abyss-2);
+  --surface-overlay: rgb(5 10 16 / .72);
+
+  --text:            var(--ink-0);
+  --text-muted:      var(--slate-1);
+  --text-bright:     var(--white);
+  --text-on-accent:  var(--abyss-0);
+
+  --accent:          var(--seafoam-4);
+  --accent-text:     var(--seafoam-4);
+  --accent-graphic:  var(--seafoam-4);
+  --accent-strong:   var(--seafoam-5);
+  --accent-rgb:      121 242 210;
+
+  --border:          rgb(244 247 245 / .12);
+  --border-strong:   rgb(244 247 245 / .2);
+  --text-rgb:        244 247 245;
+
+  /* App-shell panels. These were a second, dark-only palette inside
+     main.css (--panel/--amber/--coral); folding them in here is what lets
+     the operating console theme with the rest of the site. */
+  --panel-1:      var(--abyss-2);
+  --panel-2:      var(--abyss-3);
+  --panel-3:      var(--abyss-4);
+  --panel-deep:   #0a1119;
+  --text-dim:     #b7c4c8;
+  --signal-warn:  #f5c97b;
+  --signal-crit:  #f58e7e;
+  --scrim:        rgb(0 3 7 / .86);
+  --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
+  --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --surface:         var(--white);
+  --surface-sunken:  var(--paper-1);
+  --surface-raised:  var(--paper-0);
+  --surface-overlay: rgb(255 255 255 / .82);
+
+  --text:            var(--abyss-1);
+  --text-muted:      var(--slate-2);
+  --text-bright:     var(--abyss-0);
+  --text-on-accent:  var(--abyss-0);
+
+  --accent:          var(--seafoam-2);
+  --accent-text:     var(--seafoam-2);
+  --accent-graphic:  var(--seafoam-4);
+  --accent-strong:   var(--seafoam-1);
+  --accent-rgb:      14 124 99;
+
+  --border:          rgb(2 6 11 / .14);
+  --border-strong:   rgb(2 6 11 / .24);
+  --text-rgb:        6 12 20;
+
+  /* App-shell panels — light. The console keeps its elevation ladder, just
+     inverted: paper tones rising toward white instead of navy rising from
+     black. Warn/crit darken because the dark-theme values are pastels that
+     fail contrast on paper. */
+  --panel-1:      var(--white);
+  --panel-2:      var(--paper-0);
+  --panel-3:      var(--paper-1);
+  --panel-deep:   var(--paper-2);
+  --text-dim:     var(--slate-2);
+  --signal-warn:  #8a6414;
+  --signal-crit:  #a33a28;
+  --scrim:        rgb(2 6 11 / .5);
+  --shadow-lg:    0 36px 120px rgb(2 6 11 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(2 6 11 / .35);
+
+  color-scheme: light;
+}
+
+/* ---- Accent tints ------------------------------------------------------
+   main.css previously hardcoded ~20 distinct rgba(121,242,210,a) values,
+   which pinned it to the dark theme. These derive from --accent-rgb, so
+   they re-tint themselves when the theme flips. */
+:root {
+  --accent-a03:  rgb(var(--accent-rgb) / .03);
+  --accent-a05:  rgb(var(--accent-rgb) / .05);
+  --accent-a07:  rgb(var(--accent-rgb) / .07);
+  --accent-a08:  rgb(var(--accent-rgb) / .08);
+  --accent-a12:  rgb(var(--accent-rgb) / .12);
+  --accent-a22:  rgb(var(--accent-rgb) / .22);
+  --accent-a24:  rgb(var(--accent-rgb) / .24);
+  --accent-a28:  rgb(var(--accent-rgb) / .28);
+  --accent-a35:  rgb(var(--accent-rgb) / .35);
+  --accent-a48:  rgb(var(--accent-rgb) / .48);
+  --accent-a50:  rgb(var(--accent-rgb) / .5);
+
+  --warn-a12:    rgb(var(--signal-warn-rgb) / .12);
+  --crit-a08:    rgb(var(--signal-crit-rgb) / .08);
+  --crit-a28:    rgb(var(--signal-crit-rgb) / .28);
+
+  --text-a08:    rgb(var(--text-rgb, 244 247 245) / .08);
+  --text-a20:    rgb(var(--text-rgb, 244 247 245) / .2);
+  --text-a38:    rgb(var(--text-rgb, 244 247 245) / .38);
+
+  /* --aqua-dim and --warning were referenced by main.css (invoice rules, KPI
+     rails, the open/uncollectible status) but never defined anywhere, so
+     those borders and that status color silently resolved to nothing. They
+     are defined here rather than deleted from the rules because a dimmed
+     accent rail and a warning status are both clearly intended. */
+  --aqua-dim: var(--accent-a35);
+  --warning:  var(--signal-warn);
+}
+
+/* ---- TIER 3: ALIASES ---------------------------------------------------
+   main.css was written against these names. Pointing them at tier 2 made
+   the entire existing stylesheet theme-aware without editing its rules.
+   New code should use the semantic names directly; these stay so the
+   marketing pages and app shell keep rendering. */
+:root {
+  --navy-950:     var(--surface);
+  --navy-900:     var(--surface-sunken);
+  --navy-850:     var(--surface-raised);
+  --navy-800:     var(--surface-raised);
+  --navy-750:     var(--abyss-3);
+  --navy-700:     var(--abyss-4);
+  --ink:          var(--text);
+  --muted:        var(--text-muted);
+  --muted-bright: var(--text-bright);
+  --aqua:         var(--accent-text);
+  --aqua-strong:  var(--accent-strong);
+  --line:         var(--border);
+  --line-light:   var(--border);
+}
+
+/* Respect the reduced-motion preference globally rather than per-component,
+   so a new animation cannot forget to opt in. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

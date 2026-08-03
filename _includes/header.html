@@ -15,6 +15,10 @@
       <a href="{{ '/security/' | relative_url }}"{% if page.url contains '/security/' %} aria-current="page"{% endif %}>Security</a>
     </nav>
     <div class="header-actions">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-live="polite">
+        <span class="theme-toggle-icon" aria-hidden="true"></span>
+        <span class="visually-hidden" data-theme-label>Theme: match system</span>
+      </button>
       <a class="button button-quiet button-small desktop-action" href="{{ '/app/' | relative_url }}">Sign in</a>
       <a class="button button-primary button-small desktop-action" href="{{ '/app/' | relative_url }}">Start onboarding</a>
       <details class="mobile-menu">

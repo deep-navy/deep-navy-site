@@ -1,7 +1,8 @@
 {% unless page.layout == 'app' %}<meta charset="utf-8">{% endunless %}
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#02060b">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#02060b" media="(prefers-color-scheme: dark)">
 {% unless page.layout == 'app' %}<meta name="referrer" content="strict-origin-when-cross-origin">{% endunless %}
 {% if page.layout == 'app' %}
 <meta http-equiv="Permissions-Policy" content='camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://hooks.stripe.com" "https://checkout.stripe.com")'>
@@ -38,7 +39,30 @@
 <meta name="twitter:image:alt" content="{{ og_image_alt | escape }}">
 <link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
 <link rel="alternate" type="application/atom+xml" title="deep navy updates" href="{{ '/feed.xml' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/tokens.css' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+<script>
+  /* Theme resolution, inline and render-blocking on purpose.
+
+     Defaults to the system preference: with no stored choice we set no
+     data-theme at all and let the prefers-color-scheme media query in
+     tokens.css decide, so the page follows the OS live — including when
+     the user changes it while the tab is open.
+
+     This must run before first paint. Deferring it means the document
+     paints with the media-query theme and then snaps to the stored one,
+     which is the white flash every dark-mode site is judged by. */
+  (function () {
+    try {
+      var stored = localStorage.getItem("dn-theme");
+      if (stored === "light" || stored === "dark") {
+        document.documentElement.setAttribute("data-theme", stored);
+      }
+    } catch (e) {
+      /* Private mode or blocked storage: fall through to the system theme. */
+    }
+  })();
+</script>
 {% unless page.layout == 'app' %}<script type="application/ld+json">
 {
   "@context": "https://schema.org",
