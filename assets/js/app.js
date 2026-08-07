@@ -2348,7 +2348,21 @@
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
     const state = provisioning.label || lifecycleLabel(team.state) || "created";
     ui.contextTeam.textContent = stringValue(team.name) || stringValue(team.id);
-    ui.dashboardState.textContent = `${stringValue(team.name) || "Selected team"} is ${state}. This is the live view of what your team is planning, building, and shipping.`;
+    // The headline speaks about the team, not the resource: "newton is ready
+    // to work", never "newton is succeeded" - a provisioning state is not a
+    // sentence a colleague would say.
+    const headlineByState = {
+      succeeded: "is ready to work",
+      ready: "is ready to work",
+      running: "is being assembled",
+      queued: "is being assembled",
+      retrying: "is being assembled",
+      failed: "hit a provisioning problem",
+      suspended: "is paused",
+      deleting: "is shutting down",
+    };
+    const spoken = headlineByState[String(state).toLowerCase()] || `is ${state}`;
+    ui.dashboardState.textContent = `${stringValue(team.name) || "Your team"} ${spoken}. Everything they plan, build, and ship streams here live.`;
     renderEngineerControl();
   }
 
@@ -2538,14 +2552,21 @@
     const stateLabel = objectiveDispatchStateLabel(dispatch.state);
     const tone = stateLabel === "delivered" ? "success" : stateLabel === "failed" ? "error" : "loading";
     setSourceState(ui.objectiveDispatchState, capitalize(stateLabel), tone);
-    const parts = [`Attempt ${Number(dispatch.attempt)}`, `updated ${relativeTime(timestampDate(dispatch.updatedAt))}`];
-    const failureReason = objectiveDispatchFailureLabel(dispatch.failureReason);
-    if (failureReason) parts.push(failureReason);
-    const safeError = stringValue(dispatch.safeError);
-    if (safeError) parts.push(safeError);
+    // Speak to the customer, not the operator. "Attempt 1 · Durable TPM
+    // handoff" is dispatcher telemetry; what a customer needs to know is
+    // whether their Product Manager has the objective, and if not, why.
     const deliveredAt = dispatch.deliveredAt ? timestampDate(dispatch.deliveredAt) : null;
-    if (deliveredAt) parts.push(`delivered ${relativeTime(deliveredAt)}`);
-    ui.objectiveDispatchDetail.textContent = `Durable TPM handoff · ${parts.join(" · ")}.`;
+    const failureReason = objectiveDispatchFailureLabel(dispatch.failureReason);
+    const safeError = stringValue(dispatch.safeError);
+    let sentence;
+    if (stateLabel === "delivered") {
+      sentence = `Your Product Manager picked this up${deliveredAt ? " " + relativeTime(deliveredAt) : ""}.`;
+    } else if (stateLabel === "failed") {
+      sentence = `Delivery to your Product Manager failed${failureReason ? ": " + failureReason : ""}.${safeError ? " " + safeError : ""}`;
+    } else {
+      sentence = `On its way to your Product Manager — updated ${relativeTime(timestampDate(dispatch.updatedAt))}.${safeError ? " " + safeError : ""}`;
+    }
+    ui.objectiveDispatchDetail.textContent = sentence;
   }
 
   function validObjectiveKpis(kpis) {
@@ -2763,12 +2784,19 @@
       return;
     }
     const form = new FormData(ui.objectiveForm);
-    const title = stringValue(form.get("objectiveTitle"));
+    let title = stringValue(form.get("objectiveTitle"));
     const description = stringValue(form.get("objectiveDescription"));
     setFieldError(ui.objectiveError, "");
+    if (!title) {
+      // The customer answers one question; the title the API requires is the
+      // first sentence (or line) of that answer, clipped to the API's bound.
+      const firstLine = description.split(/\n/, 1)[0] || "";
+      const firstSentence = firstLine.split(/(?<=[.!?])\s/, 1)[0] || firstLine;
+      title = firstSentence.trim().replace(/[.!?]+$/, "").slice(0, 160).trim();
+    }
     if (title.length < 3 || title.length > 160) {
-      setFieldError(ui.objectiveError, "Enter an objective title between 3 and 160 characters.");
-      ui.objectiveTitleInput.focus();
+      setFieldError(ui.objectiveError, "Open with a short sentence describing the outcome — that becomes the objective's name.");
+      ui.objectiveDescriptionInput.focus();
       return;
     }
     if (description.length < 10 || description.length > 2000) {
@@ -2859,6 +2887,10 @@
       resetAgentView("The AgentService returned a role outside the canonical runtime contract. No roster was displayed.", "Invalid response", "error");
       return;
     }
+    // Crew rows, not database rows. The customer hired a team; what they need
+    // at a glance is who is on it and whether each person is ready — not agent
+    // UUIDs and heartbeat timestamps, which read as telemetry about machines.
+    // The identifiers still exist in the API responses for anyone debugging.
     let engineerOrdinal = 3;
     agents.forEach((agent, index) => {
       let canonicalRole = resolvedRoles[index];
@@ -2866,23 +2898,21 @@
         engineerOrdinal += 1;
         canonicalRole = { ...canonicalRole, code: `E${engineerOrdinal}` };
       }
+      const state = stringValue(agent.state).toLowerCase();
+      const active = state === "active" || state.endsWith("_active");
       const row = document.createElement("div");
-      row.className = "agent-row";
-      const ordinal = document.createElement("span");
-      ordinal.className = "agent-ordinal";
-      ordinal.textContent = canonicalRole.code;
-      ordinal.setAttribute("aria-hidden", "true");
+      row.className = active ? "crew-row is-on" : "crew-row";
+      const dot = document.createElement("i");
+      dot.className = "crew-dot";
+      dot.setAttribute("aria-hidden", "true");
       const copy = document.createElement("div");
+      copy.className = "crew-copy";
       const name = document.createElement("strong");
-      const role = document.createElement("small");
       name.textContent = canonicalRole.label;
-      role.textContent = `${stringValue(agent.id)} · ${lifecycleLabel(agent.state) || "state not reported"}`;
-      copy.append(name, role);
-      const heartbeat = document.createElement("time");
-      const date = timestampDate(agent.lastHeartbeatAt);
-      heartbeat.textContent = date ? relativeTime(date) : "No heartbeat";
-      if (date) heartbeat.dateTime = date.toISOString();
-      row.append(ordinal, copy, heartbeat);
+      const doing = document.createElement("small");
+      doing.textContent = active ? "ready to work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
+      copy.append(name, doing);
+      row.append(dot, copy);
       ui.agentList.append(row);
     });
     ui.agentsEmpty.hidden = true;
@@ -4560,10 +4590,6 @@
     entries.forEach((entry) => {
     const item = document.createElement("li");
     item.className = "customer-activity-item";
-    const roleMark = document.createElement("span");
-    roleMark.className = "agent-ordinal";
-      roleMark.textContent = activityMarker(entry);
-    roleMark.setAttribute("aria-hidden", "true");
     const copy = document.createElement("div");
     const title = document.createElement("strong");
     const summary = document.createElement("p");
@@ -4571,8 +4597,14 @@
     meta.className = "customer-activity-meta";
       title.textContent = stringValue(entry.title) || "Activity recorded";
       summary.textContent = stringValue(entry.safeSummary) || "The source returned a typed event without a customer-safe summary.";
-      const metaValues = [entry.source, entry.source === "ActivityService stream" ? agentRoleLabel(entry.agentRole) : "", stringValue(entry.status), stringValue(entry.sequenceLabel)];
-      [entry.sessionId ? `Session ${entry.sessionId}` : "", entry.objectiveId ? `Objective ${entry.objectiveId}` : "", entry.initiativeId ? `Initiative ${entry.initiativeId}` : "", entry.repositoryId ? `Repository ${entry.repositoryId}` : "", entry.githubIssueId ? `Issue ${entry.githubIssueId}` : "", entry.pullRequestId ? `PR ${entry.pullRequestId}` : ""].forEach((value) => metaValues.push(value));
+      // Human context only. The raw resource UUIDs the sources attach read as
+      // machine telemetry in a customer timeline; anyone debugging still has
+      // them in the underlying responses. GitHub numbers stay - a customer
+      // recognizes "Issue #1" - and the marker glyph rides in the meta line
+      // now that the timeline spine replaced the marker column.
+      const metaValues = [activityMarker(entry), entry.source === "ActivityService stream" ? agentRoleLabel(entry.agentRole) : stringValue(entry.source), stringValue(entry.status), stringValue(entry.sequenceLabel)];
+      if (entry.githubIssueId) metaValues.push(`Issue ${entry.githubIssueId}`);
+      if (entry.pullRequestId) metaValues.push(`PR ${entry.pullRequestId}`);
       metaValues.filter(Boolean).forEach((value) => {
       const span = document.createElement("span");
       span.textContent = value;
@@ -4620,7 +4652,7 @@
       const date = timestampDate(entry.occurredAt);
     time.textContent = date ? relativeTime(date) : "Time not reported";
     if (date) time.dateTime = date.toISOString();
-    item.append(roleMark, copy, time);
+    item.append(copy, time);
     ui.activityList.append(item);
     });
     ui.activityEmpty.hidden = entries.length > 0;
@@ -5622,6 +5654,20 @@
   if (ui.settingsEngineerApply) ui.settingsEngineerApply.addEventListener("click", applyEngineerCount);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
   ui.objectiveForm.addEventListener("submit", createObjective);
+  // Example chips seed the single objective field; ⌘/Ctrl+Enter submits it, so
+  // starting the team never requires leaving the keyboard.
+  ui.objectiveForm.addEventListener("click", (event) => {
+    const chip = event.target.closest("[data-objective-examples] .chip");
+    if (!chip || ui.objectiveDescriptionInput.disabled) return;
+    ui.objectiveDescriptionInput.value = chip.textContent.trim();
+    ui.objectiveDescriptionInput.focus();
+  });
+  ui.objectiveDescriptionInput.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !ui.objectiveSubmit.disabled) {
+      event.preventDefault();
+      ui.objectiveForm.requestSubmit();
+    }
+  });
   ui.objectiveSelect.addEventListener("change", selectObjective);
   ui.approvalList.addEventListener("submit", decideApproval);
   ui.approvalsMore.addEventListener("click", loadMoreApprovals);

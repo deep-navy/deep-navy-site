@@ -330,7 +330,17 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .dashboard-heading { align-items: flex-end; }.dashboard-controls { display: grid; grid-template-columns: auto minmax(180px, 240px) auto; align-items: center; gap: .55rem; }.dashboard-controls label { color: var(--muted); font-size: .62rem; text-transform: uppercase; }.dashboard-controls select { min-height: 44px; padding: .45rem 2rem .45rem .65rem; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; background: var(--navy-900); }
 .app-dashboard { min-width: 0; padding: 1.2rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }.app-dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }.app-dashboard-header h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.02em; }.empty-state { padding: 2.5rem 0; text-align: left; }.empty-state strong { display: block; font-family: var(--font-mono); }.empty-state p { max-width: 500px; margin: .45rem 0 0; font-size: .8rem; }
 .data-source-badge, .stream-state { display: inline-flex; min-height: 0; align-items: center; padding: 0; color: var(--muted); font-family: var(--font-mono); font-size: .57rem; line-height: 1.2; text-transform: uppercase; }.data-source-badge[data-tone="success"], .stream-state[data-tone="success"] { color: var(--aqua); }.data-source-badge[data-tone="error"], .stream-state[data-tone="error"] { color: var(--ink); }.data-source-badge[data-tone="loading"], .stream-state[data-tone="loading"] { color: var(--muted-bright); }
-.agent-roster { display: grid; gap: 0; }.agent-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .75rem 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }.agent-row strong, .agent-row small { display: block; }.agent-row strong { font-size: .75rem; }.agent-row small { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; }.agent-row time { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; }.agent-ordinal { color: var(--aqua); font-family: var(--font-mono); font-size: .6rem; }
+/* Crew rail — the roster as people, from the approved workspace design.
+   A breathing accent dot says "present and ready"; anything else is stated in
+   words. No identifiers, no timestamps: those read as machine telemetry. */
+.agent-roster { display: grid; gap: 2px; }
+.crew-row { display: flex; gap: .65rem; align-items: flex-start; padding: .5rem .55rem; margin: 0 -.55rem; border-radius: 3px; transition: background .26s ease; }
+.crew-row.is-on { background: var(--accent-a08); }
+.crew-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: .5rem; background: var(--text-muted); opacity: .45; transition: background .26s ease, box-shadow .26s ease, opacity .26s ease; }
+.crew-row.is-on .crew-dot { background: var(--accent-graphic); opacity: 1; box-shadow: 0 0 0 1px var(--accent-a35), 0 0 14px -2px var(--accent-a48); animation: crew-breathe 2.6s ease-in-out infinite; }
+@keyframes crew-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.crew-copy strong { display: block; font-size: .8rem; font-weight: 560; letter-spacing: -.01em; }
+.crew-copy small { display: block; color: var(--text-muted); font-size: .68rem; }
 .live-control { display: flex; align-items: center; gap: .55rem; }
 .activity-filters { display: flex; flex-wrap: wrap; gap: .35rem; margin: .9rem 0 .25rem; }
 .activity-filters button { display: inline-flex; min-height: 34px; align-items: center; gap: .42rem; padding: .4rem .55rem; color: var(--muted); border: 1px solid var(--line); border-radius: 0; background: transparent; font-family: var(--font-mono); font-size: .56rem; text-transform: uppercase; cursor: pointer; }
@@ -832,6 +842,34 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 }
 
 .cta-reassure { margin-top: .5rem; font-size: .82rem; color: var(--muted); }
+
+/* ---- approved workspace language -----------------------------------------
+   The overview leads with a sentence about what is happening now, not a
+   dashboard title; the objective ask is one glowing field; activity reads as
+   a timeline surfacing from the deep rather than a table of rows. */
+.app-body .now-line { font-size: clamp(1.35rem, 2.9vw, 1.75rem); letter-spacing: -.03em; font-weight: 600; text-wrap: balance; }
+.app-body .wctx { color: var(--text-muted); font-family: var(--font-mono); font-size: .68rem; margin-top: .3rem; }
+
+.objective-form { display: grid; gap: .8rem; margin-top: .85rem; }
+.objective-field { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-1); transition: border-color .26s ease, box-shadow .26s ease; }
+.objective-field:focus-within { border-color: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 14px -2px var(--accent-a48); }
+.objective-field textarea { width: 100%; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: .95rem; line-height: 1.5; padding: .9rem 1rem; resize: none; outline: none; min-height: 88px; }
+.objective-field textarea::placeholder { color: var(--muted); }
+.objective-foot { display: flex; align-items: center; justify-content: flex-end; gap: .8rem; padding: .55rem .7rem .7rem 1rem; border-top: 1px solid var(--line); }
+.objective-key { color: var(--muted); font-family: var(--font-mono); font-size: .62rem; letter-spacing: .12em; }
+.objective-examples { display: flex; gap: .45rem; flex-wrap: wrap; }
+.chip { font: inherit; font-size: .75rem; color: var(--muted-bright); border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: .3rem .75rem; cursor: pointer; transition: border-color .14s ease, color .14s ease; }
+.chip:hover { border-color: var(--accent-graphic); color: var(--accent-text); }
+
+/* Activity as a timeline: a hairline spine, a dot per event, the newest one
+   glowing seafoam as it surfaces. Same DOM the stream renderer already
+   builds — only the presentation changes. */
+.customer-activity-list { position: relative; }
+.customer-activity-list::before { content: ""; position: absolute; left: 5px; top: 10px; bottom: 6px; width: 1px; background: var(--line); }
+.customer-activity-item { position: relative; padding-left: 1.5rem; border-top: 0 !important; grid-template-columns: minmax(0, 1fr) auto !important; }
+.customer-activity-item::before { content: ""; position: absolute; left: 1px; top: 1.2rem; width: 7px; height: 7px; border-radius: 50%; background: var(--panel-3); border: 1px solid var(--surface); box-sizing: content-box; }
+.customer-activity-item:first-child::before { background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); }
+.customer-activity-list li:last-child { border-bottom: 0 !important; }
 
 /* ---- theme control ------------------------------------------------------
    Glyphs are drawn from a single element so the control costs no icon

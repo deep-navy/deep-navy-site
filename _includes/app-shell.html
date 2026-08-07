@@ -214,7 +214,7 @@
         <!-- ===== OVERVIEW ===== -->
         <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
           <div class="wview-head">
-            <div><h2 id="workspace-overview-title" data-context-team>Team workspace</h2><p data-dashboard-state>Select a team to load its current service records.</p>
+            <div><h2 class="now-line" id="workspace-overview-title" data-context-team>Team workspace</h2><p class="wctx" data-dashboard-state>Select a team to load its current service records.</p>
               <div class="provisioning-progress" data-provisioning-progress hidden>
                 <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
                   <span class="provisioning-fill" data-provisioning-fill></span>
@@ -248,13 +248,26 @@
                 <label for="objective-select">Objective</label>
                 <select id="objective-select" data-objective-select disabled></select>
               </div>
-              <form class="inline-form objective-form" data-objective-form hidden>
-                <label for="objective-title">Business objective</label>
-                <input id="objective-title" name="objectiveTitle" minlength="3" maxlength="160" placeholder="Improve trial-to-paid conversion" required disabled>
-                <label for="objective-description">Context and outcome</label>
-                <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="4" placeholder="Describe the customer problem, current baseline, desired outcome, and constraints." required disabled></textarea>
+              <!-- The whole ask is one question. The title the API requires is
+                   derived from the first line of what the customer writes, so
+                   the hidden input keeps the FormData contract app.js reads
+                   without putting a second field in front of the customer. -->
+              <form class="objective-form" data-objective-form hidden>
+                <label class="visually-hidden" for="objective-description">What should your team work on?</label>
+                <input type="hidden" id="objective-title" name="objectiveTitle">
+                <div class="objective-field">
+                  <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you'd tell a colleague. Your Product Manager turns it into acceptance criteria, the engineers build it, and you review the pull requests." required disabled></textarea>
+                  <div class="objective-foot">
+                    <span class="objective-key" aria-hidden="true">⌘↵</span>
+                    <button class="button button-primary" type="submit" disabled>Start the work</button>
+                  </div>
+                </div>
+                <div class="objective-examples" data-objective-examples>
+                  <button class="chip" type="button">Fix our accessibility problems</button>
+                  <button class="chip" type="button">Cut page load under one second</button>
+                  <button class="chip" type="button">Add tests to the payments module</button>
+                </div>
                 <p class="form-error" data-objective-error role="alert" hidden></p>
-                <button class="button button-primary" type="submit" disabled>Submit objective</button>
               </form>
               <div class="objective-record" data-objective-record hidden>
                 <span class="eyebrow">Selected objective</span>
