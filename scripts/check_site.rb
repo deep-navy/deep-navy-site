@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require "base64"
+require "digest"
 require "pathname"
 require "set"
 require "uri"
@@ -25,6 +27,35 @@ html_files.each do |file|
   duplicate_ids = ids.group_by(&:itself).select { |_id, occurrences| occurrences.length > 1 }.keys
   errors << "#{relative}: duplicate ids #{duplicate_ids.join(', ')}" unless duplicate_ids.empty?
   ids_by_file[file] = ids.to_set
+
+  # A render-blocking <script src> in <head> is a single point of failure for
+  # the whole page: if that one request stalls - flaky network, VPN, proxy, an
+  # extension holding it - the parser blocks before <body> exists and the
+  # browser paints an empty canvas. Reloading does not recover, because it
+  # stalls again. Scripts that genuinely must run pre-paint belong inline,
+  # where there is no request to stall.
+  head = html.split(%r{</head>}i, 2).first.to_s
+  head.scan(%r{<script\b([^>]*\ssrc=[^>]*)>}i).flatten.each do |attributes|
+    next if attributes.match?(/\s(defer|async)\b/i)
+
+    errors << "#{relative}: render-blocking <script src> in <head> can blank the page; inline it or add defer"
+  end
+
+  # An inline script the CSP refuses is silently dropped, so a stale hash costs
+  # a theme flash that no test would otherwise catch. Verify each inline block
+  # against the policy the page ships with.
+  csp = html[%r{<meta http-equiv="Content-Security-Policy" content="([^"]+)"}i, 1]
+  next unless csp
+
+  allowed = csp.scan(/'sha256-([A-Za-z0-9+\/=]+)'/).flatten.to_set
+  html.scan(%r{<script\b([^>]*)>(.*?)</script>}im).each do |attributes, body|
+    next if attributes.match?(/\ssrc=/i) || attributes.match?(%r{application/ld\+json}i)
+
+    digest = Base64.strict_encode64(Digest::SHA256.digest(body))
+    next if allowed.include?(digest)
+
+    errors << "#{relative}: inline script is not permitted by the page CSP (expected 'sha256-#{digest}')"
+  end
 end
 
 def target_file(site, source, href, baseurl)
@@ -76,8 +107,16 @@ app_pages.each do |file|
   relative = file.relative_path_from(site)
   errors << "#{relative}: app pages require no-referrer" unless html.match?(%r{<meta\s+name=["']referrer["']\s+content=["']no-referrer["']}i)
   errors << "#{relative}: app pages require a self-only form-action CSP" unless html.match?(%r{form-action 'self';}i)
-  errors << "#{relative}: app pages must not contain inline scripts" if html.scan(%r{<script(?![^>]*\ssrc=)[^>]*>}i).any?
-  scrubber = html.index("callback-scrubber.js")
+  # Inline scripts used to be banned outright to keep the policy strict. They
+  # are now permitted only when hash-pinned - verified for every page above -
+  # because the two blocks that must run pre-paint were the last render-
+  # blocking requests in <head>, and a stalled request there paints an empty
+  # page that no reload recovers from. The property worth protecting is that
+  # the policy never widens to arbitrary inline script.
+  errors << "#{relative}: app pages must never allow 'unsafe-inline' script" if html.match?(%r{script-src[^;]*'unsafe-inline'}i)
+  # The scrubber captures location.search before any app code reads it. It is
+  # inline now, so identify it by what it defines rather than by a filename.
+  scrubber = html.index("deepNavyInitialQuery")
   generated_client = html.index("platform-api-client.js")
   app_state = html.index("app-state.js")
   agent_roles = html.index("agent-roles.js")

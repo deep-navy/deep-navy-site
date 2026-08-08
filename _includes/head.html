@@ -43,11 +43,22 @@
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 {%- comment -%}
   Deliberately NOT deferred: this must execute before the first paint, or the
-  page renders with the media-query theme and snaps to the stored one. It is
-  an external file rather than an inline block because the app shell's CSP is
-  script-src 'self' with no 'unsafe-inline' — inline would be refused there.
+  page renders with the media-query theme and snaps to the stored one.
+
+  It is inline rather than an external file because a render-blocking
+  external script in the head is a single point of failure for the product: if
+  one request stalls - flaky network, VPN, proxy, an extension holding it -
+  the parser blocks before <body> exists and the browser paints an empty
+  canvas. Reloading does not help, because it stalls again. Inline has no
+  request to stall.
+
+  The app shell's CSP is script-src 'self' with no 'unsafe-inline', so this
+  block is allowed by the sha256- hash listed in _layouts/app.html. Editing
+  this script WITHOUT updating that hash makes the CSP refuse it, which costs
+  a theme flash on the app - never a blank page. Recompute with:
+    printf '%s' 'the exact script body' | openssl dgst -sha256 -binary | openssl base64
 {%- endcomment -%}
-<script src="{{ '/assets/js/theme-init.js' | relative_url }}"></script>
+<script>(function(){"use strict";try{var s=localStorage.getItem("dn-theme");if(s==="light"||s==="dark"){document.documentElement.setAttribute("data-theme",s);}}catch(e){}})();</script>
 {% unless page.layout == 'app' %}<script type="application/ld+json">
 {
   "@context": "https://schema.org",

@@ -5,7 +5,24 @@ const { readFileSync } = require("node:fs");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const source = readFileSync("assets/js/callback-scrubber.js", "utf8");
+// The scrubber is inline in the app layout rather than an external file: a
+// render-blocking <script src> in <head> blanks the whole page if its request
+// stalls. Extract the block from the layout so this still tests the code that
+// actually ships, and fail loudly if it is moved again.
+// Liquid comments in the layout discuss script tags in prose, so strip them
+// before matching or the prose is mistaken for markup.
+const layout = readFileSync("_layouts/app.html", "utf8").replace(
+  /\{%-?\s*comment\s*-?%\}[\s\S]*?\{%-?\s*endcomment\s*-?%\}/g,
+  ""
+);
+const inlineBlocks = [...layout.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+  (match) => match[1]
+);
+const source = inlineBlocks.find((block) => block.includes("deepNavyInitialQuery"));
+assert.ok(
+  source,
+  "no inline callback-scrubber block found in _layouts/app.html; if it moved, point this test at its new home"
+);
 
 test("callback query is captured non-enumerably and removed from address history before app assets load", () => {
   const replacements = [];
