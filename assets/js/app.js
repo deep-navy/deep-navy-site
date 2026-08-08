@@ -2366,8 +2366,29 @@
       deleting: "is shutting down",
     };
     const spoken = headlineByState[String(state).toLowerCase()] || `is ${state}`;
-    ui.dashboardState.textContent = `${stringValue(team.name) || "Your team"} ${spoken}. Everything they plan, build, and ship streams here live.`;
+    session.workspaceHeadlineSpoken = spoken;
+    session.workspaceTeamName = stringValue(team.name) || "Your team";
+    renderWorkspaceHeadline();
     renderEngineerControl();
+  }
+
+  // "Provisioning succeeded" is a past event, not a present state. A team can
+  // finish provisioning and have its runtime die minutes later - which is
+  // exactly what happened, while this page went on promising the customer
+  // their team was ready to work. Only claim present readiness when the
+  // runtime is currently streaming to us; otherwise say what we actually
+  // know, which is that it has gone quiet.
+  function renderWorkspaceHeadline() {
+    if (!ui.dashboardState) return;
+    const name = session.workspaceTeamName || "Your team";
+    const spoken = session.workspaceHeadlineSpoken;
+    if (!spoken) return;
+    const claimsReady = spoken === "is ready to work";
+    if (claimsReady && session.runtimeStreamLive !== true) {
+      ui.dashboardState.textContent = `${name} finished setting up, but has not reported in yet. Nothing is lost — the activity below fills in as soon as they check in.`;
+      return;
+    }
+    ui.dashboardState.textContent = `${name} ${spoken}. Everything they plan, build, and ship streams here live.`;
   }
 
   async function refreshSelectedTeam() {
@@ -4492,9 +4513,13 @@
         if (!event) continue;
         if (stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("The activity service returned an event outside the selected team scope", 0, "invalid_response", requestId);
         appendActivityEvent(event);
+        session.runtimeStreamLive = true;
+        renderWorkspaceHeadline();
         setSourceState(ui.activityState, "Runtime live", "success");
       }
       if (!controller.signal.aborted && generation === session.workspaceGeneration) {
+        session.runtimeStreamLive = false;
+        renderWorkspaceHeadline();
         setSourceState(ui.activityState, "Stream ended", "error");
         ui.activityRetry.hidden = false;
       }
