@@ -29,8 +29,8 @@ h1, h2, h3, p { margin-top: 0; }
    labels — the dev-tool signature — so the product reads as a product, not a
    terminal. */
 code, pre, .mono, time { font-family: var(--font-mono); }
-h1, h2, h3, h4, h5, h6 { font-family: var(--font-sans); }
-h1, h2, h3 { max-width: 24ch; line-height: 1.04; letter-spacing: -.032em; font-weight: 680; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+h1, h2, h3 { max-width: 24ch; line-height: 1.04; letter-spacing: -.032em; font-weight: 700; }
 h1 { font-size: clamp(2.6rem, 5.6vw, 4.6rem); }
 h2 { font-size: clamp(1.9rem, 3.6vw, 3.2rem); }
 h3 { font-size: 1.32rem; }
@@ -155,7 +155,7 @@ p { color: var(--muted); }
 .hero { position: relative; overflow: hidden; }
 .home-hero { min-height: 0; padding: clamp(92px, 12vw, 170px) 0 clamp(80px, 10vw, 140px); }
 .hero-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(390px, .92fr); align-items: end; gap: clamp(70px, 9vw, 140px); }
-.hero-copy h1 { max-width: 13ch; margin-bottom: 1.7rem; font-size: clamp(3.2rem, 6.5vw, 5.45rem); font-weight: 690; }
+.hero-copy h1 { max-width: 13ch; margin-bottom: 1.7rem; font-size: clamp(3.2rem, 6.5vw, 5.45rem); font-weight: 700; }
 .hero-copy h1 em { display: block; color: var(--aqua); font-style: normal; font-weight: 700; }
 .hero-lead { max-width: 640px; margin-bottom: 2rem; color: var(--muted-bright); font-size: 1.08rem; }
 .panel-topbar { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1.25rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
