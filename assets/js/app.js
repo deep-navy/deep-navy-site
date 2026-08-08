@@ -145,6 +145,10 @@
     creditBalancePanel: document.querySelector("[data-credit-balance-panel]"),
     creditBalanceState: document.querySelector("[data-credit-balance-state]"),
     creditBalanceValue: document.querySelector("[data-credit-balance-value]"),
+  railSpend: document.querySelector("[data-rail-spend]"),
+  railSpendValue: document.querySelector("[data-rail-spend-value]"),
+  railSpendFill: document.querySelector("[data-rail-spend-fill]"),
+  railSpendNote: document.querySelector("[data-rail-spend-note]"),
     creditBalanceMessage: document.querySelector("[data-credit-balance-message]"),
     creditControl: document.querySelector("[data-credit-control]"),
     creditControlState: document.querySelector("[data-credit-control-state]"),
@@ -2902,6 +2906,7 @@
       const active = state === "active" || state.endsWith("_active");
       const row = document.createElement("div");
       row.className = active ? "crew-row is-on" : "crew-row";
+      row.dataset.roleKey = canonicalRole.key;
       const dot = document.createElement("i");
       dot.className = "crew-dot";
       dot.setAttribute("aria-hidden", "true");
@@ -2909,15 +2914,88 @@
       copy.className = "crew-copy";
       const name = document.createElement("strong");
       name.textContent = canonicalRole.label;
-      const doing = document.createElement("small");
-      doing.textContent = active ? "ready to work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
-      copy.append(name, doing);
+      const roleLine = document.createElement("small");
+      roleLine.textContent = active ? "ready to work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
+      copy.append(name, roleLine);
+      // What this agent is doing right now, taken from the newest event it
+      // produced. A roster that only says "active" tells the customer nothing
+      // they could not have assumed; the last thing each person touched is the
+      // reason to keep this page open.
+      const latest = latestActivityForRole(canonicalRole.key);
+      if (latest) {
+        const doing = document.createElement("span");
+        doing.className = "crew-doing";
+        doing.textContent = latest;
+        copy.append(doing);
+        row.classList.add("is-on");
+      }
       row.append(dot, copy);
       ui.agentList.append(row);
     });
     ui.agentsEmpty.hidden = true;
     ui.agentList.hidden = false;
     setSourceState(ui.agentsState, agents.length === 6 ? "6/6 roles" : `${agents.length}/6 provisioning`, agents.length === 6 ? "success" : "loading");
+  }
+
+  // The newest customer-visible event for one role, phrased as an activity
+  // rather than a record. Returns null when the stream has nothing for them,
+  // so the row stays quiet instead of inventing work.
+  function latestActivityForRole(roleKey) {
+    const events = Array.isArray(session.activityEvents) ? session.activityEvents : [];
+    for (const event of events) {
+      const role = agentRoleContract?.canonicalAgentRole?.(event?.agentRole);
+      if (!role || role.key !== roleKey) continue;
+      const summary = stringValue(event.safeSummary) || stringValue(event.title);
+      if (!summary) continue;
+      return summary.length > 46 ? `${summary.slice(0, 45).trimEnd()}…` : summary;
+    }
+    return null;
+  }
+
+  // Rewrite only the activity line on each crew row. Re-rendering the whole
+  // roster on every streamed event would restart the dot animation and fight
+  // the customer's scroll position.
+  function refreshCrewActivity() {
+    if (!ui.agentList || ui.agentList.hidden) return;
+    ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
+      const roleKey = row.dataset.roleKey;
+      if (!roleKey) return;
+      const latest = latestActivityForRole(roleKey);
+      let line = row.querySelector(".crew-doing");
+      if (!latest) {
+        if (line) line.remove();
+        return;
+      }
+      if (!line) {
+        line = document.createElement("span");
+        line.className = "crew-doing";
+        row.querySelector(".crew-copy")?.append(line);
+      }
+      if (line.textContent !== latest) line.textContent = latest;
+      row.classList.add("is-on");
+    });
+  }
+
+  // Spend against the prepaid balance. Shown only when both numbers are real:
+  // a budget bar with an invented denominator would be a lie about money.
+  function renderRailSpend() {
+    if (!ui.railSpend) return;
+    const remaining = session.creditBalance;
+    const consumed = session.creditPeriodConsumed;
+    if (remaining === null || remaining === undefined || consumed === null || consumed === undefined) {
+      ui.railSpend.hidden = true;
+      return;
+    }
+    const total = Number(remaining) + Number(consumed);
+    if (!Number.isFinite(total) || total <= 0) {
+      ui.railSpend.hidden = true;
+      return;
+    }
+    const percent = Math.max(0, Math.min(100, (Number(consumed) / total) * 100));
+    ui.railSpend.hidden = false;
+    if (ui.railSpendValue) ui.railSpendValue.textContent = formatCreditMicros(consumed);
+    if (ui.railSpendFill) ui.railSpendFill.style.width = `${percent.toFixed(1)}%`;
+    if (ui.railSpendNote) ui.railSpendNote.textContent = `${formatCreditMicros(remaining)} remaining`;
   }
 
   function agentRoleLabel(value) {
@@ -3084,6 +3162,7 @@
     session.creditBalance = balance;
     ui.creditBalancePanel.hidden = false;
     ui.creditBalanceValue.textContent = formatCreditMicros(balance);
+    renderRailSpend();
     ui.creditBalanceMessage.textContent = "Signed grants minus settled usage for this team. Open reservations and the paid-period hard limit are separate execution guardrails below.";
     setSourceState(ui.creditBalanceState, "Verified", "success");
   }
@@ -3181,6 +3260,8 @@
     ui.creditControl.hidden = false;
     ui.creditOpenReserved.textContent = formatCreditMicros(control.openReservedMicros);
     ui.creditPeriodConsumed.textContent = formatCreditMicros(control.periodConsumedMicros);
+    session.creditPeriodConsumed = int64Value(control.periodConsumedMicros);
+    renderRailSpend();
     ui.creditHardLimit.textContent = formatCreditMicros(control.hardLimitMicros);
     ui.creditEffectiveAvailable.textContent = formatCreditMicros(control.effectiveAvailableMicros);
     ui.creditHardLimitInput.value = microsInputValue(control.hardLimitMicros);
@@ -4584,6 +4665,7 @@
 
   function renderActivityLedger() {
     renderActivityFilters();
+    refreshCrewActivity();
     const allEntries = allActivityEntries();
     const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
     ui.activityList.replaceChildren();

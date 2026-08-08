@@ -228,18 +228,30 @@
             <div><dt>Repositories</dt><dd data-context-repositories>Not loaded</dd></div>
           </dl>
 
-          <div class="overview-grid">
-            <article class="app-dashboard" aria-labelledby="teams-title">
+          <div class="wspace">
+          <aside class="wspace-rail">
+            <div class="rail-group">
+              <h3 id="agents-title">Your team</h3>
+              <div class="empty-state" data-agents-empty><strong>Your roster appears here</strong><p>Product Manager, Engineering Manager, Designer and your engineers — listed once provisioning finishes.</p></div>
+              <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
+            </div>
+            <div class="rail-group" data-rail-spend hidden>
+              <h3>This month</h3>
+              <div class="rail-gauge">
+                <div class="rail-row"><span>Spent</span><span class="rail-value" data-rail-spend-value>—</span></div>
+                <div class="rail-track"><i data-rail-spend-fill style="width:0%"></i></div>
+                <div class="rail-row"><span data-rail-spend-note>of your prepaid balance</span></div>
+              </div>
+            </div>
+          </aside>
+          <div class="wspace-main">
+            <article class="app-dashboard is-flat" aria-labelledby="teams-title">
               <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3></div>
               <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Your first team starts working minutes after checkout.</p></div>
               <div class="status-list" data-team-list aria-live="polite" hidden></div>
             </article>
 
-            <article class="app-dashboard" aria-labelledby="agents-title">
-              <div class="app-dashboard-header"><h3 id="agents-title">Your team</h3><span class="data-source-badge" data-agents-state>Waiting</span></div>
-              <div class="empty-state" data-agents-empty><strong>Your roster appears here</strong><p>Product Manager, Engineering Manager, Designer and your engineers — listed once provisioning finishes.</p></div>
-              <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
-            </article>
+            <span hidden data-agents-state></span>
 
             <article class="app-dashboard overview-objective" aria-labelledby="objectives-title">
               <div class="app-dashboard-header"><h3 id="objectives-title">Objective &amp; initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
@@ -283,6 +295,7 @@
                 <div class="initiative-stack"><div><strong>Proposed initiatives</strong><span class="data-source-badge" data-initiative-state>Waiting</span></div><ol data-initiative-list></ol><p>Initiatives are reviewed here; any protected decision appears in the <a href="#workspace-approvals" data-view-link="approvals">approvals queue</a>.</p></div>
               </div>
             </article>
+          </div>
           </div>
         </section>
 
