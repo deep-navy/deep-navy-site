@@ -947,3 +947,47 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .rail-gauge .rail-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: .82rem; color: var(--ink); font-weight: 600; }
 .rail-track { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .rail-track > i { display: block; height: 100%; background: var(--aqua); }
+
+/* ══════════════════════════════════════════════════════════════════
+   Button contract.
+
+   Six states ship, not three: enabled, hover, focus, pressed, disabled
+   and busy. Two rules here are non-negotiable rather than stylistic:
+
+   - 44px minimum height. Below that, touch targets miss on phones.
+   - Destructive actions get their own semantic colour. Delete used to
+     be a dashed grey outline, which reads as an unfinished placeholder
+     rather than "this erases a team and its work". Risk must be
+     unmistakable before the click, not explained after it.
+   ══════════════════════════════════════════════════════════════════ */
+.button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+
+/* Busy keeps the label. A bare spinner drops the one piece of context
+   that tells the customer which action they are waiting on. */
+.button[aria-busy="true"] { cursor: progress; opacity: .75; }
+.button[aria-busy="true"]::before {
+  content: ""; width: .7em; height: .7em; border-radius: 50%; flex: none;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: button-busy .7s linear infinite;
+}
+@keyframes button-busy { to { transform: rotate(360deg); } }
+
+.button-danger {
+  color: rgb(var(--signal-crit-rgb));
+  border-color: rgb(var(--signal-crit-rgb) / .45);
+  border-style: solid;
+  background: rgb(var(--signal-crit-rgb) / .07);
+}
+.button-danger:hover:not(:disabled) {
+  color: rgb(var(--signal-crit-rgb));
+  border-color: rgb(var(--signal-crit-rgb) / .8);
+  background: rgb(var(--signal-crit-rgb) / .14);
+}
+
+/* Motion is a property of the product, not an effect per component:
+   one easing, three durations, and nothing moves for anyone who asked
+   the OS to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .button[aria-busy="true"]::before { animation: none; }
+  .crew-row.is-on .crew-dot { animation: none; }
+}
