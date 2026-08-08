@@ -40,13 +40,14 @@ jobs:
       - name: Check browser JavaScript
         run: |
           node --check assets/js/site.js
-          node --check assets/js/callback-scrubber.js
           node --check assets/js/platform-api-client.js
           node --check assets/js/organization-onboarding.js
           node --check assets/js/launch-contract.js
           node --check assets/js/app-state.js
           node --check assets/js/agent-roles.js
           node --check assets/js/app.js
+      - name: Check inline pre-paint scripts
+        run: node scripts/check_inline_scripts.cjs
       - name: Check onboarding contract flow
         run: npm test
       - name: Build static site
