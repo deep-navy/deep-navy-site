@@ -31,20 +31,29 @@
      rise. Each step is a real elevation — the previous palette collapsed
      five of these to one value, which is why every "raised" surface in the
      old build rendered perfectly flat. */
-  --abyss-0:  #02060b;   /* deepest ground — is it black? is it blue? */
-  --abyss-1:  #060c14;
-  --abyss-2:  #0a131d;
-  --abyss-3:  #0f1a26;
-  --abyss-4:  #16232f;
-  --abyss-5:  #1e2d3b;
+  --abyss-0:  #020a12;   /* deepest ground — is it black? is it blue? */
+  --abyss-1:  #05121e;
+  --abyss-2:  #081b2b;
+  --abyss-3:  #0d2537;
+  --abyss-4:  #123044;
+  --abyss-5:  #183b52;
 
-  /* Seafoam. --seafoam-4 is the signature; the darker steps exist because
-     seafoam on white is ~1.4:1 and cannot legally carry text. */
+  /* Seafoam — bioluminescence, and the only thing in the product that glows.
+     --seafoam-4 is the signature; the darker steps exist because seafoam on
+     white is ~1.4:1 and cannot legally carry text.
+
+     Two seafoams on the dark ground, on purpose. The emissive one lights
+     dots, halos and fills; text and thin strokes use the lower-chroma
+     sibling, because a saturated blue-green rendered as a hairline on abyss
+     shimmers and reads as blurred no matter what its contrast ratio says.
+     Contrast is necessary here and not sufficient. */
   --seafoam-1: #0a3d33;
   --seafoam-2: #0e7c63;
   --seafoam-3: #3fd9b4;
   --seafoam-4: #79f2d2;
   --seafoam-5: #9affdf;
+  --seafoam-emissive: #4fe8be;  /* dots, halos, fills — never text */
+  --seafoam-quiet:    #8fd9c4;  /* text and hairlines on abyss */
 
   /* Neutrals, biased a few degrees toward the seafoam so they read as chosen
      rather than inherited from a default grey. */
@@ -100,9 +109,9 @@
   --accent-strong:    var(--seafoam-1);
   --accent-rgb:       14 124 99;
 
-  --border:           rgb(2 6 11 / .14);
-  --border-strong:    rgb(2 6 11 / .24);
-  --text-rgb:         6 12 20;
+  --border:           rgb(2 10 18 / .14);
+  --border-strong:    rgb(2 10 18 / .24);
+  --text-rgb:         5 18 30;
 
   /* App-shell panels — light. The console keeps its elevation ladder, just
      inverted: paper tones rising toward white instead of navy rising from
@@ -115,9 +124,9 @@
   --text-dim:     var(--slate-2);
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
-  --scrim:        rgb(2 6 11 / .5);
-  --shadow-lg:    0 36px 120px rgb(2 6 11 / .18);
-  --shadow-panel: 0 18px 40px -30px rgb(2 6 11 / .35);
+  --scrim:        rgb(2 10 18 / .5);
+  --shadow-lg:    0 36px 120px rgb(2 10 18 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(2 10 18 / .35);
 
   color-scheme: light;
 }
@@ -128,7 +137,7 @@
     --surface:         var(--abyss-0);
     --surface-sunken:  var(--abyss-0);
     --surface-raised:  var(--abyss-2);
-    --surface-overlay: rgb(5 10 16 / .72);
+    --surface-overlay: rgb(2 10 18 / .72);
 
     --text:            var(--ink-0);
     --text-muted:      var(--slate-1);
@@ -136,10 +145,10 @@
     --text-on-accent:  var(--abyss-0);
 
     --accent:          var(--seafoam-4);
-    --accent-text:     var(--seafoam-4);
+    --accent-text:     var(--seafoam-quiet);
     --accent-graphic:  var(--seafoam-4);
     --accent-strong:   var(--seafoam-5);
-    --accent-rgb:      121 242 210;
+    --accent-rgb:      79 232 190;
 
     --border:          rgb(244 247 245 / .12);
     --border-strong:   rgb(244 247 245 / .2);
@@ -151,11 +160,11 @@
     --panel-1:      var(--abyss-2);
     --panel-2:      var(--abyss-3);
     --panel-3:      var(--abyss-4);
-    --panel-deep:   #0a1119;
+    --panel-deep:   var(--abyss-1);
     --text-dim:     #b7c4c8;
     --signal-warn:  #f5c97b;
     --signal-crit:  #f58e7e;
-    --scrim:        rgb(0 3 7 / .86);
+    --scrim:        rgb(1 5 9 / .86);
     --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
     --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
@@ -168,7 +177,7 @@
   --surface:         var(--abyss-0);
   --surface-sunken:  var(--abyss-0);
   --surface-raised:  var(--abyss-2);
-  --surface-overlay: rgb(5 10 16 / .72);
+  --surface-overlay: rgb(2 10 18 / .72);
 
   --text:            var(--ink-0);
   --text-muted:      var(--slate-1);
@@ -176,10 +185,10 @@
   --text-on-accent:  var(--abyss-0);
 
   --accent:          var(--seafoam-4);
-  --accent-text:     var(--seafoam-4);
+  --accent-text:     var(--seafoam-quiet);
   --accent-graphic:  var(--seafoam-4);
   --accent-strong:   var(--seafoam-5);
-  --accent-rgb:      121 242 210;
+  --accent-rgb:      79 232 190;
 
   --border:          rgb(244 247 245 / .12);
   --border-strong:   rgb(244 247 245 / .2);
@@ -191,11 +200,11 @@
   --panel-1:      var(--abyss-2);
   --panel-2:      var(--abyss-3);
   --panel-3:      var(--abyss-4);
-  --panel-deep:   #0a1119;
+  --panel-deep:   var(--abyss-1);
   --text-dim:     #b7c4c8;
   --signal-warn:  #f5c97b;
   --signal-crit:  #f58e7e;
-  --scrim:        rgb(0 3 7 / .86);
+  --scrim:        rgb(1 5 9 / .86);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
@@ -219,8 +228,8 @@
   --accent-strong:   var(--seafoam-1);
   --accent-rgb:      14 124 99;
 
-  --border:          rgb(2 6 11 / .14);
-  --border-strong:   rgb(2 6 11 / .24);
+  --border:          rgb(2 10 18 / .14);
+  --border-strong:   rgb(2 10 18 / .24);
   --text-rgb:        6 12 20;
 
   /* App-shell panels — light. The console keeps its elevation ladder, just
@@ -234,9 +243,9 @@
   --text-dim:     var(--slate-2);
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
-  --scrim:        rgb(2 6 11 / .5);
-  --shadow-lg:    0 36px 120px rgb(2 6 11 / .18);
-  --shadow-panel: 0 18px 40px -30px rgb(2 6 11 / .35);
+  --scrim:        rgb(2 10 18 / .5);
+  --shadow-lg:    0 36px 120px rgb(2 10 18 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(2 10 18 / .35);
 
   color-scheme: light;
 }
