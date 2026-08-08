@@ -2591,7 +2591,7 @@
     if (!validObjectiveKpis(kpis)) {
       ui.objectiveKpiList.hidden = true;
       ui.objectiveKpiEmpty.hidden = false;
-      setEmptyState(ui.objectiveKpiEmpty, "KPI projection unavailable", "ObjectiveService returned malformed KPI definitions. No proposed values were displayed.");
+      setEmptyState(ui.objectiveKpiEmpty, "Measures unavailable", "We could not read the success measures for this objective. Nothing was changed.");
       setSourceState(ui.objectiveKpiState, "Invalid response", "error");
       return;
     }
@@ -2607,7 +2607,7 @@
     });
     ui.objectiveKpiEmpty.hidden = kpis.length > 0;
     ui.objectiveKpiList.hidden = kpis.length === 0;
-    if (!kpis.length) setEmptyState(ui.objectiveKpiEmpty, "No KPIs proposed", "ObjectiveService returned no KPI definitions for this objective yet.");
+    if (!kpis.length) setEmptyState(ui.objectiveKpiEmpty, "No measures yet", "Your Product Manager adds success measures as it breaks this objective down.");
     setSourceState(ui.objectiveKpiState, kpis.length ? `${kpis.length} proposed` : "None yet", kpis.length ? "success" : "");
   }
 
@@ -2626,7 +2626,7 @@
       ui.objectiveSelect.replaceChildren();
       ui.objectiveRecord.hidden = true;
       ui.objectiveEmpty.hidden = false;
-      setEmptyState(ui.objectiveEmpty, "No business objectives", "ObjectiveService returned no durable objectives for this team. Submit the first outcome its agents should pursue.");
+      setEmptyState(ui.objectiveEmpty, "No objectives yet", "Describe what you want built. Your Product Manager turns it into issues and the engineers start work.");
       ui.objectiveForm.hidden = false;
       ui.objectiveTitleInput.disabled = false;
       ui.objectiveDescriptionInput.disabled = false;

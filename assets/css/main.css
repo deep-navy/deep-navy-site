@@ -848,7 +848,10 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    dashboard title; the objective ask is one glowing field; activity reads as
    a timeline surfacing from the deep rather than a table of rows. */
 .app-body .now-line { font-size: clamp(1.35rem, 2.9vw, 1.75rem); letter-spacing: -.03em; font-weight: 600; text-wrap: balance; }
-.app-body .wctx { color: var(--text-muted); font-family: var(--font-mono); font-size: .68rem; margin-top: .3rem; }
+.app-body /* The sentence under the team name is the one line that tells a customer what
+   this product does for them, so it reads as prose. Monospace at .68rem made
+   it look like console output next to the operator badges. */
+.wctx { color: var(--text-muted); font-size: .95rem; line-height: 1.55; max-width: 58ch; margin-top: .45rem; }
 
 .objective-form { display: grid; gap: .8rem; margin-top: .85rem; }
 .objective-field { border: 1px solid var(--line); border-radius: 4px; background: var(--panel-1); transition: border-color .26s ease, box-shadow .26s ease; }

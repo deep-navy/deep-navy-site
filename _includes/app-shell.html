@@ -230,7 +230,7 @@
 
           <div class="overview-grid">
             <article class="app-dashboard" aria-labelledby="teams-title">
-              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3><span class="data-source-badge">Live</span></div>
+              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3></div>
               <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Your first team starts working minutes after checkout.</p></div>
               <div class="status-list" data-team-list aria-live="polite" hidden></div>
             </article>
@@ -273,7 +273,7 @@
                 <span class="eyebrow">Selected objective</span>
                 <strong data-objective-title></strong>
                 <p data-objective-description></p>
-                <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not reported</span><p data-objective-dispatch-detail>Waiting for the durable TPM handoff status.</p></div>
+                <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not started</span><p data-objective-dispatch-detail>Your Product Manager picks this up and turns it into issues.</p></div>
                 <section class="objective-kpis" aria-labelledby="objective-kpis-title">
                   <div><strong id="objective-kpis-title">Proposed KPIs</strong><span class="data-source-badge" data-objective-kpi-state>Waiting</span></div>
                   <div class="empty-state objective-kpi-empty" data-objective-kpi-empty><strong>No KPIs proposed</strong><p>ObjectiveService has not returned KPI definitions for this objective.</p></div>
@@ -387,7 +387,7 @@
               <span class="data-source-badge" data-invoice-state>Waiting</span>
             </div>
             <p class="invoice-history-note">Server-verified billing records for this organization. Payment return screens never create invoice state.</p>
-            <div class="empty-state invoice-empty" data-invoice-empty><strong>No invoices loaded</strong><p>Invoice history will appear after the signed billing projection is available.</p></div>
+            <div class="empty-state invoice-empty" data-invoice-empty><strong>No invoices yet</strong><p>Your invoices appear here after your first billing period.</p></div>
             <ol class="invoice-list" data-invoice-list aria-live="polite" hidden></ol>
             <button class="button button-quiet button-small invoice-more" type="button" data-invoice-more hidden>Load more invoices</button>
           </section>
