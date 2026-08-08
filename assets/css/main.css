@@ -991,3 +991,45 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .button[aria-busy="true"]::before { animation: none; }
   .crew-row.is-on .crew-dot { animation: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Depth.
+
+   The ground is one flat colour, so a page without panels - signing in,
+   an empty workspace - renders as a black rectangle regardless of how
+   blue the token is. Light falls from the surface: the top of the page
+   sits nearer it and the bottom recedes into the trench. This is the
+   whole reason the brand is called deep navy, and it costs two
+   gradients that never repaint.
+   ══════════════════════════════════════════════════════════════════ */
+body {
+  background-image:
+    radial-gradient(120% 65% at 50% -10%, var(--accent-a08) 0%, transparent 62%),
+    linear-gradient(180deg, var(--abyss-2) 0%, var(--abyss-0) 46%, #030d18 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+:root[data-theme="light"] body { background-image: none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) body { background-image: none; }
+}
+
+/* The one thing on the page that glows. A primary action rendered in
+   neutral grey on a dark ground disappears, which is how "Sign in with
+   GitHub" - the only action on that screen - ended up the quietest
+   element on it. GitHub owns the mark and the button's own colours, so
+   the emphasis goes around it rather than repainting their brand. */
+.signed-out-card .button-github,
+.button-github {
+  box-shadow:
+    0 0 0 1px var(--accent-a35),
+    0 0 28px -6px rgb(var(--accent-rgb) / .5);
+}
+.button-github:hover {
+  box-shadow:
+    0 0 0 1px rgb(var(--accent-rgb) / .6),
+    0 0 34px -4px rgb(var(--accent-rgb) / .7);
+}
+@media (prefers-reduced-motion: reduce) {
+  .button-github { transition: none; }
+}
