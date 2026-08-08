@@ -28,6 +28,30 @@ html_files.each do |file|
   errors << "#{relative}: duplicate ids #{duplicate_ids.join(', ')}" unless duplicate_ids.empty?
   ids_by_file[file] = ids.to_set
 
+  # Brand language, enforced rather than aspirational. The customer never reads
+  # our internal vocabulary: service names, and the words we use among
+  # ourselves for machinery they do not have. Guidelines nobody checks are the
+  # normal outcome; this is the check.
+  # Enforced on the product surface the customer actually works in. The
+  # architecture and API pages describe the system on purpose and are a
+  # separate content decision, tracked rather than blocked here.
+  product_surface = relative.to_s.start_with?("app/")
+  api_reference = relative.to_s.start_with?("docs/api/")
+  visible = html.gsub(%r{<(script|style)\b.*?</\1>}mi, " ").gsub(/<[^>]+>/, " ")
+  {
+    "internal service name" => /\b(Objective|Activity|Team|Billing|Auth|Agent)Service\b/,
+    "internal jargon" => /\b(durable handoff|signed billing projection|TPM handoff|reconciliation loop)\b/i,
+    "diminishing word" => /\b(just|simply) (click|enter|add|run|type)\b/i
+  }.each do |label, pattern|
+    next if api_reference && label == "internal service name"
+
+    match = visible[pattern]
+    next unless match
+    next unless product_surface
+
+    errors << "#{relative}: #{label} in customer copy: #{match.inspect}"
+  end
+
   # A render-blocking <script src> in <head> is a single point of failure for
   # the whole page: if that one request stalls - flaky network, VPN, proxy, an
   # extension holding it - the parser blocks before <body> exists and the

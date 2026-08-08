@@ -2505,7 +2505,7 @@
     ui.objectiveKpiList.replaceChildren();
     ui.objectiveKpiList.hidden = true;
     ui.objectiveKpiEmpty.hidden = false;
-    setEmptyState(ui.objectiveKpiEmpty, "No KPIs proposed", "ObjectiveService has not returned KPI definitions for this objective.");
+    setEmptyState(ui.objectiveKpiEmpty, "No measures yet", "Your Product Manager adds success measures as it breaks this objective down.");
     setSourceState(ui.objectiveKpiState, "Waiting");
     setFieldError(ui.objectiveError, "");
     setSourceState(ui.objectiveState, "Waiting");
