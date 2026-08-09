@@ -117,6 +117,92 @@ Placeholder copy, written to teach by example rather than instruct:
     address form and the 3DS redirect, but I would rather you check the
     data than take my word for it. Ship the highest-impact fix first.
 
+## The agent log
+
+The board answers "where is my work". It does not answer "what is my team
+actually doing", and that question is the one that decides whether a person
+trusts an autonomous product at all. Every AI-UX source says the same thing:
+show the work, or the system reads as a black box making changes to your
+repository.
+
+**The log is a work journal, not an event stream.** It reads like catching up
+on a team channel:
+
+    Riley · Product Manager                                    09:42
+    Read the checkout flow across 14 files. The address form posts on
+    every keystroke, which is where the drop-off is. Filed three issues.
+    → #12 Address form · #13 3DS redirect · #14 Retry logic
+
+    Morgan · Engineering Manager                               09:48
+    Assigned #12 to Ada — she wrote the current form. Holding #14 until
+    #12 lands; they touch the same file.
+
+    Ada · Engineer                                             09:51
+    ● Working #12 · checkout/AddressForm.tsx
+    Debounced validation to blur instead of keystroke. Tests pass.
+
+    Ada · Engineer                                             10:04
+    Opened PR #284. Two reviewers requested.
+    ↳ ran tests · read 6 files · edited 2 files
+
+Compare that to what ships today for the same events:
+
+    A2A propose initiative
+    7f3a1c2e-... → 9b2d4f81-...
+    ECONOMICSSERVICE SNAPSHOT MEASURED SNAPSHOT
+    Tool · deep navy assign work
+
+### The rules
+
+1. **Lead with the agent's own words.** Events already carry `safe_summary` —
+   customer-safe text, secret-scrubbed at the gateway boundary, up to 1024
+   bytes. The UI currently ignores it and builds a title out of metadata
+   instead. Leading with the summary is most of the fix and needs no new API.
+
+2. **Group by turn, not by event.** Consecutive events from one agent in one
+   session are one entry. Tool calls fold in as a quiet trailing line
+   (`ran tests · read 6 files`), because "which tools ran" is evidence for the
+   claim above it, not news in itself.
+
+3. **Names, never identifiers.** Agents get human names — Riley, Morgan, Ada.
+   A UUID arrow is not a conversation. Roles stay as the subtitle so a customer
+   learns who does what.
+
+4. **Every entry links to its artifact.** Issue, pull request, commit, file.
+   The log is a way into the work, not a read-only record of it.
+
+5. **Nothing internal is ever printed.** No service names, snapshot labels,
+   event types or sequence numbers. This must be enforced at runtime, not only
+   at build time — the current check reads rendered HTML and cannot see strings
+   that app.js constructs after load, which is exactly how these shipped.
+
+6. **Silence is reported honestly.** If no agent has said anything for a while,
+   say when the last thing happened rather than showing an empty list under a
+   claim that the team is active.
+
+### Where it lives
+
+Not a tab. The log is the right-hand column of mission control, running beside
+the board, so cause and effect sit next to each other: a card moves, and the
+sentence explaining why is level with it. Clicking a card filters the log to
+that piece of work.
+
+### What it needs
+
+**UI, no API change:** lead with `safe_summary`; group consecutive same-agent
+events into turns; fold tool calls into the turn; assign and store human names
+per agent; drop every constructed `A2A …` / `Tool · …` title.
+
+**Runtime, the real work:** agents must narrate. Today a tool call emits
+`tool_name` and a result; nobody writes the sentence. Each role's prompt needs
+to end its meaningful steps with one customer-facing sentence saying what it
+did and why — which is also the cheapest possible improvement, because it is
+prompt work, not architecture.
+
+**Guardrail:** a runtime check that fails the build if any string rendered into
+the log matches a service name, an event type or a snapshot label. The
+build-time check that exists reads HTML; this one has to read app.js.
+
 ## What each state means, in the customer's words
 
 | State | What it means | Never say |
