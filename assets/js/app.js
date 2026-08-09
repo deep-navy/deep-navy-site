@@ -2834,7 +2834,8 @@
     ui.objectiveTitleInput.disabled = true;
     ui.objectiveDescriptionInput.disabled = true;
     ui.objectiveSubmit.disabled = true;
-    ui.objectiveSubmit.textContent = "Submitting…";
+    ui.objectiveSubmit.textContent = "Starting…";
+    ui.objectiveSubmit.setAttribute("aria-busy", "true");
     setSourceState(ui.objectiveState, "Submitting", "loading");
     try {
       const fingerprint = `${team.id}:${title.toLowerCase()}:${description}`;
@@ -2864,7 +2865,8 @@
       ui.objectiveDescriptionInput.disabled = false;
       ui.objectiveSubmit.disabled = false;
     } finally {
-      ui.objectiveSubmit.textContent = "Submit objective";
+      ui.objectiveSubmit.textContent = "Start the work";
+    ui.objectiveSubmit.removeAttribute("aria-busy");
     }
   }
 
@@ -4771,6 +4773,11 @@
     if (!ui.descent || !ui.descentList) return;
     const work = allActivityEntries().filter((entry) => entry.category === "delivery" && (entry.githubIssueId || entry.pullRequestId));
     ui.descentList.replaceChildren();
+    // The ask is the headline only until there is work. After that the work
+    // leads and asking for more is a quiet control, not a question the screen
+    // opens with.
+    const ask = document.querySelector(".ask");
+    if (ask) ask.classList.toggle("is-secondary", work.length > 0);
     if (!work.length) { ui.descent.hidden = true; return; }
     ui.descent.hidden = false;
 

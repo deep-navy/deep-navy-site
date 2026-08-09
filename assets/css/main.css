@@ -1176,3 +1176,11 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .descent-band[data-state="shipped"] .descent-item:hover { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) { .descent-item.is-live::before { animation: none; } }
+
+/* Once work exists the ask stops being the headline: it keeps its place so it
+   is never hunted for, but the work above it leads. */
+.ask.is-secondary { order: 2; padding-top: 1.4rem; border-top: 1px solid var(--line); border-bottom: 0; }
+.ask.is-secondary .ask-head h3 { font-size: var(--t-sm); color: var(--muted); font-family: var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.wspace-main { display: flex; flex-direction: column; }
+.descent { order: 1; }
+.onnow { order: 0; }
