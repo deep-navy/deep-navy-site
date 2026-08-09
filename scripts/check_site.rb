@@ -52,11 +52,15 @@ html_files.each do |file|
     errors << "#{relative}: #{label} in customer copy: #{match.inspect}"
   end
 
-  # style-src 'self' refuses style attributes, so an inline style silently does
-  # nothing in a browser while looking correct in the source. That is how the
-  # icon sprite shipped un-hidden and both gauges shipped frozen at zero.
-  html.scan(%r{\sstyle="[^"]*"}).each do
-    errors << "#{relative}: inline style attribute is blocked by style-src 'self'; use a class"
+  # style-src 'self' refuses style attributes, so on a page that ships that
+  # policy an inline style silently does nothing while looking correct in the
+  # source. That is how the icon sprite shipped un-hidden and both gauges
+  # shipped frozen at zero. Only pages carrying the policy are held to it;
+  # the marketing pages do not ship it and are not affected.
+  if html.match?(%r{style-src 'self'}) && !html.match?(%r{style-src[^;]*'unsafe-inline'})
+    html.scan(%r{\sstyle="[^"]*"}).each do
+      errors << "#{relative}: inline style attribute is blocked by this page's style-src 'self'; use a class"
+    end
   end
 
   # A render-blocking <script src> in <head> is a single point of failure for
