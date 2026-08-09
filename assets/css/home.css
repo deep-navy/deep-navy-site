@@ -1,0 +1,97 @@
+/* ============================================================================
+   Landing page.
+   ============================================================================
+
+   Scoped to .lp so none of it can leak into the app, and so it does not have
+   to fight the old marketing styles for specificity.
+
+   The page is built around one object: a pull request an agent opened. That is
+   what the product actually produces, so showing a real one answers "is this
+   real" faster than any amount of prose about autonomous engineering. It is
+   the hero, not an illustration beside the hero.
+
+   Flat navy throughout, hairlines for structure, seafoam used only where
+   something is live or is the next action.
+   ========================================================================= */
+
+.lp { --gutter: clamp(1.25rem, 4vw, 3rem); }
+.lp-shell { width: min(1180px, 100% - var(--gutter) * 2); margin-inline: auto; }
+
+/* ---- hero -------------------------------------------------------------- */
+.lp-hero { padding: clamp(3rem, 8vw, 6.5rem) 0 clamp(2.5rem, 6vw, 4.5rem); border-bottom: 1px solid var(--line); }
+.lp-hero-grid { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: start; grid-template-columns: 1fr; }
+@media (min-width: 960px) { .lp-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+
+.lp-eyebrow { display: inline-flex; align-items: center; gap: .55rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.1rem; }
+.lp-live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); animation: lp-breathe 2.6s ease-in-out infinite; }
+@keyframes lp-breathe { 0%, 100% { opacity: .5; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
+
+.lp-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.4rem, 5.4vw, 3.9rem); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 1.1rem; max-width: 16ch; text-wrap: balance; }
+.lp-h1 em { font-style: normal; color: var(--accent-text); }
+.lp-lede { font-size: var(--t-md); line-height: 1.6; color: var(--text-muted); max-width: 52ch; margin: 0 0 1.9rem; }
+
+.lp-cta { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 46px; padding: 0 1.3rem; border: 1px solid transparent; border-radius: 2px; font-family: var(--font-sans); font-size: var(--t-sm); font-weight: 600; text-decoration: none; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, color 140ms ease; }
+.lp-btn-go { background: var(--accent-graphic); color: var(--abyss-0); }
+.lp-btn-go:hover { background: var(--accent-strong); color: var(--abyss-0); }
+.lp-btn-quiet { border-color: var(--line-mid); color: var(--ink); }
+.lp-btn-quiet:hover { border-color: var(--accent-graphic); color: var(--accent-text); }
+.lp-note { margin: .85rem 0 0; font-size: var(--t-xs); color: var(--muted); }
+
+/* ---- the artifact: a pull request, rendered as the object it is --------- */
+.pr { border: 1px solid var(--line); background: var(--panel-1); }
+.pr-top { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .08em; color: var(--muted); }
+.pr-merged { margin-left: auto; color: var(--accent-text); }
+.pr-body { padding: 1rem .9rem; }
+.pr-title { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .2rem; }
+.pr-by { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); margin: 0 0 .9rem; }
+.pr-diff { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 1.75; border: 1px solid var(--line); background: var(--abyss-0); padding: .6rem .7rem; overflow-x: auto; }
+.pr-diff .add { color: var(--accent-text); }
+.pr-diff .del { color: var(--coral); }
+.pr-diff .ctx { color: var(--muted); }
+.pr-reviews { display: grid; gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.pr-review { display: flex; gap: .55rem; align-items: baseline; font-size: var(--t-xs); }
+.pr-review b { font-weight: 600; }
+.pr-ok { color: var(--accent-text); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; }
+.pr-wait { color: var(--signal-warn); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; }
+
+/* ---- sections ---------------------------------------------------------- */
+.lp-section { padding: clamp(2.75rem, 6vw, 4.5rem) 0; border-bottom: 1px solid var(--line); }
+.lp-label { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.4rem; }
+.lp-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.028em; margin: 0 0 .6rem; max-width: 22ch; }
+.lp-sub { color: var(--text-muted); max-width: 58ch; margin: 0 0 2rem; }
+
+/* Steps are a real sequence, so they are numbered. Order carries meaning
+   here: the plan is free and precedes the payment, which is the whole
+   argument of the page. */
+.lp-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.lp-step { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 1.2rem; padding: 1.2rem 0; border-top: 1px solid var(--line); align-items: start; }
+.lp-step:last-child { border-bottom: 1px solid var(--line); }
+.lp-step::before { counter-increment: step; content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .12em; color: var(--muted); padding-top: .3rem; }
+.lp-step h3 { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .25rem; }
+.lp-step p { margin: 0; color: var(--text-muted); font-size: var(--t-sm); max-width: 60ch; }
+.lp-step .free { color: var(--accent-text); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .12em; text-transform: uppercase; margin-left: .5rem; }
+
+/* ---- the roster -------------------------------------------------------- */
+.lp-crew { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.lp-crew li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1.2rem; padding: .85rem 0; border-top: 1px solid var(--line); align-items: baseline; }
+.lp-crew li:last-child { border-bottom: 1px solid var(--line); }
+.lp-crew strong { font-size: var(--t-sm); font-weight: 600; }
+.lp-crew span { color: var(--text-muted); font-size: var(--t-sm); }
+@media (max-width: 620px) { .lp-crew li { grid-template-columns: 1fr; gap: .2rem; } }
+
+/* ---- price ------------------------------------------------------------- */
+.lp-price { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 800px) { .lp-price { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.lp-amount { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: clamp(2.2rem, 5vw, 3rem); letter-spacing: -.03em; line-height: 1; }
+.lp-amount small { font-family: var(--font-sans); font-size: var(--t-sm); color: var(--muted); letter-spacing: 0; }
+.lp-includes { margin: 1.2rem 0 0; padding: 0; list-style: none; display: grid; gap: .45rem; }
+.lp-includes li { display: flex; gap: .6rem; font-size: var(--t-sm); color: var(--text-muted); }
+.lp-includes li::before { content: "—"; color: var(--muted); }
+
+/* ---- close ------------------------------------------------------------- */
+.lp-close { padding: clamp(3rem, 7vw, 5rem) 0; text-align: center; }
+.lp-close .lp-h2 { margin-inline: auto; max-width: 20ch; }
+.lp-close .lp-cta { justify-content: center; }
+
+@media (prefers-reduced-motion: reduce) { .lp-live { animation: none; } }

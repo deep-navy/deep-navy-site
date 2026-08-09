@@ -44,6 +44,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ '/assets/fonts/grotesk-700.woff2' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/type.css' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+{% if page.extra_css %}<link rel="stylesheet" href="{{ page.extra_css | relative_url }}">{% endif %}
 {%- comment -%}
   Deliberately NOT deferred: this must execute before the first paint, or the
   page renders with the media-query theme and snaps to the stored one.

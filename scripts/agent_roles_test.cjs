@@ -34,7 +34,10 @@ test("canonical customer labels stay aligned with the pinned AgentRole enum", ()
 
 test("home role register presents the customer team structure", () => {
   const home = read("index.md");
-  const labels = [...home.matchAll(/<strong role="cell">([^<]+)<\/strong>/g)].map((match) => match[1]);
+  // The register moved from a table to a list in the 2026 rebuild. What the
+  // test protects is the vocabulary, not the element: the home page must name
+  // the same roles the product does, in the same words.
+  const labels = [...home.matchAll(/<li><strong>([^<]+)<\/strong>/g)].map((match) => match[1]);
   assert.deepEqual(labels, ["Product Manager", "Engineering Manager", "Product Designer", "Engineers × 3–50"]);
   // Marketing must not leak runtime jargon that no longer matches the product.
   assert.doesNotMatch(home, /Staff (Client|Backend|Platform) Engineer|Technical Product Manager/);

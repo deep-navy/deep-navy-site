@@ -1,114 +1,113 @@
 ---
 title: deep navy
 image: /assets/images/og/home.png
-description: A coordinated engineering team that carries a business objective through reviewed GitHub work, explicit decisions, and measured cost.
-body_class: home
+description: An engineering team that reads your repository, writes the issues, builds them, and reviews its own pull requests. The plan is free. You pay when they start building.
+body_class: home lp
 schema_type: Organization
-updated: 2026-07-17
+updated: 2026-08-08
+extra_css: /assets/css/home.css
 ---
 
-<section class="hero home-hero">
-  <div class="shell hero-inner">
-    <div class="hero-copy">
-      <span class="eyebrow">Early access / founding teams</span>
-      <h1>Engineering work, organized around an objective.</h1>
-      <p class="hero-lead">deep navy provisions a persistent engineering team around one objective — a Product Manager, an Engineering Manager, a Designer, and as many engineers as the work needs. You see the plan, GitHub delivery, protected decisions, normalized activity, and attributable cost.</p>
-      <div class="button-row hero-actions">
-        <a class="button button-primary button-large" href="{{ '/app/' | relative_url }}">Start onboarding <span aria-hidden="true">→</span></a>
-        <a class="button button-secondary button-large" href="{{ '/product/' | relative_url }}">Read the operating model</a>
+<section class="lp-hero">
+  <div class="lp-shell lp-hero-grid">
+    <div>
+      <p class="lp-eyebrow"><span class="lp-live" aria-hidden="true"></span> Early access · founding teams</p>
+      <h1 class="lp-h1">Your engineering team, <em>already in your repo</em>.</h1>
+      <p class="lp-lede">Six specialists — a product manager, an engineering manager, a product designer and three engineers. They read your codebase, write the issues, build them, and review each other's pull requests. You merge.</p>
+      <div class="lp-cta">
+        <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+        <a class="lp-btn lp-btn-quiet" href="#how">See how it works</a>
       </div>
-      <dl class="hero-facts" aria-label="Product facts">
-        <div><dt>Price</dt><dd>$599/mo per team · +$199 per added engineer</dd></div>
-        <div><dt>Access</dt><dd>Selected GitHub repositories</dd></div>
-        <div><dt>Control</dt><dd>Recorded approval decisions</dd></div>
-        <div><dt>Accounting</dt><dd>Cost by team and initiative</dd></div>
-      </dl>
+      <p class="lp-note">Free to connect and free to plan. You pay when the engineers start building.</p>
     </div>
 
-    <aside class="operating-brief" aria-label="Illustrative deep navy operating record">
-      <header><span>Operating record / illustrative</span><span>OBJ-014</span></header>
-      <div class="brief-objective"><span>Objective</span><strong>Reduce the time from repository connection to a reviewed change</strong><small>Current phase / pull request review</small></div>
-      <ol class="run-ledger">
-        <li><time>09:42</time><span>PLAN</span><p>Product Manager proposed the KPI definition.</p></li>
-        <li><time>09:48</time><span>GIT</span><p>Engineer 2 opened draft pull request #284; two peers queued to review.</p></li>
-        <li><time>09:51</time><span>HOLD</span><p>Release to 10% is waiting for an authorized decision.</p></li>
-      </ol>
-      <dl class="brief-totals"><div><dt>Repository scope</dt><dd>Selected</dd></div><div><dt>Team</dt><dd>PM · EM · Designer · 3 engineers</dd></div><div><dt>Approval state</dt><dd>Pending</dd></div></dl>
-      <p>Example record / values describe workflow state only.</p>
-    </aside>
+    <!-- The product makes pull requests, so the hero is a pull request. -->
+    <figure class="pr" aria-label="A pull request opened by a deep navy engineer">
+      <div class="pr-top"><span>IamGoodBad/Purizumu</span><span>#284</span><span class="pr-merged">merged</span></div>
+      <div class="pr-body">
+        <h2 class="pr-title">Restore focus when a dialog closes</h2>
+        <p class="pr-by">opened by engineer-2 · 41 min ago · +47 −12</p>
+        <pre class="pr-diff" aria-label="Diff excerpt"><code><span class="ctx">  useEffect(() =&gt; {</span>
+<span class="del">-   return () =&gt; setOpen(false)</span>
+<span class="add">+   const opener = document.activeElement</span>
+<span class="add">+   return () =&gt; opener?.focus()</span>
+<span class="ctx">  }, [])</span></code></pre>
+        <div class="pr-reviews">
+          <p class="pr-review"><b>Engineering Manager</b> <span class="pr-ok">approved</span></p>
+          <p class="pr-review"><b>Engineer 1</b> <span class="pr-ok">approved</span> <span>— added a test for the escape key path.</span></p>
+          <p class="pr-review"><b>Product Designer</b> <span class="pr-ok">approved</span></p>
+        </div>
+      </div>
+    </figure>
   </div>
 </section>
 
-<section class="section operating-model" aria-labelledby="organization-title">
-  <div class="shell editorial-split">
-    <header class="section-heading">
-      <span class="eyebrow">Operating model / 01</span>
-      <h2 id="organization-title">A whole team. One shared record.</h2>
-      <p>Roles are durable responsibilities with explicit inputs and outputs. The objective stays attached to the work, and every shipped change gets two peer reviews.</p>
-    </header>
-    <div class="role-register" role="table" aria-label="Default engineering roles">
-      <div class="register-head" role="row"><span role="columnheader">Role</span><span role="columnheader">Owns</span><span role="columnheader">Produces</span></div>
-      <div role="row"><strong role="cell">Product Manager</strong><span role="cell">Objective, KPIs, and GitHub issues</span><span role="cell">Acceptance criteria and initiative plan</span></div>
-      <div role="row"><strong role="cell">Engineering Manager</strong><span role="cell">Triage, routing, and review</span><span role="cell">Work assigned to the engineer who knows that code best</span></div>
-      <div role="row"><strong role="cell">Product Designer</strong><span role="cell">User states and Figma</span><span role="cell">Interaction specification</span></div>
-      <div role="row"><strong role="cell">Engineers × 3–50</strong><span role="cell">Implementation and adversarial peer review</span><span role="cell">Reviewed changes, tests, and deployments — three included, add more for $199/month each</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="section workflow-section" aria-labelledby="workflow-title">
-  <div class="shell split-heading">
-    <div><span class="eyebrow">Work sequence / 02</span><h2 id="workflow-title">The delivery chain remains inspectable.</h2></div>
-    <p>Every transition has a durable artifact or server-confirmed state.</p>
-  </div>
-  <ol class="shell workflow-steps">
-    <li><span>01</span><div><h3>Objective</h3><p>State the business result and review the proposed KPI definitions.</p></div></li>
-    <li><span>02</span><div><h3>Scope</h3><p>Install the GitHub App and select the repositories the team may use.</p></div></li>
-    <li><span>03</span><div><h3>Delivery</h3><p>Follow issues, branches, checks, reviews, and draft pull requests.</p></div></li>
-    <li><span>04</span><div><h3>Decision</h3><p>Resolve protected actions and compare cost with the observed KPI signal.</p></div></li>
-  </ol>
-</section>
-
-<section class="section economics-preview" aria-labelledby="economics-title">
-  <div class="shell economics-grid">
-    <div class="economics-copy">
-      <span class="eyebrow">Engineering economics / 03</span>
-      <h2 id="economics-title">Cost belongs next to the work.</h2>
-      <p>Provider usage is reconciled into a durable ledger and attributed to the team and initiative that incurred it. Outcome events retain source and update time.</p>
-      <a class="text-link" href="{{ '/economics/' | relative_url }}">Read the cost model <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="economics-card" aria-label="Engineering economics field map">
-      <div class="panel-topbar"><strong>Customer economics / field map</strong><span>TEAM SCOPE</span></div>
-      <table class="evidence-ledger"><thead><tr><th>Field</th><th>Source</th><th>Customer view</th></tr></thead><tbody><tr><td>Attributable cost</td><td>Provider usage ledger</td><td>Currency amount</td></tr><tr><td>Credits used</td><td>Credit ledger</td><td>Measured balance</td></tr><tr><td>Credits remaining</td><td>Plan balance</td><td>Measured balance</td></tr><tr><td>Updated</td><td>Economics service</td><td>Timestamp</td></tr></tbody></table>
-      <p class="illustrative-note">The customer view is limited to usage, credits, budgets, and attributable cost.</p>
-    </div>
-  </div>
-</section>
-
-<section class="section boundary-section" aria-labelledby="boundaries-title">
-  <div class="shell editorial-split">
-    <header class="section-heading">
-      <span class="eyebrow">Control path / 04</span>
-      <h2 id="boundaries-title">Credentials and authority stay server-side.</h2>
-      <p>The browser gets public runtime coordinates and in-memory user tokens. Provider credentials remain in managed services.</p>
-      <div class="button-row"><a class="button button-secondary" href="{{ '/security/' | relative_url }}">Security model</a><a class="text-link" href="{{ '/trust/' | relative_url }}">Control status →</a></div>
-    </header>
-    <ol class="boundary-map" aria-label="Customer request path">
-      <li><span>01</span><strong>Browser</strong><p>PKCE sign-in. No provider secrets.</p></li>
-      <li><span>02</span><strong>Platform API</strong><p>Authentication, authorization, validation, persistence.</p></li>
-      <li><span>03</span><strong>Team runtime</strong><p>Dedicated namespace and Gateway per team.</p></li>
-      <li><span>04</span><strong>External systems</strong><p>Short-lived, scoped GitHub and model access.</p></li>
+<section class="lp-section" id="how">
+  <div class="lp-shell">
+    <p class="lp-label">How it works</p>
+    <h2 class="lp-h2">See the plan before you pay for the work.</h2>
+    <p class="lp-sub">Most tools ask for a card before they show you anything. Your product manager reads your repository and files real issues first — in your GitHub, under your account, where you can judge whether it understood your codebase.</p>
+    <ol class="lp-steps">
+      <li class="lp-step">
+        <div><h3>Connect a repository<span class="free">Free</span></h3>
+        <p>Sign in with GitHub and pick a repo. We ask for the permissions the work needs and name each one — nothing else.</p></div>
+      </li>
+      <li class="lp-step">
+        <div><h3>Say what you want<span class="free">Free</span></h3>
+        <p>One sentence, the way you would tell a colleague. "Cut our checkout drop-off." "Get the flaky tests under control."</p></div>
+      </li>
+      <li class="lp-step">
+        <div><h3>Read the plan<span class="free">Free</span></h3>
+        <p>Your product manager breaks it into issues with acceptance criteria and files them in your repository. Open GitHub and read them. If it misread your codebase, you have lost nothing.</p></div>
+      </li>
+      <li class="lp-step">
+        <div><h3>Start the team</h3>
+        <p>Engineers pick up the issues and build. Every pull request needs two engineer reviews and the engineering manager's approval before it can merge — the same bar you would hold a human team to.</p></div>
+      </li>
     </ol>
   </div>
 </section>
 
-<section class="section pilot-section" aria-labelledby="pilot-title">
-  <div class="shell editorial-split">
-    <header class="section-heading"><span class="eyebrow">Founding pilots / 05</span><h2 id="pilot-title">Start with a bounded initiative.</h2><p>Early access is hands-on. We agree on the objective, repository scope, subscription, and success measure before activation.</p></header>
-    <div class="pilot-register">
-      <a href="{{ '/solutions/#founders' | relative_url }}"><span>Founder</span><strong>Product direction and a first measurable objective</strong><em>Read fit →</em></a>
-      <a href="{{ '/solutions/#product-leaders' | relative_url }}"><span>Product lead</span><strong>KPI definition and initiative review</strong><em>Read fit →</em></a>
-      <a href="{{ '/solutions/#engineering-leaders' | relative_url }}"><span>Engineering lead</span><strong>Repository scope, review, and runtime policy</strong><em>Read fit →</em></a>
+<section class="lp-section">
+  <div class="lp-shell">
+    <p class="lp-label">The team</p>
+    <h2 class="lp-h2">Six specialists, not one chatbot.</h2>
+    <p class="lp-sub">Work moves between them the way it moves through a real team, and each hand-off is visible to you as it happens.</p>
+    <ul class="lp-crew">
+      <li><strong>Product Manager</strong><span>Turns your objective into issues with acceptance criteria.</span></li>
+      <li><strong>Engineering Manager</strong><span>Adds context, assigns each issue, and holds the review bar.</span></li>
+      <li><strong>Product Designer</strong><span>Interface decisions, tokens and accessibility.</span></li>
+      <li><strong>Engineers × 3–50</strong><span>Build the issues and review each other's pull requests. Three is the floor, so every merge has two peer reviewers.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="lp-section">
+  <div class="lp-shell lp-price">
+    <div>
+      <p class="lp-label">Price</p>
+      <p class="lp-amount">$599<small> / month</small></p>
+      <p class="lp-sub" style="margin-top:.6rem">One team. Cancel any time from Settings, and the card is only charged once you start the build.</p>
+    </div>
+    <div>
+      <ul class="lp-includes">
+        <li>Six agents, including three engineers</li>
+        <li>Unlimited issues and pull requests</li>
+        <li>Two peer reviews plus manager approval on every merge</li>
+        <li>Every action and its cost, itemised</li>
+        <li>Add engineers whenever the work needs them</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="lp-close">
+  <div class="lp-shell">
+    <h2 class="lp-h2">Connect a repo and read the plan.</h2>
+    <p class="lp-sub" style="margin-inline:auto">It costs nothing to find out whether they understand your codebase.</p>
+    <div class="lp-cta">
+      <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+      <a class="lp-btn lp-btn-quiet" href="{{ '/pricing/' | relative_url }}">Pricing detail</a>
     </div>
   </div>
 </section>
