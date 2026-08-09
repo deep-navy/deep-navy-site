@@ -37,8 +37,16 @@ for (const match of app.matchAll(/\.(textContent|innerText)\s*=\s*("[^"]*"|'[^']
   if (SERVICE.test(match[2])) failures.push(`rendered text carries a service name: ${match[2].slice(0, 72)}`);
 }
 
+// The app shell ships style-src 'self', which blocks style ATTRIBUTES. An
+// element.style assignment is therefore refused by the browser and the change
+// silently does nothing - which is exactly how the spend gauge and the
+// provisioning bar shipped frozen at zero. Dynamic lengths go through CSSOM.
+for (const match of app.matchAll(/\.style\.(width|height|top|left|right|bottom|transform)\s*=/g)) {
+  failures.push(`element.style.${match[1]} is blocked by style-src 'self'; write the rule through CSSOM instead`);
+}
+
 if (failures.length) {
-  console.error("Customer-facing strings must not name internal services:\n  " + failures.join("\n  "));
+  console.error("The app would show our machinery to a customer, or silently do nothing:\n  " + failures.join("\n  "));
   console.error("\nThe customer's model is issues, pull requests, reviews and money.");
   process.exit(1);
 }

@@ -3019,7 +3019,7 @@
     const percent = Math.max(0, Math.min(100, (Number(consumed) / total) * 100));
     ui.railSpend.hidden = false;
     if (ui.railSpendValue) ui.railSpendValue.textContent = formatCreditMicros(consumed);
-    if (ui.railSpendFill) ui.railSpendFill.style.width = `${percent.toFixed(1)}%`;
+    setGaugeWidth(ui.railSpendFill, percent);
     if (ui.railSpendNote) ui.railSpendNote.textContent = `${formatCreditMicros(remaining)} remaining`;
   }
 
@@ -4769,6 +4769,37 @@
     return /assignees\s+\S/i.test(stringValue(entry.detail)) && !/no assignees/i.test(stringValue(entry.detail)) ? "building" : "planned";
   }
 
+  // Gauges are the one place this app needs a computed length, and the app
+  // shell ships style-src 'self' — which blocks style ATTRIBUTES, not
+  // stylesheets. Both bars were setting element.style.width and were being
+  // refused by the browser, so the spend gauge and the provisioning bar
+  // silently never moved. Writing a real rule through CSSOM is the same
+  // result without asking the policy to widen.
+  let gaugeSheet = null;
+  let gaugeSequence = 0;
+  function setGaugeWidth(element, percent) {
+    if (!element) return;
+    const value = Math.max(0, Math.min(100, Number(percent) || 0));
+    if (!gaugeSheet) {
+      if (!("adoptedStyleSheets" in document) || typeof CSSStyleSheet !== "function") return;
+      try {
+        gaugeSheet = new CSSStyleSheet();
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, gaugeSheet];
+      } catch { return; }
+    }
+    let id = element.getAttribute("data-gauge");
+    if (!id) {
+      gaugeSequence += 1;
+      id = `g${gaugeSequence.toString()}`;
+      element.setAttribute("data-gauge", id);
+    }
+    const selector = `[data-gauge="${id}"]`;
+    for (let index = gaugeSheet.cssRules.length - 1; index >= 0; index -= 1) {
+      if (gaugeSheet.cssRules[index].selectorText === selector) gaugeSheet.deleteRule(index);
+    }
+    gaugeSheet.insertRule(`${selector}{width:${value.toFixed(1)}%}`, gaugeSheet.cssRules.length);
+  }
+
   function renderDescent() {
     if (!ui.descent || !ui.descentList) return;
     const work = allActivityEntries().filter((entry) => entry.category === "delivery" && (entry.githubIssueId || entry.pullRequestId));
@@ -5017,7 +5048,7 @@
       return;
     }
     ui.provisioningProgress.hidden = false;
-    ui.provisioningFill.style.width = `${progress.percent}%`;
+    setGaugeWidth(ui.provisioningFill, progress.percent);
     ui.provisioningTrack.setAttribute("aria-valuenow", String(progress.percent));
     ui.provisioningMessage.textContent = progress.message;
     ui.provisioningEta.textContent = progress.eta || "";
