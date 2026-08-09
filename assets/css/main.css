@@ -335,7 +335,10 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    words. No identifiers, no timestamps: those read as machine telemetry. */
 .agent-roster { display: grid; gap: 2px; }
 .crew-row { display: flex; gap: .65rem; align-items: flex-start; padding: .5rem .55rem; margin: 0 -.55rem; border-radius: 3px; transition: background .26s ease; }
-.crew-row.is-on { background: var(--accent-a08); }
+/* State is the dot alone. The row also carried a filled wash and the word
+   "working", saying one fact three times, which made the rail read as a
+   stack of chunky cards rather than a list of people. */
+.crew-row.is-on { background: transparent; }
 .crew-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: .5rem; background: var(--text-muted); opacity: .45; transition: background .26s ease, box-shadow .26s ease, opacity .26s ease; }
 .crew-row.is-on .crew-dot { background: var(--accent-graphic); opacity: 1; box-shadow: 0 0 0 1px var(--accent-a35), 0 0 14px -2px var(--accent-a48); animation: crew-breathe 2.6s ease-in-out infinite; }
 @keyframes crew-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
@@ -636,13 +639,13 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   --panel:var(--panel-1);
   --line-soft:var(--border); --line-mid:var(--border-strong);
   --amber:var(--signal-warn); --coral:var(--signal-crit); --ink-dim:var(--text-dim);
-  --ra-sm:9px; --ra:13px; --ra-lg:18px;
-  background:
-    radial-gradient(1100px 560px at 84% -10%, var(--accent-a05), transparent 60%),
-    radial-gradient(820px 460px at 4% 2%, var(--surface-raised), transparent 55%),
-    var(--navy-950);
+  --ra-sm:2px; --ra:2px; --ra-lg:3px;   /* near-square: instrument, not app icon */
+  /* Flat. Two radial washes used to sit here, which put a blue-grey haze
+     across the top of every screen and made the ground look smudged rather
+     than deep. Depth in this product comes from hairlines and alignment. */
+  background: var(--navy-950);
 }
-.app-body .app-header{ background:var(--surface-overlay); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
+.app-body .app-header{ background:var(--navy-950); border-bottom:1px solid var(--line); }
 .app-body .app-shell{ padding:26px 0 96px; }
 
 /* ---- surface modes ---- */
@@ -678,7 +681,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .firstrun [data-organization-dependent]{ display:grid; gap:.2rem; }
 /* the team card: the focal action */
 .app-body .firstrun .team-card.is-primary{
-  border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:linear-gradient(180deg,var(--panel),var(--panel-deep));
+  border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:var(--panel);
   padding:22px; margin-top:.4rem; box-shadow:var(--shadow-panel);
 }
 .app-body .firstrun .team-card .step-number{ color:var(--aqua); }
@@ -929,7 +932,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* Each row is a person and what they are doing, not a database record. */
 .crew-row { display: flex; gap: .6rem; align-items: flex-start; padding: .42rem .5rem; margin: 0 -.5rem; border-radius: 3px; transition: background var(--settle, 260ms) ease; }
-.crew-row.is-on { background: var(--accent-a08); }
+.crew-row.is-on { background: transparent; }
 .crew-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: .45rem; background: var(--muted); opacity: .45; }
 .crew-row.is-on .crew-dot { background: var(--aqua); box-shadow: 0 0 0 1px var(--accent-a24), 0 0 12px -2px var(--accent-a35); opacity: 1; animation: crew-breathe 2.6s ease-in-out infinite; }
 .crew-row.is-blocked .crew-dot { background: var(--warning, #f2c46b); opacity: 1; box-shadow: none; animation: none; }
@@ -992,44 +995,45 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .crew-row.is-on .crew-dot { animation: none; }
 }
 
+
+
 /* ══════════════════════════════════════════════════════════════════
-   Depth.
+   Workspace — technical, flat, crisp.
 
-   The ground is one flat colour, so a page without panels - signing in,
-   an empty workspace - renders as a black rectangle regardless of how
-   blue the token is. Light falls from the surface: the top of the page
-   sits nearer it and the bottom recedes into the trench. This is the
-   whole reason the brand is called deep navy, and it costs two
-   gradients that never repaint.
+   No gradients: the ground is one deep navy and stays that way. Depth
+   comes from hairlines and alignment, not from light. Structure is
+   read from rules and from a mono label above each region, the way a
+   technical drawing is labelled — which is also why nothing here is a
+   rounded card with a shadow.
    ══════════════════════════════════════════════════════════════════ */
-body {
-  background-image:
-    radial-gradient(120% 65% at 50% -10%, var(--accent-a08) 0%, transparent 62%),
-    linear-gradient(180deg, var(--abyss-2) 0%, var(--abyss-0) 46%, #030d18 100%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-}
-:root[data-theme="light"] body { background-image: none; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) body { background-image: none; }
-}
+.wtop { padding: 0 0 1.1rem; border-bottom: 1px solid var(--line); margin-bottom: 1.4rem; }
+.wtop .now-line { font-size: var(--t-xl); line-height: 1.1; margin: 0; }
+.wtop .wctx { margin: .35rem 0 0; max-width: 62ch; }
+/* Context reads as instrument data: fixed-width, spaced, quiet. */
+.wmeta { display: flex; flex-wrap: wrap; gap: 1.4rem; margin: .7rem 0 0; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 
-/* The one thing on the page that glows. A primary action rendered in
-   neutral grey on a dark ground disappears, which is how "Sign in with
-   GitHub" - the only action on that screen - ended up the quietest
-   element on it. GitHub owns the mark and the button's own colours, so
-   the emphasis goes around it rather than repainting their brand. */
-.signed-out-card .button-github,
-.button-github {
-  box-shadow:
-    0 0 0 1px var(--accent-a35),
-    0 0 28px -6px rgb(var(--accent-rgb) / .5);
-}
-.button-github:hover {
-  box-shadow:
-    0 0 0 1px rgb(var(--accent-rgb) / .6),
-    0 0 34px -4px rgb(var(--accent-rgb) / .7);
-}
-@media (prefers-reduced-motion: reduce) {
-  .button-github { transition: none; }
-}
+.lbl { display: block; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+/* The ask: the one primary action on the screen, so it gets the space. */
+.ask { padding: 0 0 1.5rem; border-bottom: 1px solid var(--line); }
+.ask-head h3 { margin: 0 0 .7rem; font-size: var(--t-lg); }
+
+/* What the team is on now — a state line, not a record card. */
+.onnow { padding: 1.4rem 0 0; }
+.onnow-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+.onnow > strong { display: block; font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; }
+.onnow > p { margin: .3rem 0 0; color: var(--text-muted); max-width: 70ch; }
+.onnow-state { margin: .7rem 0 0; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); }
+.onnow-state span:first-child { color: var(--aqua); }
+/* Proposals and measures are reference, not the headline: available on
+   demand rather than stacked under every objective. */
+.onnow-more { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+.onnow-more summary { cursor: pointer; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.onnow-more summary:hover { color: var(--ink); }
+.onnow-plan { display: grid; gap: 1.2rem; padding-top: .9rem; }
+.onnow-note { font-size: var(--t-xs); color: var(--muted); }
+
+/* Rail sections separate by rule, not by box. */
+.wspace-rail .rail-group + .rail-group { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.rail-quiet { opacity: .72; }
+.rail-quiet:hover, .rail-quiet:focus-within { opacity: 1; }

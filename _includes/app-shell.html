@@ -213,93 +213,103 @@
       <div class="wsmain">
         <!-- ===== OVERVIEW ===== -->
         <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
-          <div class="wview-head">
-            <div><h2 class="now-line" id="workspace-overview-title" data-context-team>Team workspace</h2><p class="wctx" data-dashboard-state>Select a team to load its current service records.</p>
-              <div class="provisioning-progress" data-provisioning-progress hidden>
-                <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
-                  <span class="provisioning-fill" data-provisioning-fill></span>
-                </div>
-                <p class="provisioning-copy" aria-live="polite"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
+          <!-- One question per screen. Everything here answers "what is my team
+               doing, and what needs me" - in that order. Team lifecycle,
+               proposals and read-only records are not that, and have moved to
+               their own views. -->
+          <header class="wtop">
+            <h2 class="now-line" id="workspace-overview-title" data-context-team>Team workspace</h2>
+            <p class="wctx" data-dashboard-state>Choose a team to see what it is working on.</p>
+            <p class="wmeta"><span data-context-organization>—</span><span data-context-repositories>—</span></p>
+            <div class="provisioning-progress" data-provisioning-progress hidden>
+              <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
+                <span class="provisioning-fill" data-provisioning-fill></span>
               </div>
+              <p class="provisioning-copy" aria-live="polite"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
             </div>
-          </div>
-          <dl class="context-ledger">
-            <div><dt>Organization</dt><dd data-context-organization>Not selected</dd></div>
-            <div><dt>Repositories</dt><dd data-context-repositories>Not loaded</dd></div>
-          </dl>
+          </header>
 
           <div class="wspace">
-          <aside class="wspace-rail">
-            <div class="rail-group">
-              <h3 id="agents-title">Your team</h3>
-              <div class="empty-state" data-agents-empty><strong>Your roster appears here</strong><p>Product Manager, Engineering Manager, Designer and your engineers — listed once provisioning finishes.</p></div>
-              <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
-            </div>
-            <div class="rail-group" data-rail-spend hidden>
-              <h3>This month</h3>
-              <div class="rail-gauge">
-                <div class="rail-row"><span>Spent</span><span class="rail-value" data-rail-spend-value>—</span></div>
-                <div class="rail-track"><i data-rail-spend-fill style="width:0%"></i></div>
-                <div class="rail-row"><span data-rail-spend-note>of your prepaid balance</span></div>
-              </div>
-            </div>
-          </aside>
-          <div class="wspace-main">
-            <article class="app-dashboard is-flat" aria-labelledby="teams-title">
-              <div class="app-dashboard-header"><h3 id="teams-title">Teams</h3></div>
-              <div class="empty-state" data-teams-empty><strong>No teams yet</strong><p>Your first team starts working minutes after checkout.</p></div>
-              <div class="status-list" data-team-list aria-live="polite" hidden></div>
-            </article>
+            <aside class="wspace-rail">
+              <section class="rail-group" aria-labelledby="agents-title">
+                <h3 id="agents-title">Crew</h3>
+                <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
+                <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
+                <span hidden data-agents-state></span>
+              </section>
+              <section class="rail-group" data-rail-spend hidden>
+                <h3>Spend</h3>
+                <div class="rail-gauge">
+                  <div class="rail-row"><span>This month</span><span class="rail-value" data-rail-spend-value>—</span></div>
+                  <div class="rail-track"><i data-rail-spend-fill style="width:0%"></i></div>
+                  <div class="rail-row"><span data-rail-spend-note>of your prepaid balance</span></div>
+                </div>
+              </section>
+              <section class="rail-group rail-quiet" aria-labelledby="teams-title">
+                <h3 id="teams-title">Team</h3>
+                <div class="empty-state" data-teams-empty><strong>No team yet</strong><p>Create one to get started.</p></div>
+                <div class="status-list" data-team-list aria-live="polite" hidden></div>
+              </section>
+            </aside>
 
-            <span hidden data-agents-state></span>
+            <div class="wspace-main">
+              <!-- The ask. One field, one button, no second question: the title
+                   the API requires is derived from the first sentence. -->
+              <section class="ask" aria-labelledby="objectives-title">
+                <div class="ask-head">
+                  <h3 id="objectives-title">What do you want built?</h3>
+                  <span hidden data-objective-state></span>
+                </div>
+                <div class="empty-state" data-objective-empty hidden><strong>Describe the outcome</strong><p>Your Product Manager turns it into issues; the engineers build it.</p></div>
+                <form class="objective-form" data-objective-form hidden>
+                  <label class="visually-hidden" for="objective-description">What should your team work on?</label>
+                  <input type="hidden" id="objective-title" name="objectiveTitle">
+                  <div class="objective-field">
+                    <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you would tell a colleague." required disabled></textarea>
+                    <div class="objective-foot">
+                      <span class="objective-key" aria-hidden="true">⌘↵</span>
+                      <button class="button button-primary" type="submit" disabled>Start the work</button>
+                    </div>
+                  </div>
+                  <div class="objective-examples" data-objective-examples>
+                    <button class="chip" type="button">Fix our accessibility problems</button>
+                    <button class="chip" type="button">Cut page load under one second</button>
+                    <button class="chip" type="button">Add tests to the payments module</button>
+                  </div>
+                  <p class="form-error" data-objective-error role="alert" hidden></p>
+                </form>
+              </section>
 
-            <article class="app-dashboard overview-objective" aria-labelledby="objectives-title">
-              <div class="app-dashboard-header"><h3 id="objectives-title">Objective &amp; initiatives</h3><span class="data-source-badge" data-objective-state>Waiting</span></div>
-              <div class="empty-state" data-objective-empty><strong>Give your team an objective</strong><p>Describe the outcome you want. Your Product Manager turns it into acceptance criteria and files the issues — that is what starts the work.</p></div>
-              <div class="objective-select" data-objective-select-control hidden>
-                <label for="objective-select">Objective</label>
-                <select id="objective-select" data-objective-select disabled></select>
-              </div>
-              <!-- The whole ask is one question. The title the API requires is
-                   derived from the first line of what the customer writes, so
-                   the hidden input keeps the FormData contract app.js reads
-                   without putting a second field in front of the customer. -->
-              <form class="objective-form" data-objective-form hidden>
-                <label class="visually-hidden" for="objective-description">What should your team work on?</label>
-                <input type="hidden" id="objective-title" name="objectiveTitle">
-                <div class="objective-field">
-                  <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you'd tell a colleague. Your Product Manager turns it into acceptance criteria, the engineers build it, and you review the pull requests." required disabled></textarea>
-                  <div class="objective-foot">
-                    <span class="objective-key" aria-hidden="true">⌘↵</span>
-                    <button class="button button-primary" type="submit" disabled>Start the work</button>
+              <!-- What the team is on now. One line of state, not a record card. -->
+              <section class="onnow" data-objective-record hidden aria-label="Current objective">
+                <div class="onnow-head">
+                  <span class="lbl">On now</span>
+                  <div class="objective-select" data-objective-select-control hidden>
+                    <label class="visually-hidden" for="objective-select">Objective</label>
+                    <select id="objective-select" data-objective-select disabled></select>
                   </div>
                 </div>
-                <div class="objective-examples" data-objective-examples>
-                  <button class="chip" type="button">Fix our accessibility problems</button>
-                  <button class="chip" type="button">Cut page load under one second</button>
-                  <button class="chip" type="button">Add tests to the payments module</button>
-                </div>
-                <p class="form-error" data-objective-error role="alert" hidden></p>
-              </form>
-              <div class="objective-record" data-objective-record hidden>
-                <span class="eyebrow">Selected objective</span>
                 <strong data-objective-title></strong>
                 <p data-objective-description></p>
-                <div class="objective-dispatch"><span class="data-source-badge" data-objective-dispatch-state>Not started</span><p data-objective-dispatch-detail>Your Product Manager picks this up and turns it into issues.</p></div>
-                <section class="objective-kpis" aria-labelledby="objective-kpis-title">
-                  <div><strong id="objective-kpis-title">Proposed KPIs</strong><span class="data-source-badge" data-objective-kpi-state>Waiting</span></div>
-                  <div class="empty-state objective-kpi-empty" data-objective-kpi-empty><strong>No measures yet</strong><p>Your Product Manager adds success measures as it breaks this objective down.</p></div>
-                  <ol data-objective-kpi-list hidden></ol>
-                  <p class="objective-review-note">KPI definitions are read-only here. Any real acceptance request appears in the <a href="#workspace-approvals" data-view-link="approvals">approvals queue</a>.</p>
-                </section>
-                <div class="initiative-stack"><div><strong>Proposed initiatives</strong><span class="data-source-badge" data-initiative-state>Waiting</span></div><ol data-initiative-list></ol><p>Initiatives are reviewed here; any protected decision appears in the <a href="#workspace-approvals" data-view-link="approvals">approvals queue</a>.</p></div>
-              </div>
-            </article>
-          </div>
+                <p class="onnow-state"><span data-objective-dispatch-state>Not started</span> <span data-objective-dispatch-detail>Your Product Manager picks this up and turns it into issues.</span></p>
+                <details class="onnow-more">
+                  <summary>Plan detail</summary>
+                  <div class="onnow-plan">
+                    <div><span class="lbl">Measures</span><span hidden data-objective-kpi-state></span>
+                      <div class="empty-state" data-objective-kpi-empty><strong>No measures yet</strong><p>Added as your Product Manager breaks this down.</p></div>
+                      <ol data-objective-kpi-list hidden></ol>
+                    </div>
+                    <div><span class="lbl">Initiatives</span><span hidden data-initiative-state></span>
+                      <ol data-initiative-list></ol>
+                    </div>
+                    <p class="onnow-note">Decisions that need you appear in <a href="#workspace-approvals" data-view-link="approvals">approvals</a>.</p>
+                  </div>
+                </details>
+              </section>
+            </div>
           </div>
         </section>
 
-        <!-- ===== ACTIVITY ===== -->
         <section class="wview" data-view="activity" id="workspace-activity" aria-labelledby="activity-title">
           <div class="wview-head">
             <div><h2 id="activity-title">Activity</h2><p>Every event your team produces, in order — planning through delivery. Filter to what you care about.</p></div>
