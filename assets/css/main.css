@@ -1228,3 +1228,23 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    rather than pushing the board off the screen. */
 .wspace-log .activity-workspace { max-height: 62vh; overflow-y: auto; }
 .wspace-log .customer-activity-list { margin: 0; }
+
+/* The workspace bar. This was a 210px sidebar holding a team selector and
+   three links — a column of chrome standing beside the work on every screen.
+   It is now a single strip above it, so the work gets the width and the
+   product stops looking like an admin console with a filing cabinet attached.
+   Everything here is also reachable with Cmd+K. */
+.app-body .wsbar { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap;
+  padding: 0 0 .9rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--line); border-right: 0; position: static; }
+.app-body .wsbar .wsnav-team { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
+.app-body .wsbar .wsnav-links { flex-direction: row; gap: 1.2rem; margin-left: auto; }
+.app-body .wsbar .wsnav-link { border-left: 0; border-bottom: 2px solid transparent; padding: .3rem 0; }
+.app-body .wsbar .wsnav-link[aria-current="true"] { border-left: 0; border-bottom-color: var(--accent-graphic); }
+.app-body .wsbar .wsnav-new { margin: 0; padding: 0; border: 0; }
+/* Two columns now, not three: the work and the log. */
+.app-body .workspace { display: block; }
+.app-body .wspace { grid-template-columns: minmax(0, 1.4fr) minmax(0, .85fr); }
+@media (max-width: 1000px) { .app-body .wspace { grid-template-columns: 1fr; } .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; } }
+/* The crew moves into the work column as a compact row of who is on what. */
+.wspace-rail { position: static; border-right: 0; padding: 0 0 1.2rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--line); }
+.wspace-rail .rail-group + .rail-group { margin-top: 1.1rem; padding-top: 1.1rem; }

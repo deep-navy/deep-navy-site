@@ -2946,14 +2946,21 @@
       // produced. A roster that only says "active" tells the customer nothing
       // they could not have assumed; the last thing each person touched is the
       // reason to keep this page open.
+      const live = agentLiveness(canonicalRole.key);
       const latest = latestActivityForRole(canonicalRole.key);
       if (latest) {
         const doing = document.createElement("span");
         doing.className = "crew-doing";
         doing.textContent = latest;
         copy.append(doing);
-        row.classList.add("is-on");
       }
+      // Only a genuinely recent event lights the dot. Everything else says
+      // when the agent was last heard from, which is a real answer rather
+      // than a reassuring one.
+      row.classList.toggle("is-on", live.state === "working");
+      roleLine.textContent = live.state === "working"
+        ? "working now"
+        : (live.since ? `last active ${live.since}` : (active ? "waiting for work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase()));
       row.append(dot, copy);
       ui.agentList.append(row);
     });
@@ -2966,15 +2973,44 @@
   // rather than a record. Returns null when the stream has nothing for them,
   // so the row stays quiet instead of inventing work.
   function latestActivityForRole(roleKey) {
+    const found = latestEventForRole(roleKey);
+    if (!found) return null;
+    const summary = stringValue(found.safeSummary) || stringValue(found.title);
+    if (!summary) return null;
+    return summary.length > 46 ? `${summary.slice(0, 45).trimEnd()}…` : summary;
+  }
+
+  function latestEventForRole(roleKey) {
     const events = Array.isArray(session.activityEvents) ? session.activityEvents : [];
     for (const event of events) {
       const role = agentRoleContract?.canonicalAgentRole?.(event?.agentRole);
-      if (!role || role.key !== roleKey) continue;
-      const summary = stringValue(event.safeSummary) || stringValue(event.title);
-      if (!summary) continue;
-      return summary.length > 46 ? `${summary.slice(0, 45).trimEnd()}…` : summary;
+      if (role && role.key === roleKey) return event;
     }
     return null;
+  }
+
+  // Whether an agent is working is a live question, and the answer is on the
+  // stream: an agent that produced an event moments ago is working now, one
+  // that produced its last event an hour ago is not. The roster's own state
+  // column says "active" for a provisioned agent forever, which is why this
+  // screen could show six active agents and a team doing nothing.
+  const workingWindowMs = 3 * 60 * 1000;
+  function agentLiveness(roleKey) {
+    const event = latestEventForRole(roleKey);
+    if (!event || !event.occurredAt) return { state: "quiet", since: "" };
+    const at = new Date(event.occurredAt).getTime();
+    if (!Number.isFinite(at)) return { state: "quiet", since: "" };
+    const age = Date.now() - at;
+    if (age <= workingWindowMs) return { state: "working", since: "" };
+    return { state: "quiet", since: relativeAge(age) };
+  }
+
+  function relativeAge(ms) {
+    const minutes = Math.floor(ms / 60000);
+    if (minutes < 60) return `${Math.max(1, minutes).toString()}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours.toString()}h ago`;
+    return `${Math.floor(hours / 24).toString()}d ago`;
   }
 
   // Rewrite only the activity line on each crew row. Re-rendering the whole
