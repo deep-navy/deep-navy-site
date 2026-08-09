@@ -1184,3 +1184,27 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .wspace-main { display: flex; flex-direction: column; }
 .descent { order: 1; }
 .onnow { order: 0; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Command palette.
+
+   Hierarchy here comes from opacity rather than more colour: the label
+   at full strength, its category at 60%, the rules at 15%. Spacing is
+   multiples of 4px, 1px borders, 2px radius — the same grammar as the
+   rest of the product, which is why it feels like part of the tool and
+   not a modal bolted onto it.
+   ══════════════════════════════════════════════════════════════════ */
+.cmd { position: fixed; inset: 0; z-index: 60; display: grid; place-items: start center; padding-top: 12vh; background: var(--scrim); }
+.cmd-panel { width: min(560px, calc(100% - 32px)); border: 1px solid var(--line-mid); border-radius: 2px; background: var(--panel-1); overflow: hidden; }
+.cmd-input { width: 100%; padding: 12px 16px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-family: var(--font-mono); font-size: var(--t-sm); }
+.cmd-input::placeholder { color: var(--muted); }
+.cmd-input:focus { outline: none; }
+.cmd-list { list-style: none; margin: 0; padding: 4px; max-height: 44vh; overflow-y: auto; }
+.cmd-item { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 8px 12px; border-radius: 2px; font-size: var(--t-sm); cursor: pointer; }
+/* The selected row is marked by a seafoam edge, not a filled block: a fill
+   would read as a button when this is a position in a list. */
+.cmd-item.is-active { background: var(--accent-a08); box-shadow: inset 2px 0 0 var(--accent-graphic); }
+.cmd-hint { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.cmd-empty { margin: 0; padding: 16px; color: var(--muted); font-size: var(--t-sm); }
+.cmd-foot { display: flex; gap: 16px; margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: var(--t-2xs); color: var(--muted); }
+.cmd-foot kbd { font-family: var(--font-mono); font-size: var(--t-2xs); padding: 1px 4px; margin-right: 4px; border: 1px solid var(--line-mid); border-radius: 2px; }

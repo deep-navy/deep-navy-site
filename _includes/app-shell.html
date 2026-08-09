@@ -23,6 +23,17 @@
     </div>
   </section>
 
+  <!-- Command palette. Every action here is also reachable by clicking, so
+       this is a faster path rather than the only one. -->
+  <div class="cmd" data-command-palette hidden>
+    <div class="cmd-panel" role="dialog" aria-modal="true" aria-label="Command palette">
+      <input class="cmd-input" data-command-input type="text" role="combobox" aria-expanded="true" aria-controls="cmd-list" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Go to, or start something…">
+      <ul class="cmd-list" id="cmd-list" data-command-list role="listbox" aria-label="Commands"></ul>
+      <p class="cmd-empty" data-command-empty hidden>Nothing matches that.</p>
+      <p class="cmd-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>↵</kbd> run</span><span><kbd>esc</kbd> close</span></p>
+    </div>
+  </div>
+
   <!-- ============ AUTHENTICATED ============ -->
   <div data-authenticated hidden>
 
