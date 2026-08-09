@@ -145,6 +145,8 @@
     creditBalancePanel: document.querySelector("[data-credit-balance-panel]"),
     creditBalanceState: document.querySelector("[data-credit-balance-state]"),
     creditBalanceValue: document.querySelector("[data-credit-balance-value]"),
+  descent: document.querySelector("[data-descent]"),
+  descentList: document.querySelector("[data-descent-list]"),
   railSpend: document.querySelector("[data-rail-spend]"),
   railSpendValue: document.querySelector("[data-rail-spend-value]"),
   railSpendFill: document.querySelector("[data-rail-spend-fill]"),
@@ -4744,9 +4746,105 @@
     return turns;
   }
 
+  // The descent: every piece of GitHub work on one line, sinking from planned
+  // to shipped. State comes from the work itself - an issue with an assignee
+  // is being built, an open pull request is in review - rather than from a
+  // status we invent, so the board cannot disagree with the customer's own
+  // repository.
+  const descentBands = [
+    { state: "planned", label: "Planned" },
+    { state: "building", label: "Building" },
+    { state: "review", label: "In review" },
+    { state: "shipped", label: "Shipped" },
+  ];
+
+  function descentStateOf(entry) {
+    const status = stringValue(entry.status).toLowerCase();
+    if (entry.pullRequestId) return status === "merged" || status === "closed" ? "shipped" : "review";
+    if (status === "closed") return "shipped";
+    // "Assignees …" in the detail means an engineer has it; "No assignees"
+    // means it is still waiting.
+    return /assignees\s+\S/i.test(stringValue(entry.detail)) && !/no assignees/i.test(stringValue(entry.detail)) ? "building" : "planned";
+  }
+
+  function renderDescent() {
+    if (!ui.descent || !ui.descentList) return;
+    const work = allActivityEntries().filter((entry) => entry.category === "delivery" && (entry.githubIssueId || entry.pullRequestId));
+    ui.descentList.replaceChildren();
+    if (!work.length) { ui.descent.hidden = true; return; }
+    ui.descent.hidden = false;
+
+    const byState = new Map(descentBands.map((band) => [band.state, []]));
+    work.forEach((entry) => byState.get(descentStateOf(entry))?.push(entry));
+
+    descentBands.forEach((band) => {
+      const items = byState.get(band.state) || [];
+      if (!items.length) return;   // a band with nothing in it is not news
+      const li = document.createElement("li");
+      li.className = "descent-band";
+      li.dataset.state = band.state;
+      const head = document.createElement("div");
+      head.className = "descent-band-head";
+      const h4 = document.createElement("h4");
+      h4.textContent = band.label;
+      const rule = document.createElement("span");
+      rule.className = "rule";
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = String(items.length);
+      head.append(h4, rule, count);
+      li.append(head);
+
+      items.forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = band.state === "building" ? "descent-item is-live" : "descent-item";
+        const left = document.createElement("span");
+        const ref = document.createElement("span");
+        ref.className = "ref";
+        ref.textContent = entry.pullRequestId ? `PR #${entry.pullRequestId}` : `#${entry.githubIssueId}`;
+        const what = document.createElement("span");
+        what.className = "what";
+        // The entry title is "Issue #1 · Add /healthz endpoint"; the reference
+        // is already its own column, so only the human part is repeated here.
+        what.textContent = stringValue(entry.title).replace(/^(Issue|PR)\s+#\d+\s*·\s*/, "");
+        left.append(ref, document.createTextNode(" "), what);
+        if (entry.artifactUrl) {
+          const link = document.createElement("a");
+          link.href = entry.artifactUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.referrerPolicy = "no-referrer";
+          link.append(left);
+          row.append(link);
+        } else {
+          row.append(left);
+        }
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = descentWho(entry, band.state);
+        row.append(who);
+        li.append(row);
+      });
+      ui.descentList.append(li);
+    });
+  }
+
+  // Who has it, in the customer's terms. Never a bot login or a raw label.
+  function descentWho(entry, state) {
+    if (state === "shipped") return stringValue(entry.status) === "merged" ? "merged" : "closed";
+    const labels = stringValue(entry.detail).match(/agent:([a-z-]+)/i);
+    if (labels) {
+      const role = agentRoleContract?.canonicalAgentRole?.(labels[1]);
+      if (role) return agentDisplayName({ agentRole: labels[1] }) || role.label;
+    }
+    if (state === "review") return "waiting on review";
+    return state === "building" ? "in progress" : "unassigned";
+  }
+
   function renderActivityLedger() {
     renderActivityFilters();
     refreshCrewActivity();
+    renderDescent();
     const allEntries = allActivityEntries();
     const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
     ui.activityList.replaceChildren();
