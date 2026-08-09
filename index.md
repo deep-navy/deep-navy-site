@@ -1,7 +1,7 @@
 ---
 title: deep navy
 image: /assets/images/og/home.png
-description: An engineering team that reads your repository, writes the issues, builds them, and reviews its own pull requests. The plan is free. You pay when they start building.
+description: An engineering team that reads your repository, writes the issues, builds them, and reviews its own pull requests before you merge.
 body_class: home lp
 schema_type: Organization
 updated: 2026-08-08
@@ -18,7 +18,7 @@ extra_css: /assets/css/home.css
         <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
         <a class="lp-btn lp-btn-quiet" href="#how">See how it works</a>
       </div>
-      <p class="lp-note">Free to connect and free to plan. You pay when the engineers start building.</p>
+      <p class="lp-note">$599 a month. One team, cancel any time.</p>
     </div>
 
     <!-- The product makes pull requests, so the hero is a pull request. -->
@@ -45,23 +45,23 @@ extra_css: /assets/css/home.css
 <section class="lp-section" id="how">
   <div class="lp-shell">
     <p class="lp-label">How it works</p>
-    <h2 class="lp-h2">See the plan before you pay for the work.</h2>
-    <p class="lp-sub">Most tools ask for a card before they show you anything. Your product manager reads your repository and files real issues first — in your GitHub, under your account, where you can judge whether it understood your codebase.</p>
+    <h2 class="lp-h2">Work moves the way it does on a real team.</h2>
+    <p class="lp-sub">You state an objective. It becomes issues in your repository, then branches, then pull requests that two engineers and the manager have already reviewed. Every step happens in your GitHub, under your account.</p>
     <ol class="lp-steps">
       <li class="lp-step">
-        <div><h3>Connect a repository<span class="free">Free</span></h3>
-        <p>Sign in with GitHub and pick a repo. We ask for the permissions the work needs and name each one — nothing else.</p></div>
+        <div><h3>Connect a repository</h3>
+        <p>Sign in with GitHub and pick the repository your team will work in. We ask for the permissions the work needs and name each one.</p></div>
       </li>
       <li class="lp-step">
-        <div><h3>Say what you want<span class="free">Free</span></h3>
+        <div><h3>Say what you want</h3>
         <p>One sentence, the way you would tell a colleague. "Cut our checkout drop-off." "Get the flaky tests under control."</p></div>
       </li>
       <li class="lp-step">
-        <div><h3>Read the plan<span class="free">Free</span></h3>
-        <p>Your product manager breaks it into issues with acceptance criteria and files them in your repository. Open GitHub and read them. If it misread your codebase, you have lost nothing.</p></div>
+        <div><h3>Read the plan</h3>
+        <p>Your product manager breaks it into issues with acceptance criteria and files them in your repository, where you can read them like any other ticket.</p></div>
       </li>
       <li class="lp-step">
-        <div><h3>Start the team</h3>
+        <div><h3>Watch it ship</h3>
         <p>Engineers pick up the issues and build. Every pull request needs two engineer reviews and the engineering manager's approval before it can merge — the same bar you would hold a human team to.</p></div>
       </li>
     </ol>
@@ -87,7 +87,7 @@ extra_css: /assets/css/home.css
     <div>
       <p class="lp-label">Price</p>
       <p class="lp-amount">$599<small> / month</small></p>
-      <p class="lp-sub" style="margin-top:.6rem">One team. Cancel any time from Settings, and the card is only charged once you start the build.</p>
+      <p class="lp-sub" style="margin-top:.6rem">One team, billed monthly. Cancel any time from Settings.</p>
     </div>
     <div>
       <ul class="lp-includes">
@@ -103,8 +103,8 @@ extra_css: /assets/css/home.css
 
 <section class="lp-close">
   <div class="lp-shell">
-    <h2 class="lp-h2">Connect a repo and read the plan.</h2>
-    <p class="lp-sub" style="margin-inline:auto">It costs nothing to find out whether they understand your codebase.</p>
+    <h2 class="lp-h2">Put a team on your repository.</h2>
+    <p class="lp-sub" style="margin-inline:auto">$599 a month. Cancel any time.</p>
     <div class="lp-cta">
       <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
       <a class="lp-btn lp-btn-quiet" href="{{ '/pricing/' | relative_url }}">Pricing detail</a>
