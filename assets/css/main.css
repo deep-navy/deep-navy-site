@@ -1208,3 +1208,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .cmd-empty { margin: 0; padding: 16px; color: var(--muted); font-size: var(--t-sm); }
 .cmd-foot { display: flex; gap: 16px; margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: var(--t-2xs); color: var(--muted); }
 .cmd-foot kbd { font-family: var(--font-mono); font-size: var(--t-2xs); padding: 1px 4px; margin-right: 4px; border: 1px solid var(--line-mid); border-radius: 2px; }
+
+/* The icon sprite defines symbols and paints nothing. It hid itself with an
+   inline style attribute, which style-src 'self' refuses - so the policy left a
+   blank block in the page. A class lives in the stylesheet the policy trusts. */
+.icon-sprite { display: none; }

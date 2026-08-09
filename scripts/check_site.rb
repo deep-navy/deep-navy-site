@@ -52,6 +52,13 @@ html_files.each do |file|
     errors << "#{relative}: #{label} in customer copy: #{match.inspect}"
   end
 
+  # style-src 'self' refuses style attributes, so an inline style silently does
+  # nothing in a browser while looking correct in the source. That is how the
+  # icon sprite shipped un-hidden and both gauges shipped frozen at zero.
+  html.scan(%r{\sstyle="[^"]*"}).each do
+    errors << "#{relative}: inline style attribute is blocked by style-src 'self'; use a class"
+  end
+
   # A render-blocking <script src> in <head> is a single point of failure for
   # the whole page: if that one request stalls - flaky network, VPN, proxy, an
   # extension holding it - the parser blocks before <body> exists and the
