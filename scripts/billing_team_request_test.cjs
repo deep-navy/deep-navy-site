@@ -22,11 +22,20 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // No numbered five-step framing: the primary bar is two steps and the rest is
   // an auto-connected status row.
   assert.doesNotMatch(shell, /STEP 0[0-9]/);
-  assert.match(shell, /CREATE TEAM/);
+  // The screen used to say "create your team" five times over - page title,
+  // progress headline, a CREATE TEAM label, the card heading and its body.
+  // What matters is that the action is named, not that it is repeated, so
+  // assert the heading rather than the label chip that used to shout it.
+  assert.match(shell, /data-team-card-title/);
   // The signed-out card invites GitHub sign-in as the single first action.
   assert.match(shell, /Sign in to build your engineering team/);
   assert.match(shell, /data-sign-in/);
-  assert.match(shell, /class="progress-auto"/);
+  // GitHub context is reported as auto-connected facts. Assert the behaviour
+  // (each is a reviewable step that connects itself) rather than the class
+  // name, which is presentation and moved with the redesign.
+  assert.match(shell, /data-progress-auto-organization/);
+  assert.match(shell, /data-progress-auto-repositories/);
+  assert.match(shell, /data-reveal-step="organization"/);
   assert.match(shell, /connect automatically|connected automatically/i);
   // The organization is auto-derived, not a manual "establish" form step.
   assert.doesNotMatch(shell, /Establish your organization/);

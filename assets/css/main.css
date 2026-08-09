@@ -1084,3 +1084,17 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   font-size: var(--t-lg);
   letter-spacing: -.018em;
 }
+
+/* Setup facts: three things GitHub connected for you, reported as one row of
+   readings rather than three cards behind a numbered stepper. The stepper
+   stays in the markup for assistive tech, where a step count is genuinely
+   useful, but a sighted person on a one-action screen does not need to be
+   told they are on step 2 of 3. */
+.setupline { padding: 1rem 0; border-block: 1px solid var(--line); margin: 1.4rem 0; }
+.setupline-copy { margin: 0 0 .8rem; color: var(--text-muted); font-size: var(--t-sm); }
+.setupline-facts { display: flex; flex-wrap: wrap; gap: 2rem; margin: 0; padding: 0; list-style: none; }
+.setupline-facts button { display: grid; gap: .15rem; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; }
+.setupline-facts strong { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.setupline-facts small { font-size: var(--t-sm); color: var(--ink); }
+.setupline-facts button:hover small { color: var(--aqua); }
+.setupline-facts [data-state="complete"] small { color: var(--ink); }

@@ -33,8 +33,8 @@
       <div class="firstrun-inner">
         <div class="firstrun-head">
           <span class="eyebrow" data-firstrun-eyebrow>Get started</span>
-          <h1 id="firstrun-title" data-firstrun-title>Create your first engineering team</h1>
-          <p data-app-subtitle>An autonomous team that plans the work, writes the code, and opens pull requests on your repositories — while you review.</p>
+          <h1 id="firstrun-title" data-firstrun-title>Create your engineering team</h1>
+          <p data-app-subtitle>Six specialists who plan the work, write the code, and open pull requests on your repositories. You review and merge.</p>
         </div>
 
         <div class="user-summary" data-user-summary hidden>
@@ -42,22 +42,24 @@
           <div><strong data-user-name></strong><span data-user-login></span></div>
         </div>
 
-        <!-- Progress: two real actions + the payoff step; GitHub context connects automatically -->
-        <section class="onboarding-progress" aria-labelledby="onboarding-progress-title">
-          <div class="progress-copy">
-            <div><span class="eyebrow">Two-minute setup</span><h2 id="onboarding-progress-title" data-progress-headline>Sign in, then create your team.</h2></div>
-            <p data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
-          </div>
-          <ol class="progress-steps progress-steps-compact">
-            <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Authenticated</small></li>
-            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create your team</strong><small>Name it, then pay</small></li>
-            <li data-progress-step="ship" data-state="pending"><span>3</span><strong>Watch it ship</strong><small>Issues, code, PRs</small></li>
-          </ol>
-          <ul class="progress-auto" aria-label="Connected automatically from your GitHub sign-in">
+        <!-- GitHub context connects itself from the sign-in, so it is reported
+             as one line of fact rather than three cards and a stepper. The old
+             screen said "create your team" five times between the page title,
+             the progress headline, a CREATE TEAM label, a card heading and its
+             body copy; a person only needs to be told once. -->
+        <section class="setupline" aria-labelledby="onboarding-progress-title">
+          <h2 class="visually-hidden" id="onboarding-progress-title" data-progress-headline>Set up</h2>
+          <p class="setupline-copy" data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
+          <ul class="setupline-facts" aria-label="Connected from your GitHub sign-in">
             <li data-progress-step="organization" data-state="loading"><button type="button" data-reveal-step="organization" title="Review or change" aria-expanded="false"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></button></li>
             <li data-progress-step="github" data-state="loading"><button type="button" data-reveal-step="github" title="Review or change" aria-expanded="false"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></button></li>
             <li data-progress-step="repositories" data-state="loading"><button type="button" data-reveal-step="repositories" title="Review or change" aria-expanded="false"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></button></li>
           </ul>
+          <ol class="visually-hidden progress-steps">
+            <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Done</small></li>
+            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create your team</strong><small>Name it, then pay</small></li>
+            <li data-progress-step="ship" data-state="pending"><span>3</span><strong>Watch it ship</strong><small>Issues, code, PRs</small></li>
+          </ol>
         </section>
 
         <!-- Organization: auto-derived; connect / bootstrap / select handle edge cases -->
@@ -132,9 +134,9 @@
 
           <!-- The focal action -->
           <article class="onboarding-card team-card is-primary" data-step="team" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">CREATE TEAM</span><span class="step-state" data-step-state>Checking</span></div>
+            <div class="step-header"><span class="step-number visually-hidden">Create team</span><span class="step-state" data-step-state>Checking</span></div>
             <h2 data-team-card-title>Name your team</h2>
-            <p data-step-message>Name your engineering team to get started.</p>
+            <p class="visually-hidden" data-step-message>Name your engineering team to get started.</p>
             <form class="inline-form team-form card-action" data-team-form>
               <label for="team-name">Team name</label>
               <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
@@ -167,10 +169,10 @@
                   <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
                   <p class="team-price-breakdown" data-team-price-breakdown>$599 team (includes 3 engineers)</p>
                 </div>
-                <p class="form-help form-help-neutral" id="team-name-help">No setup fees. Cancel anytime from Settings. Your card is collected once in secure Stripe checkout and reused for future teams.</p>
+                <p class="form-help form-help-neutral" id="team-name-help">Charged when you confirm. Cancel anytime in Settings.</p>
               </div>
               <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
-              <button class="button button-primary" type="submit" disabled>Continue to payment — $599/month</button>
+              <button class="button button-primary" type="submit" disabled>Review payment — $599/month</button>
             </form>
             <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
           </article>
