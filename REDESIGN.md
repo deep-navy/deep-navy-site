@@ -193,11 +193,41 @@ that piece of work.
 events into turns; fold tool calls into the turn; assign and store human names
 per agent; drop every constructed `A2A …` / `Tool · …` title.
 
-**Runtime, the real work:** agents must narrate. Today a tool call emits
-`tool_name` and a result; nobody writes the sentence. Each role's prompt needs
-to end its meaningful steps with one customer-facing sentence saying what it
-did and why — which is also the cheapest possible improvement, because it is
-prompt work, not architecture.
+**Runtime — and this is not prompt work, which an earlier draft of this plan
+got wrong.** Agents cannot write the sentence today, by design.
+`safe_summary` is generated server-side from a fixed template per event type
+(`internal/activity/normalize.go`), and the ingest handler explicitly rejects
+a producer-supplied summary. Every line in the log is one of five templates:
+
+    Agent-to-agent propose_initiative recorded.
+    Tool github succeeded.
+    Session is ready.
+    Artifact pull_request opened.
+    Workspace file created.
+
+No prompt can improve that, because the agent's words never reach the field.
+The boundary exists for a real reason: an agent runs customer code and can be
+prompt-injected, so letting it write arbitrary text into the customer's
+timeline is a genuine risk.
+
+But the boundary is already inconsistent. The same agent writes issue
+comments, pull request descriptions and review comments straight into the
+customer's GitHub, and the customer reads those. Forbidding narration while
+allowing PR bodies does not remove the risk; it only removes the explanation.
+
+The fix is a typed narration event, sanitized rather than forbidden:
+
+- A new event type carrying one field: a sentence, capped in length, passed
+  through the existing credential scrubber and the same normalization
+  boundary every other event crosses.
+- Emitted by an agent at the end of a meaningful step, in the customer's
+  language: what it did and why.
+- Rendered as the entry's body, with the generated template as the fallback
+  when an agent says nothing.
+
+Until that exists the log is honest about structure — who acted, in what
+order, against which issue — and thin on voice. That is the correct trade to
+be sitting on, and it should not be described as finished.
 
 **Guardrail:** a runtime check that fails the build if any string rendered into
 the log matches a service name, an event type or a snapshot label. The
