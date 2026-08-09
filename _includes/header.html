@@ -19,8 +19,8 @@
         <span class="theme-toggle-icon" aria-hidden="true"></span>
         <span class="visually-hidden" data-theme-label>Theme: match system</span>
       </button>
-      <a class="button button-quiet button-small desktop-action" href="{{ '/app/' | relative_url }}">Sign in</a>
-      <a class="button button-primary button-small desktop-action" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+      
+      <a class="button button-primary button-small desktop-action" href="{{ '/app/?signin=1' | relative_url }}">Connect your repo</a>
       <details class="mobile-menu">
         <summary aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></summary>
         <nav aria-label="Mobile navigation">
@@ -32,8 +32,8 @@
           <a href="{{ '/blog/' | relative_url }}">Resources</a>
           <a href="{{ '/docs/' | relative_url }}">Documentation</a>
           <a href="{{ '/security/' | relative_url }}">Security</a>
-          <a href="{{ '/app/' | relative_url }}">Sign in</a>
-          <a class="button button-primary" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+          <a href="{{ '/app/?signin=1' | relative_url }}">Sign in with GitHub</a>
+          <a class="button button-primary" href="{{ '/app/?signin=1' | relative_url }}">Connect your repo</a>
         </nav>
       </details>
     </div>

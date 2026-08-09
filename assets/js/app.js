@@ -5818,6 +5818,12 @@
   const initialQuery = typeof window.deepNavyInitialQuery === "string" ? window.deepNavyInitialQuery : window.location.search;
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }
   const callbackParams = new URLSearchParams(initialQuery);
+  // The homepage carries the only sign-in button, so arriving here with
+  // ?signin=1 means the person has already clicked it. Go straight to GitHub
+  // rather than showing a second login screen that asks them to click the same
+  // button again. Anyone who lands here signed out without having asked to
+  // sign in is sent back to the homepage, so there is no login page at all.
+  const signInRequested = callbackParams.get("signin") === "1";
   const githubCallback = document.body.dataset.githubCallback === "true" || callbackParams.has("installation_id") || callbackParams.has("setup_action");
   const billingReturn = captureBillingReturn(callbackParams);
   stripCallbackQuery();
@@ -5851,9 +5857,23 @@
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in with GitHub again before the one-time authorization expires. deep navy verifies it server-side before showing a connection.");
   } else if (billingReturn) {
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "warning", "Confirm your payment", "Sign in to refresh the webhook-confirmed subscription and team credit records. A Stripe return alone never changes access or balances.");
+  } else if (signInRequested) {
+    // Came from the homepage sign-in button. Restore first, in case a session
+    // is already live and the round trip is unnecessary, then hand straight to
+    // GitHub.
+    restoreSession().then(() => {
+      if (!session.accessToken) beginSignIn();
+    }).catch(() => beginSignIn());
   } else {
     // Not a callback: this is an ordinary page load, so try to pick the session
     // back up. Skipped above because a callback is already establishing one.
-    restoreSession();
+    restoreSession().then(() => {
+      // There is no login page. Someone who reaches the app signed out and
+      // without having asked to sign in belongs on the homepage, where the
+      // only sign-in button lives.
+      if (!session.accessToken && !document.body.dataset.githubCallback) {
+        window.location.replace(new URL("../", window.location.href).toString());
+      }
+    }).catch(() => {});
   }
 })();

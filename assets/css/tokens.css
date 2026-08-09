@@ -31,12 +31,12 @@
      rise. Each step is a real elevation — the previous palette collapsed
      five of these to one value, which is why every "raised" surface in the
      old build rendered perfectly flat. */
-  --abyss-0:  #04121f;   /* deepest ground — is it black? is it blue? */
-  --abyss-1:  #071c2e;
-  --abyss-2:  #0b273e;
-  --abyss-3:  #10324e;
-  --abyss-4:  #163f60;
-  --abyss-5:  #1d4d74;
+  --abyss-0:  #000f1a;   /* the brand blue — the ground everything sits on */
+  --abyss-1:  #04182a;
+  --abyss-2:  #082238;
+  --abyss-3:  #0d2c47;
+  --abyss-4:  #123857;
+  --abyss-5:  #184568;
 
   /* Seafoam — bioluminescence, and the only thing in the product that glows.
      --seafoam-4 is the signature; the darker steps exist because seafoam on
@@ -109,9 +109,9 @@
   --accent-strong:    var(--seafoam-1);
   --accent-rgb:       14 124 99;
 
-  --border:           rgb(2 10 18 / .14);
-  --border-strong:    rgb(2 10 18 / .24);
-  --text-rgb:         5 18 30;
+  --border:           rgb(0 15 26 / .14);
+  --border-strong:    rgb(0 15 26 / .24);
+  --text-rgb:         4 24 42;
 
   /* App-shell panels — light. The console keeps its elevation ladder, just
      inverted: paper tones rising toward white instead of navy rising from
@@ -124,9 +124,9 @@
   --text-dim:     var(--slate-2);
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
-  --scrim:        rgb(2 10 18 / .5);
-  --shadow-lg:    0 36px 120px rgb(2 10 18 / .18);
-  --shadow-panel: 0 18px 40px -30px rgb(2 10 18 / .35);
+  --scrim:        rgb(0 15 26 / .5);
+  --shadow-lg:    0 36px 120px rgb(0 15 26 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(0 15 26 / .35);
 
   color-scheme: light;
 }
@@ -137,7 +137,7 @@
     --surface:         var(--abyss-0);
     --surface-sunken:  var(--abyss-0);
     --surface-raised:  var(--abyss-2);
-    --surface-overlay: rgb(2 10 18 / .72);
+    --surface-overlay: rgb(0 15 26 / .72);
 
     --text:            var(--ink-0);
     --text-muted:      var(--slate-1);
@@ -164,7 +164,7 @@
     --text-dim:     #b7c4c8;
     --signal-warn:  #f5c97b;
     --signal-crit:  #f58e7e;
-    --scrim:        rgb(1 5 9 / .86);
+    --scrim:        rgb(0 8 14 / .86);
     --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
     --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
@@ -177,7 +177,7 @@
   --surface:         var(--abyss-0);
   --surface-sunken:  var(--abyss-0);
   --surface-raised:  var(--abyss-2);
-  --surface-overlay: rgb(2 10 18 / .72);
+  --surface-overlay: rgb(0 15 26 / .72);
 
   --text:            var(--ink-0);
   --text-muted:      var(--slate-1);
@@ -204,7 +204,7 @@
   --text-dim:     #b7c4c8;
   --signal-warn:  #f5c97b;
   --signal-crit:  #f58e7e;
-  --scrim:        rgb(1 5 9 / .86);
+  --scrim:        rgb(0 8 14 / .86);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
@@ -228,8 +228,8 @@
   --accent-strong:   var(--seafoam-1);
   --accent-rgb:      14 124 99;
 
-  --border:          rgb(2 10 18 / .14);
-  --border-strong:   rgb(2 10 18 / .24);
+  --border:          rgb(0 15 26 / .14);
+  --border-strong:   rgb(0 15 26 / .24);
   --text-rgb:        6 12 20;
 
   /* App-shell panels — light. The console keeps its elevation ladder, just
@@ -243,9 +243,9 @@
   --text-dim:     var(--slate-2);
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
-  --scrim:        rgb(2 10 18 / .5);
-  --shadow-lg:    0 36px 120px rgb(2 10 18 / .18);
-  --shadow-panel: 0 18px 40px -30px rgb(2 10 18 / .35);
+  --scrim:        rgb(0 15 26 / .5);
+  --shadow-lg:    0 36px 120px rgb(0 15 26 / .18);
+  --shadow-panel: 0 18px 40px -30px rgb(0 15 26 / .35);
 
   color-scheme: light;
 }

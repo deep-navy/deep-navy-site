@@ -15,7 +15,7 @@ extra_css: /assets/css/home.css
       <h1 class="lp-h1">Your engineering team, <em>already in your repo</em>.</h1>
       <p class="lp-lede">Six specialists — a product manager, an engineering manager, a product designer and three engineers. They read your codebase, write the issues, build them, and review each other's pull requests. You merge.</p>
       <div class="lp-cta">
-        <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+        <a class="lp-btn lp-btn-go" href="{{ '/app/?signin=1' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         <a class="lp-btn lp-btn-quiet" href="#how">See how it works</a>
       </div>
       <p class="lp-note">$599 a month. One team, cancel any time.</p>
@@ -106,7 +106,7 @@ extra_css: /assets/css/home.css
     <h2 class="lp-h2">Put a team on your repository.</h2>
     <p class="lp-sub" style="margin-inline:auto">$599 a month. Cancel any time.</p>
     <div class="lp-cta">
-      <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+      <a class="lp-btn lp-btn-go" href="{{ '/app/?signin=1' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
       <a class="lp-btn lp-btn-quiet" href="{{ '/pricing/' | relative_url }}">Pricing detail</a>
     </div>
   </div>

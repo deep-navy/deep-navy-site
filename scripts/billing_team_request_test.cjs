@@ -6,6 +6,9 @@ const test = require("node:test");
 
 const app = readFileSync("assets/js/app.js", "utf8");
 const shell = readFileSync("_includes/app-shell.html", "utf8");
+// Sign-in now lives on the homepage: there is one GitHub button and no login
+// page, so the copy these rules protect is asserted where it is shown.
+const home = readFileSync("index.md", "utf8");
 const layout = readFileSync("_layouts/app.html", "utf8");
 const { ONBOARDING_STEPS } = require("../assets/js/app-state.js");
 const { missingTeamPrerequisites } = require("../assets/js/launch-contract.js");
@@ -28,7 +31,8 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // assert the heading rather than the label chip that used to shout it.
   assert.match(shell, /data-team-card-title/);
   // The signed-out card invites GitHub sign-in as the single first action.
-  assert.match(shell, /Sign in to build your engineering team/);
+  assert.match(home, /Connect your repo/);
+  assert.doesNotMatch(shell, /Sign in to build your engineering team/); // no second login screen
   assert.match(shell, /data-sign-in/);
   // GitHub context is reported as auto-connected facts. Assert the behaviour
   // (each is a reviewable step that connects itself) rather than the class
@@ -53,7 +57,11 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   assert.doesNotMatch(layout, /<script[^>]*js\.stripe\.com/);
   assert.match(app, /https:\/\/js\.stripe\.com\/dahlia\/stripe\.js/);
   // The signed-out card promises a free, card-free signup.
-  assert.match(shell, /free, no card required/i);
+  // The card is only ever collected at team creation. The homepage states the
+  // price plainly and asks for no payment detail; the app collects it once, in
+  // Stripe checkout, when a team is created.
+  assert.doesNotMatch(home, /card|payment|billing/i);
+  assert.match(home, /\$599 a month/);
   // Onboarding never mounts checkout; only the paid team path and credit packs do.
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
