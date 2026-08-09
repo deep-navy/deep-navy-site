@@ -760,23 +760,35 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* ---- workspace: sidebar + one view ---- */
 .app-body .workspace{ grid-template-columns:238px minmax(0,1fr); gap:clamp(18px,2.4vw,34px); align-items:start; }
-.app-body .wsnav{ position:sticky; top:80px; display:flex; flex-direction:column; gap:3px;
-  padding:12px; border:1px solid var(--line-soft); border-radius:var(--ra-lg); background:var(--panel); }
-.app-body .wsnav-team{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-bottom:10px; }
-.app-body .wsnav-team select{ min-width:0; height:40px; padding:0 30px 0 11px; color:var(--ink); border:1px solid var(--line-mid);
-  border-radius:var(--ra); background:var(--panel-2); font-size:13.5px; font-weight:560; }
-.app-body .wsnav-refresh{ width:40px; padding:0; }
-.app-body .wsnav-links{ display:flex; flex-direction:column; gap:2px; }
-.app-body .wsnav-link{ display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:10px;
-  color:var(--ink-dim); font-size:13.5px; font-weight:540; position:relative; text-decoration:none; }
-.app-body .wsnav-link svg{ width:17px; height:17px; color:var(--muted); flex:0 0 auto; }
-.app-body .wsnav-link:hover{ background:var(--panel-2); color:var(--ink); }
-.app-body .wsnav-link[aria-current="true"]{ background:var(--panel-3); color:var(--ink); }
-.app-body .wsnav-link[aria-current="true"] svg{ color:var(--aqua); }
-.app-body .wsnav-link[aria-current="true"]::before{ content:""; position:absolute; left:-12px; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:var(--aqua); }
+/* Workspace navigation.
+
+   Was a rounded panel of pill-shaped links with a filled active state - the
+   default admin-template sidebar, and the single most generic thing on the
+   screen. It is now a plain column against the page: sections separated by a
+   rule, the current view marked by a seafoam edge and a brighter label rather
+   than a filled box. Nothing here is a card, because nothing here is an
+   object; it is a list of places. */
+.app-body .wsnav{ position:sticky; top:80px; display:flex; flex-direction:column; gap:2px;
+  padding:0 1.35rem 0 0; border:0; border-right:1px solid var(--line); border-radius:0; background:none; }
+.app-body .wsnav-team{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-bottom:1.1rem;
+  padding-bottom:1.1rem; border-bottom:1px solid var(--line); }
+.app-body .wsnav-team select{ min-width:0; height:38px; padding:0 28px 0 10px; color:var(--ink); border:1px solid var(--line-mid);
+  border-radius:var(--ra); background:transparent; font-family:var(--font-mono); font-size:12.5px; letter-spacing:.02em; }
+.app-body .wsnav-refresh{ width:38px; padding:0; }
+.app-body .wsnav-links{ display:flex; flex-direction:column; gap:0; }
+.app-body .wsnav-link{ display:flex; align-items:center; gap:.7rem; padding:.55rem 0 .55rem .85rem; border-radius:0;
+  color:var(--muted); font-size:13.5px; font-weight:500; position:relative; text-decoration:none;
+  border-left:2px solid transparent; transition:color 140ms cubic-bezier(.2,.7,.3,1), border-color 140ms cubic-bezier(.2,.7,.3,1); }
+.app-body .wsnav-link svg{ width:16px; height:16px; color:var(--muted); flex:0 0 auto; transition:color 140ms cubic-bezier(.2,.7,.3,1); }
+.app-body .wsnav-link:hover{ background:none; color:var(--ink); border-left-color:var(--line-mid); }
+.app-body .wsnav-link:hover svg{ color:var(--ink); }
+/* The current view is stated by an edge and a brighter label. A filled pill
+   says "button"; this is a location. */
+.app-body .wsnav-link[aria-current="true"]{ background:none; color:var(--ink); border-left-color:var(--accent-graphic); }
+.app-body .wsnav-link[aria-current="true"] svg{ color:var(--accent-text); }
 .app-body .wsnav-count{ margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--amber);
-  background:var(--warn-a12); border-radius:999px; padding:1px 8px; }
-.app-body .wsnav-new{ margin-top:10px; justify-content:center; }
+  background:none; border-radius:0; padding:0; }
+.app-body .wsnav-new{ margin-top:1.1rem; padding-top:1.1rem; border-top:1px solid var(--line); justify-content:flex-start; }
 .app-body .wsmain{ min-width:0; }
 
 /* views: one at a time */
