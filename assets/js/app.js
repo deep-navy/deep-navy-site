@@ -4592,7 +4592,14 @@
     let title = "Artifact update";
     let detail = "";
     let artifactUrl = "";
-    if (type === "a2a.message") {
+    if (type === "agent.note") {
+      // The agent's own sentence. It arrives as the event's summary, already
+      // bounded and scrubbed at the ingest boundary, so there is nothing to
+      // construct here - which is the point of the event type.
+      category = "conversations";
+      title = "";
+      detail = stringValue(details.about);
+    } else if (type === "a2a.message") {
       if (!details.from_agent_id || !details.to_agent_id || !details.message_kind) throw new ApiError("ActivityService returned incomplete A2A metadata", 0, "invalid_response", "");
       category = "conversations";
       title = `A2A ${String(details.message_kind).replaceAll("_", " ")}`;
