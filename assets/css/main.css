@@ -1037,3 +1037,50 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .wspace-rail .rail-group + .rail-group { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
 .rail-quiet { opacity: .72; }
 .rail-quiet:hover, .rail-quiet:focus-within { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Shared surfaces — applied once, so every view changes together.
+
+   Two component styles were doing most of the work of making this look
+   like an internal console: pill badges that turn every piece of state
+   into a chip, and panels that read as cards. Restyling them here is
+   deliberate - a design system change reaches activity, economics,
+   approvals and settings at once, which per-view edits never would.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* State is text, not a chip. A pill around a word makes it look like a
+   database enum on display; the same word set in mono next to its label
+   reads as an instrument reading. */
+.app-body .data-source-badge,
+.app-body .stream-state {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.app-body .data-source-badge[data-tone="success"] { color: var(--aqua); background: none; border: 0; }
+.app-body .data-source-badge[data-tone="error"] { color: var(--coral); background: none; border: 0; }
+
+/* Panels stop pretending to be cards: no shadow, no inset ring. Sections
+   are separated by a single hairline, the way a spec sheet is ruled. */
+.app-body .app-dashboard,
+.app-body .measured-panel,
+.app-body .wcard {
+  box-shadow: none;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Section headings across every view share one voice. */
+.app-body .app-dashboard-header h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  letter-spacing: -.018em;
+}
