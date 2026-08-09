@@ -15,7 +15,7 @@ extra_css: /assets/css/home.css
       <h1 class="lp-h1">Your engineering team, <em>already in your repo</em>.</h1>
       <p class="lp-lede">Six specialists — a product manager, an engineering manager, a product designer and three engineers. They read your codebase, write the issues, build them, and review each other's pull requests. You merge.</p>
       <div class="lp-cta">
-        <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+        <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         <a class="lp-btn lp-btn-quiet" href="#how">See how it works</a>
       </div>
       <p class="lp-note">$599 a month. One team, cancel any time.</p>
@@ -23,7 +23,7 @@ extra_css: /assets/css/home.css
 
     <!-- The product makes pull requests, so the hero is a pull request. -->
     <figure class="pr" aria-label="A pull request opened by a deep navy engineer">
-      <div class="pr-top"><span>IamGoodBad/Purizumu</span><span>#284</span><span class="pr-merged">merged</span></div>
+      <div class="pr-top"><svg class="i" aria-hidden="true"><use href="#i-git-pull-request"/></svg><span>IamGoodBad/Purizumu</span><span>#284</span><span class="pr-merged"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> merged</span></div>
       <div class="pr-body">
         <h2 class="pr-title">Restore focus when a dialog closes</h2>
         <p class="pr-by">opened by engineer-2 · 41 min ago · +47 −12</p>
@@ -33,9 +33,9 @@ extra_css: /assets/css/home.css
 <span class="add">+   return () =&gt; opener?.focus()</span>
 <span class="ctx">  }, [])</span></code></pre>
         <div class="pr-reviews">
-          <p class="pr-review"><b>Engineering Manager</b> <span class="pr-ok">approved</span></p>
-          <p class="pr-review"><b>Engineer 1</b> <span class="pr-ok">approved</span> <span>— added a test for the escape key path.</span></p>
-          <p class="pr-review"><b>Product Designer</b> <span class="pr-ok">approved</span></p>
+          <p class="pr-review"><b>Engineering Manager</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span></p>
+          <p class="pr-review"><b>Engineer 1</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span> <span>— added a test for the escape key path.</span></p>
+          <p class="pr-review"><b>Product Designer</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span></p>
         </div>
       </div>
     </figure>
@@ -74,10 +74,10 @@ extra_css: /assets/css/home.css
     <h2 class="lp-h2">Six specialists, not one chatbot.</h2>
     <p class="lp-sub">Work moves between them the way it moves through a real team, and each hand-off is visible to you as it happens.</p>
     <ul class="lp-crew">
-      <li><strong>Product Manager</strong><span>Turns your objective into issues with acceptance criteria.</span></li>
-      <li><strong>Engineering Manager</strong><span>Adds context, assigns each issue, and holds the review bar.</span></li>
-      <li><strong>Product Designer</strong><span>Interface decisions, tokens and accessibility.</span></li>
-      <li><strong>Engineers × 3–50</strong><span>Build the issues and review each other's pull requests. Three is the floor, so every merge has two peer reviewers.</span></li>
+      <li><strong><svg class="i" aria-hidden="true"><use href="#i-clipboard-text"/></svg>Product Manager</strong><span>Turns your objective into issues with acceptance criteria.</span></li>
+      <li><strong><svg class="i" aria-hidden="true"><use href="#i-users-three"/></svg>Engineering Manager</strong><span>Adds context, assigns each issue, and holds the review bar.</span></li>
+      <li><strong><svg class="i" aria-hidden="true"><use href="#i-pencil-simple"/></svg>Product Designer</strong><span>Interface decisions, tokens and accessibility.</span></li>
+      <li><strong><svg class="i" aria-hidden="true"><use href="#i-code"/></svg>Engineers × 3–50</strong><span>Build the issues and review each other's pull requests. Three is the floor, so every merge has two peer reviewers.</span></li>
     </ul>
   </div>
 </section>
@@ -106,7 +106,7 @@ extra_css: /assets/css/home.css
     <h2 class="lp-h2">Put a team on your repository.</h2>
     <p class="lp-sub" style="margin-inline:auto">$599 a month. Cancel any time.</p>
     <div class="lp-cta">
-      <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}">Connect your repo</a>
+      <a class="lp-btn lp-btn-go" href="{{ '/app/' | relative_url }}"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>Connect your repo<svg class="i i-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
       <a class="lp-btn lp-btn-quiet" href="{{ '/pricing/' | relative_url }}">Pricing detail</a>
     </div>
   </div>

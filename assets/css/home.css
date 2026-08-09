@@ -93,3 +93,60 @@
 .lp-close .lp-cta { justify-content: center; }
 
 @media (prefers-reduced-motion: reduce) { .lp-live { animation: none; } }
+
+/* ---- icons -------------------------------------------------------------
+   Phosphor (MIT), self-hosted as a sprite in the document. An icon that
+   arrives over the network can arrive late; a <use> against a sprite that is
+   already in the page cannot. Only the sixteen icons this product uses ship. */
+.i { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.135em; }
+.i-lg { width: 1.15em; height: 1.15em; }
+
+/* ---- motion ------------------------------------------------------------
+   Restrained on purpose. The reference points here are engineering tools, so
+   motion confirms an action or reveals structure; nothing drifts, bounces or
+   loops for decoration. One easing, three durations. */
+:root { --ease: cubic-bezier(.2,.7,.3,1); --quick: 140ms; --settle: 260ms; --arrive: 420ms; }
+
+/* Rows and steps state their presence on arrival, staggered so the eye reads
+   them as a sequence rather than a block appearing. */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.lp-step, .lp-crew li { animation: lp-rise var(--arrive) var(--ease) both; }
+.lp-step:nth-child(2), .lp-crew li:nth-child(2) { animation-delay: 60ms; }
+.lp-step:nth-child(3), .lp-crew li:nth-child(3) { animation-delay: 120ms; }
+.lp-step:nth-child(4), .lp-crew li:nth-child(4) { animation-delay: 180ms; }
+
+/* The step number turns seafoam as you read its row: the page tracks where
+   you are without a scroll spy or a highlight bar. */
+.lp-step { transition: border-color var(--settle) var(--ease); }
+.lp-step::before { transition: color var(--settle) var(--ease); }
+.lp-step:hover::before { color: var(--accent-text); }
+.lp-step:hover { border-top-color: var(--accent-a35); }
+
+/* Buttons: press is acknowledged, and the arrow leads. */
+.lp-btn { transition: background var(--quick) var(--ease), border-color var(--quick) var(--ease), color var(--quick) var(--ease), transform var(--quick) var(--ease); }
+.lp-btn:active { transform: translateY(1px); }
+.lp-btn .i { transition: transform var(--quick) var(--ease); }
+.lp-btn:hover .i-arrow { transform: translateX(3px); }
+
+/* The pull request is the product; hovering it lifts the border, not the box,
+   because a shadow would reintroduce the card look the palette just shed. */
+.pr { transition: border-color var(--settle) var(--ease); }
+.pr:hover { border-color: var(--accent-a35); }
+/* Each approval lands after the one above it - the review sequence the
+   product actually enforces, shown rather than described. */
+@keyframes lp-approve { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+.pr-review { animation: lp-approve var(--settle) var(--ease) both; }
+.pr-review:nth-child(1) { animation-delay: 500ms; }
+.pr-review:nth-child(2) { animation-delay: 760ms; }
+.pr-review:nth-child(3) { animation-delay: 1020ms; }
+.pr-ok .i { color: var(--accent-text); }
+
+/* Crew and roster icons carry role, so they are not decoration. */
+.lp-crew strong { display: inline-flex; align-items: center; gap: .5rem; }
+.lp-crew .i { color: var(--muted); transition: color var(--quick) var(--ease); }
+.lp-crew li:hover .i { color: var(--accent-text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-step, .lp-crew li, .lp-review, .pr-review { animation: none; }
+  .lp-btn:active { transform: none; }
+}

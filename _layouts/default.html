@@ -4,6 +4,7 @@
     {% include head.html %}
   </head>
   <body class="page-{{ page.body_class | default: 'default' }}">
+{% include icons.svg %}
     <a class="skip-link" href="#main-content">Skip to content</a>
     {% include header.html %}
     <main id="main-content" tabindex="-1">{{ content }}</main>
