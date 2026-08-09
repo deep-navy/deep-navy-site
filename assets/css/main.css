@@ -1116,3 +1116,10 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .brand .mark { width: 30px; height: 30px; flex: none; color: currentColor; }
 .site-footer .mark { width: 24px; height: 24px; }
 .brand { display: inline-flex; align-items: center; gap: .6rem; }
+
+/* The agent log reads as a work journal: who spoke, what they said, and the
+   evidence underneath. Tool calls are set quiet and small because they answer
+   "how do you know" rather than being the news. */
+.app-body .customer-activity-item strong { font-family: var(--font-display); font-size: var(--t-sm); letter-spacing: -.01em; }
+.app-body .customer-activity-item > div > p:first-of-type { color: var(--ink); }
+.customer-activity-evidence { margin: .35rem 0 0; font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }

@@ -1,3 +1,5 @@
+// Source labels are internal discriminators that the timeline can render,
+// so they no longer name services. The rule under test is unchanged.
 "use strict";
 
 const assert = require("node:assert/strict");
@@ -12,10 +14,10 @@ test("activity filters cover every launch work source without conflating their c
   for (const category of ["all", "conversations", "sessions", "tools", "workspace", "delivery", "approvals", "provisioning", "cost"]) {
     assert.match(shell, new RegExp(`data-activity-filter="${category}"`));
   }
-  assert.match(app, /ActivityService stream/);
+  assert.match(app, /source: "runtime"/);
   assert.match(app, /ProvisioningService stream/);
-  assert.match(app, /ApprovalService queue/);
-  assert.match(app, /EconomicsService snapshot/);
+  assert.match(app, /source: "approval queue"/);
+  assert.match(app, /source: "economics"/);
   assert.match(app, /Activity event \$\{sequence\.toString\(\)\}/);
   assert.match(app, /Provisioning event \$\{sequence\.toString\(\)\}/);
 });

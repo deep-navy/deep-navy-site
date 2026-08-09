@@ -2571,7 +2571,7 @@
   function renderObjectiveDispatch(dispatch) {
     if (!validObjectiveDispatch(dispatch)) {
       setSourceState(ui.objectiveDispatchState, "Unavailable", "error");
-      ui.objectiveDispatchDetail.textContent = "ObjectiveService did not return a valid durable handoff status. Delivery is not assumed.";
+      ui.objectiveDispatchDetail.textContent = "We could not read the handoff state for this objective, so nothing is assumed about it.";
       return;
     }
     const stateLabel = objectiveDispatchStateLabel(dispatch.state);
@@ -3378,7 +3378,7 @@
     upsertActivityProjection({
       id: `cost:${teamId}`,
       category: "cost",
-      source: "EconomicsService snapshot",
+      source: "economics",
       title: "Cost and credits measured",
       safeSummary: `${formatCanonicalMoney(economics.directCost)} attributable cost · ${formatCreditMicros(economics.creditsUsedMicros)} credits used · ${formatCreditMicros(economics.creditsRemainingMicros)} credits remaining.`,
       detail: "Point-in-time team economics; not a streamed usage event.",
@@ -3539,7 +3539,7 @@
     replaceActivityProjections("approval-pending:", session.approvals.map((approval) => ({
       id: `approval-pending:${stringValue(approval.id)}`,
       category: "approvals",
-      source: "ApprovalService queue",
+      source: "approval queue",
       title: stringValue(approval.actionType).replaceAll("_", " ") || "Approval requested",
       safeSummary: stringValue(approval.safeSummary),
       detail: stringValue(approval.requestedByAgentId) ? `Requested by agent ${stringValue(approval.requestedByAgentId)}` : "Requesting agent not reported.",
@@ -3629,10 +3629,10 @@
       upsertActivityProjection({
         id: `approval-decision:${id}`,
         category: "approvals",
-        source: "ApprovalService decision",
+        source: "approval decision",
         title: `${actionType.replaceAll("_", " ")} · ${approved ? "approved" : "denied"}`,
         safeSummary: stringValue(decided.safeSummary) || stringValue(approval.safeSummary),
-        detail: "Decision confirmed by the authenticated ApprovalService response.",
+        detail: "Decision confirmed.",
         status: approved ? "approved" : "denied",
         sequenceLabel: "Decision",
         occurredAt: decided.decidedAt || approval.requestedAt
@@ -3886,7 +3886,7 @@
     return {
       id: `workspace-change:${id}`,
       category: "workspace",
-      source: "WorkspaceService snapshot",
+      source: "workspace",
       title: `${relativePath} · ${kind}`,
       safeSummary: `${additions.toString()} additions · ${deletions.toString()} deletions · ${diffState}.`,
       detail: `Agent ${agentId} · Work assignment ${workAssignmentId} v${assignmentVersion.toString()} · Team generation ${generation.toString()}`,
@@ -4160,16 +4160,16 @@
     }
     if (states.every((state) => state === "loaded")) {
       setSourceState(ui.deliveryHistoryState, `${session.githubIssues.length} issues · ${session.githubPullRequests.length} PRs`, "success");
-      ui.deliveryHistoryState.title = "GitHubDeliveryService returned both webhook-backed snapshots.";
+      ui.deliveryHistoryState.title = "Issues and pull requests are both up to date.";
       return;
     }
     if (states.some((state) => state === "loaded")) {
       setSourceState(ui.deliveryHistoryState, `Partial · ${session.githubIssues.length} issues · ${session.githubPullRequests.length} PRs`, "error");
-      ui.deliveryHistoryState.title = "One GitHubDeliveryService projection is unavailable; no missing records are inferred.";
+      ui.deliveryHistoryState.title = "Part of your GitHub history is unavailable right now, so nothing is guessed at.";
       return;
     }
     setSourceState(ui.deliveryHistoryState, states.includes("invalid") ? "Invalid response" : "Unavailable", "error");
-    ui.deliveryHistoryState.title = "GitHubDeliveryService did not return a trustworthy issue or pull-request projection.";
+    ui.deliveryHistoryState.title = "We could not read your issues and pull requests reliably, so none are shown.";
   }
 
   function githubIssueStateLabel(value) {
@@ -4250,7 +4250,7 @@
       entry: {
         id: `github-issue:${repository.id}:${id}`,
         category: "delivery",
-        source: "GitHubDeliveryService issue snapshot",
+        source: "github issue",
         title: `Issue #${number.toString()} · ${title}`,
         safeSummary: `${state} · ${comments.toString()} comments${record.locked ? " · locked" : ""}.`,
         detail: [stateReason ? `Reason ${stateReason}` : "", author ? `Author ${author}` : "Author unavailable", assignees.length ? `Assignees ${assignees.join(", ")}` : "No assignees", labels.length ? `Labels ${labels.join(", ")}` : "No labels"].filter(Boolean).join(" · "),
@@ -4294,7 +4294,7 @@
       entry: {
         id: `github-pull-request:${repository.id}:${id}`,
         category: "delivery",
-        source: "GitHubDeliveryService pull-request snapshot",
+        source: "github pull request",
         title: `PR #${number.toString()} · ${title}`,
         safeSummary: `${state}${record.draft ? " draft" : ""} · ${counters.commitsCount.toString()} commits · ${counters.changedFiles.toString()} files · +${counters.additions.toString()} / −${counters.deletions.toString()}.`,
         detail: [`${headRef} → ${baseRef}`, author ? `Author ${author}` : "Author unavailable", `${counters.commentsCount.toString()} comments`, `${counters.reviewCommentsCount.toString()} review comments`, assignees.length ? `Assignees ${assignees.join(", ")}` : "No assignees", labels.length ? `Labels ${labels.join(", ")}` : "No labels"].join(" · "),
@@ -4620,7 +4620,7 @@
     return {
       id: `runtime:${id}`,
       category,
-      source: "ActivityService stream",
+      source: "runtime",
       title,
       safeSummary,
       detail,
@@ -4693,8 +4693,48 @@
   }
 
   function activityMarker(entry) {
-    if (entry.source === "ActivityService stream") return agentRoleContract?.canonicalAgentRole?.(entry.agentRole)?.code || "A";
+    if (entry.source === "runtime") return agentRoleContract?.canonicalAgentRole?.(entry.agentRole)?.code || "A";
     return ({ sessions: "S", workspace: "W", approvals: "AP", provisioning: "PV", cost: "$" })[entry.category] || "·";
+  }
+
+  // Agents get names. "7f3a1c2e-… → 9b2d4f81-…" is not a conversation, and a
+  // customer who has hired a team should be able to say who did what. Names
+  // are assigned deterministically from the role and the engineer's ordinal,
+  // so the same agent is the same person on every page load.
+  const agentNames = { tpm: "Riley", em: "Morgan", designer: "Dana" };
+  const engineerNames = ["Ada", "Sam", "Jordan", "Avery", "Kit", "Noor"];
+  function agentDisplayName(entry) {
+    const role = agentRoleContract?.canonicalAgentRole?.(entry?.agentRole);
+    if (!role) return "";
+    if (agentNames[role.key]) return agentNames[role.key];
+    // Engineers share one role, so the code (E4, E5…) picks the name.
+    const ordinal = Number.parseInt(String(role.code || "").replace(/\D/g, ""), 10);
+    return engineerNames[(Number.isFinite(ordinal) ? ordinal - 4 : 0) % engineerNames.length] || "Engineer";
+  }
+
+  // Tool calls are evidence for the sentence above them, not news. Folded into
+  // the turn as one quiet line, they answer "how do you know" without turning
+  // the log into a syscall trace.
+  function toolEvidence(entries) {
+    const tools = entries.filter((entry) => entry.category === "tools").map((entry) => stringValue(entry.title).replace(/^Tool · /, ""));
+    if (!tools.length) return "";
+    const counts = new Map();
+    tools.forEach((tool) => counts.set(tool, (counts.get(tool) || 0) + 1));
+    return [...counts].map(([tool, n]) => (n > 1 ? `${tool} ×${n}` : tool)).join(" · ");
+  }
+
+  // One entry per agent turn: consecutive events from the same agent in the
+  // same session are one thing that happened, not five.
+  function groupActivityTurns(entries) {
+    const turns = [];
+    entries.forEach((entry) => {
+      const last = turns[turns.length - 1];
+      const speaker = agentDisplayName(entry);
+      const key = `${speaker}|${entry.sessionId || ""}`;
+      if (last && last.key === key && speaker) last.entries.push(entry);
+      else turns.push({ key, speaker, entries: [entry] });
+    });
+    return turns;
   }
 
   function renderActivityLedger() {
@@ -4703,7 +4743,15 @@
     const allEntries = allActivityEntries();
     const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
     ui.activityList.replaceChildren();
-    entries.forEach((entry) => {
+    // One entry per agent turn. Tool calls belong to the turn that made them,
+    // so they are folded in as evidence rather than listed as peers of the
+    // work they served.
+    const turns = groupActivityTurns(entries);
+    const shown = turns.map((turn) => {
+      const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
+      return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
+    });
+    shown.forEach(({ entry, evidence }) => {
     const item = document.createElement("li");
     item.className = "customer-activity-item";
     const copy = document.createElement("div");
@@ -4711,14 +4759,25 @@
     const summary = document.createElement("p");
     const meta = document.createElement("div");
     meta.className = "customer-activity-meta";
-      title.textContent = stringValue(entry.title) || "Activity recorded";
-      summary.textContent = stringValue(entry.safeSummary) || "The source returned a typed event without a customer-safe summary.";
+      // Lead with who is speaking and what they said. The old title was built
+      // from metadata - "A2A propose initiative", "Tool · deep navy assign
+      // work" - which described our event taxonomy rather than the work. The
+      // agent's own customer-safe sentence was already on the event and was
+      // being shown underneath that; now it is the entry.
+      const speaker = agentDisplayName(entry);
+      const roleLabel = entry.source === "runtime" ? agentRoleLabel(entry.agentRole) : "";
+      title.textContent = speaker ? `${speaker} · ${roleLabel}` : (stringValue(entry.title) || "Update");
+      summary.textContent = stringValue(entry.safeSummary) || stringValue(entry.title) || "No detail was reported.";
       // Human context only. The raw resource UUIDs the sources attach read as
       // machine telemetry in a customer timeline; anyone debugging still has
       // them in the underlying responses. GitHub numbers stay - a customer
       // recognizes "Issue #1" - and the marker glyph rides in the meta line
       // now that the timeline spine replaced the marker column.
-      const metaValues = [activityMarker(entry), entry.source === "ActivityService stream" ? agentRoleLabel(entry.agentRole) : stringValue(entry.source), stringValue(entry.status), stringValue(entry.sequenceLabel)];
+      // Never our machinery. entry.source ("economics") and
+      // entry.sequenceLabel ("Activity event 13") were printed straight into
+      // the customer's timeline, along with a single-letter marker glyph. A
+      // customer's model is issues, pull requests and money.
+      const metaValues = [stringValue(entry.status)];
       if (entry.githubIssueId) metaValues.push(`Issue ${entry.githubIssueId}`);
       if (entry.pullRequestId) metaValues.push(`PR ${entry.pullRequestId}`);
       metaValues.filter(Boolean).forEach((value) => {
@@ -4742,6 +4801,12 @@
           detail.append(link);
         }
         copy.append(detail);
+      }
+      if (evidence) {
+        const line = document.createElement("p");
+        line.className = "customer-activity-evidence";
+        line.textContent = `↳ ${evidence}`;
+        copy.append(line);
       }
       if (entry.diffAvailability) {
         const diff = document.createElement("details");

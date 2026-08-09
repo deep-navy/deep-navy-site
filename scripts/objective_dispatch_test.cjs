@@ -1,3 +1,5 @@
+// Source labels are internal discriminators that the timeline can render,
+// so they no longer name services. The rule under test is unchanged.
 "use strict";
 
 const assert = require("node:assert/strict");
@@ -19,7 +21,7 @@ test("objective pages fail closed when dispatch status is absent or invalid", ()
   assert.match(app, /!validObjectiveDispatch\(objective\?\.dispatch\)/);
   assert.match(app, /stateLabel === "delivered" && !deliveredAt/);
   assert.match(app, /stateLabel === "failed" && !failureReason/);
-  assert.match(app, /Delivery is not assumed/);
+  assert.match(app, /nothing is assumed about it/);
 });
 
 test("objective creation reports the returned queue state without fabricating delivery", () => {

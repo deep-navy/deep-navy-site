@@ -48,6 +48,8 @@ jobs:
           node --check assets/js/app.js
       - name: Check inline pre-paint scripts
         run: node scripts/check_inline_scripts.cjs
+      - name: Check runtime customer language
+        run: node scripts/check_runtime_language.cjs
       - name: Check onboarding contract flow
         run: npm test
       - name: Build static site

@@ -1,3 +1,5 @@
+// Source labels are internal discriminators that the timeline can render,
+// so they no longer name services. The rule under test is unchanged.
 "use strict";
 
 const assert = require("node:assert/strict");
@@ -49,7 +51,7 @@ test("workspace changes render only bounded server-sanitized text with typed una
   assert.match(app, /new TextEncoder\(\)\.encode\(value\)\.byteLength > 4096/);
   assert.match(app, /availability !== "available" && \(safeDiff \|\| diffRedacted \|\| diffTruncated\)/);
   assert.match(app, /sequence === null \|\| sequence <= previousSequence/);
-  assert.match(app, /source: "WorkspaceService snapshot"/);
+  assert.match(app, /source: "workspace"/);
   assert.match(app, /Diff unavailable · \$\{entry\.diffAvailability\}/);
   assert.match(app, /code\.textContent = entry\.safeDiff/);
   assert.match(app, /Sensitive-looking values were redacted/);
