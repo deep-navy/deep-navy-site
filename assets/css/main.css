@@ -1213,3 +1213,18 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    inline style attribute, which style-src 'self' refuses - so the policy left a
    blank block in the page. A class lives in the stylesheet the policy trusts. */
 .icon-sprite { display: none; }
+
+/* One screen: the rail, the work, and the log beside it.
+   Activity used to be a separate tab, which meant that seeing a card move and
+   reading why it moved were two different screens. They are now level with
+   each other, which is the entire reason the tab is gone. */
+.app-body .wspace { grid-template-columns: 210px minmax(0, 1.35fr) minmax(0, .9fr); }
+@media (max-width: 1180px) { .app-body .wspace { grid-template-columns: 200px minmax(0, 1fr); } .wspace-log { grid-column: 1 / -1; } }
+@media (max-width: 900px) { .app-body .wspace { grid-template-columns: 1fr; } }
+.wspace-log { padding-left: 1.6rem; border-left: 1px solid var(--line); min-width: 0; }
+.log-head { display: flex; align-items: baseline; gap: .7rem; margin-bottom: 1rem; }
+.log-head h3 { margin: 0; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+/* The log is reference while you read the work, so it scrolls on its own
+   rather than pushing the board off the screen. */
+.wspace-log .activity-workspace { max-height: 62vh; overflow-y: auto; }
+.wspace-log .customer-activity-list { margin: 0; }

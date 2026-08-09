@@ -200,12 +200,6 @@
           </button>
         </div>
         <nav class="wsnav-links">
-          <a class="wsnav-link" data-view-link="overview" aria-current="true" href="#workspace-overview">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-            <span>Overview</span></a>
-          <a class="wsnav-link" data-view-link="activity" href="#workspace-activity">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
-            <span>Activity</span></a>
           <a class="wsnav-link" data-view-link="economics" href="#workspace-economics">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V6M4 20h16M9 20v-6M14 20V9M19 20v-9"/></svg>
             <span>Economics</span></a>
@@ -328,6 +322,33 @@
                 </details>
               </section>
             </div>
+            <!-- The log runs beside the work, so a card moving and the
+                 sentence explaining why sit level with each other. It was a
+                 separate tab, which meant reading cause and effect required
+                 changing screens. -->
+            <aside class="wspace-log" aria-labelledby="log-title">
+              <div class="log-head">
+                <h3 id="log-title">Log</h3>
+                <span class="stream-state" data-activity-state>Waiting for a team</span>
+                <button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button>
+              </div>
+<div class="activity-workspace">
+            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you give your team an objective.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Give them an objective</a></div>
+            <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
+            <!-- Paging lives after the events, reached by running out of them,
+                 rather than above the feed as a control panel. -->
+            <div class="activity-more" aria-label="Load older activity">
+              <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
+              <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
+              <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
+              <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
+              <button class="button button-quiet button-small" type="button" data-sessions-more hidden>Older sessions</button>
+              <button class="button button-quiet button-small" type="button" data-workspace-more hidden>Older code changes</button>
+              <button class="button button-quiet button-small" type="button" data-issues-more hidden>Older issues</button>
+              <button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>Older pull requests</button>
+            </div>
+          </div>
+            </aside>
           </div>
         </section>
 
@@ -357,22 +378,7 @@
             <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
           </div>
 
-          <div class="activity-workspace">
-            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you give your team an objective.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Give them an objective</a></div>
-            <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
-            <!-- Paging lives after the events, reached by running out of them,
-                 rather than above the feed as a control panel. -->
-            <div class="activity-more" aria-label="Load older activity">
-              <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
-              <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
-              <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
-              <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
-              <button class="button button-quiet button-small" type="button" data-sessions-more hidden>Older sessions</button>
-              <button class="button button-quiet button-small" type="button" data-workspace-more hidden>Older code changes</button>
-              <button class="button button-quiet button-small" type="button" data-issues-more hidden>Older issues</button>
-              <button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>Older pull requests</button>
-            </div>
-          </div>
+          <p class="wctx">This team's work and log are on the main screen.</p>
         </section>
 
         <!-- ===== ECONOMICS ===== -->
