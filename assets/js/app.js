@@ -4681,6 +4681,15 @@
     const counts = new Map([...activityCategories].map((category) => [category, category === "all" ? entries.length : entries.filter((entry) => entry.category === category).length]));
     ui.activityFilterButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.activityFilter === session.activityFilter)));
     ui.activityFilterCounts.forEach((element) => { element.textContent = String(counts.get(element.dataset.activityFilterCount) || 0); });
+    // A filter for a category with nothing in it is a dead control. Nine chips
+    // reading zero told the customer only that nine categories exist; hiding
+    // the empty ones means the row describes what their team has actually
+    // done. "All" stays so there is always something to return to.
+    ui.activityFilterButtons.forEach((button) => {
+      const category = button.dataset.activityFilter;
+      const empty = category !== "all" && !(counts.get(category) || 0);
+      button.hidden = empty && category !== session.activityFilter;
+    });
   }
 
   function activityMarker(entry) {
@@ -4766,7 +4775,7 @@
     ui.activityList.hidden = entries.length === 0;
     if (!entries.length && allEntries.length) {
       const filterLabel = ui.activityFilterButtons.find((button) => button.dataset.activityFilter === session.activityFilter)?.childNodes[0]?.textContent?.trim() || "selected";
-      setEmptyState(ui.activityEmpty, `No ${filterLabel.toLowerCase()} activity`, "The authoritative sources returned no records in this filter.");
+      setEmptyState(ui.activityEmpty, `Nothing under ${filterLabel.toLowerCase()} yet`, "Your team has not produced anything in this category. Try All to see everything they have done.");
     } else if (!entries.length) {
       setEmptyState(ui.activityEmpty, "No activity yet", "The selected team has no customer-safe events or source snapshots yet.");
     }

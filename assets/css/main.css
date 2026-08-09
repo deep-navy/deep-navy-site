@@ -1110,3 +1110,9 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .setupline-facts small { font-size: var(--t-sm); color: var(--ink); }
 .setupline-facts button:hover small { color: var(--aqua); }
 .setupline-facts [data-state="complete"] small { color: var(--ink); }
+
+/* The mark. One SVG for both themes: it inherits currentColor, so it is navy
+   on light grounds and white on dark without a second file to keep in sync. */
+.brand .mark { width: 30px; height: 30px; flex: none; color: currentColor; }
+.site-footer .mark { width: 24px; height: 24px; }
+.brand { display: inline-flex; align-items: center; gap: .6rem; }
