@@ -33,7 +33,11 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // The signed-out card invites GitHub sign-in as the single first action.
   assert.match(home, /Connect your repo/);
   assert.doesNotMatch(shell, /Sign in to build your engineering team/); // no second login screen
-  assert.match(shell, /data-sign-in/);
+  // There is no sign-in button in the app at all. The homepage carries the only
+  // one; the app's signed-out state is the handoff to GitHub, not a screen that
+  // asks the customer to click the same button a second time.
+  assert.doesNotMatch(shell, /data-sign-in\b/);
+  assert.doesNotMatch(shell, /Continue with GitHub/);
   // GitHub context is reported as auto-connected facts. Assert the behaviour
   // (each is a reviewable step that connects itself) rather than the class
   // name, which is presentation and moved with the redesign.

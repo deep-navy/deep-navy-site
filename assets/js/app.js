@@ -321,7 +321,7 @@
   });
 
   ui.environmentFields.forEach((field) => { field.textContent = environment; });
-  ui.signIn.disabled = !identity.ready;
+  if (ui.signIn) ui.signIn.disabled = !identity.ready;
 
   function setAuthPhase(phase) {
     const presentation = appState?.authPresentation
@@ -346,7 +346,7 @@
     // Once authenticated, the user card and Sign out button already say so; a
     // "Signed in" pill is duplicate status that adds header noise.
     ui.sessionState.hidden = presentation.authenticated;
-    ui.signIn.disabled = presentation.phase === "authenticating" || !identity.ready;
+    if (ui.signIn) ui.signIn.disabled = presentation.phase === "authenticating" || !identity.ready;
   }
 
   function stringValue(value) {
@@ -481,15 +481,30 @@
   // newly signed-in user who has not installed the App yet to install it and
   // connect repositories. Installing authorizes too, so the same callback
   // completes sign-in and derives the organization.
+  // A sign-in handoff that fails leaves nothing useful on this page, because
+  // this page has no sign-in button by design. Send them back to the homepage,
+  // where the only one lives. Once: if the return trip fails too, the banner
+  // below has to be readable instead of looping.
+  const signInBounceKey = "deepnavy.signin.bounced";
+  function bounceToHomepage() {
+    try {
+      if (window.sessionStorage.getItem(signInBounceKey)) return false;
+      window.sessionStorage.setItem(signInBounceKey, "1");
+    } catch { return false; }
+    window.location.replace(new URL("../", window.location.href).toString());
+    return true;
+  }
+
   async function beginSignIn(target = "authorization") {
     hideAuthError();
     if (!identity.ready || !platformApi) {
+      if (bounceToHomepage()) return;
       showAuthError("Sign-in is not available", "This deployment is missing its platform API configuration or the generated client bundle. No sign-in request was sent.");
       return;
     }
 
     setAuthPhase("authenticating");
-    ui.signIn.disabled = true;
+    if (ui.signIn) ui.signIn.disabled = true;
     ui.retrySignIn.disabled = true;
     const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
     const controller = new AbortController();
@@ -511,8 +526,9 @@
     } catch {
       clearSignInTransaction();
       setAuthPhase("signed_out");
+      if (bounceToHomepage()) return;
       showAuthError("Could not start sign-in", "deep navy could not begin GitHub sign-in. No credentials were sent. Try again in a moment.");
-      ui.signIn.disabled = !identity.ready;
+      if (ui.signIn) ui.signIn.disabled = !identity.ready;
       ui.retrySignIn.disabled = !identity.ready;
     } finally {
       window.clearTimeout(timeout);
@@ -5927,7 +5943,7 @@
     window.location.assign(appPath);
   }
 
-  ui.signIn.addEventListener("click", () => beginSignIn());
+  if (ui.signIn) ui.signIn.addEventListener("click", () => beginSignIn());
   ui.retrySignIn.addEventListener("click", () => beginSignIn());
   ui.signOut.addEventListener("click", signOut);
   if (ui.organizationConnect) ui.organizationConnect.addEventListener("click", () => beginSignIn("installation"));
