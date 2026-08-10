@@ -2927,8 +2927,10 @@
         engineerOrdinal += 1;
         canonicalRole = { ...canonicalRole, code: `E${engineerOrdinal}` };
       }
-      const state = stringValue(agent.state).toLowerCase();
-      const active = state === "active" || state.endsWith("_active");
+      // The roster reports lifecycle as a proto enum, which arrives as a number
+      // over JSON; stringValue() turned that into "2" and neither branch matched,
+      // so every agent read as not-active and no dot ever lit.
+      const active = lifecycleLabel(agent.state) === "active";
       const row = document.createElement("div");
       row.className = active ? "crew-row is-on" : "crew-row";
       row.dataset.roleKey = canonicalRole.key;
@@ -4541,6 +4543,21 @@
     setSourceState(ui.activityState, "Connecting", "loading");
     setEmptyState(ui.activityEmpty, "Connecting to activity", "Waiting for the server to replay customer-safe events and open the live stream.");
     ui.activityRetry.hidden = true;
+    // An open stream with nothing to say looked identical to one that never
+    // opened, because the only place that reported success was inside the loop
+    // body and the loop body runs on an event. A quiet team sat on "Connecting"
+    // indefinitely. No error within the settle window means we are connected;
+    // a real failure below overwrites this.
+    let streamEstablished = false;
+    const markStreamEstablished = () => {
+      if (streamEstablished || controller.signal.aborted) return;
+      streamEstablished = true;
+      setSourceState(ui.activityState, "Listening", "success");
+      if (!allActivityEntries().length) {
+        setEmptyState(ui.activityEmpty, "Listening", "Connected to your team. The first thing they do appears here.");
+      }
+    };
+    const establishTimer = window.setTimeout(markStreamEstablished, 1500);
     const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
     try {
       for await (const response of platformApi.streamTeamActivity({ teamId, afterSequence: session.lastActivitySequence }, {
@@ -4552,6 +4569,8 @@
         const event = response?.event;
         if (!event) continue;
         if (stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("The activity service returned an event outside the selected team scope", 0, "invalid_response", requestId);
+        window.clearTimeout(establishTimer);
+        markStreamEstablished();
         appendActivityEvent(event);
         session.runtimeStreamLive = true;
         renderWorkspaceHeadline();
@@ -4576,6 +4595,7 @@
       }
       ui.activityRetry.hidden = false;
     } finally {
+      window.clearTimeout(establishTimer);
       if (session.activityAbort === controller) session.activityAbort = null;
     }
   }
