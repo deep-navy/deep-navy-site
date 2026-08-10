@@ -31,7 +31,7 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // assert the heading rather than the label chip that used to shout it.
   assert.match(shell, /data-team-card-title/);
   // The signed-out card invites GitHub sign-in as the single first action.
-  assert.match(home, /Connect your repo/);
+  assert.match(home, /Continue with GitHub/);
   assert.doesNotMatch(shell, /Sign in to build your engineering team/); // no second login screen
   // There is no sign-in button in the app at all. The homepage carries the only
   // one; the app's signed-out state is the handoff to GitHub, not a screen that

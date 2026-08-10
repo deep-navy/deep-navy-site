@@ -1290,3 +1290,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .wfoot { margin-top: 1.7rem; padding-top: 1.2rem; border-top: 1px solid var(--line); opacity: .62; transition: opacity .24s ease; }
 .wfoot:hover, .wfoot:focus-within { opacity: 1; }
 .wfoot h3 { margin: 0 0 .7rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* The GitHub sign-in button. It lives here, on the homepage, and nowhere else. */
+.lp-btn-github { background: var(--brand-github-bg); color: var(--brand-github-fg); border: 1px solid var(--brand-github-bg); gap: .6rem; }
+.lp-btn-github:hover { background: var(--brand-github-bg-hover); border-color: var(--brand-github-bg-hover); }
+.lp-btn-github .github-mark { flex: none; }
