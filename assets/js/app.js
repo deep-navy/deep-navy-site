@@ -2977,7 +2977,7 @@
     if (!found) return null;
     const summary = stringValue(found.safeSummary) || stringValue(found.title);
     if (!summary) return null;
-    return summary.length > 46 ? `${summary.slice(0, 45).trimEnd()}…` : summary;
+    return summary.length > 96 ? `${summary.slice(0, 95).trimEnd()}…` : summary;
   }
 
   function latestEventForRole(roleKey) {
@@ -5471,7 +5471,7 @@
     return {
       theme: "night",
       variables: {
-        colorPrimary: "#79f2d2",
+        colorPrimary: "#5ef0a8",
         colorBackground: "#050a10",
         colorText: "#f4f7f5",
         colorTextSecondary: "#9aa6aa",
@@ -5483,10 +5483,10 @@
       },
       rules: {
         ".Input": { backgroundColor: "#02060b", border: "1px solid rgba(244,247,245,0.14)" },
-        ".Input:focus": { border: "1px solid #79f2d2", boxShadow: "none" },
+        ".Input:focus": { border: "1px solid #5ef0a8", boxShadow: "none" },
         ".Label": { color: "#9aa6aa" },
         ".Tab": { border: "1px solid rgba(244,247,245,0.14)" },
-        ".Tab--selected": { borderColor: "#79f2d2" }
+        ".Tab--selected": { borderColor: "#5ef0a8" }
       }
     };
   }

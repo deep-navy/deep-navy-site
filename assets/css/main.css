@@ -1237,14 +1237,56 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .wsbar { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap;
   padding: 0 0 .9rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--line); border-right: 0; position: static; }
 .app-body .wsbar .wsnav-team { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
-.app-body .wsbar .wsnav-links { flex-direction: row; gap: 1.2rem; margin-left: auto; }
-.app-body .wsbar .wsnav-link { border-left: 0; border-bottom: 2px solid transparent; padding: .3rem 0; }
-.app-body .wsbar .wsnav-link[aria-current="true"] { border-left: 0; border-bottom-color: var(--accent-graphic); }
-.app-body .wsbar .wsnav-new { margin: 0; padding: 0; border: 0; }
-/* Two columns now, not three: the work and the log. */
-.app-body .workspace { display: block; }
-.app-body .wspace { grid-template-columns: minmax(0, 1.4fr) minmax(0, .85fr); }
-@media (max-width: 1000px) { .app-body .wspace { grid-template-columns: 1fr; } .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; } }
-/* The crew moves into the work column as a compact row of who is on what. */
-.wspace-rail { position: static; border-right: 0; padding: 0 0 1.2rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--line); }
-.wspace-rail .rail-group + .rail-group { margin-top: 1.1rem; padding-top: 1.1rem; }
+/* Overflow menu. Economics and settings are places you visit occasionally; as
+   three permanent links they competed with the work for attention every second
+   the page was open. Everything here is also on Cmd+K. */
+.app-body .wsbar .wsmenu { margin-left: auto; position: relative; }
+.wsmenu > summary { list-style: none; cursor: pointer; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--muted); transition: color .2s ease, border-color .2s ease; }
+.wsmenu > summary::-webkit-details-marker { display: none; }
+.wsmenu[open] > summary, .wsmenu > summary:hover { color: var(--ink); border-color: var(--accent-a35); }
+.wsmenu-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 172px; display: grid; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem; box-shadow: var(--shadow-panel); }
+.wsmenu-panel a { padding: .42rem .55rem; border-radius: var(--radius-sm); font-size: .78rem; color: var(--text); text-decoration: none; }
+.wsmenu-panel a:hover { background: var(--accent-a12); color: var(--aqua); }
+
+/* Spend rides in the bar as a number. It does not need a screen. */
+.wsbar-spend { display: flex; align-items: center; gap: .5rem; }
+.wsbar-spend-value { font-family: var(--font-mono); font-size: .76rem; font-variant-numeric: tabular-nums; color: var(--text-bright); }
+.wsbar-track { width: 54px; height: 2px; background: var(--line); overflow: hidden; }
+.wsbar-track > i { display: block; height: 100%; background: var(--aqua); }
+
+/* One screen, stacked: the crew, then the work beside the log. */
+.app-body [data-shell][data-shell-mode="workspace"] .workspace { display: block; }
+.app-body .wspace { display: block; }
+.app-body .wspace-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .85fr); align-items: start; }
+.app-body .wspace-main { padding-left: 0; }
+
+/* THE CREW. Six people and what each is doing this second - the reason to keep
+   the page open. This lived in a 250px gutter under a small heading, which is
+   where you put a legend, not the subject of the screen. */
+.crew { padding: 0 0 1.25rem; margin-bottom: 1.45rem; border-bottom: 1px solid var(--line); }
+.crew-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .85rem; }
+.crew-head h3 { margin: 0; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.crew-state { font-family: var(--font-mono); font-size: .62rem; letter-spacing: .1em; color: var(--muted); }
+/* Hairline grid: one line between tiles, no boxes inside boxes. */
+/* Hairlines are drawn by the tiles, not by a gap over a coloured backing:
+   six people rarely fill the last row, and a backing turned the empty cell
+   into a grey slab that read as a missing panel. */
+.app-body .agent-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0; background: none; border: 1px solid var(--line); }
+.app-body .crew-row { margin: 0; border-radius: 0; padding: .72rem .8rem; background: none; gap: .55rem; align-items: flex-start;
+  border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.app-body .crew-row.is-on { background: var(--accent-a05); }
+.app-body .crew-dot { margin-top: .34rem; }
+.app-body .crew-copy strong { font-size: .8rem; }
+/* The live line wraps instead of truncating: it is the sentence the customer
+   came for, and an ellipsis in a 210px tile hid the verb. */
+.app-body .crew-copy .crew-doing { white-space: normal; font-size: .66rem; line-height: 1.45; margin-top: .3rem; }
+
+@media (max-width: 1000px) {
+  .app-body .wspace-grid { grid-template-columns: 1fr; }
+  .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+}
+
+/* Team lifecycle is not work. It sits under the floor, quiet. */
+.wfoot { margin-top: 1.7rem; padding-top: 1.2rem; border-top: 1px solid var(--line); opacity: .62; transition: opacity .24s ease; }
+.wfoot:hover, .wfoot:focus-within { opacity: 1; }
+.wfoot h3 { margin: 0 0 .7rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }

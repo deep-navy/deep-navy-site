@@ -47,13 +47,13 @@
      sibling, because a saturated blue-green rendered as a hairline on abyss
      shimmers and reads as blurred no matter what its contrast ratio says.
      Contrast is necessary here and not sufficient. */
-  --seafoam-1: #0a3d33;
-  --seafoam-2: #0e7c63;
-  --seafoam-3: #3fd9b4;
-  --seafoam-4: #79f2d2;
-  --seafoam-5: #9affdf;
-  --seafoam-emissive: #4fe8be;  /* dots, halos, fills — never text */
-  --seafoam-quiet:    #8fd9c4;  /* text and hairlines on abyss */
+  --seafoam-1: #08402c;
+  --seafoam-2: #0f8257;
+  --seafoam-3: #2fd88e;
+  --seafoam-4: #5ef0a8;
+  --seafoam-5: #8effc6;
+  --seafoam-emissive: #35e28d;  /* dots, halos, fills — never text */
+  --seafoam-quiet:    #83dcae;  /* text and hairlines on abyss */
 
   /* Neutrals, biased a few degrees toward the seafoam so they read as chosen
      rather than inherited from a default grey. */
@@ -107,7 +107,7 @@
   --accent-text:      var(--seafoam-2);
   --accent-graphic:   var(--seafoam-4);
   --accent-strong:    var(--seafoam-1);
-  --accent-rgb:       14 124 99;
+  --accent-rgb:       15 130 87;
 
   --border:           rgb(0 15 26 / .14);
   --border-strong:    rgb(0 15 26 / .24);
@@ -148,7 +148,7 @@
     --accent-text:     var(--seafoam-quiet);
     --accent-graphic:  var(--seafoam-4);
     --accent-strong:   var(--seafoam-5);
-    --accent-rgb:      79 232 190;
+    --accent-rgb:      94 240 168;
 
     --border:          rgb(244 247 245 / .12);
     --border-strong:   rgb(244 247 245 / .2);
@@ -188,7 +188,7 @@
   --accent-text:     var(--seafoam-quiet);
   --accent-graphic:  var(--seafoam-4);
   --accent-strong:   var(--seafoam-5);
-  --accent-rgb:      79 232 190;
+  --accent-rgb:      94 240 168;
 
   --border:          rgb(244 247 245 / .12);
   --border-strong:   rgb(244 247 245 / .2);
@@ -226,7 +226,7 @@
   --accent-text:     var(--seafoam-2);
   --accent-graphic:  var(--seafoam-4);
   --accent-strong:   var(--seafoam-1);
-  --accent-rgb:      14 124 99;
+  --accent-rgb:      15 130 87;
 
   --border:          rgb(0 15 26 / .14);
   --border-strong:   rgb(0 15 26 / .24);
