@@ -197,7 +197,15 @@
     toast: document.querySelector("[data-toast]")
   };
 
-  if (!ui.signIn) return;
+  // Bail out when this is not the app shell. Key this on markup the shell
+  // actually ships and always will: the signed-out and authenticated regions
+  // ARE the app. It used to key on the sign-in button, and when that button was
+  // deleted the guard silently returned out of this entire IIFE on every load -
+  // no throw, no console output - so nothing bootstrapped, no request was ever
+  // sent, and the customer got the raw server-rendered shell: a card reading
+  // "Taking you to GitHub…", a "Signed out" phase and the layout's hardcoded
+  // "Local" pill, none of which anything was left alive to correct.
+  if (!ui.signedOut || !ui.authenticated) return;
 
   const session = {
     accessToken: "",
