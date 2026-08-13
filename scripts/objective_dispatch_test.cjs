@@ -51,3 +51,38 @@ test("initiative review exhausts typed pages and displays proposal context", () 
   assert.match(app, /Hypothesis:/);
   assert.match(app, /Priority \$\{Number\(initiative\.priority\)\}/);
 });
+
+test("undelivered objectives poll the dispatcher instead of trusting one fetch", () => {
+  // The dispatch row went 'delivered' eight seconds after submission while
+  // the page kept rendering the 'queued' it caught at load. The poll follows
+  // the provisioning pattern: pause while hidden, retry only retryable
+  // errors, stop once every handoff is terminal.
+  assert.match(app, /function pollObjectiveDispatch/);
+  assert.match(app, /function objectiveDispatchTerminal/);
+  assert.match(app, /\["delivered", "failed"\]\.includes\(objectiveDispatchStateLabel\(dispatch\?\.state\)\)/);
+  assert.match(app, /if \(objectiveDispatchPending\(teamId\)\) startObjectiveDispatchPolling\(teamId, generation\)/);
+  assert.match(app, /if \(objectiveDispatchPending\(normalizedTeamId\)\) startObjectiveDispatchPolling\(teamId, generation\)/);
+  assert.match(app, /if \(isRetryableApiError\(error\)\) startObjectiveDispatchPolling\(teamId, generation, 10000\)/);
+  assert.match(app, /stopObjectiveDispatchPolling\(\);/);
+});
+
+test("dispatch detail reports when the server was read, not a frozen 'updated now'", () => {
+  // relativeTime(dispatch.updatedAt) rendered "updated now" once and never
+  // moved again; the honest timestamp for polled data is the poll itself.
+  assert.match(app, /objectiveDispatchCheckedAt = new Date\(\)/);
+  assert.match(app, /last checked \$\{new Intl\.DateTimeFormat/);
+  assert.doesNotMatch(app, /updated \$\{relativeTime\(timestampDate\(dispatch\.updatedAt\)\)\}/);
+  assert.match(app, /Your Product Manager has it/);
+});
+
+test("a fresh server-confirmed handoff marks the Product Manager as briefed", () => {
+  // With the stream down, the polled dispatch record is the only witness that
+  // the team was briefed; "waiting for work" while the PM burns model calls
+  // is a lie. Only the PM tile may borrow the dispatch record's word, and a
+  // live stream event always outranks it.
+  assert.match(app, /function recentObjectiveHandoff/);
+  assert.match(app, /roleKey === "tpm" && recentObjectiveHandoff\(\)/);
+  assert.match(app, /"briefed — working"/);
+  assert.match(app, /\["delivering", "delivered"\]\.includes\(stateLabel\)/);
+  assert.match(app, /live\.state === "working" \|\| live\.state === "briefed"/);
+});

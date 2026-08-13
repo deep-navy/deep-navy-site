@@ -59,3 +59,27 @@ test("customer economics breakdowns are server-calculated, scoped, and bounded",
   assert.match(app, /formatCanonicalMoney\(record\.directCost\).*formatCreditMicros\(record\.creditsUsedMicros\)/s);
   assert.match(client, /economics\.listEconomicsBreakdowns/);
 });
+
+test("the activity stream reconnects itself and heals an expired token", () => {
+  // A mid-stream token expiry arrives as an in-stream "unauthenticated"
+  // error frame; the old code treated it as terminal and the manual Retry
+  // reused the same stale token, so one expiry became a permanent dead
+  // panel. Reconnects are automatic with backoff, bounded for streams that
+  // never establish, and routed through the refresh_session cookie exchange
+  // when auth is the failure.
+  assert.match(app, /function refreshStreamAccessToken/);
+  assert.match(app, /platformApi\.signIn\("refresh_session"/);
+  assert.match(app, /function scheduleActivityReconnect/);
+  assert.match(app, /const activityReconnectLimit = \d+/);
+  assert.match(app, /Math\.min\(30000, 1500 \* 2 \*\* attempt\)/);
+  assert.match(app, /normalized\.status === 401 \|\| normalized\.code === "unauthenticated"/);
+  assert.match(app, /scheduleActivityReconnect\(teamId, generation, nextAttempt, unauthenticated\)/);
+  assert.match(app, /scheduleActivityReconnect\(teamId, generation, nextAttempt, false\)/);
+  // A stream that genuinely established gets a fresh budget when it drops.
+  assert.match(app, /streamEstablished \? 0 : attempt \+ 1/);
+});
+
+test("reconnecting is a different promise than terminal unavailability", () => {
+  assert.match(app, /setSourceState\(ui\.activityState, "Reconnecting", "loading"\)/);
+  assert.match(app, /setSourceState\(ui\.activityState, "Unavailable", "error"\)/);
+});

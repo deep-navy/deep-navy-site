@@ -247,6 +247,7 @@
     selectedTeamId: "",
     workspaceGeneration: 0,
     activityAbort: null,
+    activityReconnectTimer: null,
     provisioningAbort: null,
     activityEvents: [],
     activityEventIds: new Set(),
@@ -284,6 +285,8 @@
     githubPullRequestLastSort: null,
     objectivesByTeam: new Map(),
     objectiveListsByTeam: new Map(),
+    objectiveDispatchTimer: null,
+    objectiveDispatchCheckedAt: null,
     approvals: [],
     approvalNextPageToken: "",
     approvalPageTokens: new Set(),
@@ -2536,6 +2539,7 @@
   }
 
   function resetObjectiveView(message) {
+    stopObjectiveDispatchPolling();
     ui.objectiveForm.hidden = true;
     ui.objectiveTitleInput.disabled = true;
     ui.objectiveDescriptionInput.disabled = true;
@@ -2611,11 +2615,18 @@
     const safeError = stringValue(dispatch.safeError);
     let sentence;
     if (stateLabel === "delivered") {
-      sentence = `Your Product Manager picked this up${deliveredAt ? " " + relativeTime(deliveredAt) : ""}.`;
+      sentence = `Your Product Manager has it${deliveredAt ? " — picked up " + relativeTime(deliveredAt) : ""}.`;
     } else if (stateLabel === "failed") {
       sentence = `Delivery to your Product Manager failed${failureReason ? ": " + failureReason : ""}.${safeError ? " " + safeError : ""}`;
     } else {
-      sentence = `On its way to your Product Manager — updated ${relativeTime(timestampDate(dispatch.updatedAt))}.${safeError ? " " + safeError : ""}`;
+      // An in-flight handoff is rendered from a poll, and the honest
+      // timestamp is when WE last read the server — not the row's own
+      // updatedAt, which once froze at "updated now" while the dispatcher
+      // delivered eight seconds later and moved on without us. A clock time
+      // cannot go stale the way "now" does.
+      const checked = session.objectiveDispatchCheckedAt;
+      const checkedLabel = checked ? ` — last checked ${new Intl.DateTimeFormat(undefined, { timeStyle: "medium" }).format(checked)}` : "";
+      sentence = `On its way to your Product Manager${checkedLabel}.${safeError ? " " + safeError : ""}`;
     }
     ui.objectiveDispatchDetail.textContent = sentence;
   }
@@ -2704,6 +2715,11 @@
     ui.objectiveTitle.textContent = stringValue(objective.title) || "Untitled objective";
     ui.objectiveDescription.textContent = stringValue(objective.description) || "No description returned.";
     renderObjectiveDispatch(objective.dispatch);
+    // Delivery advances on the server within seconds of submission; one fetch
+    // at page load caught "queued" and kept saying it indefinitely. Poll the
+    // dispatch state while any handoff is still in flight, the same way
+    // provisioning progress is polled.
+    if (objectiveDispatchPending(normalizedTeamId)) startObjectiveDispatchPolling(teamId, generation);
     renderObjectiveKpis(objective.kpis);
     setSourceState(ui.objectiveState, `${objectives.length} ${objectives.length === 1 ? "objective" : "objectives"}`, "success");
     loadInitiatives(objective, generation);
@@ -2742,7 +2758,68 @@
       return;
     }
     session.objectiveListsByTeam.set(stringValue(teamId), result.value);
+    session.objectiveDispatchCheckedAt = new Date();
     renderObjectiveView(teamId, generation);
+  }
+
+  // Delivery of an objective is a server-side state machine — queued →
+  // delivering → delivered or failed — that usually finishes within seconds,
+  // while this page used to render whichever state one initial fetch happened
+  // to catch. While any handoff is in flight, re-read the objective list on a
+  // timer, following the provisioning-poll pattern: pause while hidden, retry
+  // only retryable errors, stop once every handoff is terminal.
+  function objectiveDispatchTerminal(dispatch) {
+    return ["delivered", "failed"].includes(objectiveDispatchStateLabel(dispatch?.state));
+  }
+
+  function objectiveDispatchPending(teamId) {
+    const objectives = session.objectiveListsByTeam.get(stringValue(teamId)) || [];
+    return objectives.some((objective) => !objectiveDispatchTerminal(objective?.dispatch));
+  }
+
+  function stopObjectiveDispatchPolling() {
+    if (session.objectiveDispatchTimer) window.clearTimeout(session.objectiveDispatchTimer);
+    session.objectiveDispatchTimer = null;
+  }
+
+  function startObjectiveDispatchPolling(teamId, generation, delay = 3000) {
+    if (session.objectiveDispatchTimer) return;
+    session.objectiveDispatchTimer = window.setTimeout(() => pollObjectiveDispatch(teamId, generation), delay);
+  }
+
+  async function pollObjectiveDispatch(teamId, generation) {
+    session.objectiveDispatchTimer = null;
+    if (generation !== session.workspaceGeneration || stringValue(teamId) !== session.selectedTeamId) return;
+    if (!session.accessToken || document.visibilityState === "hidden") {
+      startObjectiveDispatchPolling(teamId, generation, 5000);
+      return;
+    }
+    try {
+      const objectives = await listAllObjectives(teamId);
+      if (generation !== session.workspaceGeneration || stringValue(teamId) !== session.selectedTeamId) return;
+      const teamKey = stringValue(teamId);
+      session.objectiveListsByTeam.set(teamKey, objectives);
+      session.objectiveDispatchCheckedAt = new Date();
+      // Repaint only what this poll is authoritative for: the handoff panel
+      // for the selected objective, and the crew tiles that borrow the
+      // dispatch record's word. A full renderObjectiveView here would refetch
+      // initiatives every few seconds for no reason.
+      const remembered = session.objectivesByTeam.get(teamKey);
+      const objective = objectives.find((candidate) => stringValue(candidate.id) === stringValue(remembered?.id)) || objectives[0] || null;
+      if (objective) {
+        session.objectivesByTeam.set(teamKey, objective);
+        renderObjectiveDispatch(objective.dispatch);
+      }
+      refreshCrewActivity();
+    } catch (error) {
+      if (generation !== session.workspaceGeneration || stringValue(teamId) !== session.selectedTeamId) return;
+      // A failed poll leaves the last server-read state on screen — labeled
+      // with the time it was actually read — and retries only errors worth
+      // retrying, so an auth failure does not become a busy loop.
+      if (isRetryableApiError(error)) startObjectiveDispatchPolling(teamId, generation, 10000);
+      return;
+    }
+    if (objectiveDispatchPending(teamId)) startObjectiveDispatchPolling(teamId, generation);
   }
 
   function validInitiative(initiative, objectiveId) {
@@ -2878,6 +2955,9 @@
       const existing = session.objectiveListsByTeam.get(teamKey) || [];
       session.objectiveListsByTeam.set(teamKey, [objective, ...existing.filter((candidate) => stringValue(candidate.id) !== stringValue(objective.id))]);
       session.objectivesByTeam.set(teamKey, objective);
+      // The create response carries a server-confirmed dispatch row; for
+      // freshness purposes that response IS a poll.
+      session.objectiveDispatchCheckedAt = new Date();
       ui.objectiveForm.reset();
       renderObjectiveView(team.id, session.workspaceGeneration);
       toast(`The API confirmed the business objective and its durable handoff is ${objectiveDispatchStateLabel(objective.dispatch.state)}.`, "success");
@@ -2982,11 +3062,12 @@
       }
       // Only a genuinely recent event lights the dot. Everything else says
       // when the agent was last heard from, which is a real answer rather
-      // than a reassuring one.
-      row.classList.toggle("is-on", live.state === "working");
-      roleLine.textContent = live.state === "working"
-        ? "working now"
-        : (live.since ? `last active ${live.since}` : (active ? "waiting for work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase()));
+      // than a reassuring one. The idle wording is remembered on the row so
+      // refreshCrewActivity can fall back to it without re-reading the
+      // roster response.
+      row.dataset.idleLine = active ? "waiting for work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
+      row.classList.toggle("is-on", live.state === "working" || live.state === "briefed");
+      roleLine.textContent = crewStatusLine(live, row.dataset.idleLine);
       row.append(dot, copy);
       ui.agentList.append(row);
     });
@@ -3021,14 +3102,43 @@
   // column says "active" for a provisioned agent forever, which is why this
   // screen could show six active agents and a team doing nothing.
   const workingWindowMs = 3 * 60 * 1000;
+  // The dispatcher's record is a second, independent witness. The night this
+  // was added, the stream was down while the Product Manager was mid-run
+  // burning model calls, and the tile read "waiting for work" — the polled
+  // dispatch row was the only evidence the team had been briefed. A handoff
+  // this recent outranks stream silence, but never a live stream event.
+  const briefedWindowMs = 5 * 60 * 1000;
   function agentLiveness(roleKey) {
     const event = latestEventForRole(roleKey);
-    if (!event || !event.occurredAt) return { state: "quiet", since: "" };
-    const at = new Date(event.occurredAt).getTime();
-    if (!Number.isFinite(at)) return { state: "quiet", since: "" };
-    const age = Date.now() - at;
-    if (age <= workingWindowMs) return { state: "working", since: "" };
-    return { state: "quiet", since: relativeAge(age) };
+    const at = event && event.occurredAt ? new Date(event.occurredAt).getTime() : NaN;
+    const age = Number.isFinite(at) ? Date.now() - at : NaN;
+    if (Number.isFinite(age) && age <= workingWindowMs) return { state: "working", since: "" };
+    // Objectives are dispatched to the Product Manager, so only that tile can
+    // borrow the dispatch record's word.
+    if (roleKey === "tpm" && recentObjectiveHandoff()) return { state: "briefed", since: "" };
+    return { state: "quiet", since: Number.isFinite(age) ? relativeAge(age) : "" };
+  }
+
+  function recentObjectiveHandoff() {
+    const objectives = session.objectiveListsByTeam.get(session.selectedTeamId) || [];
+    return objectives.some((objective) => {
+      const dispatch = objective?.dispatch;
+      const stateLabel = objectiveDispatchStateLabel(dispatch?.state);
+      if (!["delivering", "delivered"].includes(stateLabel)) return false;
+      const at = timestampDate(stateLabel === "delivered" ? dispatch.deliveredAt : dispatch.updatedAt)?.getTime();
+      return Number.isFinite(at) && Date.now() - at <= briefedWindowMs;
+    });
+  }
+
+  // One wording for both render paths. "briefed — working" is the dispatcher
+  // vouching for the agent: the handoff was server-confirmed moments ago, so
+  // the agent has work even when the stream has relayed nothing yet — or is
+  // down entirely.
+  function crewStatusLine(live, idleLine) {
+    if (live.state === "working") return "working now";
+    if (live.state === "briefed") return "briefed — working";
+    if (live.since) return `last active ${live.since}`;
+    return idleLine;
   }
 
   function relativeAge(ms) {
@@ -3039,14 +3149,22 @@
     return `${Math.floor(hours / 24).toString()}d ago`;
   }
 
-  // Rewrite only the activity line on each crew row. Re-rendering the whole
-  // roster on every streamed event would restart the dot animation and fight
-  // the customer's scroll position.
+  // Rewrite only the status and activity lines on each crew row.
+  // Re-rendering the whole roster on every streamed event would restart the
+  // dot animation and fight the customer's scroll position.
   function refreshCrewActivity() {
     if (!ui.agentList || ui.agentList.hidden) return;
     ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
       const roleKey = row.dataset.roleKey;
       if (!roleKey) return;
+      // The status line answers the same liveness question the full render
+      // answers, from the same sources — stream first, then the polled
+      // dispatch record — so a handoff that advances between streamed events
+      // updates the row without a roster re-render.
+      const live = agentLiveness(roleKey);
+      const roleLine = row.querySelector(".crew-copy small");
+      if (roleLine) roleLine.textContent = crewStatusLine(live, row.dataset.idleLine || roleLine.textContent);
+      row.classList.toggle("is-on", live.state === "working" || live.state === "briefed");
       const latest = latestActivityForRole(roleKey);
       let line = row.querySelector(".crew-doing");
       if (!latest) {
@@ -3059,7 +3177,6 @@
         row.querySelector(".crew-copy")?.append(line);
       }
       if (line.textContent !== latest) line.textContent = latest;
-      row.classList.add("is-on");
     });
   }
 
@@ -4544,6 +4661,8 @@
   function stopRuntimeActivityStream() {
     if (session.activityAbort) session.activityAbort.abort();
     session.activityAbort = null;
+    if (session.activityReconnectTimer) window.clearTimeout(session.activityReconnectTimer);
+    session.activityReconnectTimer = null;
   }
 
   function stopProvisioningStream() {
@@ -4556,7 +4675,59 @@
     stopProvisioningStream();
   }
 
-  async function startActivityStream(teamId, generation = session.workspaceGeneration) {
+  // Streams outlive bearer tokens. The access token is minted at sign-in and
+  // held only in memory; a stream that stays open past the token's life dies
+  // with "unauthenticated" even though the httpOnly session cookie beside it
+  // is still valid — which is how the LOG panel regressed from "Listening" to
+  // "Unavailable" in one afternoon with nobody touching anything. Exchange
+  // the cookie for a fresh token exactly the way restoreSession does on a
+  // page load, without disturbing the signed-in UI state.
+  async function refreshStreamAccessToken() {
+    if (!platformApi || !session.accessToken) return false;
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const result = await platformApi.signIn("refresh_session", {}, { requestId, signal: controller.signal });
+      const sessionToken = stringValue(result?.sessionToken);
+      if (!sessionToken) return false;
+      session.accessToken = sessionToken;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  // How many consecutive failed connection attempts the stream retries on its
+  // own before handing the problem to the customer as a terminal state with a
+  // Retry button. A stream that genuinely established resets the budget when
+  // it later drops, so a page left open all day survives any number of
+  // deploys and token expiries; only a stream that cannot come up at all
+  // burns through the limit.
+  const activityReconnectLimit = 4;
+
+  function scheduleActivityReconnect(teamId, generation, attempt, refreshToken) {
+    const delay = Math.min(30000, 1500 * 2 ** attempt);
+    // "Reconnecting" is a different promise than "Unavailable": the first
+    // says nobody needs to do anything, the second asks for a click.
+    setSourceState(ui.activityState, "Reconnecting", "loading");
+    if (!allActivityEntries().length) {
+      setEmptyState(ui.activityEmpty, "Reconnecting", "The live feed dropped. Reconnecting automatically — nothing your team did is lost.");
+    }
+    ui.activityRetry.hidden = true;
+    session.activityReconnectTimer = window.setTimeout(async () => {
+      session.activityReconnectTimer = null;
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || !session.accessToken) return;
+      // An expired token would fail every retry identically; heal it first.
+      if (refreshToken) await refreshStreamAccessToken();
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      startActivityStream(teamId, generation, attempt);
+    }, delay);
+  }
+
+  async function startActivityStream(teamId, generation = session.workspaceGeneration, attempt = 0) {
     stopRuntimeActivityStream();
     if (!teamId || typeof platformApi?.streamTeamActivity !== "function") {
       resetActivityView("The generated ActivityService client is not available in this deployment.", "Unavailable", "error");
@@ -4603,6 +4774,15 @@
       if (!controller.signal.aborted && generation === session.workspaceGeneration) {
         session.runtimeStreamLive = false;
         renderWorkspaceHeadline();
+        // A cleanly closed stream is usually a rolling deploy retiring the
+        // pod behind the load balancer, not a problem the customer can act
+        // on. The afterSequence cursor makes reconnecting lossless, so do it
+        // ourselves before asking anyone to click anything.
+        const nextAttempt = streamEstablished ? 0 : attempt + 1;
+        if (nextAttempt <= activityReconnectLimit) {
+          scheduleActivityReconnect(teamId, generation, nextAttempt, false);
+          return;
+        }
         setSourceState(ui.activityState, "Stream ended", "error");
         ui.activityRetry.hidden = false;
       }
@@ -4611,6 +4791,19 @@
       const normalized = error?.name === "PlatformClientError"
         ? new ApiError(stringValue(error.message), Number(error.status || 0), stringValue(error.code), stringValue(error.requestId) || requestId)
         : error;
+      session.runtimeStreamLive = false;
+      renderWorkspaceHeadline();
+      // A mid-stream token expiry arrives here as an in-stream
+      // "unauthenticated" error frame (verified against the live API), not as
+      // an HTTP failure. It heals through the session cookie; treating it as
+      // terminal was how one expiry became a permanent dead panel that no
+      // manual retry with the same stale token could fix.
+      const unauthenticated = normalized instanceof ApiError && (normalized.status === 401 || normalized.code === "unauthenticated");
+      const nextAttempt = streamEstablished ? 0 : attempt + 1;
+      if ((unauthenticated || isRetryableApiError(normalized)) && nextAttempt <= activityReconnectLimit) {
+        scheduleActivityReconnect(teamId, generation, nextAttempt, unauthenticated);
+        return;
+      }
       const message = apiErrorMessage(normalized, "Live activity is unavailable.");
       setSourceState(ui.activityState, "Unavailable", "error");
       if (!allActivityEntries().length) {
@@ -6104,6 +6297,7 @@
     destroyEmbeddedCheckout();
     stopProvisioningPolling();
     stopPendingTeamPolling();
+    stopObjectiveDispatchPolling();
     stopActivityStream();
   });
 
