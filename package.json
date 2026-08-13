@@ -9,7 +9,7 @@
     "check:vendor": "node scripts/check_vendored_platform_protos.mjs",
     "check:api-base-url": "node scripts/check_api_base_url.mjs",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "test": "node --test scripts/app_bootstrap_guard_test.cjs scripts/activity_ledger_test.cjs scripts/agent_roles_test.cjs scripts/app_state_test.cjs scripts/approval_queue_test.cjs scripts/billing_checkout_test.cjs scripts/billing_team_request_test.cjs scripts/callback_scrubber_test.cjs scripts/github_delivery_test.cjs scripts/invoice_history_test.cjs scripts/objective_dispatch_test.cjs scripts/onboarding_contract_test.cjs scripts/launch_contract_test.cjs scripts/platform_api_client_test.cjs scripts/session_workspace_test.cjs",
+    "test": "node --test scripts/app_bootstrap_guard_test.cjs scripts/signin_autoretry_test.cjs scripts/activity_ledger_test.cjs scripts/agent_roles_test.cjs scripts/app_state_test.cjs scripts/approval_queue_test.cjs scripts/billing_checkout_test.cjs scripts/billing_team_request_test.cjs scripts/callback_scrubber_test.cjs scripts/github_delivery_test.cjs scripts/invoice_history_test.cjs scripts/objective_dispatch_test.cjs scripts/onboarding_contract_test.cjs scripts/launch_contract_test.cjs scripts/platform_api_client_test.cjs scripts/session_workspace_test.cjs",
     "check": "npm run check:api-docs && npm run check:vendor && npm run check:api-base-url && npm run typecheck && npm run build && npm test"
   },
   "engines": {

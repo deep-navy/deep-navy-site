@@ -492,6 +492,20 @@
   // newly signed-in user who has not installed the App yet to install it and
   // connect repositories. Installing authorizes too, so the same callback
   // completes sign-in and derives the organization.
+  // One automatic sign-in restart per two minutes. The codeless-install
+  // callback is routine and self-heals through a plain authorize round trip;
+  // anything failing more often than this is a real configuration problem the
+  // customer needs to see rather than loop through.
+  const signInAutoRetryKey = "deepnavy.signin.autoretry";
+  function armSignInAutoRetry() {
+    try {
+      const last = Number(window.sessionStorage.getItem(signInAutoRetryKey) || 0);
+      if (Date.now() - last < 2 * 60 * 1000) return false;
+      window.sessionStorage.setItem(signInAutoRetryKey, String(Date.now()));
+      return true;
+    } catch { return false; }
+  }
+
   // A sign-in handoff that fails leaves nothing useful on this page, because
   // this page has no sign-in button by design. Send them back to the homepage,
   // where the only one lives. Once: if the return trip fails too, the banner
@@ -6339,10 +6353,27 @@
     } catch (error) {
       clearSignInTransaction();
       clearGitHubFlow();
-      const message = launchContract && error instanceof launchContract.LaunchContractError
-        ? error.message
-        : "The GitHub callback could not be validated in this browser. Start sign-in again.";
-      showAuthError("Sign-in was not completed", message);
+      // GitHub's install/update screen redirects back WITHOUT the one-time
+      // OAuth code when the App's "Request user authorization (OAuth) during
+      // installation" is off. The remedy has always been one click on "Try
+      // again", which just runs beginSignIn() - the plain authorize round trip
+      // that does return a code. A remedy that deterministic is the machine's
+      // job: restart sign-in automatically, rate-limited so a genuinely broken
+      // configuration still surfaces as an error instead of a redirect loop.
+      const codelessInstall = launchContract
+        && error instanceof launchContract.LaunchContractError
+        && error.code === "github_oauth_code_missing";
+      if (codelessInstall && armSignInAutoRetry()) {
+        setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "Finishing sign-in with GitHub", "GitHub sent you back before sign-in finished. Completing it now - no action needed.");
+        restoreSession().then(() => {
+          if (!session.accessToken) beginSignIn();
+        }).catch(() => beginSignIn());
+      } else {
+        const message = launchContract && error instanceof launchContract.LaunchContractError
+          ? error.message
+          : "The GitHub callback could not be validated in this browser. Start sign-in again.";
+        showAuthError("Sign-in was not completed", message);
+      }
     }
   } else if (readGitHubCompletion()) {
     setBanner(ui.authBanner, ui.authTitle, ui.authMessage, "success", "GitHub completion is waiting", "Sign in with GitHub again before the one-time authorization expires. deep navy verifies it server-side before showing a connection.");

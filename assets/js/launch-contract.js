@@ -195,7 +195,7 @@
       throw new LaunchContractError("GitHub did not return a recognized installation action.", "github_setup_action_missing");
     }
     if (!authorizationCode || authorizationCode.length > 2048 || /[\r\n\0]/.test(authorizationCode)) {
-      throw new LaunchContractError("The product GitHub App did not return its one-time OAuth code. Enable OAuth during installation and start again.", "github_oauth_code_missing");
+      throw new LaunchContractError("GitHub sent you back before sign-in finished. Sign-in restarts automatically; if you keep seeing this, the GitHub App needs \"Request user authorization (OAuth) during installation\" enabled in its settings.", "github_oauth_code_missing");
     }
     if (!stateToken || stateToken.length > 4096 || /[\r\n\0]/.test(stateToken)) {
       throw new LaunchContractError("GitHub did not return the one-time installation state.", "github_state_missing");
