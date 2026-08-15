@@ -249,6 +249,9 @@
     activityAbort: null,
     activityReconnectTimer: null,
     provisioningAbort: null,
+    provisioningReconnectTimer: null,
+    provisioningStreamLive: false,
+    provisioningRouteKey: "",
     activityEvents: [],
     activityEventIds: new Set(),
     provisioningEvents: [],
@@ -2450,6 +2453,12 @@
       // found" until provisioning completes. Firing those requests only surfaces
       // raw errors, so render guidance that leads to the next step instead.
       renderPendingTeamGuidance(team);
+      // The waits a customer actually watches happen in this branch — the
+      // first build, and the delete that used to freeze on a stale "retrying"
+      // until a hard reload, because a team parked here had no live transport
+      // at all. The status stream is the one call a not-yet-active team CAN
+      // answer, so open it; the roster/economics calls below stay off.
+      if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
       return;
     }
     resetAgentView("Loading the server-confirmed team roster.", "Loading", "loading");
@@ -2466,7 +2475,9 @@
     resetObjectiveView("Loading durable objectives for the selected team.");
     setSourceState(ui.objectiveState, "Loading", "loading");
     startActivityStream(team.id, generation);
-    startProvisioningStream(team.id, generation);
+    // A settled team's provisioning is history, not a live operation — only
+    // hold the status stream open while it still owes us a terminal state.
+    if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
 
     const [agentsResult, economicsResult, economicsBreakdownsResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult] = await Promise.allSettled([
       apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
@@ -4682,6 +4693,11 @@
   function stopProvisioningStream() {
     if (session.provisioningAbort) session.provisioningAbort.abort();
     session.provisioningAbort = null;
+    if (session.provisioningReconnectTimer) window.clearTimeout(session.provisioningReconnectTimer);
+    session.provisioningReconnectTimer = null;
+    // The fallback poll is gated on this flag; a stopped stream must hand
+    // coverage back or nothing follows the operation at all.
+    session.provisioningStreamLive = false;
   }
 
   function stopActivityStream() {
@@ -5351,11 +5367,46 @@
     renderActivityLedger();
   }
 
-  async function startProvisioningStream(teamId, generation = session.workspaceGeneration) {
+  // Reconnection twin of scheduleActivityReconnect: same backoff curve, same
+  // budget, same token remedy. It deliberately leaves ui.activityState alone —
+  // that label narrates the ACTIVITY stream, which during a delete is not even
+  // open; overwriting the removal screen's copy with transport chatter would
+  // tell the customer about our plumbing instead of their progress.
+  function scheduleProvisioningReconnect(teamId, generation, attempt, refreshToken) {
+    const delay = Math.min(30000, 1500 * 2 ** attempt);
+    session.provisioningReconnectTimer = window.setTimeout(async () => {
+      session.provisioningReconnectTimer = null;
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || !session.accessToken) return;
+      // An expired token would fail every retry identically; heal it first.
+      if (refreshToken) await refreshStreamAccessToken();
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      startProvisioningStream(teamId, generation, attempt);
+    }, delay);
+  }
+
+  // A stream that gives up for good must hand coverage back to the poll it
+  // displaced, or a dead stream would leave the page exactly as frozen as the
+  // polling gap it was built to close.
+  function resumeProvisioningFallbackPoll(teamId) {
+    const team = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+    if (team) startProvisioningPolling(team, 1000);
+  }
+
+  async function startProvisioningStream(teamId, generation = session.workspaceGeneration, attempt = 0) {
     stopProvisioningStream();
     if (!teamId || typeof platformApi?.streamProvisioningStatus !== "function") return;
     const controller = new AbortController();
     session.provisioningAbort = controller;
+    // Same settle-window trick as the activity stream: a stream with nothing
+    // to replay is indistinguishable from one that never opened, and the
+    // fallback poll must stand down for a healthy-but-quiet stream too.
+    let streamEstablished = false;
+    const markStreamEstablished = () => {
+      if (streamEstablished || controller.signal.aborted) return;
+      streamEstablished = true;
+      session.provisioningStreamLive = true;
+    };
+    const establishTimer = window.setTimeout(markStreamEstablished, 1500);
     const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
     try {
       for await (const response of platformApi.streamProvisioningStatus({ teamId, afterSequence: session.lastProvisioningSequence }, {
@@ -5368,24 +5419,86 @@
         const event = response?.event;
         if (status && stringValue(status.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned a status outside the selected team scope", 0, "invalid_response", requestId);
         if (event && stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned an event outside the selected team scope", 0, "invalid_response", requestId);
+        window.clearTimeout(establishTimer);
+        markStreamEstablished();
         if (event) appendProvisioningEvent(event);
         const team = selectedTeam();
         if (status && team) {
           team.provisioning = status;
+          team._pollingMessage = "";
           syncProvisioningSnapshot(team);
           renderTeamList();
           renderSelectedTeamSummary();
+          const presented = launchContract.provisioningPresentation(status);
+          if (presented.terminal && !presented.failed) {
+            // Route the lifecycle from the stream itself — this is the moment
+            // the customer used to spend staring at a stale "retrying" until a
+            // hard reload. Key the routing on the terminal record so the same
+            // snapshot replayed across reconnects cannot refetch in a loop.
+            const routeKey = `${stringValue(teamId)}:${stringValue(presented.sequence)}:${presented.state}`;
+            if (session.provisioningRouteKey !== routeKey) {
+              session.provisioningRouteKey = routeKey;
+              const removal = launchContract.provisioningOperation(status) === launchContract.PROVISIONING_OPERATION.DELETE;
+              if (removal) toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
+              // Reflect only server truth, like the poll's terminal branch:
+              // re-read the team list, and renderTeamList's writes to
+              // [data-teams-empty]/[data-team-list] tell the view router what
+              // happened. A finished delete lands on the create-team screen;
+              // a finished provision/resume re-reads lifecycle and reloads
+              // the roster through refreshSelectedTeam.
+              await reloadTeamsAfterLifecycle();
+              return;
+            }
+          }
         }
         setSourceState(ui.activityState, session.activityAbort ? "Sources live" : "Provisioning live", "success");
       }
-      if (!controller.signal.aborted && generation === session.workspaceGeneration) ui.activityRetry.hidden = false;
+      if (!controller.signal.aborted && generation === session.workspaceGeneration) {
+        session.provisioningStreamLive = false;
+        // A cleanly closed stream is usually a rolling deploy retiring the
+        // pod; the sequence cursor makes reconnecting lossless, so do it
+        // ourselves before asking anyone to click anything.
+        const nextAttempt = streamEstablished ? 0 : attempt + 1;
+        if (nextAttempt <= activityReconnectLimit) {
+          scheduleProvisioningReconnect(teamId, generation, nextAttempt, false);
+          return;
+        }
+        ui.activityRetry.hidden = false;
+        resumeProvisioningFallbackPoll(teamId);
+      }
     } catch (error) {
       if (controller.signal.aborted || generation !== session.workspaceGeneration) return;
+      const normalized = error?.name === "PlatformClientError"
+        ? new ApiError(stringValue(error.message), Number(error.status || 0), stringValue(error.code), stringValue(error.requestId) || requestId)
+        : error;
+      session.provisioningStreamLive = false;
+      // "Not found" for a team mid-removal is the deletion finishing and
+      // taking the status resource with it, not an outage. Route it exactly
+      // like a streamed delete-succeeded — an error banner here is how a
+      // completed deletion looked stuck until someone hard-reloaded.
+      const removingTeam = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
+      if (isMissingResource(normalized) && removingTeam && lifecycleLabel(removingTeam.state) === "deleting") {
+        toast(`Team “${stringValue(removingTeam.name) || "the team"}” was removed.`, "success");
+        await reloadTeamsAfterLifecycle();
+        return;
+      }
+      // A mid-stream token expiry arrives as an in-stream "unauthenticated"
+      // error frame; it heals through the session cookie exactly as the
+      // activity stream's does. Treating it as terminal turns one expiry into
+      // a frozen provisioning panel that no same-token retry can fix.
+      const unauthenticated = normalized instanceof ApiError && (normalized.status === 401 || normalized.code === "unauthenticated");
+      const nextAttempt = streamEstablished ? 0 : attempt + 1;
+      if ((unauthenticated || isRetryableApiError(normalized)) && nextAttempt <= activityReconnectLimit) {
+        scheduleProvisioningReconnect(teamId, generation, nextAttempt, unauthenticated);
+        return;
+      }
       ui.activityRetry.hidden = false;
       if (!session.activityEvents.length && !session.provisioningEvents.length && !session.activityProjections.size) {
-        setEmptyState(ui.activityEmpty, "Provisioning stream unavailable", apiErrorMessage(error, "Provisioning updates could not be streamed."));
+        setEmptyState(ui.activityEmpty, "Provisioning stream unavailable", apiErrorMessage(normalized, "Provisioning updates could not be streamed."));
       }
+      resumeProvisioningFallbackPoll(teamId);
     } finally {
+      window.clearTimeout(establishTimer);
       if (session.provisioningAbort === controller) session.provisioningAbort = null;
     }
   }
@@ -5438,6 +5551,18 @@
     return Boolean(team.provisioning) || ["pending", ""].includes(state);
   }
 
+  // The status stream is warranted exactly while the command pipeline still
+  // owes this team a terminal state: any non-terminal provisioning record, or
+  // a removal in flight. A pre-payment pending team has no provisioning
+  // resource yet — the GetTeam poll owns that wait, and opening the stream
+  // there would only manufacture a "not found" error to explain away.
+  function teamNeedsProvisioningStream(team) {
+    if (!stringValue(team?.id)) return false;
+    if (lifecycleLabel(team.state) === "deleting") return true;
+    if (!team.provisioning) return false;
+    return !launchContract.provisioningTerminal(team.provisioning);
+  }
+
   function startProvisioningPolling(team, delay = 1000) {
     if (!teamNeedsProvisioningPoll(team) || provisioningTimers.has(team.id)) return;
     const timer = window.setTimeout(() => pollProvisioning(team.id), delay);
@@ -5449,6 +5574,16 @@
     if (!session.accessToken || document.visibilityState === "hidden") {
       const team = session.teams.find((candidate) => candidate.id === teamId);
       if (team) startProvisioningPolling(team, 5000);
+      return;
+    }
+    // The stream is the primary transport now and this poll is its fallback.
+    // While the selected team's stream is live, skip the RPC but keep a lazy
+    // re-check armed, so polling resumes on its own the moment the stream
+    // drops. Only the selected team has a stream; every other team still
+    // polls at full cadence.
+    if (teamId === session.selectedTeamId && session.provisioningStreamLive === true) {
+      const covered = session.teams.find((candidate) => candidate.id === teamId);
+      if (covered) startProvisioningPolling(covered, 5000);
       return;
     }
     const team = session.teams.find((candidate) => candidate.id === teamId);
@@ -5491,6 +5626,15 @@
         return;
       }
     } catch (error) {
+      // "Not found" while the team was being removed is the deletion finishing
+      // between two status reads, not an outage — the same routing the stream
+      // does when the delete completes under it. The error banner here is how
+      // a finished deletion once looked stuck until someone hard-reloaded.
+      if (isMissingResource(error) && lifecycleLabel(team.state) === "deleting") {
+        toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
+        await reloadTeamsAfterLifecycle();
+        return;
+      }
       team._pollingMessage = apiErrorMessage(error, "Provisioning status is temporarily unavailable. Use Refresh status to retry.");
       renderTeamList();
       if (teamId === session.selectedTeamId) renderSelectedTeamSummary();
@@ -6297,7 +6441,7 @@
     const team = selectedTeam();
     if (team) {
       startActivityStream(team.id, session.workspaceGeneration);
-      startProvisioningStream(team.id, session.workspaceGeneration);
+      if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, session.workspaceGeneration);
     }
   });
   document.addEventListener("visibilitychange", () => {
