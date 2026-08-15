@@ -95,6 +95,17 @@
     agentsState: document.querySelector("[data-agents-state]"),
     agentsEmpty: document.querySelector("[data-agents-empty]"),
     agentList: document.querySelector("[data-agent-list]"),
+    conversationState: document.querySelector("[data-conversation-state]"),
+    conversationEmpty: document.querySelector("[data-conversation-empty]"),
+    conversationThread: document.querySelector("[data-conversation-thread]"),
+    conversationTyping: document.querySelector("[data-conversation-typing]"),
+    conversationTypingCopy: document.querySelector("[data-conversation-typing-copy]"),
+    conversationForm: document.querySelector("[data-conversation-form]"),
+    conversationInput: document.querySelector('[data-conversation-form] textarea[name="conversationText"]'),
+    conversationSubmit: document.querySelector('[data-conversation-form] button[type="submit"]'),
+    conversationHint: document.querySelector("[data-conversation-hint]"),
+    conversationError: document.querySelector("[data-conversation-error]"),
+    conversationRetry: document.querySelector("[data-conversation-retry]"),
     objectiveState: document.querySelector("[data-objective-state]"),
     objectiveEmpty: document.querySelector("[data-objective-empty]"),
     objectiveSelectControl: document.querySelector("[data-objective-select-control]"),
@@ -248,6 +259,13 @@
     workspaceGeneration: 0,
     activityAbort: null,
     activityReconnectTimer: null,
+    conversationAbort: null,
+    conversationReconnectTimer: null,
+    conversationStreamLive: false,
+    conversationMessages: [],
+    conversationById: new Map(),
+    lastConversationSequence: 0n,
+    conversationSending: false,
     provisioningAbort: null,
     provisioningReconnectTimer: null,
     provisioningStreamLive: false,
@@ -2474,7 +2492,12 @@
     syncProvisioningSnapshot(team);
     resetObjectiveView("Loading durable objectives for the selected team.");
     setSourceState(ui.objectiveState, "Loading", "loading");
+    // The console subscribes with the team: the stream replays the recorded
+    // conversation (the Product Manager's introduction included) and then
+    // follows it live, healing itself the same way the activity stream does.
+    resetConversationView("Connecting to the conversation with your Product Manager.", "Connecting", "loading", "Your Product Manager is getting set up");
     startActivityStream(team.id, generation);
+    startConversationStream(team.id, generation);
     // A settled team's provisioning is history, not a live operation — only
     // hold the status stream open while it still owes us a terminal state.
     if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
@@ -2523,6 +2546,7 @@
     resetCreditControlView(headline, label);
     resetApprovalView(headline, label);
     resetActivityView(deleting ? headline : "The live activity stream starts when your agents do.", label);
+    resetConversationView(deleting ? headline : "Your Product Manager opens the conversation the moment the team finishes setting up.", label, "", deleting ? "No conversation" : "Your Product Manager is getting set up");
     resetSessionHistoryView(headline, label);
     resetWorkspaceHistoryView(headline, label);
     resetDeliveryHistoryView(headline, label);
@@ -2543,6 +2567,7 @@
     resetApprovalView(message, "Waiting");
     renderCreditPackControls();
     resetActivityView(message, "Waiting");
+    resetConversationView(message, "Waiting");
     resetSessionHistoryView(message, "Waiting");
     resetWorkspaceHistoryView(message, "Waiting");
     resetDeliveryHistoryView(message, "Waiting");
@@ -3012,6 +3037,342 @@
     renderObjectiveView(team.id, session.workspaceGeneration);
   }
 
+  // ── The console ─────────────────────────────────────────────────────────
+  // The conversation with the team's Product Manager. Customer rows travel a
+  // durable dispatch to the PM's session, and the server re-sends the same
+  // message on every delivery-state change, so the chip beside each message is
+  // the last state the server reported rather than a state this page froze.
+
+  function conversationAuthorLabel(value) {
+    if (typeof value === "number") return ["", "customer", "product_manager", "system"][value] || "";
+    return ({
+      CONVERSATION_AUTHOR_CUSTOMER: "customer",
+      CONVERSATION_AUTHOR_PRODUCT_MANAGER: "product_manager",
+      CONVERSATION_AUTHOR_SYSTEM: "system"
+    })[stringValue(value)] || "";
+  }
+
+  function conversationDeliveryLabel(value) {
+    if (typeof value === "number") return ["", "queued", "delivering", "delivered", "failed"][value] || "";
+    return ({
+      CONVERSATION_DELIVERY_STATE_QUEUED: "queued",
+      CONVERSATION_DELIVERY_STATE_DELIVERING: "delivering",
+      CONVERSATION_DELIVERY_STATE_DELIVERED: "delivered",
+      CONVERSATION_DELIVERY_STATE_FAILED: "failed"
+    })[stringValue(value)] || "";
+  }
+
+  function validConversationMessage(message) {
+    const id = stringValue(message?.id);
+    const author = conversationAuthorLabel(message?.author);
+    const text = stringValue(message?.text);
+    const sequence = typeof message?.sequence === "bigint" ? message.sequence : BigInt(message?.sequence || 0);
+    const createdAt = timestampDate(message?.createdAt);
+    const deliveryState = conversationDeliveryLabel(message?.deliveryState);
+    const safeError = stringValue(message?.safeError);
+    if (!id || id.length > 128 || /[\u0000-\u001f\u007f]/.test(id) || !author || sequence <= 0n || !createdAt) return false;
+    // Prose bound, not the send bound: the customer's own sends are capped at
+    // 4,000 bytes, but the Product Manager's replies are recorded from the
+    // session and may run longer. Bounded and control-character-free either way.
+    if (!text || text.length > 16000 || /[\u0000\u007f]/.test(text)) return false;
+    // Customer rows carry the delivery state machine; PM and SYSTEM rows are
+    // recorded as delivered by contract, and anything else is fail-closed.
+    if (author === "customer" && !deliveryState) return false;
+    if (author !== "customer" && deliveryState !== "delivered") return false;
+    if (safeError.length > 1000 || /[\u0000-\u001f\u007f]/.test(safeError)) return false;
+    return true;
+  }
+
+  function acceptConversationMessage(message) {
+    if (!validConversationMessage(message)) throw new ApiError("The conversation service returned an invalid message", 0, "invalid_response", "");
+    const id = stringValue(message.id);
+    const sequence = typeof message.sequence === "bigint" ? message.sequence : BigInt(message.sequence || 0);
+    const author = conversationAuthorLabel(message.author);
+    const text = stringValue(message.text);
+    const createdAt = timestampDate(message.createdAt);
+    const deliveryState = conversationDeliveryLabel(message.deliveryState);
+    const safeError = stringValue(message.safeError);
+    if (sequence > session.lastConversationSequence) session.lastConversationSequence = sequence;
+    const existing = session.conversationById.get(id);
+    if (existing) {
+      // A delivery-state transition re-sends the same sequence; update the
+      // row in place so the chip moves without the message duplicating.
+      existing.sequence = sequence;
+      existing.deliveryState = deliveryState;
+      existing.safeError = safeError;
+      existing.createdAt = createdAt;
+      existing.pending = false;
+      existing.sendState = "";
+      return;
+    }
+    // The stream can outrun the send response: a replayed customer row that
+    // matches an in-flight optimistic send IS that send, reconciled by the
+    // server-assigned sequence instead of appearing twice.
+    const pendingRow = author === "customer"
+      ? session.conversationMessages.find((row) => row.pending && !row.id && row.author === "customer" && row.text === text)
+      : null;
+    if (pendingRow) {
+      pendingRow.id = id;
+      pendingRow.sequence = sequence;
+      pendingRow.deliveryState = deliveryState;
+      pendingRow.safeError = safeError;
+      pendingRow.createdAt = createdAt;
+      pendingRow.pending = false;
+      pendingRow.sendState = "";
+      session.conversationById.set(id, pendingRow);
+      return;
+    }
+    const entry = { localId: "", id, sequence, author, text, createdAt, deliveryState, safeError, pending: false, sendState: "" };
+    session.conversationById.set(id, entry);
+    session.conversationMessages.push(entry);
+    if (session.conversationMessages.length > 200) {
+      const removed = session.conversationMessages.shift();
+      if (removed?.id) session.conversationById.delete(removed.id);
+    }
+  }
+
+  function productManagerName() {
+    return agentDisplayName({ agentRole: "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" }) || "Your Product Manager";
+  }
+
+  // What the chip on a customer message says. Local states cover the gap
+  // before the server has acknowledged the send at all; everything after that
+  // is the server's own delivery state, re-sent on the stream as it changes.
+  function conversationChip(entry) {
+    if (entry.sendState === "sending") return { label: "Sending…", tone: "loading" };
+    if (entry.sendState === "failed") return { label: "Not sent", tone: "error" };
+    const state = entry.deliveryState;
+    if (state === "delivered") return { label: "Delivered", tone: "success" };
+    if (state === "failed") return { label: "Failed", tone: "error" };
+    if (state === "delivering") return { label: "Delivering", tone: "loading" };
+    if (state === "queued") return { label: "Queued", tone: "loading" };
+    return { label: "Sending…", tone: "loading" };
+  }
+
+  function renderConversation() {
+    if (!ui.conversationThread) return;
+    // SYSTEM rows are wake plumbing between the dispatcher and the runtime;
+    // they advance the cursor but are never rendered as chat.
+    const visible = session.conversationMessages.filter((entry) => entry.author !== "system");
+    const sequenced = visible.filter((entry) => entry.sequence !== null).sort((a, b) => (a.sequence < b.sequence ? -1 : a.sequence > b.sequence ? 1 : 0));
+    const local = visible.filter((entry) => entry.sequence === null);
+    const ordered = [...sequenced, ...local];
+    const thread = ui.conversationThread;
+    const nearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 48;
+    thread.replaceChildren();
+    ordered.forEach((entry) => {
+      const item = document.createElement("li");
+      item.className = entry.author === "customer" ? "msg is-you" : "msg is-pm";
+      const who = document.createElement("span");
+      who.className = "msg-who";
+      who.textContent = entry.author === "customer" ? "You" : `${productManagerName()} · Product Manager`;
+      const bubble = document.createElement("p");
+      bubble.className = "msg-text";
+      bubble.textContent = entry.text;
+      const meta = document.createElement("span");
+      meta.className = "msg-meta";
+      const time = document.createElement("time");
+      time.textContent = entry.createdAt ? relativeTime(entry.createdAt) : "";
+      if (entry.createdAt) time.dateTime = entry.createdAt.toISOString();
+      meta.append(time);
+      if (entry.author === "customer") {
+        const chip = conversationChip(entry);
+        const state = document.createElement("span");
+        state.className = "msg-state";
+        setSourceState(state, chip.label, chip.tone);
+        meta.append(state);
+      }
+      item.append(who, bubble, meta);
+      if (entry.sendState === "failed") {
+        const failure = document.createElement("p");
+        failure.className = "msg-error";
+        failure.textContent = entry.safeError || "The message was not confirmed as sent.";
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "button button-secondary button-small";
+        retry.dataset.conversationResend = entry.localId;
+        retry.textContent = "Send again";
+        item.append(failure, retry);
+      } else if (entry.deliveryState === "failed") {
+        const failure = document.createElement("p");
+        failure.className = "msg-error";
+        failure.textContent = entry.safeError || "Delivery to your Product Manager failed.";
+        item.append(failure);
+      }
+      thread.append(item);
+    });
+    ui.conversationEmpty.hidden = ordered.length > 0;
+    thread.hidden = ordered.length === 0;
+    if (ordered.length && nearBottom) thread.scrollTop = thread.scrollHeight;
+    renderConversationTyping();
+  }
+
+  // The shimmer row is a claim that the Product Manager is composing, so it is
+  // only shown while something real vouches for it: the crew tile's own
+  // liveness (a stream event moments ago), or a delivery the server confirmed
+  // within the same window the crew tiles use for a fresh objective handoff.
+  function renderConversationTyping() {
+    if (!ui.conversationTyping) return;
+    const team = selectedTeam();
+    const visible = session.conversationMessages.filter((entry) => entry.author !== "system");
+    const newest = visible[visible.length - 1];
+    const awaitingReply = Boolean(team) && lifecycleLabel(team.state) === "active"
+      && newest && newest.author === "customer" && newest.deliveryState === "delivered";
+    if (!awaitingReply) {
+      ui.conversationTyping.hidden = true;
+      return;
+    }
+    const live = agentLiveness("AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER");
+    const deliveredAt = newest.createdAt?.getTime();
+    const recentDelivery = Number.isFinite(deliveredAt) && Date.now() - deliveredAt <= briefedWindowMs;
+    const composing = live.state === "working" || live.state === "briefed" || recentDelivery;
+    ui.conversationTyping.hidden = !composing;
+    if (composing && ui.conversationTypingCopy) ui.conversationTypingCopy.textContent = `${productManagerName()} is working on a reply`;
+  }
+
+  // Honest composer state: the input explains why it is off instead of sitting
+  // disabled without a reason, and it only opens for a provisioned team.
+  function syncConversationComposer() {
+    if (!ui.conversationForm) return;
+    const team = selectedTeam();
+    const active = Boolean(team) && lifecycleLabel(team.state) === "active";
+    ui.conversationInput.disabled = !active;
+    ui.conversationSubmit.disabled = !active || session.conversationSending;
+    if (session.conversationSending) {
+      ui.conversationSubmit.setAttribute("aria-busy", "true");
+      ui.conversationSubmit.textContent = "Sending…";
+    } else {
+      ui.conversationSubmit.removeAttribute("aria-busy");
+      ui.conversationSubmit.textContent = "Send";
+    }
+    if (!team) ui.conversationHint.textContent = "Choose a team to talk to its Product Manager.";
+    else if (!active) ui.conversationHint.textContent = "The conversation opens when your team finishes setting up.";
+    else ui.conversationHint.textContent = "Goes straight to your Product Manager. They reply right here.";
+  }
+
+  function resetConversationView(message, label = "Waiting", tone = "", title = "No conversation yet") {
+    session.conversationMessages = [];
+    session.conversationById.clear();
+    session.lastConversationSequence = 0n;
+    session.conversationSending = false;
+    ui.conversationThread.replaceChildren();
+    ui.conversationThread.hidden = true;
+    ui.conversationTyping.hidden = true;
+    ui.conversationEmpty.hidden = false;
+    setEmptyState(ui.conversationEmpty, title, message);
+    setFieldError(ui.conversationError, "");
+    ui.conversationRetry.hidden = true;
+    setSourceState(ui.conversationState, label, tone);
+    syncConversationComposer();
+  }
+
+  // One send in flight at a time, retried with the same idempotency key so a
+  // retry can never say the same thing twice. Keys are minted per composed
+  // message (localId) rather than per text, so sending "yes" twice on purpose
+  // is two messages while retrying a failed "yes" is still one.
+  async function deliverConversationMessage(team, entry) {
+    session.conversationSending = true;
+    syncConversationComposer();
+    try {
+      const result = await apiRequest("send_team_message", {
+        teamId: team.id,
+        text: entry.text,
+        idempotencyKey: mutationKeys.for("sendTeamMessage", `${team.id}:${entry.localId}`)
+      });
+      // A workspace switch mid-flight already cleared the thread this entry
+      // lived in; the response belongs to nothing on screen.
+      if (stringValue(team.id) !== session.selectedTeamId) return;
+      const message = result?.message;
+      if (!validConversationMessage(message) || stringValue(message.teamId) !== stringValue(team.id) || conversationAuthorLabel(message.author) !== "customer") {
+        throw new ApiError("The conversation service did not confirm the message in the selected team scope", 0, "invalid_response", "");
+      }
+      const id = stringValue(message.id);
+      const recorded = session.conversationById.get(id);
+      if (recorded && recorded !== entry) {
+        // The stream replayed the row before this response landed and
+        // reconciled it into a different entry, so the optimistic row simply
+        // retires. When the replay adopted THIS entry, it already carries the
+        // server's identifiers and must not be removed.
+        session.conversationMessages = session.conversationMessages.filter((row) => row !== entry);
+      } else if (!recorded) {
+        entry.id = id;
+        entry.sequence = typeof message.sequence === "bigint" ? message.sequence : BigInt(message.sequence || 0);
+        entry.deliveryState = conversationDeliveryLabel(message.deliveryState);
+        entry.safeError = stringValue(message.safeError);
+        entry.createdAt = timestampDate(message.createdAt);
+        entry.pending = false;
+        entry.sendState = "";
+        session.conversationById.set(id, entry);
+        if (entry.sequence > session.lastConversationSequence) session.lastConversationSequence = entry.sequence;
+      }
+      renderConversation();
+    } catch (error) {
+      if (stringValue(team.id) !== session.selectedTeamId) return;
+      entry.sendState = "failed";
+      entry.safeError = apiErrorMessage(error, "The message was not confirmed as sent. Sending again reuses the same request, so it cannot post twice.");
+      renderConversation();
+    } finally {
+      session.conversationSending = false;
+      syncConversationComposer();
+    }
+  }
+
+  async function sendConversationMessage(event) {
+    event.preventDefault();
+    const team = selectedTeam();
+    if (!team) return;
+    if (lifecycleLabel(team.state) !== "active") {
+      setFieldError(ui.conversationError, "This team is not set up yet. The conversation opens the moment provisioning completes.");
+      return;
+    }
+    if (session.conversationSending) return;
+    const text = stringValue(ui.conversationInput.value);
+    setFieldError(ui.conversationError, "");
+    if (!text) {
+      setFieldError(ui.conversationError, "Write the message first.");
+      ui.conversationInput.focus();
+      return;
+    }
+    // The contract bounds a message at 4,000 bytes after trimming; measure
+    // bytes rather than characters so multi-byte text cannot slip past the
+    // textarea's character cap and bounce off the server.
+    if (new TextEncoder().encode(text).length > 4000) {
+      setFieldError(ui.conversationError, "Keep a single message under 4,000 characters, or split it in two.");
+      ui.conversationInput.focus();
+      return;
+    }
+    const entry = {
+      localId: window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18),
+      id: "",
+      sequence: null,
+      author: "customer",
+      text,
+      createdAt: new Date(),
+      deliveryState: "",
+      safeError: "",
+      pending: true,
+      sendState: "sending"
+    };
+    // Optimistic: the message appears the moment Send is pressed, and the
+    // stream's replay of the recorded row reconciles it by sequence.
+    session.conversationMessages.push(entry);
+    renderConversation();
+    ui.conversationInput.value = "";
+    await deliverConversationMessage(team, entry);
+  }
+
+  function retryConversationMessage(event) {
+    const button = event.target.closest("[data-conversation-resend]");
+    if (!button) return;
+    const team = selectedTeam();
+    const entry = session.conversationMessages.find((row) => row.localId === button.dataset.conversationResend);
+    if (!team || !entry || session.conversationSending) return;
+    entry.sendState = "sending";
+    entry.safeError = "";
+    renderConversation();
+    deliverConversationMessage(team, entry);
+  }
+
   function resetAgentView(message, label, tone = "") {
     ui.agentList.replaceChildren();
     ui.agentList.hidden = true;
@@ -3178,6 +3539,10 @@
   // Re-rendering the whole roster on every streamed event would restart the
   // dot animation and fight the customer's scroll position.
   function refreshCrewActivity() {
+    // The console's composing shimmer answers the same liveness question the
+    // crew tiles do, so it re-evaluates whenever they do — a PM that goes
+    // quiet takes the shimmer down with the tile's glow.
+    renderConversationTyping();
     if (!ui.agentList || ui.agentList.hidden) return;
     ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
       const roleKey = row.dataset.roleKey;
@@ -4700,8 +5065,17 @@
     session.provisioningStreamLive = false;
   }
 
+  function stopConversationStream() {
+    if (session.conversationAbort) session.conversationAbort.abort();
+    session.conversationAbort = null;
+    if (session.conversationReconnectTimer) window.clearTimeout(session.conversationReconnectTimer);
+    session.conversationReconnectTimer = null;
+    session.conversationStreamLive = false;
+  }
+
   function stopActivityStream() {
     stopRuntimeActivityStream();
+    stopConversationStream();
     stopProvisioningStream();
   }
 
@@ -4844,6 +5218,124 @@
     } finally {
       window.clearTimeout(establishTimer);
       if (session.activityAbort === controller) session.activityAbort = null;
+    }
+  }
+
+  function scheduleConversationReconnect(teamId, generation, attempt, refreshToken) {
+    const delay = Math.min(30000, 1500 * 2 ** attempt);
+    setSourceState(ui.conversationState, "Reconnecting", "loading");
+    if (!session.conversationMessages.length) {
+      setEmptyState(ui.conversationEmpty, "Reconnecting", "The conversation dropped. Reconnecting automatically — nothing said is lost.");
+    }
+    ui.conversationRetry.hidden = true;
+    session.conversationReconnectTimer = window.setTimeout(async () => {
+      session.conversationReconnectTimer = null;
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || !session.accessToken) return;
+      // An expired token would fail every retry identically; heal it first.
+      if (refreshToken) await refreshStreamAccessToken();
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      startConversationStream(teamId, generation, attempt);
+    }, delay);
+  }
+
+  // The resume cursor cannot simply be the newest sequence: delivery-state
+  // transitions re-send a message's original sequence, so a cursor parked at
+  // the newest row would skip the very transitions the chips exist to show.
+  // Resume just below the oldest customer row still in flight; with nothing
+  // in flight the newest sequence is safe.
+  function conversationResumeCursor() {
+    let cursor = session.lastConversationSequence;
+    for (const entry of session.conversationMessages) {
+      if (entry.sequence === null) continue;
+      if (entry.author === "customer" && !["delivered", "failed"].includes(entry.deliveryState) && entry.sequence - 1n < cursor) {
+        cursor = entry.sequence - 1n;
+      }
+    }
+    return cursor < 0n ? 0n : cursor;
+  }
+
+  async function startConversationStream(teamId, generation = session.workspaceGeneration, attempt = 0) {
+    stopConversationStream();
+    if (!teamId || typeof platformApi?.streamTeamConversation !== "function") {
+      resetConversationView("The generated conversation client is not available in this deployment.", "Unavailable", "error");
+      return;
+    }
+    const controller = new AbortController();
+    session.conversationAbort = controller;
+    setSourceState(ui.conversationState, "Connecting", "loading");
+    if (!session.conversationMessages.length) {
+      setEmptyState(ui.conversationEmpty, "Your Product Manager is getting set up", "Connecting to the conversation. Their introduction appears here the moment they are ready.");
+    }
+    ui.conversationRetry.hidden = true;
+    // Same settle-window promise the activity stream makes: no error within
+    // the window means we are connected, and a quiet conversation does not
+    // sit on "Connecting" indefinitely.
+    let streamEstablished = false;
+    const markStreamEstablished = () => {
+      if (streamEstablished || controller.signal.aborted) return;
+      streamEstablished = true;
+      setSourceState(ui.conversationState, "Listening", "success");
+      if (!session.conversationMessages.length) {
+        setEmptyState(ui.conversationEmpty, "Your Product Manager is getting set up", "Connected. They open the conversation from their side the moment they are ready.");
+      }
+    };
+    const establishTimer = window.setTimeout(markStreamEstablished, 1500);
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    try {
+      for await (const response of platformApi.streamTeamConversation({ teamId, afterSequence: conversationResumeCursor() }, {
+        accessToken: session.accessToken,
+        requestId,
+        signal: controller.signal
+      })) {
+        if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || controller.signal.aborted) return;
+        const message = response?.message;
+        if (!message) continue;
+        if (stringValue(message.teamId) !== stringValue(teamId)) throw new ApiError("The conversation service returned a message outside the selected team scope", 0, "invalid_response", requestId);
+        window.clearTimeout(establishTimer);
+        markStreamEstablished();
+        acceptConversationMessage(message);
+        session.conversationStreamLive = true;
+        renderConversation();
+        setSourceState(ui.conversationState, "Live", "success");
+      }
+      if (!controller.signal.aborted && generation === session.workspaceGeneration) {
+        session.conversationStreamLive = false;
+        // A cleanly closed stream is usually a rolling deploy retiring the
+        // pod, not something the customer can act on; the resume cursor makes
+        // reconnecting lossless, so do it before asking anyone to click.
+        const nextAttempt = streamEstablished ? 0 : attempt + 1;
+        if (nextAttempt <= activityReconnectLimit) {
+          scheduleConversationReconnect(teamId, generation, nextAttempt, false);
+          return;
+        }
+        setSourceState(ui.conversationState, "Stream ended", "error");
+        ui.conversationRetry.hidden = false;
+      }
+    } catch (error) {
+      if (controller.signal.aborted || generation !== session.workspaceGeneration) return;
+      const normalized = error?.name === "PlatformClientError"
+        ? new ApiError(stringValue(error.message), Number(error.status || 0), stringValue(error.code), stringValue(error.requestId) || requestId)
+        : error;
+      session.conversationStreamLive = false;
+      // A mid-stream token expiry arrives as an in-stream "unauthenticated"
+      // frame, exactly like the activity stream's; it heals through the
+      // session cookie rather than becoming a permanently dead console.
+      const unauthenticated = normalized instanceof ApiError && (normalized.status === 401 || normalized.code === "unauthenticated");
+      const nextAttempt = streamEstablished ? 0 : attempt + 1;
+      if ((unauthenticated || isRetryableApiError(normalized)) && nextAttempt <= activityReconnectLimit) {
+        scheduleConversationReconnect(teamId, generation, nextAttempt, unauthenticated);
+        return;
+      }
+      const message = apiErrorMessage(normalized, "The conversation is unavailable.");
+      setSourceState(ui.conversationState, "Unavailable", "error");
+      if (!session.conversationMessages.length) {
+        ui.conversationEmpty.hidden = false;
+        setEmptyState(ui.conversationEmpty, "Conversation unavailable", message);
+      }
+      ui.conversationRetry.hidden = false;
+    } finally {
+      window.clearTimeout(establishTimer);
+      if (session.conversationAbort === controller) session.conversationAbort = null;
     }
   }
 
@@ -5015,7 +5507,11 @@
   // customer who has hired a team should be able to say who did what. Names
   // are assigned deterministically from the role and the engineer's ordinal,
   // so the same agent is the same person on every page load.
-  const agentNames = { tpm: "Riley", em: "Morgan", designer: "Dana" };
+  // Keyed by the canonical AgentRole enum keys that canonicalAgentRole()
+  // returns. The first draft used shorthand keys ("tpm", "em") that never
+  // matched, so every leadership tile fell through to the engineer fallback
+  // and the Product Manager answered to an engineer's name.
+  const agentNames = { AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER: "Riley", AGENT_ROLE_ENGINEERING_MANAGER: "Morgan", AGENT_ROLE_PRODUCT_DESIGNER: "Dana" };
   const engineerNames = ["Ada", "Sam", "Jordan", "Avery", "Kit", "Noor"];
   function agentDisplayName(entry) {
     const role = agentRoleContract?.canonicalAgentRole?.(entry?.agentRole);
@@ -5107,11 +5603,9 @@
     if (!ui.descent || !ui.descentList) return;
     const work = allActivityEntries().filter((entry) => entry.category === "delivery" && (entry.githubIssueId || entry.pullRequestId));
     ui.descentList.replaceChildren();
-    // The ask is the headline only until there is work. After that the work
-    // leads and asking for more is a quiet control, not a question the screen
-    // opens with.
-    const ask = document.querySelector(".ask");
-    if (ask) ask.classList.toggle("is-secondary", work.length > 0);
+    // The conversation with the Product Manager is the floor's headline now;
+    // the tracked-objective form ships demoted (is-secondary) in the shell and
+    // never reclaims primacy, so there is nothing to toggle here.
     if (!work.length) { ui.descent.hidden = true; return; }
     ui.descent.hidden = false;
 
@@ -6409,14 +6903,9 @@
   if (ui.settingsEngineerApply) ui.settingsEngineerApply.addEventListener("click", applyEngineerCount);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
   ui.objectiveForm.addEventListener("submit", createObjective);
-  // Example chips seed the single objective field; ⌘/Ctrl+Enter submits it, so
-  // starting the team never requires leaving the keyboard.
-  ui.objectiveForm.addEventListener("click", (event) => {
-    const chip = event.target.closest("[data-objective-examples] .chip");
-    if (!chip || ui.objectiveDescriptionInput.disabled) return;
-    ui.objectiveDescriptionInput.value = chip.textContent.trim();
-    ui.objectiveDescriptionInput.focus();
-  });
+  // ⌘/Ctrl+Enter submits, so starting tracked work never requires leaving the
+  // keyboard. The example chips that used to seed this field went with the
+  // form's primacy: the conversation is where work is asked for now.
   ui.objectiveDescriptionInput.addEventListener("keydown", (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !ui.objectiveSubmit.disabled) {
       event.preventDefault();
@@ -6424,6 +6913,20 @@
     }
   });
   ui.objectiveSelect.addEventListener("change", selectObjective);
+  // The console: one thread, one input. Send is a form submit, ⌘/Ctrl+Enter
+  // included, and a failed message's "Send again" lives on its own row.
+  ui.conversationForm.addEventListener("submit", sendConversationMessage);
+  ui.conversationInput.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !ui.conversationSubmit.disabled) {
+      event.preventDefault();
+      ui.conversationForm.requestSubmit();
+    }
+  });
+  ui.conversationThread.addEventListener("click", retryConversationMessage);
+  ui.conversationRetry.addEventListener("click", () => {
+    const team = selectedTeam();
+    if (team) startConversationStream(team.id, session.workspaceGeneration);
+  });
   ui.approvalList.addEventListener("submit", decideApproval);
   ui.approvalsMore.addEventListener("click", loadMoreApprovals);
   ui.sessionsMore.addEventListener("click", loadMoreSessions);

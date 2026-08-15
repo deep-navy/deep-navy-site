@@ -9,6 +9,7 @@ import {
 } from "../vendor/platform-protos/deepnavy/v1/approvals_pb.js";
 import { AuthService } from "../vendor/platform-protos/deepnavy/v1/auth_pb.js";
 import { BillingService } from "../vendor/platform-protos/deepnavy/v1/billing_pb.js";
+import { TeamConversationService } from "../vendor/platform-protos/deepnavy/v1/conversations_pb.js";
 import { EconomicsScopeType, EconomicsService } from "../vendor/platform-protos/deepnavy/v1/economics_pb.js";
 import {
   GitHubInstallationSetupAction,
@@ -71,6 +72,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "github_pull_requests",
   "approvals",
   "decide_approval",
+  "send_team_message",
   "sign_out"
 ] as const);
 
@@ -97,7 +99,9 @@ export const PLATFORM_CAPABILITIES = Object.freeze({
   githubIssueHistory: true,
   githubPullRequestHistory: true,
   approvalDecision: true,
-  approvalDiscovery: true
+  approvalDiscovery: true,
+  conversationSend: true,
+  conversationStream: true
 });
 
 type ProcedureName = (typeof SUPPORTED_PROCEDURES)[number];
@@ -314,6 +318,7 @@ export function createPlatformApi(options: PlatformApiOptions) {
   const approvals = createClient(ApprovalService, transport);
   const auth = createClient(AuthService, transport);
   const billing = createClient(BillingService, transport);
+  const conversations = createClient(TeamConversationService, transport);
   const economics = createClient(EconomicsService, transport);
   const github = createClient(GitHubService, transport);
   const githubDelivery = createClient(GitHubDeliveryService, transport);
@@ -535,6 +540,12 @@ export function createPlatformApi(options: PlatformApiOptions) {
             approved: booleanField(payload, "approved"),
             reason: textField(payload, "reason", false)
           }, callOptions);
+        case "send_team_message":
+          return await conversations.sendTeamMessage({
+            teamId: textField(payload, "teamId"),
+            text: textField(payload, "text"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
         case "sign_out":
           return await auth.signOut({}, callOptions);
         default:
@@ -619,6 +630,38 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
+  async function* streamTeamConversation(input: unknown, options: PlatformCallOptions) {
+    const payload = inputRecord(input);
+    const accessToken = options.accessToken.trim();
+    const requestId = options.requestId.trim();
+    if (!accessToken) throw new PlatformClientError("Sign-in is required.", "unauthenticated", 401, requestId);
+    const callOptions: CallOptions = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Request-ID": requestId
+      },
+      signal: options.signal,
+      timeoutMs: 0
+    };
+
+    try {
+      for await (const response of conversations.streamTeamConversation({
+        teamId: textField(payload, "teamId"),
+        afterSequence: int64Field(payload.afterSequence ?? 0, "afterSequence")
+      }, callOptions)) {
+        yield response;
+      }
+    } catch (error) {
+      if (error instanceof PlatformClientError) throw error;
+      const connectError = ConnectError.from(error);
+      const responseRequestId = connectError.metadata.get("x-request-id") || requestId;
+      const safeMessage = connectError.code === Code.Unknown
+        ? "The browser could not reach the conversation service."
+        : connectError.rawMessage.slice(0, 300) || "The conversation service rejected the stream.";
+      throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
+    }
+  }
+
   async function* streamProvisioningStatus(input: unknown, options: PlatformCallOptions) {
     const payload = inputRecord(input);
     const accessToken = options.accessToken.trim();
@@ -651,5 +694,5 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
-  return Object.freeze({ request, signIn, streamTeamActivity, streamProvisioningStatus });
+  return Object.freeze({ request, signIn, streamTeamActivity, streamTeamConversation, streamProvisioningStatus });
 }

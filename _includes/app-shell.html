@@ -253,11 +253,48 @@
             <div class="wspace-grid">
 
             <div class="wspace-main">
-              <!-- The ask. One field, one button, no second question: the title
-                   the API requires is derived from the first sentence. -->
-              <section class="ask" aria-labelledby="objectives-title">
+              <!-- The conversation. The floor opens on the same exchange a
+                   business leader has with the product manager they hired:
+                   you say what matters, the Product Manager answers here.
+                   Customer messages carry their own delivery chip, driven by
+                   streamed re-sends of the same message, so the state on
+                   screen is always the last thing the server said - never a
+                   guess. System rows on the stream are wake plumbing and are
+                   not rendered as chat. -->
+              <section class="console" aria-labelledby="console-title">
+                <div class="console-head">
+                  <h3 id="console-title">Talk to your Product Manager</h3>
+                  <span class="stream-state" data-conversation-state>Waiting for a team</span>
+                  <button class="button button-quiet button-small" type="button" data-conversation-retry hidden>Reconnect</button>
+                </div>
+                <div class="empty-state" data-conversation-empty><strong>Your Product Manager is getting set up</strong><p>They introduce themselves here the moment they are ready, and the conversation starts from their side.</p></div>
+                <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
+                <!-- The Product Manager mid-reply: shown only while their
+                     crew-tile liveness says they are actually working after
+                     your delivered message, so the shimmer cannot outlive the
+                     truth behind it. -->
+                <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
+                <form class="console-form" data-conversation-form>
+                  <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
+                  <div class="objective-field console-field">
+                    <textarea id="conversation-text" name="conversationText" maxlength="4000" rows="2" placeholder="Tell your Product Manager what matters next." required disabled></textarea>
+                    <div class="objective-foot">
+                      <span class="objective-key" aria-hidden="true">⌘↵</span>
+                      <button class="button button-primary" type="submit" disabled>Send</button>
+                    </div>
+                  </div>
+                  <p class="form-help form-help-neutral" data-conversation-hint>The conversation opens when your team finishes setting up.</p>
+                  <p class="form-error" data-conversation-error role="alert" hidden></p>
+                </form>
+              </section>
+
+              <!-- The tracked-objective form stays for the flows that reference
+                   it, but the conversation above is the ask now: this section
+                   ships demoted (is-secondary) and never reclaims the
+                   headline. -->
+              <section class="ask is-secondary" aria-labelledby="objectives-title">
                 <div class="ask-head">
-                  <h3 id="objectives-title">What do you want built?</h3>
+                  <h3 id="objectives-title">Tracked objectives</h3>
                   <span hidden data-objective-state></span>
                 </div>
                 <div class="empty-state" data-objective-empty hidden><strong>Describe the outcome</strong><p>Your Product Manager turns it into issues; the engineers build it.</p></div>
@@ -268,13 +305,10 @@
                     <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you would tell a colleague." required disabled></textarea>
                     <div class="objective-foot">
                       <span class="objective-key" aria-hidden="true">⌘↵</span>
-                      <button class="button button-primary" type="submit" disabled>Start the work</button>
+                      <!-- Secondary on purpose: the console's Send is this
+                           screen's one primary action now. -->
+                      <button class="button button-secondary" type="submit" disabled>Start the work</button>
                     </div>
-                  </div>
-                  <div class="objective-examples" data-objective-examples>
-                    <button class="chip" type="button">Fix our accessibility problems</button>
-                    <button class="chip" type="button">Cut page load under one second</button>
-                    <button class="chip" type="button">Add tests to the payments module</button>
                   </div>
                   <p class="form-error" data-objective-error role="alert" hidden></p>
                 </form>
@@ -328,7 +362,7 @@
                 <button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button>
               </div>
 <div class="activity-workspace">
-            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you give your team an objective.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Give them an objective</a></div>
+            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Talk to your Product Manager</a></div>
             <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
             <!-- Paging lives after the events, reached by running out of them,
                  rather than above the feed as a control panel. -->

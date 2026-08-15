@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const expectedRevision = "b5e762174d1a5ea6a92a50333489d994c2873042";
+const expectedRevision = "803a516ca4c1f93d90850593e69084ea02a2328e";
 const expectedRuntimeVersions = Object.freeze({
   "@bufbuild/protobuf": "2.13.0",
   "@connectrpc/connect": "2.1.2",
@@ -24,6 +24,7 @@ const required = new Set([
   "auth",
   "billing",
   "common",
+  "conversations",
   "economics",
   "github",
   "github_delivery",
