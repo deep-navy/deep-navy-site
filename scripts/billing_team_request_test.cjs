@@ -6,6 +6,7 @@ const test = require("node:test");
 
 const app = readFileSync("assets/js/app.js", "utf8");
 const shell = readFileSync("_includes/app-shell.html", "utf8");
+const css = readFileSync("assets/css/main.css", "utf8");
 // Sign-in now lives on the homepage: there is one GitHub button and no login
 // page, so the copy these rules protect is asserted where it is shown.
 const home = readFileSync("index.md", "utf8");
@@ -22,14 +23,12 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   assert.doesNotMatch(shell, /data-step="subscription"/);
   assert.doesNotMatch(shell, /data-subscription-action/);
   assert.doesNotMatch(shell, /Activate subscription/);
-  // No numbered five-step framing: the primary bar is two steps and the rest is
-  // an auto-connected status row.
+  // No numbered five-step framing: the screen is one question, not a course.
   assert.doesNotMatch(shell, /STEP 0[0-9]/);
   // The screen used to say "create your team" five times over - page title,
   // progress headline, a CREATE TEAM label, the card heading and its body.
-  // What matters is that the action is named, not that it is repeated, so
-  // assert the heading rather than the label chip that used to shout it.
-  assert.match(shell, /data-team-card-title/);
+  // Now the action is named exactly once, by the page's own headline.
+  assert.match(shell, /<h1 id="firstrun-title" data-firstrun-title>Name your team<\/h1>/);
   // The signed-out card invites GitHub sign-in as the single first action.
   assert.match(home, /Continue with GitHub/);
   assert.doesNotMatch(shell, /Sign in to build your engineering team/); // no second login screen
@@ -38,12 +37,11 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // asks the customer to click the same button a second time.
   assert.doesNotMatch(shell, /data-sign-in\b/);
   assert.doesNotMatch(shell, /Continue with GitHub/);
-  // GitHub context is reported as auto-connected facts. Assert the behaviour
-  // (each is a reviewable step that connects itself) rather than the class
-  // name, which is presentation and moved with the redesign.
+  // GitHub context is reported as auto-connected facts. The connection model
+  // stays machine-readable (app.js still writes each step's state) but it is
+  // background now: one visible fact line, no chips to review and no wizard.
   assert.match(shell, /data-progress-auto-organization/);
   assert.match(shell, /data-progress-auto-repositories/);
-  assert.match(shell, /data-reveal-step="organization"/);
   assert.match(shell, /connect automatically|connected automatically/i);
   // The organization is auto-derived, not a manual "establish" form step.
   assert.doesNotMatch(shell, /Establish your organization/);
@@ -70,29 +68,68 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
 
-test("the team setup screen collects an objective, an engineer stepper, a live price, and the roster", () => {
-  // Objective: an optional, encouraged imperative the PM turns into criteria.
-  assert.match(shell, /data-team-objective/);
-  assert.match(shell, /What should this team accomplish\?/);
-  assert.match(shell, /turns this into acceptance criteria/i);
-  // Engineer stepper: floor 3, default 3, max 50.
-  assert.match(shell, /<input[^>]*data-engineer-input[^>]*>/);
-  assert.match(shell, /name="engineerCount"[^>]*min="3"[^>]*max="50"[^>]*value="3"/);
-  assert.match(shell, /data-engineer-decrement/);
-  assert.match(shell, /data-engineer-increment/);
-  // Live price + breakdown + the implied roster container.
-  assert.match(shell, /data-team-price-amount/);
-  assert.match(shell, /data-team-price-breakdown/);
-  assert.match(shell, /data-team-roster/);
-  // The price is computed from the stepper against the plan base + per-engineer add-on.
+test("the first-run screen asks one question: the team name", () => {
+  // The name field is the hero — the only input the initial screen presents.
+  // Everything the wizard used to collect alongside it moved out of the first
+  // ask: capacity changes live in Settings, and the objective goes to your
+  // Product Manager in conversation once the team exists.
+  const teamForm = shell.match(/<form class="team-form" data-team-form>[\s\S]*?<\/form>/);
+  assert.ok(teamForm, "the name form must exist");
+  assert.deepEqual(teamForm[0].match(/<(?:input|textarea|select)\b/g), ["<input"], "the name field is the only input in the team form");
+  assert.match(teamForm[0], /name="teamName"/);
+  assert.deepEqual(teamForm[0].match(/<button\b/g), ["<button"], "one button carries the create action");
+  // The $599/month line sits with the field, and the price still renders live
+  // from the plan against the included-engineer floor.
+  assert.match(teamForm[0], /data-team-price-amount/);
+  assert.match(teamForm[0], /data-team-price-breakdown/);
+  assert.match(teamForm[0], /\$599/);
   assert.match(app, /function renderTeamSetupPricing/);
   assert.match(app, /teamPricingFor\(/);
   assert.match(app, /function pricingBreakdown/);
-  // The floor keeps two peer reviewers on every shipped ticket.
-  assert.match(shell, /two peer reviewers/i);
+  // Nothing else competes on the first screen.
+  assert.doesNotMatch(shell, /data-team-objective/);
+  assert.doesNotMatch(shell, /data-objective-suggestion/);
+  assert.doesNotMatch(shell, /data-engineer-input/);
+  assert.doesNotMatch(shell, /data-engineer-decrement/);
+  assert.doesNotMatch(shell, /data-team-roster/);
+  assert.doesNotMatch(shell, /data-example-run/);
 });
 
-test("RequestTeam now sends the collected engineer count and objective", () => {
+test("prerequisites are background: a card surfaces only while it genuinely blocks", () => {
+  // No wizard chrome remains: no progress bar, step numbering, reveal-step
+  // chips, readiness guide, or step-card scaffolding.
+  assert.doesNotMatch(shell, /data-reveal-step/);
+  assert.doesNotMatch(shell, /onboarding-card/);
+  assert.doesNotMatch(shell, /setupline/);
+  assert.doesNotMatch(shell, /step-number/);
+  assert.doesNotMatch(shell, /progress-steps/);
+  assert.doesNotMatch(shell, /Readiness guide/);
+  // Prerequisite cards exist for app.js to drive, but render only in blocking
+  // states; the enforcement point is the stylesheet, so pin it there.
+  assert.match(css, /\.firstrun \.firstrun-card\{ display:none;/);
+  assert.match(css, /\.blocking-card\[data-state="action"\]/);
+  assert.match(css, /\.blocking-card\[data-state="error"\]/);
+  assert.match(css, /\.repo-card\[data-state="blocked"\]\{ display:block; \}/);
+  // GitHub not installed: the connect card shows INSTEAD of the name form,
+  // wired to the existing install flow.
+  assert.match(css, /\.firstrun-inner:has\(\[data-step="organization"\]\[data-state="action"\], \[data-step="organization"\]\[data-state="error"\], \[data-step="github"\]\[data-state="action"\], \[data-step="github"\]\[data-state="error"\]\) \.team-card\{ display:none; \}/);
+  const githubCard = shell.match(/<article class="firstrun-card blocking-card github-card"[\s\S]*?<\/article>/);
+  assert.ok(githubCard, "the GitHub connect card must exist");
+  assert.match(githubCard[0], /data-github-action/);
+  assert.match(app, /ui\.githubAction\.addEventListener\("click", startGitHubInstallation\)/);
+  // The repository picker is the second beat — after the name, framed as a
+  // question — and it never competes with the GitHub connect card.
+  assert.match(shell, /Which repository should your team work in\?/);
+  assert.ok(shell.indexOf("Which repository should your team work in?") > shell.indexOf("data-team-form"), "the repository question follows the name form");
+  assert.match(css, /\.firstrun-inner:has\(\[data-step="github"\]:not\(\[data-state="complete"\]\)\) \.repo-card\{ display:none; \}/);
+  // After create, the handoff names what actually happens next.
+  assert.match(shell, /Your Product Manager will open the conversation when the team is ready\./);
+});
+
+test("RequestTeam sends the engineer count and objective, defaulting to the floor and empty when the screen collects neither", () => {
+  // The first-run screen no longer collects these; normalizeEngineerCount(null)
+  // resolves to the included floor of three and the objective defaults empty,
+  // so the request contract is unchanged.
   assert.match(app, /const engineerCount = normalizeEngineerCount\(form\.get\("engineerCount"\)\)/);
   assert.match(app, /const objective = stringValue\(form\.get\("teamObjective"\)\)/);
   assert.match(app, /apiRequest\("request_team", \{[\s\S]*?engineerCount,\s*\n\s*objective\s*\n\s*\}\)/);

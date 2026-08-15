@@ -2,7 +2,6 @@
   <section class="config-banner" data-config-banner data-tone="warning" aria-live="polite" aria-atomic="true">
     <span class="banner-icon" aria-hidden="true">!</span>
     <div><strong data-config-title>Checking environment configuration</strong><p data-config-message>The application is verifying its public API and identity settings.</p></div>
-    <a class="button button-quiet button-small" href="{{ '/docs/#readiness' | relative_url }}">Readiness guide</a>
   </section>
 
   <section class="auth-banner" data-auth-banner data-tone="warning" role="alert" hidden>
@@ -36,12 +35,21 @@
   <!-- ============ AUTHENTICATED ============ -->
   <div data-authenticated hidden>
 
-    <!-- ---------- FIRST RUN / CREATE TEAM ---------- -->
+    <!-- ---------- FIRST RUN / NAME YOUR TEAM ---------- -->
+    <!-- One question: what is your team called? The GitHub organization, App
+         installation, and repositories connect themselves in the background
+         from the sign-in, so none of them is presented as a step. Each keeps
+         a card here, but a card renders only while app.js marks it genuinely
+         blocking (data-state="action"/"error"): connecting GitHub replaces
+         the name form until it is done, and the repository choice follows the
+         name as its own question. Payment opens from the create action; after
+         that the provisioning stream and the Product Manager's opening
+         message take over in the workspace. -->
     <section class="firstrun" data-firstrun aria-labelledby="firstrun-title">
       <div class="firstrun-inner">
         <div class="firstrun-head">
           <span class="eyebrow" data-firstrun-eyebrow>Get started</span>
-          <h1 id="firstrun-title" data-firstrun-title>Create your engineering team</h1>
+          <h1 id="firstrun-title" data-firstrun-title>Name your team</h1>
           <p data-app-subtitle>Six specialists who plan the work, write the code, and open pull requests on your repositories. You review and merge.</p>
         </div>
 
@@ -50,30 +58,30 @@
           <div><strong data-user-name></strong><span data-user-login></span></div>
         </div>
 
-        <!-- GitHub context connects itself from the sign-in, so it is reported
-             as one line of fact rather than three cards and a stepper. The old
-             screen said "create your team" five times between the page title,
-             the progress headline, a CREATE TEAM label, a card heading and its
-             body copy; a person only needs to be told once. -->
-        <section class="setupline" aria-labelledby="onboarding-progress-title">
-          <h2 class="visually-hidden" id="onboarding-progress-title" data-progress-headline>Set up</h2>
-          <p class="setupline-copy" data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
-          <ul class="setupline-facts" aria-label="Connected from your GitHub sign-in">
-            <li data-progress-step="organization" data-state="loading"><button type="button" data-reveal-step="organization" title="Review or change" aria-expanded="false"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></button></li>
-            <li data-progress-step="github" data-state="loading"><button type="button" data-reveal-step="github" title="Review or change" aria-expanded="false"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></button></li>
-            <li data-progress-step="repositories" data-state="loading"><button type="button" data-reveal-step="repositories" title="Review or change" aria-expanded="false"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></button></li>
-          </ul>
-          <ol class="visually-hidden progress-steps">
-            <li data-progress-step="identity" data-state="complete"><span>1</span><strong>Sign in</strong><small>Done</small></li>
-            <li data-progress-step="team" data-state="blocked"><span>2</span><strong>Create your team</strong><small>Name it, then pay</small></li>
-            <li data-progress-step="ship" data-state="pending"><span>3</span><strong>Watch it ship</strong><small>Issues, code, PRs</small></li>
+        <!-- The connection model stays machine-readable for app.js and for
+             screen readers; nothing in it renders as a wizard. The visible
+             fact line at the end of the section reports what connected
+             itself. -->
+        <div class="visually-hidden">
+          <h2 id="onboarding-progress-title" data-progress-headline>Set up</h2>
+          <ol aria-label="Connected from your GitHub sign-in">
+            <li data-progress-step="identity" data-state="complete"><strong>Sign in</strong><small>Done</small></li>
+            <li data-progress-step="organization" data-state="loading"><strong>Organization</strong><small data-progress-auto-organization>Connecting…</small></li>
+            <li data-progress-step="github" data-state="loading"><strong>GitHub App</strong><small data-progress-auto-github>Connecting…</small></li>
+            <li data-progress-step="repositories" data-state="loading"><strong>Repositories</strong><small data-progress-auto-repositories>Connecting…</small></li>
+            <li data-progress-step="team" data-state="blocked"><strong>Name your team</strong><small>Waiting</small></li>
+            <li data-progress-step="ship" data-state="pending"><strong>Watch it ship</strong><small>After payment</small></li>
           </ol>
-        </section>
+        </div>
 
-        <!-- Organization: auto-derived; connect / bootstrap / select handle edge cases -->
-        <section class="onboarding-card organization-card is-auto" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
-          <div class="step-header"><span class="step-number">ORGANIZATION</span><span class="step-state" data-step-state>Checking</span></div>
-          <h2 id="organization-title">Organization</h2>
+        <!-- Organization: derives itself from the GitHub sign-in. This card
+             surfaces only when that cannot happen on its own — nothing to
+             derive from yet, a name needed, or a choice between several
+             organizations — and while it shows it takes the name form's
+             place. -->
+        <section class="firstrun-card blocking-card organization-card" data-step="organization" data-state="loading" aria-labelledby="organization-title" tabindex="-1">
+          <span class="visually-hidden" data-step-state>Checking</span>
+          <h2 id="organization-title">Connect your organization</h2>
           <p data-step-message>Loading the memberships authorized for this signed-in account.</p>
           <button class="button button-github" type="button" data-organization-connect hidden>
             <svg class="github-mark" width="18" height="18" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
@@ -91,26 +99,52 @@
             <select id="organization-selection" name="organizationId" required disabled></select>
             <button class="button button-primary" type="submit" disabled>Continue with organization</button>
           </form>
-          <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Retry profile check</button>
+          <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Try again</button>
         </section>
 
+        <!-- The one question. The input enables the moment the background
+             connections are ready; payment opens from this button, and the
+             team starts working minutes after it clears. -->
+        <article class="firstrun-card team-card" data-step="team" data-state="loading" tabindex="-1">
+          <span class="visually-hidden" data-step-state>Checking</span>
+          <p class="visually-hidden" data-step-message>Name your team to get started.</p>
+          <form class="team-form" data-team-form>
+            <label class="visually-hidden" for="team-name">Team name</label>
+            <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
+            <div class="team-price">
+              <div>
+                <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
+                <p class="team-price-breakdown" data-team-price-breakdown>$599 team (includes 3 engineers)</p>
+              </div>
+              <p class="form-help form-help-neutral" id="team-name-help">Charged when you confirm. Cancel anytime in Settings.</p>
+            </div>
+            <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
+            <button class="button button-primary" type="submit" disabled>Continue to payment — $599/month</button>
+          </form>
+          <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
+        </article>
+
         <div data-organization-dependent hidden>
-          <!-- GitHub App status (auto) -->
-          <article class="onboarding-card is-auto" data-step="github" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number">GITHUB</span><span class="step-state" data-step-state>Checking</span></div>
-            <h2>GitHub App</h2>
-            <p data-step-message>Checking for an organization-bound GitHub App installation.</p>
-            <div class="card-action"><button class="button button-secondary" type="button" data-github-action disabled>Manage GitHub access</button></div>
+          <!-- GitHub App: connects itself from the sign-in. Shown only while
+               the installation is genuinely missing or unreachable; while it
+               shows, it takes the name form's place. -->
+          <article class="firstrun-card blocking-card github-card" data-step="github" data-state="loading" tabindex="-1">
+            <span class="visually-hidden" data-step-state>Checking</span>
+            <h2>Connect GitHub</h2>
+            <p data-step-message>Checking your GitHub connection.</p>
+            <div class="card-action"><button class="button button-primary" type="button" data-github-action disabled>Connect GitHub</button></div>
           </article>
 
-          <!-- Repositories (auto; adjustable behind a disclosure) -->
-          <article class="onboarding-card repository-card is-auto" data-step="repositories" data-state="blocked" tabindex="-1">
-            <div class="step-header"><span class="step-number">REPOSITORIES</span><span class="step-state" data-step-state>Blocked</span></div>
-            <h2>Repositories</h2>
-            <p data-step-message>The repositories you granted the GitHub App are connected. You can adjust which ones your team uses below.</p>
+          <!-- Repositories: connect themselves from what you granted the
+               GitHub App. This is the second question — after the name — and
+               it appears only when a choice is actually needed. -->
+          <article class="firstrun-card blocking-card repo-card" data-step="repositories" data-state="loading" tabindex="-1">
+            <span class="visually-hidden" data-step-state>Checking</span>
+            <h2>Which repository should your team work in?</h2>
+            <p data-step-message>The repositories you granted the GitHub App are connected.</p>
             <form class="repository-form" data-repository-form hidden>
               <fieldset class="repository-modes">
-                <legend>deep navy access</legend>
+                <legend>Your team may work in</legend>
                 <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
                 <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
               </fieldset>
@@ -118,73 +152,14 @@
               <p class="form-help" data-repository-empty hidden>No accessible repositories were returned. Grant repository access in GitHub, then refresh.</p>
               <div class="repository-actions">
                 <button class="button button-primary" type="submit" data-repository-save disabled>Save repository access</button>
-                <button class="button button-quiet" type="button" data-repository-refresh>Refresh repositories</button>
               </div>
             </form>
-          </article>
-
-          <!-- Proof before the paywall: what actually happens after you pay -->
-          <details class="example-run" data-example-run>
-            <summary>
-              <span class="example-run-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3.5v17l14-8.5z" stroke-linejoin="round"/></svg>
-              </span>
-              <span class="example-run-summary-copy">
-                <strong>See what happens after you pay</strong>
-                <small>An example run, start to merge — 30 seconds</small>
-              </span>
-            </summary>
-            <div class="example-run-body">
-              <p class="example-run-note">Example objective, real pipeline — this is the sequence your team follows on your repositories.</p>
-              <ol class="example-run-stages" data-example-run-stages></ol>
-            </div>
-          </details>
-
-          <!-- The focal action -->
-          <article class="onboarding-card team-card is-primary" data-step="team" data-state="loading" tabindex="-1">
-            <div class="step-header"><span class="step-number visually-hidden">Create team</span><span class="step-state" data-step-state>Checking</span></div>
-            <h2 data-team-card-title>Name your team</h2>
-            <p class="visually-hidden" data-step-message>Name your engineering team to get started.</p>
-            <form class="inline-form team-form card-action" data-team-form>
-              <label for="team-name">Team name</label>
-              <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
-
-              <label for="team-objective">What should this team accomplish? <span class="label-optional">Optional</span></label>
-              <div class="objective-suggestions" role="group" aria-label="Example objectives — click to use one">
-                <button type="button" data-objective-suggestion="Raise automated test coverage on our core service and wire the coverage gate into CI.">Raise test coverage</button>
-                <button type="button" data-objective-suggestion="Find and fix the top accessibility issues across the app, then add regression checks.">Fix accessibility</button>
-                <button type="button" data-objective-suggestion="Profile our slowest API endpoints and cut p95 latency in half, with before/after benchmarks.">Cut API latency</button>
-              </div>
-              <textarea id="team-objective" name="teamObjective" data-team-objective maxlength="2000" rows="3" placeholder="e.g. Cut trial-to-paid friction — ship a guided onboarding and instrument activation." aria-describedby="team-objective-help"></textarea>
-              <p class="form-help form-help-neutral" id="team-objective-help">Your Product Manager turns this into acceptance criteria. Encouraged, but you can refine it later.</p>
-
-              <div class="team-engineers" data-engineer-field>
-                <div class="team-engineers-head">
-                  <label id="team-engineer-label" for="team-engineer-count">Engineers</label>
-                  <p class="form-help form-help-neutral">Floor of three, so every shipped ticket gets two peer reviewers.</p>
-                </div>
-                <div class="stepper" role="group" aria-labelledby="team-engineer-label">
-                  <button class="stepper-btn" type="button" data-engineer-decrement aria-label="Remove an engineer">&minus;</button>
-                  <input class="stepper-value" id="team-engineer-count" name="engineerCount" type="number" inputmode="numeric" min="3" max="50" step="1" value="3" data-engineer-input>
-                  <button class="stepper-btn" type="button" data-engineer-increment aria-label="Add an engineer">+</button>
-                </div>
-              </div>
-
-              <ul class="team-roster" data-team-roster aria-label="Who joins this team"></ul>
-
-              <div class="team-price">
-                <div>
-                  <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
-                  <p class="team-price-breakdown" data-team-price-breakdown>$599 team (includes 3 engineers)</p>
-                </div>
-                <p class="form-help form-help-neutral" id="team-name-help">Charged when you confirm. Cancel anytime in Settings.</p>
-              </div>
-              <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
-              <button class="button button-primary" type="submit" disabled>Review payment — $599/month</button>
-            </form>
-            <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
+            <button class="button button-quiet button-small repo-refresh" type="button" data-repository-refresh>Refresh repositories</button>
           </article>
         </div>
+
+        <!-- Background facts, not curriculum: what connected itself. -->
+        <p class="firstrun-fact" data-progress-summary role="status" aria-live="polite">Your GitHub organization and repositories connect automatically.</p>
       </div>
     </section>
 
@@ -267,7 +242,7 @@
                   <span class="stream-state" data-conversation-state>Waiting for a team</span>
                   <button class="button button-quiet button-small" type="button" data-conversation-retry hidden>Reconnect</button>
                 </div>
-                <div class="empty-state" data-conversation-empty><strong>Your Product Manager is getting set up</strong><p>They introduce themselves here the moment they are ready, and the conversation starts from their side.</p></div>
+                <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p></div>
                 <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
                 <!-- The Product Manager mid-reply: shown only while their
                      crew-tile liveness says they are actually working after

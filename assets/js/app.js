@@ -62,7 +62,6 @@
     teamInput: document.querySelector('[data-team-form] input[name="teamName"]'),
     teamSubmit: document.querySelector('[data-team-form] button[type="submit"]'),
     teamError: document.querySelector("[data-team-error]"),
-    teamObjective: document.querySelector("[data-team-objective]"),
     engineerInput: document.querySelector("[data-engineer-input]"),
     engineerDecrement: document.querySelector("[data-engineer-decrement]"),
     engineerIncrement: document.querySelector("[data-engineer-increment]"),
@@ -86,9 +85,6 @@
     teamList: document.querySelector("[data-team-list]"),
     progressSummary: document.querySelector("[data-progress-summary]"),
     progressHeadline: document.querySelector("[data-progress-headline]"),
-    revealStepButtons: [...document.querySelectorAll("[data-reveal-step]")],
-    exampleRun: document.querySelector("[data-example-run]"),
-    exampleRunStages: document.querySelector("[data-example-run-stages]"),
     progressSteps: [...document.querySelectorAll("[data-progress-step]")],
     dashboardState: document.querySelector("[data-dashboard-state]"),
     teamSelect: document.querySelector("[data-team-select]"),
@@ -1110,8 +1106,8 @@
         ui.githubAction.disabled = false;
         await refreshRepositoryAccess();
       } else {
-        setStep("github", "action", "Needs action", "The GitHub App installation is not active. Start or resume the secure installation flow.");
-        ui.githubAction.textContent = "Install GitHub App";
+        setStep("github", "action", "Needs action", "Your GitHub connection is not active yet. Connect GitHub so your team can work in your repositories.");
+        ui.githubAction.textContent = "Connect GitHub";
         ui.githubAction.disabled = false;
         resetRepositoryAccess("Connect an active GitHub App installation before choosing repositories.");
       }
@@ -1119,9 +1115,9 @@
     }
     session.githubInstalled = false;
     if (isMissingResource(result.reason)) {
-      setStep("github", "action", "Needs action", "No GitHub App installation is recorded for this organization.");
+      setStep("github", "action", "Needs action", "Connect GitHub so your team can work in your repositories.");
       ui.githubAction.disabled = false;
-      ui.githubAction.textContent = "Install GitHub App";
+      ui.githubAction.textContent = "Connect GitHub";
       resetRepositoryAccess("Connect the GitHub App before choosing repositories.");
     } else {
       setStep("github", "error", "Unavailable", apiErrorMessage(result.reason, "The GitHub integration service is not ready. No installation state was assumed."));
@@ -1537,10 +1533,11 @@
       : `Continue to payment — ${total}`;
   }
 
-  // Live price for the team-setup screen: reflects the stepper as it changes.
+  // Live price for the name-your-team screen. The screen asks one question,
+  // so there is no stepper here: the price reflects the included floor of
+  // three engineers, and capacity changes live in Settings after creation.
   function renderTeamSetupPricing() {
-    if (!ui.engineerInput) return;
-    const pricing = teamPricingFor(ui.engineerInput.value);
+    const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
     if (ui.teamPriceAmount) {
       ui.teamPriceAmount.replaceChildren();
       ui.teamPriceAmount.append(document.createTextNode(formatCents(pricing.totalCents)));
@@ -2092,11 +2089,11 @@
     if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
       setStep("team", "action", "Ready", `${existing}${savedCardChargeExpected()
-        ? "Name your team — the card on file is charged and your team starts working minutes later."
-        : "Name your team — payment opens in secure Stripe checkout, and your team starts working minutes later."}`);
+        ? "Name your team — the card on file is charged, and your Product Manager opens the conversation when the team is ready."
+        : "Name your team — payment opens in secure Stripe checkout, and your Product Manager opens the conversation when the team is ready."}`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
-      setStep("team", "blocked", "Blocked", `Complete the ${requirements} above, then create your team here.`);
+      setStep("team", "blocked", "Blocked", `Finish the ${requirements}, then name your team.`);
     }
     ui.teamInput.disabled = !ready;
     ui.teamSubmit.disabled = !ready;
@@ -2145,15 +2142,15 @@
       ui.progressHeadline.textContent = states.team === "complete"
         ? "Your team is live — give it work."
         : states.identity === "complete"
-          ? "One step left: create your team."
-          : "Sign in, then create your team.";
+          ? "One step left: name your team."
+          : "Sign in, then name your team.";
     }
     if (states.team === "complete") {
-      ui.progressSummary.textContent = "Your team workspace is ready. Submit a business objective to put it to work.";
+      ui.progressSummary.textContent = "Your team is live. Your Product Manager picks up the conversation in the workspace.";
     } else if (autoConnected) {
       const organization = stringValue(session.organizationName) || "Your organization";
       const count = session.connectedRepositoryCount;
-      ui.progressSummary.textContent = `${organization} is connected${count ? ` with ${count} ${count === 1 ? "repository" : "repositories"}` : ""}. Name your team below — it starts working minutes after payment.`;
+      ui.progressSummary.textContent = `${organization} is connected${count ? ` with ${count} ${count === 1 ? "repository" : "repositories"}` : ""}. Your team starts working minutes after payment.`;
     } else {
       ui.progressSummary.textContent = "Your GitHub organization and repositories connect automatically.";
     }
@@ -6806,70 +6803,6 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
-  // The proof-of-work moment: an example run rendered from the launch contract,
-  // revealed a stage at a time so the pipeline reads as a sequence rather than a
-  // wall of text. Built once, on first open; motion is skipped entirely when the
-  // visitor prefers reduced motion (the content is identical either way).
-  let exampleRunBuilt = false;
-  function buildExampleRun() {
-    if (exampleRunBuilt || !ui.exampleRunStages || !launchContract?.exampleRun) return;
-    exampleRunBuilt = true;
-    const { stages } = launchContract.exampleRun();
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
-    ui.exampleRunStages.replaceChildren();
-    stages.forEach((stage, index) => {
-      const item = document.createElement("li");
-      item.className = "example-run-stage";
-      const badge = document.createElement("span");
-      badge.className = "example-run-code";
-      badge.textContent = stage.code;
-      const copy = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = stage.title;
-      const actor = document.createElement("span");
-      actor.className = "example-run-actor";
-      actor.textContent = stage.actor;
-      const detail = document.createElement("p");
-      detail.textContent = stage.detail;
-      const artifact = document.createElement("span");
-      artifact.className = "example-run-artifact";
-      artifact.textContent = stage.artifact;
-      copy.append(title, actor, detail, artifact);
-      item.append(badge, copy);
-      if (!reduceMotion) {
-        item.classList.add("is-pending");
-        window.setTimeout(() => item.classList.remove("is-pending"), 90 + index * 420);
-      }
-      ui.exampleRunStages.append(item);
-    });
-  }
-
-  // Example-objective chips beat a blank textarea (NN/g suggestion-chip
-  // guidance; the template pattern is near-universal in successful AI product
-  // onboarding). Clicking fills the objective so the PM has something concrete.
-  if (ui.exampleRun) ui.exampleRun.addEventListener("toggle", () => { if (ui.exampleRun.open) buildExampleRun(); });
-  document.querySelectorAll("[data-objective-suggestion]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const field = ui.teamForm?.querySelector("[data-team-objective]");
-      if (!field || field.disabled) return;
-      field.value = button.dataset.objectiveSuggestion;
-      field.focus();
-    });
-  });
-  // Completed auto-connect cards collapse behind their chips; a chip click
-  // reveals the card for review or adjustment (progressive disclosure).
-  ui.revealStepButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const card = document.querySelector(`[data-step="${button.dataset.revealStep}"]`);
-      if (!card) return;
-      const revealed = card.classList.toggle("is-revealed");
-      button.setAttribute("aria-expanded", revealed ? "true" : "false");
-      if (revealed) {
-        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        card.focus({ preventScroll: true });
-      }
-    });
-  });
   ui.repositoryModes.forEach((input) => input.addEventListener("change", updateRepositoryControls));
   ui.repositoryList.addEventListener("change", updateRepositoryControls);
   ui.settingsBillingManage.addEventListener("click", manageBilling);

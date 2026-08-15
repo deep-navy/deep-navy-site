@@ -162,9 +162,10 @@ test("the composer is honest about why it is off, and the empty console promises
   // ⌘/Ctrl+Enter sends without leaving the keyboard.
   assert.match(app, /ui\.conversationForm\.addEventListener\("submit", sendConversationMessage\)/);
   assert.match(app, /ui\.conversationForm\.requestSubmit\(\)/);
-  // A brand-new team's console says the PM is getting set up — and the
-  // greeting arrives through the stream as a normal PM message, so nothing
-  // here fabricates one.
-  assert.match(shell, /Your Product Manager is getting set up/);
+  // A brand-new team's console carries the handoff from the create screen —
+  // the PM opens the conversation when the team is ready — and the greeting
+  // arrives through the stream as a normal PM message, so nothing here
+  // fabricates one.
+  assert.match(shell, /Your Product Manager will open the conversation when the team is ready\./);
   assert.doesNotMatch(app, /author: "product_manager"/);
 });

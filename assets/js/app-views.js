@@ -31,8 +31,7 @@
   const cancelButton = document.querySelector("[data-firstrun-cancel]");
   const firstrunTitle = document.querySelector("[data-firstrun-title]");
   const firstrunEyebrow = document.querySelector("[data-firstrun-eyebrow]");
-  const teamCardTitle = document.querySelector("[data-team-card-title]");
-  const teamInput = document.querySelector("[data-team-form] input");
+  const teamInput = document.querySelector('[data-team-form] input[name="teamName"]');
 
   const VIEWS = ["overview", "activity", "economics", "approvals", "settings"];
   let currentView = "overview";
@@ -65,8 +64,7 @@
     if (mode === "firstrun") {
       const another = teamsExist();
       if (firstrunEyebrow) firstrunEyebrow.textContent = another ? "New team" : "Get started";
-      if (firstrunTitle) firstrunTitle.textContent = another ? "Create another engineering team" : "Create your first engineering team";
-      if (teamCardTitle) teamCardTitle.textContent = another ? "Name your new team" : "Name your team";
+      if (firstrunTitle) firstrunTitle.textContent = another ? "Name your new team" : "Name your team";
       if (cancelButton) cancelButton.hidden = !another;
     } else if (mode === "workspace") {
       setView(currentView);

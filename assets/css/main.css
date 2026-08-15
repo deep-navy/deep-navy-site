@@ -266,45 +266,12 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .banner-icon { display: grid; width: 26px; height: 26px; color: var(--muted-bright); border: 1px solid currentColor; font-family: var(--font-mono); font-size: .68rem; place-items: center; }.config-banner[data-tone="success"] .banner-icon, .auth-banner[data-tone="success"] .banner-icon { color: var(--aqua); }.config-banner[data-tone="error"] .banner-icon, .auth-banner[data-tone="error"] .banner-icon { color: var(--ink); }
 .config-banner strong, .auth-banner strong { display: block; font-size: .85rem; }.config-banner p, .auth-banner p { margin: .1rem 0 0; font-size: .75rem; }
 .signed-out-card { display: grid; min-height: 430px; justify-items: start; align-items: center; padding: 4rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; text-align: left; }.signed-out-inner { max-width: 600px; }.signed-out-mark { display: none; }.signed-out-card h2 { margin-bottom: .8rem; font-size: 2.1rem; }.signed-out-card .button { margin-top: 1rem; }.security-note { margin-top: 1.25rem; font-size: .7rem; }
-.onboarding-progress { margin-bottom: 2.5rem; padding: 1.35rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.progress-copy { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 1.15rem; }
-.progress-copy .eyebrow { margin-bottom: .55rem; }.progress-copy h2 { margin: 0; font-size: 1.35rem; }.progress-copy p { margin: 0; color: var(--muted-bright); font-family: var(--font-mono); font-size: .67rem; text-transform: uppercase; white-space: nowrap; }
-.progress-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
-.progress-steps li { position: relative; display: grid; padding: .9rem .65rem .2rem 0; border-top: 1px solid var(--line); gap: .12rem; }
-.progress-steps li::before { position: absolute; top: -5px; left: 0; width: 8px; height: 8px; content: ""; border: 2px solid var(--navy-700); background: var(--navy-850); }
-.progress-steps li[data-state="complete"]::before { border-color: var(--aqua); background: var(--aqua); }.progress-steps li[data-state="action"]::before { border-color: var(--muted-bright); }.progress-steps li[data-state="error"]::before { border-color: var(--ink); background: var(--ink); }
-.progress-steps span { color: var(--text-muted); font-family: var(--font-mono); font-size: .58rem; }.progress-steps strong { font-size: .72rem; }.progress-steps small { color: var(--muted); font-size: .62rem; line-height: 1.35; }
-/* Two real actions — sign in, create team — so the compact bar is 2 columns. */
-.progress-steps-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 640px; }
-/* GitHub org / App / repositories connect automatically: a quiet status row. */
-.progress-auto { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
-.progress-auto li { display: flex; align-items: baseline; gap: .5rem; }
-/* each chip is a button that reveals its collapsed card for review/adjustment */
-.progress-auto button { display: flex; align-items: baseline; gap: .5rem; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; text-align: left; }
-.progress-auto button:hover small, .progress-auto button:focus-visible small { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-.progress-auto strong { font-family: var(--font-mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-.progress-auto small { font-size: .68rem; color: var(--muted-bright); }
-.progress-auto li[data-state="complete"] strong { color: var(--aqua); }
-.progress-auto li[data-state="complete"] strong::after { content: " ✓"; }
-.progress-auto li[data-state="error"] strong, .progress-auto li[data-state="action"] strong { color: var(--ink); }
-/* Auto-connected cards are secondary; the team card is the primary action. */
-.onboarding-card.is-auto { padding-top: 1rem; padding-bottom: 1rem; opacity: .82; }
-.onboarding-card.is-auto h2 { font-size: 1rem; }
-.onboarding-card.is-primary { padding: 1.75rem 0; }
-.onboarding-card.is-primary h2 { font-size: 1.45rem; }
 .workspace-section { scroll-margin-top: 92px; margin-top: 4rem; padding: 2rem 0 0; border-top: 1px solid var(--line); }
 .workspace-section + .workspace-section { margin-top: 1.25rem; }
 .workspace-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; margin-bottom: 1.35rem; }.workspace-section-heading .eyebrow { margin-bottom: .6rem; }.workspace-section-heading h2 { margin: 0; font-size: clamp(1.45rem, 3vw, 2.15rem); }.workspace-section-heading p { max-width: 550px; margin: .55rem 0 0; font-size: .82rem; }
-.onboarding-grid { display: block; }
-.onboarding-card { position: relative; display: flex; min-height: 0; flex-direction: column; padding: 1.5rem 0; border-bottom: 1px solid var(--line); }.onboarding-card[data-state="complete"] { border-color: var(--accent-a28); }.onboarding-card[data-state="error"] { border-color: var(--muted-bright); border-style: solid; }.onboarding-card[data-state="blocked"] { opacity: .72; }
-.step-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }.step-number { color: var(--text-muted); font-family: var(--font-mono); font-size: .65rem; }.step-state { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-family: var(--font-mono); font-size: .58rem; text-transform: uppercase; }.step-state::before { width: 7px; height: 7px; content: ""; background: var(--text-muted); }.onboarding-card[data-state="complete"] .step-state { color: var(--aqua); }.onboarding-card[data-state="complete"] .step-state::before { background: var(--aqua); }.onboarding-card[data-state="error"] .step-state { color: var(--ink); }.onboarding-card[data-state="error"] .step-state::before { background: var(--ink); }.onboarding-card[data-state="action"] .step-state { color: var(--muted-bright); }.onboarding-card[data-state="action"] .step-state::before { border: 1px solid var(--muted-bright); background: transparent; }
-.onboarding-card h2 { margin: 1rem 0 .55rem; font-size: 1.35rem; }.onboarding-card p { margin-bottom: 1.2rem; font-size: .82rem; }.onboarding-card .card-action { margin-top: auto; }.onboarding-card .button { width: 100%; }
-.onboarding-card[data-state="complete"], .onboarding-card[data-state="blocked"] { padding-block: .85rem; opacity: 1; }
-.onboarding-card[data-state="complete"] > :not(.step-header), .onboarding-card[data-state="blocked"] > :not(.step-header) { display: none !important; }
-.organization-card { min-height: 0; margin-bottom: 1rem; padding-top: 0; }.organization-card h2 { margin-top: 1.25rem; }.organization-form { max-width: 620px; grid-template-columns: 1fr; }.organization-form label, .organization-form .form-help, .organization-form .form-error { grid-column: auto; }.organization-form .button { width: fit-content; }.organization-retry { width: fit-content !important; }
+.organization-form { max-width: 620px; grid-template-columns: 1fr; }.organization-form label, .organization-form .form-help, .organization-form .form-error { grid-column: auto; }.organization-form .button { width: fit-content; }.organization-retry { width: fit-content !important; }
 .inline-form { display: grid; gap: .55rem; }.inline-form label { color: var(--muted-bright); font-size: .72rem; }.inline-form input, .inline-form select, .inline-form textarea { width: 100%; min-height: 44px; padding: .6rem .7rem; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; background: var(--navy-900); }.inline-form textarea { min-height: 7rem; resize: vertical; font: inherit; }.inline-form select { }.inline-form input::placeholder, .inline-form textarea::placeholder { color: var(--muted); }
 .inline-form input:hover, .inline-form select:hover, .inline-form textarea:hover, .dashboard-controls select:hover { border-color: var(--accent-a35); }.inline-form input:focus-visible, .inline-form select:focus-visible, .inline-form textarea:focus-visible, .dashboard-controls select:focus-visible { border-color: var(--aqua); outline-offset: 2px; }
-.repository-card { min-height: 390px; }
 .repository-form { display: grid; gap: 1rem; margin-top: .25rem; }
 .repository-modes { display: grid; margin: 0; padding: 0; border: 0; gap: .55rem; }
 .repository-modes legend { margin-bottom: .45rem; color: var(--muted-bright); font-size: .72rem; font-weight: 700; }
@@ -555,7 +522,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .section { padding-block: 80px; }.home-hero { padding-top: 80px; }
   .split-heading, .content-grid { grid-template-columns: 1fr; gap: 2rem; }.content-grid > header { position: static; }
   .footer-grid { grid-template-columns: repeat(2, 1fr); }.footer-brand { grid-column: 1 / -1; }
-  .progress-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 1rem; }.onboarding-grid { grid-template-columns: 1fr; }
   .dashboard-heading { align-items: flex-start; flex-direction: column; }.dashboard-controls { width: 100%; grid-template-columns: auto minmax(0, 1fr) auto; }
   .doc-layout { grid-template-columns: 1fr; gap: 2rem; }.doc-nav { position: static; display: flex; overflow-x: auto; padding-bottom: .5rem; }.doc-nav strong { display: none; }.doc-nav a { white-space: nowrap; }
   .generated-api-reference > ul { columns: 1; }
@@ -590,13 +556,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .footer-grid { grid-template-columns: 1fr; }.footer-brand { grid-column: auto; }.footer-bottom { align-items: flex-start; flex-direction: column; }
   .page-hero { padding: 65px 0 55px; }.page-hero h1 { font-size: 2.7rem; }.page-hero p { font-size: 1rem; }
   .app-header { padding-inline: 14px; }.app-header .brand > span:last-child, .environment-pill { display: none; }.app-header-actions { gap: .25rem; }.app-intro { flex-direction: column; }.config-banner, .auth-banner { grid-template-columns: auto 1fr; }.config-banner > .button, .auth-banner > .button { grid-column: 1 / -1; width: 100%; }
-  .workspace-section-heading, .progress-copy { flex-direction: column; gap: .7rem; }.progress-copy { align-items: flex-start; }.progress-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* The 3-step tracker must stay one row on mobile: a 2-column grid orphans
-     step 3 and breaks the 1 -> 2 -> 3 progression the goal gradient depends on.
-     Declared inside this breakpoint because the generic rule above ties on
-     specificity and would otherwise win on source order. */
-  .progress-steps-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
-  .progress-steps-compact strong { font-size: .68rem; }.progress-steps-compact small { font-size: .58rem; }
+  .workspace-section-heading { flex-direction: column; gap: .7rem; }
   .dashboard-controls { grid-template-columns: 1fr; }.dashboard-controls label { margin-bottom: -.25rem; }.dashboard-controls .button { width: 100%; }.customer-activity-item { grid-template-columns: 34px minmax(0, 1fr); }.customer-activity-item time { grid-column: 2; }
   .activity-source-pages { grid-template-columns: 1fr; }.activity-source-pages > div + div { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
   .home-hero { padding-top: 72px; }
@@ -654,39 +614,35 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body [data-shell][data-shell-mode="firstrun"] .firstrun{ display:block; }
 .app-body [data-shell][data-shell-mode="workspace"] .workspace{ display:grid; }
 
-/* ---- first run: one job ---- */
+/* ---- first run: one question ---- */
 .app-body .firstrun-inner{ max-width:600px; margin:0 auto; display:grid; gap:20px; padding:clamp(6px,3vw,32px) 0 40px; }
 .app-body .firstrun-head .eyebrow{ display:block; margin-bottom:12px; }
 .app-body .firstrun-head h1{ font-size:clamp(2rem,4.4vw,2.75rem); font-weight:680; margin-bottom:12px; }
 .app-body .firstrun-head p{ color:var(--ink-dim); font-size:1.02rem; max-width:48ch; }
-.app-body .firstrun .onboarding-progress{ border:0; padding:0; margin:0; }
-/* Stacked, sentence-case header: the summary is a real sentence with live data
-   (org name, repo count), not a short status code — the global mono/uppercase/
-   nowrap treatment can't wrap it and crushes the headline beside it. */
-.app-body .firstrun .progress-copy{ flex-direction:column; align-items:flex-start; gap:.45rem; margin-bottom:1.1rem; }
-.app-body .firstrun .progress-copy h2{ font-size:1.3rem; }
-.app-body .firstrun .progress-copy p{ font-family:inherit; font-size:.92rem; text-transform:none; white-space:normal; letter-spacing:0; color:var(--ink-dim); max-width:56ch; }
-.app-body .firstrun .progress-steps li[data-state="pending"]::before,
-.app-body .firstrun .progress-steps li[data-state="blocked"]::before,
-.app-body .firstrun .progress-steps li[data-state="loading"]::before{ border-color:var(--line-mid); }
-/* auto-connected steps: quiet confirmation chips */
-.app-body .firstrun .progress-auto{ gap:.6rem; }
-.app-body .firstrun .progress-auto li{ padding:6px 11px; border:1px solid var(--line-soft); border-radius:999px; background:var(--panel); }
-/* the org / github / repo cards: compact, secondary. Once connected, the
-   progress-auto chips already report their status, so the collapsed card rows
-   are redundant — hide them and let the create-team card follow the chips. */
-.app-body .firstrun .onboarding-card.is-auto{ opacity:1; margin:0; padding:.9rem 0; min-height:0; }
-.app-body .firstrun .onboarding-card.is-auto[data-state="complete"]:not(.is-revealed){ display:none; }
-.app-body .firstrun .repository-card{ min-height:0; }
-.app-body .firstrun [data-organization-dependent]{ display:grid; gap:.2rem; }
-/* the team card: the focal action */
-.app-body .firstrun .team-card.is-primary{
-  border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:var(--panel);
-  padding:22px; margin-top:.4rem; box-shadow:var(--shadow-panel);
-}
-.app-body .firstrun .team-card .step-number{ color:var(--aqua); }
-.app-body .firstrun .team-card h2{ font-size:1.35rem; margin:.7rem 0 .4rem; }
-.app-body .team-form input{ height:50px; font-size:16px; border-radius:var(--ra); }
+/* Prerequisites are background, not curriculum. Each keeps a card that app.js
+   drives through data-state, but a card renders only while it genuinely
+   blocks: the organization/GitHub cards on action or error, the repository
+   card also when the connected installation has nothing to work in. */
+.app-body .firstrun .firstrun-card{ display:none; border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:var(--panel); padding:22px; }
+.app-body .firstrun .team-card{ display:block; margin-top:.4rem; box-shadow:var(--shadow-panel); }
+.app-body .firstrun .blocking-card[data-state="action"],
+.app-body .firstrun .blocking-card[data-state="error"],
+.app-body .firstrun .repo-card[data-state="blocked"]{ display:block; }
+.app-body .firstrun .blocking-card h2{ font-size:1.15rem; margin:0 0 .4rem; }
+.app-body .firstrun .blocking-card [data-step-message]{ color:var(--ink-dim); font-size:.85rem; margin:0 0 1rem; max-width:56ch; }
+.app-body .firstrun .blocking-card .button-github{ width:fit-content; }
+/* While connecting the organization or GitHub is the ask, that one card takes
+   the name form's place instead of stacking above it. */
+.app-body .firstrun-inner:has([data-step="organization"][data-state="action"], [data-step="organization"][data-state="error"], [data-step="github"][data-state="action"], [data-step="github"][data-state="error"]) .team-card{ display:none; }
+/* The repository question waits for GitHub: never two asks at once. */
+.app-body .firstrun-inner:has([data-step="github"]:not([data-state="complete"])) .repo-card{ display:none; }
+.app-body .firstrun [data-organization-dependent]{ display:grid; gap:20px; }
+/* the name field: the hero */
+.app-body .team-form{ display:grid; gap:.55rem; }
+.app-body .team-form input{ width:100%; height:54px; padding:.6rem .8rem; font-size:17px; color:var(--ink); border:1px solid var(--line); border-radius:var(--ra); background:var(--navy-900); }
+.app-body .team-form input::placeholder{ color:var(--muted); }
+.app-body .team-form input:hover{ border-color:var(--accent-a35); }
+.app-body .team-form input:focus-visible{ border-color:var(--aqua); outline-offset:2px; }
 .app-body .team-price{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap;
   margin:.35rem 0 .2rem; padding-top:.85rem; border-top:1px solid var(--line-soft); }
 .app-body .team-price-amt{ font-family:var(--font-mono); font-size:1.35rem; font-weight:600; }
@@ -694,39 +650,12 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .team-price .form-help{ flex:1; min-width:220px; text-align:right; }
 .app-body .team-form .button-primary{ width:100%; height:50px; font-size:.95rem; margin-top:.3rem; }
 .app-body .firstrun-back{ width:fit-content !important; margin-top:.4rem; }
-.label-optional{ margin-left:.4rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.04em; }
+.app-body .firstrun .repo-refresh{ width:fit-content; margin-top:.6rem; }
+/* background facts: one quiet line, not a status board */
+.app-body .firstrun-fact{ color:var(--muted); font-size:.78rem; margin:0; max-width:56ch; }
 
-/* ---- proof before the paywall: the example run ---- */
-.example-run{ border:1px solid var(--line-mid); border-radius:var(--ra-lg); background:var(--panel); margin:.2rem 0 .1rem; overflow:hidden; }
-.example-run > summary{ display:flex; align-items:center; gap:.8rem; padding:14px 16px; cursor:pointer; list-style:none; }
-.example-run > summary::-webkit-details-marker{ display:none; }
-.example-run > summary:hover, .example-run > summary:focus-visible{ background:var(--panel-2); }
-.example-run-icon{ display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:999px;
-  border:1px solid var(--line-mid); color:var(--aqua); transition:transform .18s ease; }
-.example-run[open] .example-run-icon{ transform:rotate(90deg); }
-.example-run-summary-copy{ display:grid; gap:.1rem; }
-.example-run-summary-copy strong{ font-size:.9rem; }
-.example-run-summary-copy small{ color:var(--muted); font-size:.74rem; }
-.example-run-body{ padding:2px 16px 16px; border-top:1px solid var(--line-soft); }
-.example-run-note{ margin:.75rem 0 .9rem; color:var(--muted); font-size:.74rem; }
-.example-run-stages{ list-style:none; margin:0; padding:0; display:grid; gap:.15rem; }
-.example-run-stage{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:.7rem; padding:.7rem 0;
-  border-bottom:1px solid var(--line-soft); opacity:1; transform:none; transition:opacity .38s ease, transform .38s ease; }
-.example-run-stage:last-child{ border-bottom:0; }
-.example-run-stage.is-pending{ opacity:0; transform:translateY(6px); }
-.example-run-code{ align-self:start; padding:3px 0; border:1px solid var(--line-mid); border-radius:var(--ra);
-  color:var(--aqua); font-family:var(--font-mono); font-size:.58rem; text-align:center; letter-spacing:.04em; }
-.example-run-stage strong{ font-size:.85rem; }
-.example-run-actor{ margin-left:.5rem; color:var(--muted); font-family:var(--font-mono); font-size:.62rem; }
-.example-run-stage p{ margin:.2rem 0 .3rem; color:var(--ink-dim); font-size:.78rem; }
-.example-run-artifact{ display:block; color:var(--muted); font-family:var(--font-mono); font-size:.66rem; line-height:1.5; }
-@media (prefers-reduced-motion: reduce){ .example-run-stage{ transition:none; } .example-run-icon{ transition:none; } }
 
 /* example-objective chips: one click beats a blank textarea */
-.objective-suggestions{ display:flex; flex-wrap:wrap; gap:.45rem; margin:.15rem 0 .5rem; }
-.objective-suggestions button{ padding:5px 12px; border:1px solid var(--line-mid); border-radius:999px; background:var(--panel);
-  color:var(--ink-dim); font-size:.74rem; cursor:pointer; }
-.objective-suggestions button:hover, .objective-suggestions button:focus-visible{ border-color:var(--aqua); color:var(--ink); }
 
 /* engineer stepper: a compact, keyboard-usable count control */
 .team-engineers{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
@@ -745,14 +674,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .team-price-breakdown{ margin:.25rem 0 0; color:var(--muted); font-family:var(--font-mono); font-size:.68rem; }
 
 /* roster the chosen count implies */
-.team-roster{ list-style:none; display:grid; gap:.4rem; margin:.4rem 0 0; padding:0; }
-.team-roster li{ display:flex; align-items:baseline; justify-content:space-between; gap:.75rem;
-  padding:.5rem 0; border-bottom:1px solid var(--line-soft); }
-.team-roster li:last-child{ border-bottom:0; }
-.team-roster .roster-role{ display:flex; align-items:baseline; gap:.55rem; }
-.team-roster .roster-count{ font-family:var(--font-mono); font-size:.72rem; color:var(--aqua); min-width:1.6rem; }
-.team-roster .roster-label{ font-size:.82rem; color:var(--ink); font-weight:560; }
-.team-roster .roster-scope{ color:var(--muted); font-size:.72rem; text-align:right; }
 .app-body .team-price > div:first-child{ min-width:220px; }
 
 /* settings engineering-capacity card */
@@ -1131,19 +1052,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   letter-spacing: -.018em;
 }
 
-/* Setup facts: three things GitHub connected for you, reported as one row of
-   readings rather than three cards behind a numbered stepper. The stepper
-   stays in the markup for assistive tech, where a step count is genuinely
-   useful, but a sighted person on a one-action screen does not need to be
-   told they are on step 2 of 3. */
-.setupline { padding: 1rem 0; border-block: 1px solid var(--line); margin: 1.4rem 0; }
-.setupline-copy { margin: 0 0 .8rem; color: var(--text-muted); font-size: var(--t-sm); }
-.setupline-facts { display: flex; flex-wrap: wrap; gap: 2rem; margin: 0; padding: 0; list-style: none; }
-.setupline-facts button { display: grid; gap: .15rem; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; }
-.setupline-facts strong { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-.setupline-facts small { font-size: var(--t-sm); color: var(--ink); }
-.setupline-facts button:hover small { color: var(--aqua); }
-.setupline-facts [data-state="complete"] small { color: var(--ink); }
 
 /* The mark. One SVG for both themes: it inherits currentColor, so it is navy
    on light grounds and white on dark without a second file to keep in sync. */
