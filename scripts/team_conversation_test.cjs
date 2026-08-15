@@ -137,8 +137,12 @@ test("the composing shimmer borrows the crew tile's liveness instead of inventin
 test("the objective form no longer renders as the primary ask", () => {
   // The console leads the floor; the tracked-objective form ships demoted and
   // app.js no longer promotes it back when the board empties.
-  assert.ok(shell.indexOf("data-conversation-form") < shell.indexOf("data-objective-form"), "the console precedes the objective form");
-  assert.match(shell, /class="ask is-secondary"/);
+  // There is no second ask at all any more: the objective FORM left the shell
+  // entirely (the pipeline and the "On now" record remain). A returning form
+  // would mean two places to say the same thing - the exact confusion the
+  // console exists to end.
+  assert.doesNotMatch(shell, /data-objective-form/);
+  assert.doesNotMatch(shell, /Tracked objectives/);
   assert.doesNotMatch(shell, /What do you want built\?/);
   // The example chips went with the form's primacy.
   assert.doesNotMatch(shell, /data-objective-examples/);

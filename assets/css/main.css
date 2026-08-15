@@ -960,7 +960,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .console { padding: 0 0 1.5rem; border-bottom: 1px solid var(--line); }
 .console-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .7rem; }
 .console-head h3 { margin: 0; font-size: var(--t-lg); }
-.console-thread { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .9rem; max-height: 420px; overflow-y: auto; overscroll-behavior: contain; }
+.console-thread { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .9rem; min-height: 220px; max-height: 56vh; overflow-y: auto; overscroll-behavior: contain; }
 .msg { display: grid; gap: .25rem; justify-items: start; max-width: 62ch; }
 /* Your messages sit on the right, the Product Manager's on the left —
    the one convention every chat reader already carries. */
@@ -1213,8 +1213,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Hairlines are drawn by the tiles, not by a gap over a coloured backing:
    six people rarely fill the last row, and a backing turned the empty cell
    into a grey slab that read as a missing panel. */
-.app-body .agent-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0; background: none; border: 1px solid var(--line); }
-.app-body .crew-row { margin: 0; border-radius: 0; padding: .72rem .8rem; background: none; gap: .55rem; align-items: flex-start;
+.app-body .agent-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0; background: none; border: 1px solid var(--line); }
+.app-body .crew-row { margin: 0; border-radius: 0; padding: .5rem .65rem; background: none; gap: .5rem; align-items: flex-start;
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .app-body .crew-row.is-on { background: var(--accent-a05); }
 .app-body .crew-dot { margin-top: .34rem; }

@@ -263,31 +263,10 @@
                 </form>
               </section>
 
-              <!-- The tracked-objective form stays for the flows that reference
-                   it, but the conversation above is the ask now: this section
-                   ships demoted (is-secondary) and never reclaims the
-                   headline. -->
-              <section class="ask is-secondary" aria-labelledby="objectives-title">
-                <div class="ask-head">
-                  <h3 id="objectives-title">Tracked objectives</h3>
-                  <span hidden data-objective-state></span>
-                </div>
-                <div class="empty-state" data-objective-empty hidden><strong>Describe the outcome</strong><p>Your Product Manager turns it into issues; the engineers build it.</p></div>
-                <form class="objective-form" data-objective-form hidden>
-                  <label class="visually-hidden" for="objective-description">What should your team work on?</label>
-                  <input type="hidden" id="objective-title" name="objectiveTitle">
-                  <div class="objective-field">
-                    <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you would tell a colleague." required disabled></textarea>
-                    <div class="objective-foot">
-                      <span class="objective-key" aria-hidden="true">⌘↵</span>
-                      <!-- Secondary on purpose: the console's Send is this
-                           screen's one primary action now. -->
-                      <button class="button button-secondary" type="submit" disabled>Start the work</button>
-                    </div>
-                  </div>
-                  <p class="form-error" data-objective-error role="alert" hidden></p>
-                </form>
-              </section>
+              <!-- There is exactly one ask on this floor: the conversation
+                   above. Objectives the platform tracks still render as the
+                   "On now" record when one exists; nothing here collects a
+                   second version of the same question. -->
 
               <!-- The descent. Work sinks: planned at the surface, shipped in
                    the trench, on one continuous line. A column board would

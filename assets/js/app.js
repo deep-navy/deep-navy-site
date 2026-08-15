@@ -2445,11 +2445,19 @@
     const spoken = session.workspaceHeadlineSpoken;
     if (!spoken) return;
     const claimsReady = spoken === "is ready to work";
-    if (claimsReady && session.runtimeStreamLive !== true) {
-      ui.dashboardState.textContent = `${name} finished setting up, but has not reported in yet. Nothing is lost — the activity below fills in as soon as they check in.`;
+    // Once the Product Manager has spoken, the conversation carries the
+    // state of the team better than any summary sentence could - the
+    // paragraph stands down rather than paraphrasing the thread above it.
+    const pmHasSpoken = (session.conversationMessages || []).some((m) => m.author === "CONVERSATION_AUTHOR_PRODUCT_MANAGER" || m.author === 2);
+    if (pmHasSpoken) {
+      ui.dashboardState.textContent = "";
       return;
     }
-    ui.dashboardState.textContent = `${name} ${spoken}. Everything they plan, build, and ship streams here live.`;
+    if (claimsReady) {
+      ui.dashboardState.textContent = `${name} is ready. Your Product Manager is writing the first message.`;
+      return;
+    }
+    ui.dashboardState.textContent = `${name} ${spoken}.`;
   }
 
   async function refreshSelectedTeam() {
@@ -2587,7 +2595,7 @@
 
   function resetObjectiveView(message) {
     stopObjectiveDispatchPolling();
-    ui.objectiveForm.hidden = true;
+    if (ui.objectiveForm) ui.objectiveForm.hidden = true;
     ui.objectiveTitleInput.disabled = true;
     ui.objectiveDescriptionInput.disabled = true;
     ui.objectiveSubmit.disabled = true;
@@ -2736,7 +2744,7 @@
       ui.objectiveRecord.hidden = true;
       ui.objectiveEmpty.hidden = false;
       setEmptyState(ui.objectiveEmpty, "No objectives yet", "Describe what you want built. Your Product Manager turns it into issues and the engineers start work.");
-      ui.objectiveForm.hidden = false;
+      if (ui.objectiveForm) ui.objectiveForm.hidden = false;
       ui.objectiveTitleInput.disabled = false;
       ui.objectiveDescriptionInput.disabled = false;
       ui.objectiveSubmit.disabled = false;
@@ -2753,7 +2761,7 @@
     ui.objectiveSelect.value = stringValue(objective.id);
     ui.objectiveSelect.disabled = false;
     ui.objectiveSelectControl.hidden = false;
-    ui.objectiveForm.hidden = false;
+    if (ui.objectiveForm) ui.objectiveForm.hidden = false;
     ui.objectiveTitleInput.disabled = false;
     ui.objectiveDescriptionInput.disabled = false;
     ui.objectiveSubmit.disabled = false;
@@ -5323,7 +5331,8 @@
         scheduleConversationReconnect(teamId, generation, nextAttempt, unauthenticated);
         return;
       }
-      const message = apiErrorMessage(normalized, "The conversation is unavailable.");
+      const requestSuffix = normalized instanceof ApiError && normalized.requestId ? ` Request ID: ${normalized.requestId}.` : "";
+      const message = `The conversation lost its connection and could not recover on its own. Reconnect to continue.${requestSuffix}`;
       setSourceState(ui.conversationState, "Unavailable", "error");
       if (!session.conversationMessages.length) {
         ui.conversationEmpty.hidden = false;
@@ -5596,9 +5605,34 @@
     gaugeSheet.insertRule(`${selector}{width:${value.toFixed(1)}%}`, gaugeSheet.cssRules.length);
   }
 
+  // When this team came into existence, for separating its own work from the
+  // repository's history. The generated client surfaces created_at either as
+  // an ISO string or a {seconds} timestamp depending on transport; accept both.
+  function selectedTeamCreatedAtMs() {
+    const team = selectedTeam();
+    const value = team?.createdAt;
+    if (!value) return 0;
+    if (typeof value === "string") return Date.parse(value) || 0;
+    if (typeof value.seconds !== "undefined") return Number(value.seconds) * 1000;
+    return 0;
+  }
+
   function renderDescent() {
     if (!ui.descent || !ui.descentList) return;
-    const work = allActivityEntries().filter((entry) => entry.category === "delivery" && (entry.githubIssueId || entry.pullRequestId));
+    const teamBorn = selectedTeamCreatedAtMs();
+    const work = allActivityEntries().filter((entry) => {
+      if (entry.category !== "delivery" || !(entry.githubIssueId || entry.pullRequestId)) return false;
+      // GitHub work is projected per repository, so a new team pointed at the
+      // same repository inherits its predecessor's issues and pull requests.
+      // Work that predates this team is the repository's history, not this
+      // crew's output, and rendering it as "Shipped" under a brand-new team
+      // told the customer a lie within minutes of creating it.
+      if (teamBorn) {
+        const at = Date.parse(entry.occurredAt || "") || 0;
+        if (at && at < teamBorn) return false;
+      }
+      return true;
+    });
     ui.descentList.replaceChildren();
     // The conversation with the Product Manager is the floor's headline now;
     // the tracked-objective form ships demoted (is-secondary) in the shell and
