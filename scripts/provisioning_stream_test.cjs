@@ -84,7 +84,14 @@ test("a team that vanishes mid-removal is deletion-complete routing, not an erro
   const missing = poll.indexOf("isMissingResource(error)");
   assert.notEqual(missing, -1, "pollProvisioning treats a missing team as completion");
   assert.ok(missing < poll.indexOf("_pollingMessage = apiErrorMessage"), "completion routing precedes the error banner");
-  assert.match(poll.slice(missing, missing + 400), /await reloadTeamsAfterLifecycle\(\);/);
+  // Completion goes through the one shared removal door: routeTeamRemoved
+  // dedupes the "was removed" toast across the stream/poll/not_found writers
+  // and performs the authoritative reloadTeamsAfterLifecycle refetch itself.
+  assert.match(poll.slice(missing, missing + 400), /await routeTeamRemoved\(team\);/);
+  const door = between("function announceTeamRemoved(team)", "function renderTeamSelector");
+  assert.match(door, /provisioningRouteKey/);
+  assert.match(door, /was removed/);
+  assert.match(door, /reloadTeamsAfterLifecycle\(\)/);
 });
 
 test("the provisioning stream reconnects through the token refresh path with a bounded budget", () => {

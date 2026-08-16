@@ -85,6 +85,10 @@
       event.preventDefault();
       setView(link.dataset.viewLink);
       if (shell.dataset.shellMode !== "workspace") { newTeamRequested = false; applyMode(); }
+      // A view link inside the "…" overflow menu closes it on selection;
+      // <details> keeps itself open otherwise.
+      const menu = link.closest("details.wsmenu");
+      if (menu) menu.removeAttribute("open");
       const main = document.querySelector(".wsmain");
       if (main) main.scrollTop = 0;
     });

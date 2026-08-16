@@ -925,8 +925,19 @@
     // The chip shows the concrete organization, not an abstract "Ready".
     setStep("organization", "complete", shortLabel(organizationName), `${organizationName} is connected as your organization for this session.`);
     ui.organizationDependent.hidden = false;
-    if (readGitHubCompletion()) await completePendingGitHubInstallation();
-    await refreshOnboarding();
+    // The organization above is server-confirmed. Anything that fails from
+    // here on is an onboarding/workspace refresh problem, not an organization
+    // problem — surface it without destroying the established scope. Letting
+    // it propagate used to land in initializeAuthenticatedSession's catch,
+    // which wiped session.organizationId and re-hid the workspace: every boot
+    // rendered the workspace and then took it away behind a false org error.
+    try {
+      if (readGitHubCompletion()) await completePendingGitHubInstallation();
+      await refreshOnboarding();
+    } catch (error) {
+      console.error("deep-navy: workspace refresh failed after the organization was established", error);
+      toast("Some workspace panels could not finish loading. Use Refresh to retry.", "error");
+    }
   }
 
   class ApiError extends Error {
@@ -1065,24 +1076,30 @@
     setStep("team", "loading", "Checking", "Checking existing engineering teams and prerequisites.");
     resetInvoiceHistory("Loading the signed-webhook-backed invoice projection.", "Loading", "loading");
     ui.refresh.disabled = true;
-    const [githubResult, planResult, subscriptionResult, teamsResult, invoicesResult] = await Promise.allSettled([
-      apiRequest("github_installation", { organizationId: session.organizationId }),
-      apiRequest("billing_plan", { planId: stringValue(config.plan_id) || "founding-team" }),
-      apiRequest("subscription", { organizationId: session.organizationId }),
-      listAllTeams(),
-      apiRequest("invoices", { organizationId: session.organizationId, page: { pageSize: 25 } })
-    ]);
+    // The finally is what keeps Refresh alive: an error anywhere below used to
+    // leave the button disabled forever, with no way to retry from the UI.
+    try {
+      const teamsGeneration = nextTeamsListGeneration();
+      const [githubResult, planResult, subscriptionResult, teamsResult, invoicesResult] = await Promise.allSettled([
+        apiRequest("github_installation", { organizationId: session.organizationId }),
+        apiRequest("billing_plan", { planId: stringValue(config.plan_id) || "founding-team" }),
+        apiRequest("subscription", { organizationId: session.organizationId }),
+        listAllTeams(),
+        apiRequest("invoices", { organizationId: session.organizationId, page: { pageSize: 25 } })
+      ]);
 
-    renderBillingPlanResult(planResult);
-    renderSubscriptionResult(subscriptionResult);
-    renderTeamsResult(teamsResult);
-    renderInvoicesResult(invoicesResult);
-    await renderGitHubResult(githubResult);
-    updateTeamAction();
-    await refreshCreditPacks();
-    reconcileBillingReturn();
-    await refreshSelectedTeam();
-    ui.refresh.disabled = false;
+      renderBillingPlanResult(planResult);
+      renderSubscriptionResult(subscriptionResult);
+      renderTeamsResult(teamsResult, teamsGeneration);
+      renderInvoicesResult(invoicesResult);
+      await renderGitHubResult(githubResult);
+      updateTeamAction();
+      await refreshCreditPacks();
+      reconcileBillingReturn();
+      await refreshSelectedTeam();
+    } finally {
+      ui.refresh.disabled = false;
+    }
   }
 
   async function renderGitHubResult(result) {
@@ -2020,8 +2037,28 @@
     ui.creditPackSubmit.disabled = !valid || !stripeConfigured() || checkoutOpening;
   }
 
-  function renderTeamsResult(result) {
+  // Every ListTeams snapshot is stamped with a generation at ISSUE time and
+  // checked at APPLY time: without it, whichever response arrived last won,
+  // and a slow response issued before a delete finished could resurrect the
+  // deleted team as a ghost row after a fresh empty list had already rendered.
+  let teamsListGeneration = 0;
+  function nextTeamsListGeneration() {
+    teamsListGeneration += 1;
+    return teamsListGeneration;
+  }
+
+  function renderTeamsResult(result, generation = teamsListGeneration) {
+    if (generation !== teamsListGeneration) return;
     if (result.status === "fulfilled") {
+      if (!session.organizationId) {
+        // No organization is selected in THIS session. That is a local state,
+        // not the server returning out-of-scope resources — judging the
+        // roster against "" emptied it and flipped the shell to the
+        // create-team screen mid-delete. Keep the roster as it stands.
+        session.teamServiceAvailable = false;
+        setStep("team", "error", "No organization", "No organization is selected in this session, so the team list cannot be verified. Retry the organization step.");
+        return;
+      }
       const teams = Array.isArray(result.value.teams) ? result.value.teams : [];
       const invalid = teams.some((team) => !stringValue(team?.id) || stringValue(team.organizationId) !== session.organizationId);
       if (invalid) {
@@ -2045,12 +2082,13 @@
       });
       return;
     }
+    // A transient list failure must not empty the roster: flashing an empty
+    // list flips the router to the create screen and back. Keep the previous
+    // roster on screen with the error on the step card instead.
     session.teamServiceAvailable = false;
-    session.teams = [];
     renderTeamList();
-    renderTeamSelector();
     renderSettingsBilling();
-    setStep("team", "error", "Unavailable", apiErrorMessage(result.reason, "The team service is not ready. No team state was assumed."));
+    setStep("team", "error", "Unavailable", apiErrorMessage(result.reason, "The team service is not ready. The last confirmed team list is still shown."));
   }
 
   // Creating a team is the paid action now, so the only prerequisites are an
@@ -2182,8 +2220,13 @@
       status.className = "status-label";
       if (provisioning.failed) status.classList.add("failed");
       else if (!provisioning.terminal && provisioning.state) status.classList.add("planned");
-      // "Running" is the command's state, not the customer's situation.
-      status.textContent = (removing && !provisioning.failed ? "removing" : provisioning.label)
+      // "Running" is the command's state, not the customer's situation — and
+      // so is "succeeded": once the command is terminal and healthy, the chip
+      // speaks lifecycle ("active"), keeping command labels for in-flight
+      // commands only.
+      status.textContent = (removing && !provisioning.failed
+        ? "removing"
+        : (provisioning.terminal && !provisioning.failed ? lifecycleLabel(team.state) || provisioning.label : provisioning.label))
         || lifecycleLabel(team.state) || "created";
       copy.append(name, detail);
       side.append(status);
@@ -2325,11 +2368,6 @@
       if (verify && !verify(response)) {
         throw new ApiError("TeamService did not confirm the lifecycle change in the current organization scope", 0, "invalid_response", "");
       }
-      session.teamLifecycleBusy.delete(teamId);
-      // Reflect only server truth: reload the authoritative team list rather
-      // than synthesizing the post-mutation state in the browser.
-      await reloadTeamsAfterLifecycle();
-      toast(successMessage, "success");
     } catch (error) {
       session.teamLifecycleBusy.delete(teamId);
       renderTeamList();
@@ -2339,14 +2377,90 @@
       if (error instanceof ApiError && ["failed_precondition", "resource_exhausted", "not_found"].includes(error.code)) {
         await reloadTeamsAfterLifecycle();
       }
+      return;
     }
+    session.teamLifecycleBusy.delete(teamId);
+    // A server-confirmed delete is watched until a fresh list shows the team
+    // gone, so its completion is announced even if the live observers die.
+    if (procedure === "delete_team") watchedRemovals.set(teamId, stringValue(team.name));
+    // The server confirmed the mutation; only the request/verify above may
+    // fail it. Reflect only server truth: reload the authoritative team list
+    // rather than synthesizing the post-mutation state in the browser — and
+    // never let a reload/render hiccup be re-reported as "the team was not
+    // deleted" after the server said it was.
+    try {
+      await reloadTeamsAfterLifecycle();
+    } catch (error) {
+      console.error("deep-navy: team list reload after a confirmed lifecycle change failed", error);
+    }
+    toast(successMessage, "success");
   }
 
-  async function reloadTeamsAfterLifecycle() {
-    const [teamsResult] = await Promise.allSettled([listAllTeams()]);
-    renderTeamsResult(teamsResult);
-    updateTeamAction();
-    await refreshSelectedTeam();
+  // A finished delete can be observed by up to five writers at once (the
+  // lifecycle mutation, the status stream's terminal frame, the stream's
+  // not_found, the fallback poll's terminal branch, and the poll's
+  // not_found). Single-flight: concurrent callers share the one in-flight
+  // reload instead of racing six ListTeams calls whose last arrival wins.
+  let teamsReloadInFlight = null;
+  let teamsReloadRetryTimer = null;
+  // Removals the server has confirmed (DeleteTeam OK, or roster rows already
+  // in LIFECYCLE_STATE_DELETING): when such a team is absent from a fresh
+  // authoritative list, its removal finished — even if every live status
+  // observer died in between (a transient list failure kills them all).
+  const watchedRemovals = new Map();
+  function reloadTeamsAfterLifecycle() {
+    if (teamsReloadInFlight) return teamsReloadInFlight;
+    window.clearTimeout(teamsReloadRetryTimer);
+    teamsReloadInFlight = (async () => {
+      try {
+        session.teams.forEach((team) => {
+          if (lifecycleLabel(team.state) === "deleting") watchedRemovals.set(stringValue(team.id), stringValue(team.name));
+        });
+        const teamsGeneration = nextTeamsListGeneration();
+        const [teamsResult] = await Promise.allSettled([listAllTeams()]);
+        renderTeamsResult(teamsResult, teamsGeneration);
+        updateTeamAction();
+        await refreshSelectedTeam();
+        if (teamsResult.status === "fulfilled" && session.organizationId) {
+          // Announce watched removals that vanished from the fresh list —
+          // deduped by the same route key every other removal observer uses.
+          watchedRemovals.forEach((name, id) => {
+            if (session.teams.some((candidate) => stringValue(candidate.id) === id)) return;
+            watchedRemovals.delete(id);
+            announceTeamRemoved({ id, name });
+          });
+        }
+        if (teamsResult.status === "rejected" && isRetryableApiError(teamsResult.reason)) {
+          // A lifecycle change is settling server-side; a transient list
+          // failure must not orphan it on a stale roster with nothing left
+          // watching. Keep re-reading until a list lands (each success stops
+          // the loop because only a rejected fetch re-arms it).
+          teamsReloadRetryTimer = window.setTimeout(() => {
+            if (session.accessToken) reloadTeamsAfterLifecycle();
+          }, 5000);
+        }
+      } finally {
+        teamsReloadInFlight = null;
+      }
+    })();
+    return teamsReloadInFlight;
+  }
+
+  // The one door through which a finished removal is announced and routed.
+  // Every observer of a completed delete funnels through here, keyed on the
+  // team, so the customer sees exactly one "was removed" toast and one list
+  // reload no matter how many observers fire (or how often a replayed stream
+  // snapshot repeats the terminal record).
+  function announceTeamRemoved(team) {
+    const routeKey = `${stringValue(team?.id)}:removed`;
+    if (session.provisioningRouteKey === routeKey) return;
+    session.provisioningRouteKey = routeKey;
+    toast(`Team “${stringValue(team?.name) || "the team"}” was removed.`, "success");
+  }
+
+  function routeTeamRemoved(team) {
+    announceTeamRemoved(team);
+    return reloadTeamsAfterLifecycle();
   }
 
   function renderTeamSelector(preferredId = "") {
@@ -2394,7 +2508,10 @@
       return;
     }
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
-    const state = provisioning.label || lifecycleLabel(team.state) || "created";
+    // A deleting team's command label is "running" — but what is running is
+    // the removal. Speak lifecycle for removals, command state otherwise.
+    const removing = lifecycleLabel(team.state) === "deleting" && !provisioning.failed;
+    const state = (removing ? "deleting" : provisioning.label) || lifecycleLabel(team.state) || "created";
     ui.contextTeam.textContent = stringValue(team.name) || stringValue(team.id);
     // The headline speaks about the team, not the resource: "newton is ready
     // to work", never "newton is succeeded" - a provisioning state is not a
@@ -2571,6 +2688,10 @@
   }
 
   function setSourceState(element, label, tone = "") {
+    // Null-safe like setEmptyState/setFieldError: several state chips (the
+    // objective panel's among them) left the shell in the workspace redesign,
+    // and a render helper must tolerate the markup it is given.
+    if (!element) return;
     element.textContent = label;
     if (tone) element.dataset.tone = tone;
     else delete element.dataset.tone;
@@ -2578,15 +2699,18 @@
 
   function resetObjectiveView(message) {
     stopObjectiveDispatchPolling();
+    // The objective form (and its empty-state card) left the shell when the
+    // console became the only ask; every write to those elements is guarded
+    // per element so the record elements below still render.
     if (ui.objectiveForm) ui.objectiveForm.hidden = true;
-    ui.objectiveTitleInput.disabled = true;
-    ui.objectiveDescriptionInput.disabled = true;
-    ui.objectiveSubmit.disabled = true;
+    if (ui.objectiveTitleInput) ui.objectiveTitleInput.disabled = true;
+    if (ui.objectiveDescriptionInput) ui.objectiveDescriptionInput.disabled = true;
+    if (ui.objectiveSubmit) ui.objectiveSubmit.disabled = true;
     ui.objectiveSelectControl.hidden = true;
     ui.objectiveSelect.disabled = true;
     ui.objectiveSelect.replaceChildren();
     ui.objectiveRecord.hidden = true;
-    ui.objectiveEmpty.hidden = false;
+    if (ui.objectiveEmpty) ui.objectiveEmpty.hidden = false;
     setEmptyState(ui.objectiveEmpty, "No objective loaded", message);
     ui.initiativeList.replaceChildren();
     setSourceState(ui.objectiveDispatchState, "Not reported");
@@ -2725,12 +2849,12 @@
       ui.objectiveSelect.disabled = true;
       ui.objectiveSelect.replaceChildren();
       ui.objectiveRecord.hidden = true;
-      ui.objectiveEmpty.hidden = false;
+      if (ui.objectiveEmpty) ui.objectiveEmpty.hidden = false;
       setEmptyState(ui.objectiveEmpty, "No objectives yet", "Describe what you want built. Your Product Manager turns it into issues and the engineers start work.");
       if (ui.objectiveForm) ui.objectiveForm.hidden = false;
-      ui.objectiveTitleInput.disabled = false;
-      ui.objectiveDescriptionInput.disabled = false;
-      ui.objectiveSubmit.disabled = false;
+      if (ui.objectiveTitleInput) ui.objectiveTitleInput.disabled = false;
+      if (ui.objectiveDescriptionInput) ui.objectiveDescriptionInput.disabled = false;
+      if (ui.objectiveSubmit) ui.objectiveSubmit.disabled = false;
       setSourceState(ui.objectiveState, "Ready", "success");
       return;
     }
@@ -2745,10 +2869,10 @@
     ui.objectiveSelect.disabled = false;
     ui.objectiveSelectControl.hidden = false;
     if (ui.objectiveForm) ui.objectiveForm.hidden = false;
-    ui.objectiveTitleInput.disabled = false;
-    ui.objectiveDescriptionInput.disabled = false;
-    ui.objectiveSubmit.disabled = false;
-    ui.objectiveEmpty.hidden = true;
+    if (ui.objectiveTitleInput) ui.objectiveTitleInput.disabled = false;
+    if (ui.objectiveDescriptionInput) ui.objectiveDescriptionInput.disabled = false;
+    if (ui.objectiveSubmit) ui.objectiveSubmit.disabled = false;
+    if (ui.objectiveEmpty) ui.objectiveEmpty.hidden = true;
     ui.objectiveRecord.hidden = false;
     ui.objectiveTitle.textContent = stringValue(objective.title) || "Untitled objective";
     ui.objectiveDescription.textContent = stringValue(objective.description) || "No description returned.";
@@ -2940,6 +3064,9 @@
 
   async function createObjective(event) {
     event.preventDefault();
+    // The whole function is driven by the objective form; on the form-less
+    // shell there is nothing to read or disable, so bail before any deref.
+    if (!ui.objectiveForm || !ui.objectiveTitleInput || !ui.objectiveDescriptionInput || !ui.objectiveSubmit) return;
     const team = selectedTeam();
     if (!team) return;
     if (lifecycleLabel(team.state) !== "active") {
@@ -5941,19 +6068,23 @@
           if (presented.terminal && !presented.failed) {
             // Route the lifecycle from the stream itself — this is the moment
             // the customer used to spend staring at a stale "retrying" until a
-            // hard reload. Key the routing on the terminal record so the same
-            // snapshot replayed across reconnects cannot refetch in a loop.
+            // hard reload. A finished DELETE goes through the shared removal
+            // door (one toast, one reload, shared with the fallback poll);
+            // a finished provision/resume is keyed on its terminal record so
+            // a replayed snapshot cannot refetch in a loop.
+            const removal = launchContract.provisioningOperation(status) === launchContract.PROVISIONING_OPERATION.DELETE;
+            if (removal) {
+              await routeTeamRemoved(team);
+              return;
+            }
             const routeKey = `${stringValue(teamId)}:${stringValue(presented.sequence)}:${presented.state}`;
             if (session.provisioningRouteKey !== routeKey) {
               session.provisioningRouteKey = routeKey;
-              const removal = launchContract.provisioningOperation(status) === launchContract.PROVISIONING_OPERATION.DELETE;
-              if (removal) toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
               // Reflect only server truth, like the poll's terminal branch:
               // re-read the team list, and renderTeamList's writes to
               // [data-teams-empty]/[data-team-list] tell the view router what
-              // happened. A finished delete lands on the create-team screen;
-              // a finished provision/resume re-reads lifecycle and reloads
-              // the roster through refreshSelectedTeam.
+              // happened. A finished provision/resume re-reads lifecycle and
+              // reloads the roster through refreshSelectedTeam.
               await reloadTeamsAfterLifecycle();
               return;
             }
@@ -5986,8 +6117,7 @@
       // completed deletion looked stuck until someone hard-reloaded.
       const removingTeam = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
       if (isMissingResource(normalized) && removingTeam && lifecycleLabel(removingTeam.state) === "deleting") {
-        toast(`Team “${stringValue(removingTeam.name) || "the team"}” was removed.`, "success");
-        await reloadTeamsAfterLifecycle();
+        await routeTeamRemoved(removingTeam);
         return;
       }
       // A mid-stream token expiry arrives as an in-stream "unauthenticated"
@@ -6129,8 +6259,7 @@
         // command - not the lifecycle. Without this re-read the row sat at
         // "deleting" with a completed command until the customer reloaded,
         // which is exactly how a finished deletion looked like a stuck one.
-        toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
-        await reloadTeamsAfterLifecycle();
+        await routeTeamRemoved(team);
         return;
       }
     } catch (error) {
@@ -6139,8 +6268,7 @@
       // does when the delete completes under it. The error banner here is how
       // a finished deletion once looked stuck until someone hard-reloaded.
       if (isMissingResource(error) && lifecycleLabel(team.state) === "deleting") {
-        toast(`Team “${stringValue(team.name) || "the team"}” was removed.`, "success");
-        await reloadTeamsAfterLifecycle();
+        await routeTeamRemoved(team);
         return;
       }
       team._pollingMessage = apiErrorMessage(error, "Provisioning status is temporarily unavailable. Use Refresh status to retry.");
@@ -6666,6 +6794,13 @@
     pendingTeamTimers.delete(teamId);
     if (!session.accessToken) return;
     if (document.visibilityState === "hidden") { startPendingTeamPoll(teamId, 5000); return; }
+    if (!session.organizationId) {
+      // No organization selected locally — a session state, not a server
+      // scope violation. Re-arm rather than dying on a scope check that can
+      // only fail against "".
+      startPendingTeamPoll(teamId, 8000);
+      return;
+    }
     try {
       const response = await apiRequest("team", { id: teamId });
       const team = response.team;
@@ -6673,12 +6808,22 @@
         throw new ApiError("The team service returned a resource outside the selected organization scope", 0, "invalid_response", "");
       }
       const target = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
-      if (target) { Object.assign(target, team); target._pollingMessage = ""; }
-      else session.teams = [team, ...session.teams];
+      if (!target) {
+        // The roster no longer carries this team — a delete-terminal reload
+        // emptied it while this tick was in flight. A poll tick must never
+        // resurrect a team the authoritative list dropped; the list is truth.
+        return;
+      }
+      Object.assign(target, team);
+      target._pollingMessage = "";
       const lifecycle = lifecycleLabel(team.state);
       const provisioning = team.provisioning ? launchContract.provisioningPresentation(team.provisioning) : null;
-      const activated = lifecycle === "active" || provisioning?.state === launchContract.PROVISIONING_STATE.SUCCEEDED;
-      const failed = lifecycle === "failed" || Boolean(provisioning?.failed);
+      const removal = Boolean(team.provisioning) && launchContract.provisioningOperation(team.provisioning) === launchContract.PROVISIONING_OPERATION.DELETE;
+      // A succeeded command only means "activated" when the command was a
+      // provision/resume: a succeeded DELETE reaching this poll used to toast
+      // "provisioned and billing is active" in the middle of the removal.
+      const activated = !removal && lifecycle !== "deleting" && (lifecycle === "active" || provisioning?.state === launchContract.PROVISIONING_STATE.SUCCEEDED);
+      const failed = !removal && (lifecycle === "failed" || Boolean(provisioning?.failed));
       // Advance the determinate wait bar on every poll tick while this team is
       // the selected one, so each real provisioning step banks visible progress.
       if (stringValue(teamId) === session.selectedTeamId) renderProvisioningProgress(team);
@@ -6692,14 +6837,20 @@
         return;
       }
       if (failed) {
-        const stalled = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
-        if (stalled) { stalled._pollingMessage = "Provisioning failed. Delete this team and try again, or contact support."; renderTeamList(); }
+        target._pollingMessage = "Provisioning failed. Delete this team and try again, or contact support.";
+        renderTeamList();
         return;
       }
-      if (lifecycle === "pending" || lifecycle === "" || Boolean(team.provisioning)) {
-        const waiting = session.teams.find((candidate) => stringValue(candidate.id) === stringValue(teamId));
-        if (waiting && !stringValue(waiting._pollingMessage)) {
-          waiting._pollingMessage = "Waiting for the signed Stripe webhook to confirm payment and provision the team.";
+      if (removal || lifecycle === "deleting") {
+        // This team left "pending" into a deletion. The provisioning poll
+        // owns removals (progress, terminal routing, not_found) — hand off
+        // and stop pending polling instead of re-arming forever.
+        startProvisioningPolling(team, 2500);
+        return;
+      }
+      if (lifecycle === "pending" || lifecycle === "") {
+        if (!stringValue(target._pollingMessage)) {
+          target._pollingMessage = "Waiting for the signed Stripe webhook to confirm payment and provision the team.";
           renderTeamList();
         }
         startPendingTeamPoll(teamId, 5000);
@@ -6730,10 +6881,13 @@
   }
 
   async function signOut() {
-    closeEmbeddedCheckout();
-    stopProvisioningPolling();
-    stopPendingTeamPolling();
-    stopActivityStream();
+    // Order matters here: the local state teardown and the signed-out phase
+    // land FIRST, the cosmetic view resets run best-effort in the middle, and
+    // server-side revocation plus the redirect always run at the end. A render
+    // error inside a reset used to throw out of this handler before
+    // setAuthPhase/revocation/redirect — the button looked dead while the
+    // in-memory token was already gone, a half-signed-out stranding no retry
+    // could fix.
     const revokedToken = session.accessToken;
     session.accessToken = "";
     session.claims = {};
@@ -6748,21 +6902,36 @@
     session.subscriptionManageable = false;
     session.creditPacks = [];
     session.creditControl = null;
-    resetInvoiceHistory("Sign in and select an organization to load verified billing records.", "Waiting");
-    resetSubscriptionCapacity();
-    renderSettingsAccount();
-    renderSettingsBilling();
     session.objectivesByTeam.clear();
     session.objectiveListsByTeam.clear();
-    resetApprovalView("Sign in and select a team to load pending decisions.", "Waiting");
-    ui.contextOrganization.textContent = "Not selected";
-    ui.contextRepositories.textContent = "Not loaded";
-    ui.contextTeam.textContent = "Not selected";
-    resetWorkspaceViews("Sign in and select a team to load its workspace.");
     setAuthPhase("signed_out");
     clearSignInTransaction();
     clearGitHubFlow();
     storageRemove(billingReturnStorageKey);
+    // A previous sign-in failure may have armed the once-only homepage bounce
+    // guard; a deliberate sign-out clears it so the signed-out landing can
+    // bounce to the homepage (the only place with a sign-in button).
+    try { window.sessionStorage.removeItem(signInBounceKey); } catch { /* storage unavailable */ }
+    try {
+      closeEmbeddedCheckout();
+      stopProvisioningPolling();
+      stopPendingTeamPolling();
+      stopActivityStream();
+      window.clearTimeout(teamsReloadRetryTimer);
+      watchedRemovals.clear();
+      resetInvoiceHistory("Sign in and select an organization to load verified billing records.", "Waiting");
+      resetSubscriptionCapacity();
+      renderSettingsAccount();
+      renderSettingsBilling();
+      resetApprovalView("Sign in and select a team to load pending decisions.", "Waiting");
+      ui.contextOrganization.textContent = "Not selected";
+      ui.contextRepositories.textContent = "Not loaded";
+      ui.contextTeam.textContent = "Not selected";
+      resetWorkspaceViews("Sign in and select a team to load its workspace.");
+    } catch (error) {
+      // Cosmetic teardown only — the redirect below repaints everything.
+      console.error("deep-navy: sign-out view reset failed", error);
+    }
     // Revoke the session server-side (best effort); a failure never blocks the
     // local sign-out or the redirect back into the app.
     if (revokedToken && platformApi) {
@@ -6831,9 +7000,9 @@
   // bootstrap-guard test now pins listeners too.
   if (ui.objectiveForm) ui.objectiveForm.addEventListener("submit", createObjective);
   if (ui.objectiveDescriptionInput) ui.objectiveDescriptionInput.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !ui.objectiveSubmit.disabled) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && ui.objectiveSubmit && !ui.objectiveSubmit.disabled) {
       event.preventDefault();
-      ui.objectiveForm.requestSubmit();
+      if (ui.objectiveForm) ui.objectiveForm.requestSubmit();
     }
   });
   ui.objectiveSelect.addEventListener("change", selectObjective);
@@ -6963,8 +7132,12 @@
     restoreSession().then(() => {
       // There is no login page. Someone who reaches the app signed out and
       // without having asked to sign in belongs on the homepage, where the
-      // only sign-in button lives.
-      if (!session.accessToken && !document.body.dataset.githubCallback) {
+      // only sign-in button lives. The layout always stamps the attribute
+      // (as the string "false" on ordinary pages — truthy!), so compare
+      // against "true" exactly like the callback detection above does;
+      // testing bare truthiness made this bounce unreachable and stranded
+      // every signed-out visit on a dead "Taking you to GitHub…" card.
+      if (!session.accessToken && document.body.dataset.githubCallback !== "true") {
         window.location.replace(new URL("../", window.location.href).toString());
       }
     }).catch(() => {});
