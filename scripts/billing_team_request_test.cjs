@@ -81,9 +81,10 @@ test("the first-run screen is name + repositories: the name is the hero, the pic
   assert.ok(teamForm, "the name form must exist");
   assert.deepEqual(teamForm[0].match(/<(?:input|textarea|select)\b/g), ["<input"], "the name field is the only static input in the team form");
   assert.match(teamForm[0], /name="teamName"/);
-  // One PRIMARY action. Inline text-buttons (class="button-link") are part of
-  // sentences - "Add repositories on GitHub", "refresh the list" - and do not
+  // One PRIMARY action. The inline affordances (class="button-link") are part
+  // of a sentence - a link out to GitHub and "refresh it now" - and do not
   // compete with the create action, so the pin counts real buttons only.
+  // (The GitHub one is an <a>, not a <button>; see repository_access_test.)
   const realButtons = (teamForm[0].match(/<button\b[^>]*>/g) || []).filter((tag) => !tag.includes("button-link"));
   assert.equal(realButtons.length, 1, "one primary button carries the create action");
   assert.match(realButtons[0], /type="submit"/);

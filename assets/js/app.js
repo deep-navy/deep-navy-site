@@ -88,6 +88,8 @@
     settingsRepositoriesError: document.querySelector("[data-settings-repositories-error]"),
     settingsRepositoriesNote: document.querySelector("[data-settings-repositories-note]"),
     settingsRepositoriesApply: document.querySelector("[data-settings-repositories-apply]"),
+    settingsRepositoryManageAccess: document.querySelector("[data-settings-repository-manage-access]"),
+    settingsRepositoryRefresh: document.querySelector("[data-settings-repository-refresh]"),
     organizationError: document.querySelector("[data-organization-error]"),
     refresh: document.querySelector("[data-refresh]"),
     teamsEmpty: document.querySelector("[data-teams-empty]"),
@@ -231,6 +233,12 @@
     organizationName: "",
     members: [],
     githubInstalled: false,
+    // The API-confirmed installation, kept because its account and id are what
+    // make the manage-access link point at THIS installation's settings page
+    // rather than a generic GitHub screen.
+    githubInstallation: null,
+    // Set when the customer opens that link; cleared by the refetch on return.
+    githubAccessDepartedAt: 0,
     repositories: [],
     repositorySelection: null,
     repositoryServiceAvailable: false,
@@ -1130,12 +1138,15 @@
       const installation = result.value.installation;
       if (installation && stringValue(installation.organizationId) !== session.organizationId) {
         session.githubInstalled = false;
+        setGitHubInstallation(null);
         setStep("github", "error", "Invalid response", "The GitHub service returned an installation outside the current organization scope. No connection was displayed.");
         ui.githubAction.disabled = true;
         resetRepositoryAccess("Repository access cannot be checked until the GitHub installation scope is valid.", "error");
         return;
       }
       session.githubInstalled = Boolean(launchContract?.githubInstallationActive(installation));
+      // Only an ACTIVE installation names a settings page worth linking to.
+      setGitHubInstallation(session.githubInstalled ? installation : null);
       if (session.githubInstalled) {
         const account = stringValue(installation.accountLogin) || stringValue(installation.account_login) || "selected GitHub account";
         setStep("github", "complete", "Connected", `The API confirms an active installation for ${account}. Choose the repositories deep navy may use next.`);
@@ -1151,6 +1162,7 @@
       return;
     }
     session.githubInstalled = false;
+    setGitHubInstallation(null);
     if (isMissingResource(result.reason)) {
       setStep("github", "action", "Needs action", "Connect GitHub so your team can work in your repositories.");
       ui.githubAction.disabled = false;
@@ -1161,6 +1173,72 @@
       ui.githubAction.disabled = true;
       resetRepositoryAccess("Repository access cannot be checked until the GitHub installation service responds.", "error");
     }
+  }
+
+  // ── The way to widen the grant ───────────────────────────────────────────
+  // Which repositories deep navy can reach is decided on GitHub, on the
+  // installation's own settings page. That page is a real, stable URL, so the
+  // affordance beside the picker is a real link to it — not a button that
+  // restarts the install flow, which is what it used to be and which sent
+  // people through an installation they had already completed.
+  //
+  // Org-owned installations live under the organization; personal ones under
+  // the signed-in account. Until the API confirms an installation, the honest
+  // destination is the plain installations list, which is valid for whoever is
+  // signed in to GitHub.
+  const githubInstallationsUrl = "https://github.com/settings/installations";
+
+  function githubInstallationIdentifier(installation) {
+    const raw = typeof installation?.id === "bigint" ? installation.id.toString() : stringValue(installation?.id);
+    return /^[1-9][0-9]{0,18}$/.test(raw) ? raw : "";
+  }
+
+  function githubInstallationSettingsUrl() {
+    const installation = session.githubInstallation;
+    const id = githubInstallationIdentifier(installation);
+    if (!id) return githubInstallationsUrl;
+    const login = stringValue(installation?.accountLogin) || stringValue(installation?.account_login);
+    const organization = stringValue(installation?.accountType).toLowerCase() === "organization";
+    // A login is path data here, so it is pattern-checked rather than escaped:
+    // anything that is not a GitHub login falls back to the account-scoped URL.
+    const candidate = organization && /^[A-Za-z0-9-]{1,39}$/.test(login)
+      ? `https://github.com/organizations/${login}/settings/installations/${id}`
+      : `https://github.com/settings/installations/${id}`;
+    // Same trusted-host discipline every other outbound handoff uses.
+    return validatedRedirect(candidate, ["github.com"]) || githubInstallationsUrl;
+  }
+
+  // Both manage-access links are the same door; keep their destination in step
+  // with whatever installation the API last confirmed.
+  function renderRepositoryManageLinks() {
+    const destination = githubInstallationSettingsUrl();
+    if (ui.repositoryManageAccess) ui.repositoryManageAccess.href = destination;
+    if (ui.settingsRepositoryManageAccess) ui.settingsRepositoryManageAccess.href = destination;
+  }
+
+  function setGitHubInstallation(installation) {
+    session.githubInstallation = installation || null;
+    renderRepositoryManageLinks();
+  }
+
+  // The grant changes in another tab, on GitHub. Coming back to a list that
+  // still shows the old repositories is what made people reload the app by
+  // hand, so record the departure and refetch when they return. Only a real
+  // departure arms it — an ordinary tab switch must not fire a request.
+  function markGitHubAccessDeparture() {
+    session.githubAccessDepartedAt = Date.now();
+  }
+
+  function refreshRepositoryAccessAfterReturn() {
+    if (!session.githubAccessDepartedAt) return;
+    if (!session.accessToken || !session.organizationId || !session.githubInstalled) return;
+    // Cleared before the await so a focus and a visibilitychange arriving
+    // together cannot both fire the refetch.
+    session.githubAccessDepartedAt = 0;
+    Promise.resolve(refreshRepositoryAccess()).catch(() => {
+      /* refreshRepositoryAccess renders its own failure state; a rejection
+         here must never break the return to the app. */
+    });
   }
 
   function resetRepositoryAccess(message, stateValue = "blocked") {
@@ -1835,7 +1913,7 @@
       return;
     }
     if (!session.repositoryServiceAvailable || session.repositories.length === 0) {
-      resetSection("Unavailable", "", "The accessible repository list has not loaded. Refresh repository access in GitHub setup, then return here.");
+      resetSection("Unavailable", "", "The list of repositories you have granted has not loaded yet. Refresh it to try again.");
       return;
     }
     const teamId = stringValue(team.id);
@@ -6576,6 +6654,7 @@
         throw new ApiError("The API did not confirm an active GitHub installation", 0, "invalid_response", "");
       }
       session.githubInstalled = true;
+      setGitHubInstallation(result.installation);
       if (result.repositorySelection) session.repositorySelection = result.repositorySelection;
       clearGitHubFlow();
       toast("GitHub verified the signed-in user and active App installation.", "success");
@@ -7208,11 +7287,16 @@
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   if (ui.repositoryRefresh) ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
-  // The picker can only offer what the GitHub App has been granted; when the
-  // grant is one repository, a multi-select with one row reads as broken.
-  // The way to widen it lives on GitHub, so the door is beside the list.
-  if (ui.repositoryManageAccess) ui.repositoryManageAccess.addEventListener("click", startGitHubInstallation);
+  // The picker can only offer what the customer has granted; when the grant is
+  // one repository, a multi-select with one row reads as broken. Widening it
+  // happens on GitHub, so the door is beside the list — and it is an ordinary
+  // link (see renderRepositoryManageLinks), so these handlers only record that
+  // the customer left. They must never preventDefault: the navigation IS the
+  // affordance.
+  if (ui.repositoryManageAccess) ui.repositoryManageAccess.addEventListener("click", markGitHubAccessDeparture);
+  if (ui.settingsRepositoryManageAccess) ui.settingsRepositoryManageAccess.addEventListener("click", markGitHubAccessDeparture);
   if (ui.repositoryRefreshInline) ui.repositoryRefreshInline.addEventListener("click", refreshRepositoryAccess);
+  if (ui.settingsRepositoryRefresh) ui.settingsRepositoryRefresh.addEventListener("click", refreshRepositoryAccess);
   // Touching the picker clears its "needs at least one" error the moment the
   // customer acts on it.
   ui.repositoryList.addEventListener("change", () => setFieldError(ui.teamRepositoriesError, ""));
@@ -7304,11 +7388,17 @@
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
+    refreshRepositoryAccessAfterReturn();
     session.teams.forEach((team) => {
       if (lifecycleLabel(team.state) === "pending") startPendingTeamPoll(team.id, 250);
       else startProvisioningPolling(team, 250);
     });
   });
+  // Opening GitHub in a second window leaves this tab visible the whole time,
+  // so visibilitychange never fires and the list would stay stale. Focus is
+  // the signal that covers it; the departure mark keeps both paths to one
+  // refetch.
+  window.addEventListener("focus", refreshRepositoryAccessAfterReturn);
   window.addEventListener("beforeunload", () => {
     destroyEmbeddedCheckout();
     stopProvisioningPolling();
@@ -7322,6 +7412,7 @@
   renderTeamSetupPricing();
   renderEngineerControl();
   renderRepositoryControl();
+  renderRepositoryManageLinks();
   renderConfiguration();
   const initialQuery = typeof window.deepNavyInitialQuery === "string" ? window.deepNavyInitialQuery : window.location.search;
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }

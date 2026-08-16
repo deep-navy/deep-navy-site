@@ -1240,6 +1240,9 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .button-link { background: none; border: 0; padding: 0; font: inherit; color: var(--accent-text); text-decoration: underline; cursor: pointer; }
 .button-link:hover { color: var(--accent); }
 .repo-access-line { margin-top: .5rem; }
+/* In the settings card the line separates the checklist from the save
+   action, and stays put when the checklist itself is hidden. */
+.settings-card .repo-access-line { margin-top: .75rem; }
 
 /* Settings → Repositories: the create-flow picker restyled for a settings
    card (the card header already says "Repositories", so no top rule), and

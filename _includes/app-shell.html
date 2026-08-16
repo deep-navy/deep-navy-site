@@ -127,13 +127,16 @@
               <p class="form-help form-help-neutral" id="team-repositories-help" data-repository-note>Loading the repositories your GitHub App can reach…</p>
               <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories" aria-describedby="team-repositories-help team-repositories-error"></div>
               <p class="form-error" id="team-repositories-error" data-team-repositories-error role="alert" hidden></p>
-              <!-- The list can only ever show what the GitHub App has been
-                   granted. When that grant is narrow, the fix lives on GitHub,
-                   not here - so the door to GitHub sits beside the list
-                   instead of leaving a one-repo picker looking broken. -->
-              <p class="form-help form-help-neutral repo-access-line">Only repositories the deep navy app can access are listed.
-                <button class="button-link" type="button" data-repository-manage-access>Add repositories on GitHub</button>
-                — then <button class="button-link" type="button" data-repository-refresh-inline>refresh the list</button>.</p>
+              <!-- The list can only ever show what the customer has granted,
+                   and the grant is changed on GitHub, not here - so the door
+                   to GitHub sits beside the list instead of leaving a one-repo
+                   picker looking broken. It is a REAL link to this
+                   installation's own settings page (app.js fills the
+                   org-aware href once the API confirms the installation), not
+                   a button that restarts the install flow. -->
+              <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
+                <a class="button-link" data-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
+                — this list updates when you come back, or <button class="button-link" type="button" data-repository-refresh-inline>refresh it now</button>.</p>
             </fieldset>
             <div class="team-price">
               <div>
@@ -547,6 +550,13 @@
                 <div class="repository-list" data-settings-repository-list role="group" aria-label="Accessible repositories" aria-describedby="settings-repositories-help settings-repositories-error"></div>
                 <p class="form-error" id="settings-repositories-error" data-settings-repositories-error role="alert" hidden></p>
               </fieldset>
+              <!-- The same door as the create picker, and deliberately OUTSIDE
+                   the fieldset: when the accessible list has not loaded the
+                   fieldset is hidden, and that is exactly when the customer
+                   needs the way to GitHub and the way to retry. -->
+              <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
+                <a class="button-link" data-settings-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
+                — this list updates when you come back, or <button class="button-link" type="button" data-settings-repository-refresh>refresh it now</button>.</p>
               <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-repositories-apply disabled>Update repositories</button></div>
               <p class="form-help form-help-neutral settings-repos-note" data-settings-repositories-note hidden>Saving re-provisions the team. Agents keep their memory; work in progress is interrupted.</p>
             </article>
