@@ -197,6 +197,56 @@ test("RequestTeam carries the engineer count and objective the setup screen coll
   });
 });
 
+test("RequestTeam carries the team's own repository choice as validated int64 ids", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        pendingTeam: { id: "team-1", organizationId: "org-1", name: "Product engineering", state: "LIFECYCLE_STATE_PENDING" },
+        settlement: "REQUEST_TEAM_SETTLEMENT_CHARGED_OFF_SESSION"
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  await api.request("request_team", {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-3",
+    repositoryIds: ["101", "102"]
+  }, { accessToken: "access-token", requestId: "request-team-repositories" });
+
+  // The chosen set rides the request as proto-JSON int64 strings; a request
+  // without a choice omits the field entirely (backward compatible).
+  assert.deepEqual(calls[0].body, {
+    organizationId: "org-1",
+    name: "Product engineering",
+    idempotencyKey: "request-team-3",
+    repositoryIds: ["101", "102"]
+  });
+
+  // A malformed or non-positive id is rejected at the client boundary and
+  // never reaches the network.
+  for (const invalid of [["0"], ["-3"], ["abc"], "101"]) {
+    let touchedNetwork = false;
+    const rejecting = generated.createPlatformApi({
+      baseUrl: "https://dev.api.deep.navy",
+      fetch: async () => { touchedNetwork = true; throw new Error("must not run"); }
+    });
+    await assert.rejects(
+      rejecting.request("request_team", {
+        organizationId: "org-1",
+        name: "Product engineering",
+        idempotencyKey: "request-team-4",
+        repositoryIds: invalid
+      }, { accessToken: "access-token", requestId: "request-team-bad-repositories" }),
+      /repositoryIds is invalid/
+    );
+    assert.equal(touchedNetwork, false);
+  }
+});
+
 test("SetTeamEngineerCount changes an existing team's engineering capacity and decodes the settlement", async () => {
   const calls = [];
   const api = generated.createPlatformApi({

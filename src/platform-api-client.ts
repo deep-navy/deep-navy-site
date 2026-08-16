@@ -165,6 +165,15 @@ function int64Field(value: unknown, name: string, allowZero = true): bigint {
   return parsed;
 }
 
+// Repeated int64 ids at the UI boundary (e.g. the per-team repository choice).
+// Every element must be a positive int64; an empty or absent list is allowed —
+// the server treats it as "no explicit choice", never as authorization.
+function int64ListField(value: unknown, name: string): bigint[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new PlatformClientError(`${name} is invalid.`, "invalid_argument", 400, "");
+  return value.map((id) => int64Field(id, name, false));
+}
+
 function int32Field(value: unknown, name: string, allowZero = true): number {
   const normalized = typeof value === "number"
     ? value
@@ -369,18 +378,14 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await repositories.listRepositories({ organizationId: textField(payload, "organizationId"), page: pageRequest(payload.page) }, callOptions);
         case "repository_selection":
           return await repositories.getRepositorySelection({ organizationId: textField(payload, "organizationId") }, callOptions);
-        case "update_repository_selection": {
-          const repositoryIds = Array.isArray(payload.githubRepositoryIds)
-            ? payload.githubRepositoryIds.map((id) => int64Field(id, "githubRepositoryIds", false))
-            : [];
+        case "update_repository_selection":
           return await repositories.updateRepositorySelection({
             organizationId: textField(payload, "organizationId"),
             mode: selectionMode(payload.mode),
-            githubRepositoryIds: repositoryIds,
+            githubRepositoryIds: int64ListField(payload.githubRepositoryIds, "githubRepositoryIds"),
             idempotencyKey: textField(payload, "idempotencyKey"),
             expectedVersion: int64Field(payload.expectedVersion, "expectedVersion")
           }, callOptions);
-        }
         case "billing_plan":
           return await billing.getBillingPlan({ planId: textField(payload, "planId") }, callOptions);
         case "subscription":
@@ -445,14 +450,20 @@ export function createPlatformApi(options: PlatformApiOptions) {
         case "teams":
           return await teams.listTeams({ organizationId: textField(payload, "organizationId"), page: pageRequest(payload.page) }, callOptions);
         case "create_team":
-          return await teams.createTeam({ organizationId: textField(payload, "organizationId"), name: textField(payload, "name"), idempotencyKey: textField(payload, "idempotencyKey") }, callOptions);
+          return await teams.createTeam({
+            organizationId: textField(payload, "organizationId"),
+            name: textField(payload, "name"),
+            idempotencyKey: textField(payload, "idempotencyKey"),
+            repositoryIds: int64ListField(payload.repositoryIds, "repositoryIds")
+          }, callOptions);
         case "request_team":
           return await teams.requestTeam({
             organizationId: textField(payload, "organizationId"),
             name: textField(payload, "name"),
             idempotencyKey: textField(payload, "idempotencyKey"),
             engineerCount: int32Field(payload.engineerCount ?? 0, "engineerCount"),
-            objective: textField(payload, "objective", false)
+            objective: textField(payload, "objective", false),
+            repositoryIds: int64ListField(payload.repositoryIds, "repositoryIds")
           }, callOptions);
         case "set_team_engineer_count":
           return await teams.setTeamEngineerCount({

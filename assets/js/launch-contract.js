@@ -407,12 +407,15 @@
 
   // Team creation is now the paid action (RequestTeam collects the card), so an
   // active subscription is no longer a prerequisite: it is the *result* of
-  // creating the first team. Only the GitHub install and a durable repository
-  // selection must be ready before a team can be requested.
-  function missingTeamPrerequisites({ githubInstalled, repositorySelectionReady: repositoriesReady }) {
+  // creating the first team. And the repository choice rides the creation
+  // request itself (each team carries its own repository_ids, revalidated
+  // server-side), so a saved org-level selection is not a gate either. What
+  // must be true first: the GitHub App is installed and it can reach at least
+  // one repository — otherwise there is nothing for a team to work in.
+  function missingTeamPrerequisites({ githubInstalled, repositoriesAvailable }) {
     return [
       !githubInstalled ? "GitHub installation" : "",
-      !repositoriesReady ? "repository selection" : ""
+      !repositoriesAvailable ? "repository access" : ""
     ].filter(Boolean);
   }
 

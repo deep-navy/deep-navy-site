@@ -36,13 +36,16 @@
   <div data-authenticated hidden>
 
     <!-- ---------- FIRST RUN / NAME YOUR TEAM ---------- -->
-    <!-- One question: what is your team called? The GitHub organization, App
-         installation, and repositories connect themselves in the background
-         from the sign-in, so none of them is presented as a step. Each keeps
-         a card here, but a card renders only while app.js marks it genuinely
-         blocking (data-state="action"/"error"): connecting GitHub replaces
-         the name form until it is done, and the repository choice follows the
-         name as its own question. Payment opens from the create action; after
+    <!-- Creation is name + repository choice, both first-class: the name is
+         the hero and the repository picker is the quiet second beat inside
+         the same form, so every team carries its own selection instead of
+         inheriting the organization's. The GitHub organization, App
+         installation, and repositories still connect themselves in the
+         background from the sign-in, so none of them is presented as a step.
+         Each keeps a card here, but a card renders only while app.js marks
+         it genuinely blocking (data-state="action"/"error", or the
+         repository card when nothing is accessible): that card replaces the
+         form until it is done. Payment opens from the create action; after
          that the provisioning stream and the Product Manager's opening
          message take over in the workspace. -->
     <section class="firstrun" data-firstrun aria-labelledby="firstrun-title">
@@ -102,7 +105,8 @@
           <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Try again</button>
         </section>
 
-        <!-- The one question. The input enables the moment the background
+        <!-- The name is the hero; the repository choice is the quiet second
+             beat under it. The input enables the moment the background
              connections are ready; payment opens from this button, and the
              team starts working minutes after it clears. -->
         <article class="firstrun-card team-card" data-step="team" data-state="loading" tabindex="-1">
@@ -111,6 +115,19 @@
           <form class="team-form" data-team-form>
             <label class="visually-hidden" for="team-name">Team name</label>
             <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
+            <!-- Every repository the GitHub App can reach, with the
+                 organization's current selection pre-checked. The choice is
+                 per team: the server revalidates every id against the
+                 installation and stores the set for THIS team only, so a
+                 second team never silently inherits the first team's repos.
+                 app.js renders the checkboxes; the browser list is never
+                 authorization. -->
+            <fieldset class="team-repos" data-team-repositories>
+              <legend>Which repositories should it work in?</legend>
+              <p class="form-help form-help-neutral" id="team-repositories-help" data-repository-note>Loading the repositories your GitHub App can reach…</p>
+              <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories" aria-describedby="team-repositories-help team-repositories-error"></div>
+              <p class="form-error" id="team-repositories-error" data-team-repositories-error role="alert" hidden></p>
+            </fieldset>
             <div class="team-price">
               <div>
                 <div class="team-price-amt" data-team-price-amount>$599<small> / month</small></div>
@@ -136,24 +153,15 @@
           </article>
 
           <!-- Repositories: connect themselves from what you granted the
-               GitHub App. This is the second question — after the name — and
-               it appears only when a choice is actually needed. -->
+               GitHub App, and the choice of which ones THIS team works in
+               lives inside the name form above. This card surfaces only when
+               there is genuinely nothing to choose from — the installation
+               reaches no repositories, or the repository service failed —
+               and while it shows it takes the name form's place. -->
           <article class="firstrun-card blocking-card repo-card" data-step="repositories" data-state="loading" tabindex="-1">
             <span class="visually-hidden" data-step-state>Checking</span>
-            <h2>Which repository should your team work in?</h2>
+            <h2>Grant repository access</h2>
             <p data-step-message>The repositories you granted the GitHub App are connected.</p>
-            <form class="repository-form" data-repository-form hidden>
-              <fieldset class="repository-modes">
-                <legend>Your team may work in</legend>
-                <label><input type="radio" name="repositoryMode" value="selected" checked> Only repositories I choose</label>
-                <label><input type="radio" name="repositoryMode" value="all"> Every repository available to the GitHub App</label>
-              </fieldset>
-              <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories"></div>
-              <p class="form-help" data-repository-empty hidden>No accessible repositories were returned. Grant repository access in GitHub, then refresh.</p>
-              <div class="repository-actions">
-                <button class="button button-primary" type="submit" data-repository-save disabled>Save repository access</button>
-              </div>
-            </form>
             <button class="button button-quiet button-small repo-refresh" type="button" data-repository-refresh>Refresh repositories</button>
           </article>
         </div>

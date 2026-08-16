@@ -50,8 +50,10 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   assert.doesNotMatch(app, /setStep\("subscription"/);
   assert.doesNotMatch(app, /ui\.subscriptionAction/);
   assert.doesNotMatch(app, /steps complete`/);
-  // Team creation no longer requires an active subscription up front.
-  assert.deepEqual(missingTeamPrerequisites({ githubInstalled: true, repositorySelectionReady: true }), []);
+  // Team creation no longer requires an active subscription up front, and the
+  // repository choice is part of the create form itself — only the GitHub
+  // install and at least one reachable repository gate it.
+  assert.deepEqual(missingTeamPrerequisites({ githubInstalled: true, repositoriesAvailable: true }), []);
 });
 
 test("no card is collected during sign-in or onboarding, only at team creation", () => {
@@ -68,16 +70,27 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
 
-test("the first-run screen asks one question: the team name", () => {
-  // The name field is the hero — the only input the initial screen presents.
-  // Everything the wizard used to collect alongside it moved out of the first
-  // ask: capacity changes live in Settings, and the objective goes to your
+test("the first-run screen is name + repositories: the name is the hero, the picker the quiet second beat", () => {
+  // The name field is the hero — the only static input the screen presents.
+  // The repository picker lives INSIDE the same form, directly under the name
+  // (its checkboxes are rendered by app.js from the API, so the shell carries
+  // only the container). Everything else the wizard used to collect moved
+  // out: capacity changes live in Settings, and the objective goes to your
   // Product Manager in conversation once the team exists.
   const teamForm = shell.match(/<form class="team-form" data-team-form>[\s\S]*?<\/form>/);
   assert.ok(teamForm, "the name form must exist");
-  assert.deepEqual(teamForm[0].match(/<(?:input|textarea|select)\b/g), ["<input"], "the name field is the only input in the team form");
+  assert.deepEqual(teamForm[0].match(/<(?:input|textarea|select)\b/g), ["<input"], "the name field is the only static input in the team form");
   assert.match(teamForm[0], /name="teamName"/);
   assert.deepEqual(teamForm[0].match(/<button\b/g), ["<button"], "one button carries the create action");
+  // The picker always renders with the form — not only when something blocks.
+  assert.match(teamForm[0], /<fieldset class="team-repos" data-team-repositories>/);
+  assert.match(teamForm[0], /<legend>Which repositories should it work in\?<\/legend>/);
+  assert.match(teamForm[0], /data-repository-list/);
+  assert.match(teamForm[0], /data-team-repositories-error/);
+  const nameIndex = teamForm[0].indexOf('name="teamName"');
+  const pickerIndex = teamForm[0].indexOf("data-team-repositories");
+  const priceIndex = teamForm[0].indexOf("data-team-price-amount");
+  assert.ok(nameIndex < pickerIndex && pickerIndex < priceIndex, "the picker sits under the name and above the price");
   // The $599/month line sits with the field, and the price still renders live
   // from the plan against the included-engineer floor.
   assert.match(teamForm[0], /data-team-price-amount/);
@@ -93,6 +106,31 @@ test("the first-run screen asks one question: the team name", () => {
   assert.doesNotMatch(shell, /data-engineer-decrement/);
   assert.doesNotMatch(shell, /data-team-roster/);
   assert.doesNotMatch(shell, /data-example-run/);
+});
+
+test("the picker is per team: org selection pre-checked, minimum one enforced, repositoryIds on the request", () => {
+  // Pre-check comes from the organization's current durable selection (or the
+  // all-accessible mode), but the set submitted is THIS team's own.
+  assert.match(app, /checkbox\.checked = mode === launchContract\.REPOSITORY_SELECTION_MODE\.ALL \|\| selected\.has\(id\) \|\| repository\.selectedForTeams === true/);
+  // form.reset() after a successful create restores the pre-check for the
+  // next team instead of blanking the picker.
+  assert.match(app, /checkbox\.defaultChecked = checkbox\.checked/);
+  // Minimum one, enforced with honest copy at the submit boundary, cleared
+  // the moment the customer touches the picker.
+  assert.match(app, /Your team needs at least one repository\./);
+  assert.match(app, /if \(repositoryIds\.length === 0\) \{\s*\n\s*setFieldError\(ui\.teamRepositoriesError, "Your team needs at least one repository\."\);/);
+  assert.match(app, /ui\.repositoryList\.addEventListener\("change", \(\) => setFieldError\(ui\.teamRepositoriesError, ""\)\)/);
+  // The chosen ids ride the RequestTeam call, sorted so the same set always
+  // produces the same normalized request, and they are part of the
+  // idempotency fingerprint — a different selection is a different request.
+  assert.match(app, /const repositoryIds = selectedRepositoryIdsFromForm\(\)\.sort\(/);
+  assert.match(app, /apiRequest\("request_team", \{[\s\S]*?repositoryIds\s*\n\s*\}\)/);
+  assert.match(app, /const fingerprint = `\$\{session\.organizationId\}:\$\{name\.toLowerCase\(\)\}:\$\{engineerCount\}:\$\{repositoryIds\.join\(","\)\}:\$\{objective\}`/);
+  // The org-level "save repository access" ask is gone: no second picker, no
+  // durable-selection save competing with the create form.
+  assert.doesNotMatch(shell, /data-repository-save/);
+  assert.doesNotMatch(shell, /repositoryMode/);
+  assert.doesNotMatch(app, /update_repository_selection/);
 });
 
 test("prerequisites are background: a card surfaces only while it genuinely blocks", () => {
@@ -111,16 +149,24 @@ test("prerequisites are background: a card surfaces only while it genuinely bloc
   assert.match(css, /\.blocking-card\[data-state="error"\]/);
   assert.match(css, /\.repo-card\[data-state="blocked"\]\{ display:block; \}/);
   // GitHub not installed: the connect card shows INSTEAD of the name form,
-  // wired to the existing install flow.
-  assert.match(css, /\.firstrun-inner:has\(\[data-step="organization"\]\[data-state="action"\], \[data-step="organization"\]\[data-state="error"\], \[data-step="github"\]\[data-state="action"\], \[data-step="github"\]\[data-state="error"\]\) \.team-card\{ display:none; \}/);
+  // wired to the existing install flow. Zero accessible repositories (or a
+  // failed repository service) does the same: nothing to pick from means the
+  // grant-access guidance is the one ask on screen.
+  assert.match(css, /\.firstrun-inner:has\(\[data-step="organization"\]\[data-state="action"\], \[data-step="organization"\]\[data-state="error"\], \[data-step="github"\]\[data-state="action"\], \[data-step="github"\]\[data-state="error"\], \[data-step="repositories"\]\[data-state="blocked"\], \[data-step="repositories"\]\[data-state="error"\]\) \.team-card\{ display:none; \}/);
   const githubCard = shell.match(/<article class="firstrun-card blocking-card github-card"[\s\S]*?<\/article>/);
   assert.ok(githubCard, "the GitHub connect card must exist");
   assert.match(githubCard[0], /data-github-action/);
   assert.match(app, /ui\.githubAction\.addEventListener\("click", startGitHubInstallation\)/);
-  // The repository picker is the second beat — after the name, framed as a
-  // question — and it never competes with the GitHub connect card.
-  assert.match(shell, /Which repository should your team work in\?/);
-  assert.ok(shell.indexOf("Which repository should your team work in?") > shell.indexOf("data-team-form"), "the repository question follows the name form");
+  // The repository question is not a blocked-state card any more: it lives in
+  // the create form itself (asserted in the picker test). What remains of the
+  // repo card is the zero-accessible-repositories guidance, which never
+  // competes with the GitHub connect card.
+  const repoCard = shell.match(/<article class="firstrun-card blocking-card repo-card"[\s\S]*?<\/article>/);
+  assert.ok(repoCard, "the repository guidance card must exist");
+  assert.match(repoCard[0], /Grant repository access/);
+  assert.match(repoCard[0], /data-repository-refresh/);
+  assert.doesNotMatch(repoCard[0], /<form\b/);
+  assert.match(app, /GitHub returned no accessible repositories\. Grant access in GitHub and refresh\./);
   assert.match(css, /\.firstrun-inner:has\(\[data-step="github"\]:not\(\[data-state="complete"\]\)\) \.repo-card\{ display:none; \}/);
   // After create, the handoff names what actually happens next.
   assert.match(shell, /Your Product Manager will open the conversation when the team is ready\./);
@@ -132,7 +178,7 @@ test("RequestTeam sends the engineer count and objective, defaulting to the floo
   // so the request contract is unchanged.
   assert.match(app, /const engineerCount = normalizeEngineerCount\(form\.get\("engineerCount"\)\)/);
   assert.match(app, /const objective = stringValue\(form\.get\("teamObjective"\)\)/);
-  assert.match(app, /apiRequest\("request_team", \{[\s\S]*?engineerCount,\s*\n\s*objective\s*\n\s*\}\)/);
+  assert.match(app, /apiRequest\("request_team", \{[\s\S]*?engineerCount,\s*\n\s*objective,\s*\n\s*repositoryIds\s*\n\s*\}\)/);
 });
 
 test("Settings exposes an engineer-count control that calls SetTeamEngineerCount with proration", () => {

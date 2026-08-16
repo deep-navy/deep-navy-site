@@ -34,12 +34,10 @@
     organizationSelectSubmit: document.querySelector("[data-organization-select] button"),
     profileRetry: document.querySelector("[data-profile-retry]"),
     githubAction: document.querySelector("[data-github-action]"),
-    repositoryForm: document.querySelector("[data-repository-form]"),
     repositoryList: document.querySelector("[data-repository-list]"),
-    repositoryEmpty: document.querySelector("[data-repository-empty]"),
-    repositorySave: document.querySelector("[data-repository-save]"),
+    repositoryNote: document.querySelector("[data-repository-note]"),
     repositoryRefresh: document.querySelector("[data-repository-refresh]"),
-    repositoryModes: [...document.querySelectorAll('input[name="repositoryMode"]')],
+    teamRepositoriesError: document.querySelector("[data-team-repositories-error]"),
     planSummary: document.querySelector("[data-plan-summary]"),
     planName: document.querySelector("[data-plan-name]"),
     planPrice: document.querySelector("[data-plan-price]"),
@@ -224,7 +222,6 @@
     githubInstalled: false,
     repositories: [],
     repositorySelection: null,
-    repositorySelectionReady: false,
     repositoryServiceAvailable: false,
     billingPlan: null,
     billingPlanAvailable: false,
@@ -1129,10 +1126,10 @@
   function resetRepositoryAccess(message, stateValue = "blocked") {
     session.repositories = [];
     session.repositorySelection = null;
-    session.repositorySelectionReady = false;
     session.repositoryServiceAvailable = false;
-    ui.repositoryForm.hidden = true;
     ui.repositoryList.replaceChildren();
+    ui.repositoryNote.textContent = message;
+    setFieldError(ui.teamRepositoriesError, "");
     ui.contextRepositories.textContent = "Not loaded";
     setStep("repositories", stateValue, stateValue === "error" ? "Unavailable" : "Blocked", message);
   }
@@ -1162,7 +1159,7 @@
       return;
     }
     setStep("repositories", "loading", "Loading", "Loading accessible repositories and the current server-side selection.");
-    ui.repositoryForm.hidden = true;
+    ui.repositoryNote.textContent = "Loading the repositories your GitHub App can reach…";
     const [repositoriesResult, selectionResult] = await Promise.allSettled([
       listAllRepositories(),
       apiRequest("repository_selection", { organizationId: session.organizationId })
@@ -1199,13 +1196,16 @@
     }
   }
 
+  // The picker lives inside the create form: every repository the active
+  // installation can reach, with the organization's current durable selection
+  // pre-checked as the starting point. The choice submitted with the form is
+  // THIS team's own — the server revalidates every id against the
+  // installation, so this list is presentation, never authorization.
   function renderRepositoryAccess() {
     const mode = launchContract.repositorySelectionMode(session.repositorySelection?.mode) || launchContract.REPOSITORY_SELECTION_MODE.SELECTED;
     const selected = new Set(launchContract.selectedRepositoryIds(session.repositorySelection || {}));
-    session.repositorySelectionReady = launchContract.repositorySelectionReady(session.repositorySelection, session.repositories);
-    ui.repositoryForm.hidden = false;
+    setFieldError(ui.teamRepositoriesError, "");
     ui.repositoryList.replaceChildren();
-    ui.repositoryModes.forEach((input) => { input.checked = input.value === (mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? "all" : "selected"); });
 
     session.repositories.forEach((repository) => {
       const id = String(repository.githubRepositoryId);
@@ -1216,6 +1216,9 @@
       checkbox.name = "githubRepositoryId";
       checkbox.value = id;
       checkbox.checked = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL || selected.has(id) || repository.selectedForTeams === true;
+      // form.reset() after a successful create must restore the org-selection
+      // pre-check, not blank the picker for the next team.
+      checkbox.defaultChecked = checkbox.checked;
       const copy = document.createElement("span");
       const name = document.createElement("strong");
       const branch = document.createElement("small");
@@ -1225,48 +1228,27 @@
       label.append(checkbox, copy);
       ui.repositoryList.append(label);
     });
-    ui.repositoryEmpty.hidden = session.repositories.length > 0;
-    updateRepositoryControls();
 
-    if (session.repositorySelectionReady) {
-      const all = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL;
-      const connected = session.repositories.filter((repository) =>
-        all || selected.has(String(repository.githubRepositoryId)) || repository.selectedForTeams === true);
-      const count = all ? session.repositories.length : selected.size;
-      const names = connected.slice(0, 4).map((repository) => `${stringValue(repository.owner)}/${stringValue(repository.name)}`);
-      const preview = names.join(", ") + (connected.length > 4 ? ` and ${connected.length - 4} more` : "");
+    const count = session.repositories.length;
+    if (count > 0) {
+      const names = session.repositories.slice(0, 4).map((repository) => `${stringValue(repository.owner)}/${stringValue(repository.name)}`);
+      const preview = names.join(", ") + (count > 4 ? ` and ${count - 4} more` : "");
       session.connectedRepositoryCount = count;
-      ui.contextRepositories.textContent = preview || `${count} connected`;
-      // Name the repositories: "Selected" alone can't tell the user WHICH
-      // repos their team will work on, which is the one thing they check here.
-      setStep("repositories", "complete", `${count} connected`, preview
-        ? `Your team can work on ${preview}. Adjust the selection below any time.`
-        : `${count} ${count === 1 ? "repository is" : "repositories are"} connected for your team.`);
-    } else if (session.repositories.length === 0) {
-      ui.contextRepositories.textContent = "No accessible repositories";
-      setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
+      ui.contextRepositories.textContent = preview;
+      ui.repositoryNote.textContent = "Your organization's current selection is pre-checked. This team keeps its own list — pick at least one.";
+      // Name the repositories: a bare count can't tell the user WHICH repos
+      // are on offer, which is the one thing they check here.
+      setStep("repositories", "complete", `${count} connected`, `Your GitHub App reaches ${preview}. Choose which of them this team works in when you name it.`);
     } else {
-      ui.contextRepositories.textContent = "Selection required";
-      setStep("repositories", "action", "Needs action", "Choose the accessible repositories that deep navy may use, then save the server-side selection.");
+      session.connectedRepositoryCount = 0;
+      ui.contextRepositories.textContent = "No accessible repositories";
+      ui.repositoryNote.textContent = "No accessible repositories were returned. Grant repository access in GitHub, then refresh.";
+      setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
     }
-  }
-
-  function selectedRepositoryMode() {
-    return ui.repositoryModes.find((input) => input.checked)?.value === "all"
-      ? launchContract.REPOSITORY_SELECTION_MODE.ALL
-      : launchContract.REPOSITORY_SELECTION_MODE.SELECTED;
   }
 
   function selectedRepositoryIdsFromForm() {
     return [...ui.repositoryList.querySelectorAll('input[name="githubRepositoryId"]:checked')].map((input) => input.value);
-  }
-
-  function updateRepositoryControls() {
-    const allMode = selectedRepositoryMode() === launchContract.REPOSITORY_SELECTION_MODE.ALL;
-    const checkboxes = [...ui.repositoryList.querySelectorAll('input[name="githubRepositoryId"]')];
-    checkboxes.forEach((checkbox) => { checkbox.disabled = allMode; });
-    const valid = session.repositoryServiceAvailable && session.repositories.length > 0 && (allMode || checkboxes.some((checkbox) => checkbox.checked));
-    ui.repositorySave.disabled = !valid;
   }
 
   function renderBillingPlanResult(result) {
@@ -2072,9 +2054,10 @@
   }
 
   // Creating a team is the paid action now, so the only prerequisites are an
-  // active GitHub installation and a durable repository selection. There is no
-  // subscription/slot gate: RequestTeam drives the payment (embedded Checkout
-  // for the first team, the saved card off-session for the rest).
+  // active GitHub installation that reaches at least one repository. There is
+  // no subscription/slot gate: RequestTeam drives the payment (embedded
+  // Checkout for the first team, the saved card off-session for the rest).
+  // The repository choice itself is part of the create form, not a gate.
   function updateTeamAction() {
     if (!session.teamServiceAvailable) {
       ui.teamInput.disabled = true;
@@ -2083,20 +2066,21 @@
     }
     const missing = launchContract.missingTeamPrerequisites({
       githubInstalled: session.githubInstalled,
-      repositorySelectionReady: session.repositorySelectionReady
+      repositoriesAvailable: session.repositoryServiceAvailable && session.repositories.length > 0
     });
     const ready = missing.length === 0 && !checkoutOpening;
     if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
       setStep("team", "action", "Ready", `${existing}${savedCardChargeExpected()
-        ? "Name your team — the card on file is charged, and your Product Manager opens the conversation when the team is ready."
-        : "Name your team — payment opens in secure Stripe checkout, and your Product Manager opens the conversation when the team is ready."}`);
+        ? "Name your team and pick its repositories — the card on file is charged, and your Product Manager opens the conversation when the team is ready."
+        : "Name your team and pick its repositories — payment opens in secure Stripe checkout, and your Product Manager opens the conversation when the team is ready."}`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
       setStep("team", "blocked", "Blocked", `Finish the ${requirements}, then name your team.`);
     }
     ui.teamInput.disabled = !ready;
     ui.teamSubmit.disabled = !ready;
+    ui.repositoryList.querySelectorAll("input").forEach((checkbox) => { checkbox.disabled = !ready; });
     updateTeamSubmitLabel();
   }
 
@@ -2104,7 +2088,6 @@
     const label = stateValue === "blocked" ? "Waiting" : "Unavailable";
     ["github", "repositories", "team"].forEach((name) => setStep(name, stateValue, label, message));
     ui.githubAction.disabled = true;
-    ui.repositorySave.disabled = true;
     ui.repositoryRefresh.disabled = true;
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
@@ -6235,48 +6218,6 @@
     }
   }
 
-  async function saveRepositorySelection(event) {
-    event.preventDefault();
-    if (!session.repositoryServiceAvailable) return;
-    const mode = selectedRepositoryMode();
-    const ids = mode === launchContract.REPOSITORY_SELECTION_MODE.ALL ? [] : selectedRepositoryIdsFromForm();
-    const fingerprint = JSON.stringify({ organizationId: session.organizationId, mode, ids: [...ids].sort(), version: String(session.repositorySelection?.version || 0) });
-    ui.repositorySave.disabled = true;
-    ui.repositoryRefresh.disabled = true;
-    ui.repositorySave.textContent = "Saving…";
-    setStep("repositories", "loading", "Saving", "Revalidating every selected repository against the active GitHub App installation.");
-    try {
-      const payload = launchContract.buildRepositorySelectionRequest({
-        organizationId: session.organizationId,
-        mode,
-        githubRepositoryIds: ids,
-        idempotencyKey: mutationKeys.for("repositorySelection", fingerprint),
-        expectedVersion: session.repositorySelection?.version || "0"
-      });
-      const result = await apiRequest("update_repository_selection", payload);
-      if (!result.selection || stringValue(result.selection.organizationId) !== session.organizationId) throw new ApiError("Repository service did not return a saved selection in the current organization scope", 0, "invalid_response", "");
-      if (Array.isArray(result.repositories) && result.repositories.some((repository) => stringValue(repository?.organizationId) !== session.organizationId)) {
-        throw new ApiError("Repository service returned a resource outside the current organization scope", 0, "invalid_response", "");
-      }
-      session.repositorySelection = result.selection;
-      if (Array.isArray(result.repositories) && result.repositories.length) session.repositories = launchContract.accessibleRepositories(result.repositories);
-      mutationKeys.clear("repositorySelection");
-      renderRepositoryAccess();
-      updateTeamAction();
-      toast("Repository access was validated and saved by the API.", "success");
-    } catch (error) {
-      const message = error instanceof launchContract.LaunchContractError
-        ? error.message
-        : apiErrorMessage(error, "Repository access was not saved. No selection was assumed.");
-      setStep("repositories", "error", "Not saved", message);
-      if (error instanceof ApiError && ["aborted", "failed_precondition"].includes(error.code)) await refreshRepositoryAccess();
-    } finally {
-      ui.repositorySave.textContent = "Save repository access";
-      ui.repositoryRefresh.disabled = false;
-      updateRepositoryControls();
-    }
-  }
-
   // Settings → Manage billing opens the Stripe Customer Portal. It is available
   // only once a subscription exists (created by the first team's checkout); no
   // card is ever collected here. Team creation is what drives payment.
@@ -6607,15 +6548,26 @@
     const name = stringValue(form.get("teamName"));
     const objective = stringValue(form.get("teamObjective")).slice(0, 2000);
     const engineerCount = normalizeEngineerCount(form.get("engineerCount"));
+    // The team's own repository choice, sorted so the same set always
+    // produces the same normalized request (and idempotency fingerprint)
+    // regardless of checkbox order. The server revalidates every id against
+    // the active installation; this list is never authorization.
+    const repositoryIds = selectedRepositoryIdsFromForm().sort((left, right) => (BigInt(left) < BigInt(right) ? -1 : BigInt(left) > BigInt(right) ? 1 : 0));
     setFieldError(ui.teamError, "");
+    setFieldError(ui.teamRepositoriesError, "");
     if (name.length < 2 || name.length > 80) {
       setFieldError(ui.teamError, "Enter a team name between 2 and 80 characters.");
       ui.teamInput.focus();
       return;
     }
+    if (repositoryIds.length === 0) {
+      setFieldError(ui.teamRepositoriesError, "Your team needs at least one repository.");
+      ui.repositoryList.querySelector('input[name="githubRepositoryId"]')?.focus();
+      return;
+    }
     const missing = launchContract.missingTeamPrerequisites({
       githubInstalled: session.githubInstalled,
-      repositorySelectionReady: session.repositorySelectionReady
+      repositoriesAvailable: session.repositoryServiceAvailable && session.repositories.length > 0
     });
     if (missing.length) {
       const message = `Complete ${missing.join(", ")} before team creation.`;
@@ -6628,13 +6580,14 @@
     ui.teamSubmit.dataset.busy = "1";
     ui.teamSubmit.textContent = savedCardChargeExpected() ? "Creating your team…" : "Opening secure payment…";
     try {
-      const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${objective}`;
+      const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${repositoryIds.join(",")}:${objective}`;
       const result = await apiRequest("request_team", {
         organizationId: session.organizationId,
         name,
         idempotencyKey: mutationKeys.for("requestTeam", fingerprint),
         engineerCount,
-        objective
+        objective,
+        repositoryIds
       });
       const pending = result.pendingTeam || result.pending_team;
       if (!pending?.id || stringValue(pending.organizationId) !== session.organizationId) {
@@ -6835,10 +6788,10 @@
   ui.organizationSelectForm.addEventListener("submit", selectOrganization);
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
   ui.githubAction.addEventListener("click", startGitHubInstallation);
-  ui.repositoryForm.addEventListener("submit", saveRepositorySelection);
   ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
-  ui.repositoryModes.forEach((input) => input.addEventListener("change", updateRepositoryControls));
-  ui.repositoryList.addEventListener("change", updateRepositoryControls);
+  // Touching the picker clears its "needs at least one" error the moment the
+  // customer acts on it.
+  ui.repositoryList.addEventListener("change", () => setFieldError(ui.teamRepositoriesError, ""));
   ui.settingsBillingManage.addEventListener("click", manageBilling);
   ui.invoiceMore.addEventListener("click", loadMoreInvoices);
   ui.creditPackForm.addEventListener("submit", startCreditPackCheckout);

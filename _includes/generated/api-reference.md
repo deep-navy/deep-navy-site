@@ -3634,9 +3634,10 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or admin membership. The<br> server verifies the active subscription, GitHub installation, and durable<br> repository selection; browser state is never sufficient authorization. |
+| `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or admin membership. The<br> server verifies the active subscription, GitHub installation, and<br> repository selection; browser state is never sufficient authorization. |
 | `name` | 2 | `string` | singular | — |
 | `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with<br> the same key returns the original Team and provisioning command. |
+| `repository_ids` | 4 | `int64` | repeated | repository_ids are the GitHub repository ids this team works on, chosen<br> from the repositories the organization's active GitHub App installation<br> can reach. The server revalidates every id against the installation —<br> never against browser state — and the validated set becomes this team's<br> own durable selection, snapshotted onto its provisioning command. An id<br> outside the installation's accessible set is rejected with<br> TEAM_ERROR_REASON_REPOSITORY_NOT_ACCESSIBLE. Empty is backward<br> compatible: the organization's durable repository selection is copied to<br> the team, and it must then contain at least one repository. |
 
 <a id="deepnavy-v1-createteamresponse"></a>
 ### Message `deepnavy.v1.CreateTeamResponse`
@@ -3665,7 +3666,7 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `id` | 1 | `string` | singular | — |
+| `id` | 1 | `string` | singular | ResumeTeam intentionally carries no repository_ids. Repositories are a<br> per-team selection made at creation (CreateTeam or RequestTeam), so<br> resume re-verifies the installation and subscription prerequisites and<br> re-enqueues provisioning with the team's own existing repository<br> selection. It must not re-copy the organization's durable selection over<br> the team's. |
 
 <a id="deepnavy-v1-resumeteamresponse"></a>
 ### Message `deepnavy.v1.ResumeTeamResponse`
@@ -3696,6 +3697,7 @@ This message has no fields.
 | `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with the<br> same key returns the original pending team + settlement without opening a<br> second Checkout Session or charging the saved card twice. |
 | `engineer_count` | 4 | `int32` | singular | engineer_count is the number of engineering agents on the team. The minimum<br> is 3 — the adversarial-review floor (an engineer completes a ticket, then<br> two peers can review). The base subscription includes 3 engineers; each<br> engineer above 3 is billed as a recurring add-on. Values below 3 are<br> rejected. A team also always includes one Product Manager, one Engineering<br> Manager, and one Designer, which are not counted here. |
 | `objective` | 5 | `string` | singular | objective is the team's imperative — the outcome its agents pursue. The<br> Product Manager turns it into acceptance criteria and Gherkin; the<br> Engineering Manager triages and tags work from it. Optional at request time<br> and refinable later via ObjectiveService. |
+| `repository_ids` | 6 | `int64` | repeated | repository_ids are the GitHub repository ids this team works on, with the<br> same semantics and server-side validation as<br> CreateTeamRequest.repository_ids: every id is revalidated against the<br> organization's active GitHub App installation — never against browser<br> state — and the validated set becomes this team's own durable selection.<br> Empty is backward compatible and copies the organization's durable<br> repository selection. |
 
 <a id="deepnavy-v1-requestteamresponse"></a>
 ### Message `deepnavy.v1.RequestTeamResponse`
@@ -3741,6 +3743,7 @@ This message has no fields.
 | `TEAM_ERROR_REASON_PAID_TEAM_SLOTS_EXHAUSTED` | 8 | Returned with RESOURCE_EXHAUSTED when non-deleted teams already consume<br> every paid Stripe licensed-quantity slot. |
 | `TEAM_ERROR_REASON_PAYMENT_DECLINED` | 9 | Returned with FAILED_PRECONDITION when the off-session charge for an<br> additional team was declined by the saved card. No pending team is created. |
 | `TEAM_ERROR_REASON_PAYMENT_METHOD_REQUIRED` | 10 | Returned with FAILED_PRECONDITION when the organization has no saved<br> payment method on file for an off-session charge (should not occur after<br> the first team's checkout). |
+| `TEAM_ERROR_REASON_REPOSITORY_NOT_ACCESSIBLE` | 11 | At least one requested repository id is not currently accessible through<br> the organization's active GitHub App installation. Returned with<br> FAILED_PRECONDITION without revealing whether a repository belonging to<br> another tenant exists. |
 
 <a id="deepnavy-v1-requestteamsettlement"></a>
 ### Enum `deepnavy.v1.RequestTeamSettlement`
