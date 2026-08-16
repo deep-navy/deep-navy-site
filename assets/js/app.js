@@ -6822,11 +6822,15 @@
   if (ui.settingsEngineerIncrement) ui.settingsEngineerIncrement.addEventListener("click", () => stepEngineerInput(ui.settingsEngineerInput, 1, syncEngineerControl));
   if (ui.settingsEngineerApply) ui.settingsEngineerApply.addEventListener("click", applyEngineerCount);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
-  ui.objectiveForm.addEventListener("submit", createObjective);
-  // ⌘/Ctrl+Enter submits, so starting tracked work never requires leaving the
-  // keyboard. The example chips that used to seed this field went with the
-  // form's primacy: the conversation is where work is asked for now.
-  ui.objectiveDescriptionInput.addEventListener("keydown", (event) => {
+  // The objective form left the shell when the console became the only ask.
+  // Its pipeline remains for programmatic flows, so the listeners are guarded
+  // rather than deleted - and the guard is not optional: an unguarded
+  // addEventListener on the removed form crashed the whole bootstrap at the
+  // top level, freezing the app at "Checking environment configuration" with
+  // sign-in dead. The third frozen-shell incident of this shape; the
+  // bootstrap-guard test now pins listeners too.
+  if (ui.objectiveForm) ui.objectiveForm.addEventListener("submit", createObjective);
+  if (ui.objectiveDescriptionInput) ui.objectiveDescriptionInput.addEventListener("keydown", (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !ui.objectiveSubmit.disabled) {
       event.preventDefault();
       ui.objectiveForm.requestSubmit();

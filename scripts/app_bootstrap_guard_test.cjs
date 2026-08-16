@@ -22,6 +22,11 @@ const test = require("node:test");
 
 const app = readFileSync("assets/js/app.js", "utf8");
 const shell = readFileSync("_includes/app-shell.html", "utf8");
+// The app's DOM is the shell include PLUS the layout chrome (header, pills);
+// elements like the sign-out control live in the layout, and a listener
+// check that reads only the include would cry wolf on them.
+const layout = readFileSync("_layouts/app.html", "utf8");
+const appDOM = shell + layout;
 
 // ui: { name: document.querySelector("[data-thing]"), ... }
 function uiSelectorMap(source) {
@@ -68,4 +73,36 @@ test("the bootstrap guard does not depend on the deleted sign-in button", () => 
   // guard keyed on it can only ever be false.
   assert.doesNotMatch(app, /if\s*\(!ui\.signIn\)\s*return;/);
   assert.doesNotMatch(shell, /data-sign-in\b/);
+});
+
+// The third frozen-shell incident was not the bail-out guard but an orphaned
+// listener: markup removed from the shell while its top-level
+// addEventListener stayed unguarded, throwing TypeError on null and killing
+// the bootstrap just as thoroughly as the early return did. So: every
+// ui.<name>.addEventListener at statement position must either be guarded
+// (inside "if (ui.<name>)") or target an element the shell still ships.
+test("no top-level listener targets an element the shell no longer ships", () => {
+  const selectors = new Map();
+  for (const match of app.matchAll(/(\w+):\s*document\.querySelector\(\s*"(\[[^"]+\])"\s*\)/g)) {
+    selectors.set(match[1], match[2]);
+  }
+  // Unguarded form: line begins with optional whitespace then ui.<name>.addEventListener
+  for (const match of app.matchAll(/^[ \t]*ui\.(\w+)\.addEventListener\(/gm)) {
+    const key = match[1];
+    const selector = selectors.get(key);
+    if (!selector) continue;
+    // A listener wrapped in an if (ui.<key>) block is guarded even though the
+    // call itself starts its own line - look back a short window for the
+    // guard before crying wolf.
+    const preceding = app.slice(Math.max(0, match.index - 300), match.index);
+    if (preceding.includes(`if (ui.${key})`)) continue;
+    const attribute = selector.slice(1, -1).split("=")[0];
+    assert.ok(
+      appDOM.includes(attribute),
+      `app.js attaches a listener to ui.${key} (${selector}) unguarded at the top level, ` +
+      `but the shell no longer contains ${attribute}. That throws on null and freezes the ` +
+      `entire app at "Checking environment configuration" - guard it with if (ui.${key}) ` +
+      `or restore the markup.`
+    );
+  }
 });
