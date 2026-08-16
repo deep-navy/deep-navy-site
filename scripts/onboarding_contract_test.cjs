@@ -220,3 +220,38 @@ test("sign-out revokes the session server-side, then redirects into the app", ()
   assert.match(appSource, /platformApi\.request\("sign_out", \{\}, \{ accessToken: revokedToken/);
   assert.match(appSource, /window\.location\.assign\(appPath\)/);
 });
+
+// Every way into the app from a marketing page is a sign-in handoff. The app
+// itself has no login screen by design: an ordinary /app/ load that finds no
+// session calls location.replace("../") and puts the visitor back where they
+// started, with nothing said and nothing done. A conversion button that links
+// bare /app/ therefore reads as broken - "Create your team" returned the
+// visitor to the page they clicked it from. ?signin=1 is the correct link for
+// both states, because that branch restores an existing session first and only
+// hands off to GitHub when there is none.
+test("every marketing link into the app asks for sign-in", () => {
+  const { execFileSync } = require("node:child_process");
+  const sources = execFileSync("git", ["ls-files", "*.md", "*.html"], { encoding: "utf8" })
+    .split("\n")
+    .filter(Boolean)
+    // The callback page IS the app's own return address, not a link into it.
+    .filter((file) => !file.startsWith("app/"));
+  const bare = [];
+  for (const file of sources) {
+    const body = readFileSync(file, "utf8");
+    for (const match of body.matchAll(/href="\{\{\s*'([^']*\/app\/[^']*)'\s*\|\s*relative_url\s*\}\}"/g)) {
+      if (!match[1].includes("signin=1")) bare.push(`${file}: ${match[1]}`);
+    }
+    for (const match of body.matchAll(/href="(\/app\/[^"]*)"/g)) {
+      if (!match[1].includes("signin=1")) bare.push(`${file}: ${match[1]}`);
+    }
+  }
+  assert.deepEqual(bare, [], `these links bounce a signed-out visitor back to where they came from:\n${bare.join("\n")}`);
+});
+
+// The bounce those links used to hit, so the test above keeps meaning what it
+// says if the redirect is ever rewritten.
+test("a signed-out app load with no sign-in request returns to the homepage", () => {
+  assert.match(appSource, /!session\.accessToken && document\.body\.dataset\.githubCallback !== "true"/);
+  assert.match(appSource, /window\.location\.replace\(new URL\("\.\.\/", window\.location\.href\)/);
+});
