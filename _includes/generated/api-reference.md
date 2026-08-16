@@ -299,6 +299,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.SuspendTeamResponse`](#deepnavy-v1-suspendteamresponse)
   - [Message `deepnavy.v1.ResumeTeamRequest`](#deepnavy-v1-resumeteamrequest)
   - [Message `deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse)
+  - [Message `deepnavy.v1.UpdateTeamRepositoriesRequest`](#deepnavy-v1-updateteamrepositoriesrequest)
+  - [Message `deepnavy.v1.UpdateTeamRepositoriesResponse`](#deepnavy-v1-updateteamrepositoriesresponse)
   - [Message `deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest)
   - [Message `deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse)
   - [Message `deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest)
@@ -3675,6 +3677,22 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 | --- | ---: | --- | --- | --- |
 | `team` | 1 | [`deepnavy.v1.Team`](#deepnavy-v1-team) | singular | — |
 
+<a id="deepnavy-v1-updateteamrepositoriesrequest"></a>
+### Message `deepnavy.v1.UpdateTeamRepositoriesRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | The team whose repository selection changes. The authenticated principal<br> must hold an owner or admin membership on the team's organization — the<br> same authorization every other team mutation requires. |
+| `repository_ids` | 2 | `int64` | repeated | repository_ids replace the team's own durable repository selection. At<br> least one id is required — a team always works in at least one repository<br> — and an empty list is rejected with FAILED_PRECONDITION and<br> TEAM_ERROR_REASON_REPOSITORY_SELECTION_REQUIRED; unlike CreateTeam, empty<br> never falls back to the organization's durable selection. Every id is<br> revalidated against the organization's active GitHub App installation —<br> never against browser state. An id outside the installation's accessible<br> set is rejected with TEAM_ERROR_REASON_REPOSITORY_NOT_ACCESSIBLE without<br> revealing whether a repository belonging to another tenant exists. |
+| `idempotency_key` | 3 | `string` | singular | idempotency_key is required. Repeating the same normalized request with<br> the same key returns the original Team and provisioning command without<br> enqueueing a second re-provision. |
+
+<a id="deepnavy-v1-updateteamrepositoriesresponse"></a>
+### Message `deepnavy.v1.UpdateTeamRepositoriesResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team` | 1 | [`deepnavy.v1.Team`](#deepnavy-v1-team) | singular | team carries the refreshed provisioning command status: the validated<br> selection is persisted as the team's own and the re-provision command is<br> enqueued atomically with it, so team.provisioning reports the new<br> command. The workspace volume persists across the re-provision — agent<br> memory and session history survive. |
+
 <a id="deepnavy-v1-deleteteamrequest"></a>
 ### Message `deepnavy.v1.DeleteTeamRequest`
 
@@ -3768,6 +3786,7 @@ RequestTeamSettlement describes how a RequestTeam call is paid for.
 | `RequestTeam` | [`deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest) | [`deepnavy.v1.RequestTeamResponse`](#deepnavy-v1-requestteamresponse) | unary | RequestTeam is the customer entry point for creating a team and is the<br> moment payment is collected. It captures the team, then either starts the<br> subscription (first team, via embedded Checkout) or charges the saved card<br> off-session (subsequent teams, incrementing the licensed quantity). The<br> team row is provisioned by the signed Stripe webhook, never inline. It is<br> idempotent by the authenticated principal and idempotency_key. |
 | `SuspendTeam` | [`deepnavy.v1.SuspendTeamRequest`](#deepnavy-v1-suspendteamrequest) | [`deepnavy.v1.SuspendTeamResponse`](#deepnavy-v1-suspendteamresponse) | unary | — |
 | `ResumeTeam` | [`deepnavy.v1.ResumeTeamRequest`](#deepnavy-v1-resumeteamrequest) | [`deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse) | unary | — |
+| `UpdateTeamRepositories` | [`deepnavy.v1.UpdateTeamRepositoriesRequest`](#deepnavy-v1-updateteamrepositoriesrequest) | [`deepnavy.v1.UpdateTeamRepositoriesResponse`](#deepnavy-v1-updateteamrepositoriesresponse) | unary | UpdateTeamRepositories replaces the repository selection of an existing<br> team. It requires an owner or admin membership, like the other team<br> mutations, and is idempotent by the authenticated principal and<br> idempotency_key. The server-validated set becomes the team's own durable<br> selection and triggers a re-provision (generation bump), so everything<br> derived from the roster follows: the seeded repository roster, the<br> GitHub token scope, webhook wake fencing, and merge-gate rulesets on<br> newly added repositories. |
 | `DeleteTeam` | [`deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest) | [`deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse) | unary | — |
 | `SetTeamEngineerCount` | [`deepnavy.v1.SetTeamEngineerCountRequest`](#deepnavy-v1-setteamengineercountrequest) | [`deepnavy.v1.SetTeamEngineerCountResponse`](#deepnavy-v1-setteamengineercountresponse) | unary | SetTeamEngineerCount changes the number of engineering agents on an existing<br> team and settles the difference on the org's subscription: an increase charges<br> the saved card off-session (prorated), a decrease credits the next invoice. The<br> team must already have an active subscription. Idempotent by principal + key. |
 

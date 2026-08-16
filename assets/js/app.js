@@ -37,6 +37,8 @@
     repositoryList: document.querySelector("[data-repository-list]"),
     repositoryNote: document.querySelector("[data-repository-note]"),
     repositoryRefresh: document.querySelector("[data-repository-refresh]"),
+    repositoryManageAccess: document.querySelector("[data-repository-manage-access]"),
+    repositoryRefreshInline: document.querySelector("[data-repository-refresh-inline]"),
     teamRepositoriesError: document.querySelector("[data-team-repositories-error]"),
     planSummary: document.querySelector("[data-plan-summary]"),
     planName: document.querySelector("[data-plan-name]"),
@@ -77,6 +79,15 @@
     settingsEngineerNote: document.querySelector("[data-settings-engineer-note]"),
     settingsEngineerError: document.querySelector("[data-settings-engineer-error]"),
     settingsEngineerApply: document.querySelector("[data-settings-engineer-apply]"),
+    repoSettings: document.querySelector("[data-repo-settings]"),
+    repoSettingsState: document.querySelector("[data-repo-settings-state]"),
+    repoSettingsTeam: document.querySelector("[data-repo-settings-team]"),
+    repoSettingsField: document.querySelector("[data-repo-settings-field]"),
+    settingsRepositoryList: document.querySelector("[data-settings-repository-list]"),
+    settingsRepositoryNote: document.querySelector("[data-settings-repository-note]"),
+    settingsRepositoriesError: document.querySelector("[data-settings-repositories-error]"),
+    settingsRepositoriesNote: document.querySelector("[data-settings-repositories-note]"),
+    settingsRepositoriesApply: document.querySelector("[data-settings-repositories-apply]"),
     organizationError: document.querySelector("[data-organization-error]"),
     refresh: document.querySelector("[data-refresh]"),
     teamsEmpty: document.querySelector("[data-teams-empty]"),
@@ -244,6 +255,12 @@
     selectedEconomicsGroup: "initiative",
     teamServiceAvailable: false,
     teams: [],
+    // The repository set each team is KNOWN to run with, keyed by team id —
+    // recorded from server-confirmed mutations in this session (RequestTeam /
+    // UpdateTeamRepositories). Teams born before this session fall back to
+    // the organization's durable selection, which is exactly what CreateTeam
+    // copied onto them.
+    teamRepositoryIds: new Map(),
     teamLifecycleBusy: new Set(),
     teamLifecyclePendingDelete: "",
     completingGitHub: false,
@@ -335,6 +352,12 @@
   // the selected team changes, so a background re-render never clobbers an edit.
   let engineerControlTeamId = "";
   let engineerControlBusy = false;
+  // Same discipline for the Settings repository checklist: it is rebuilt from
+  // the team's confirmed set only when the selected team (or the accessible
+  // list itself) changes — never mid-edit by a background re-render.
+  let repositoryControlTeamId = "";
+  let repositoryControlListSignature = "";
+  let repositoryControlBusy = false;
   const provisioningTimers = new Map();
   // Pending teams from RequestTeam are polled with GetTeam until they leave
   // LIFECYCLE_STATE_PENDING (a verified Stripe webhook provisions them).
@@ -1149,6 +1172,7 @@
     setFieldError(ui.teamRepositoriesError, "");
     ui.contextRepositories.textContent = "Not loaded";
     setStep("repositories", stateValue, stateValue === "error" ? "Unavailable" : "Blocked", message);
+    renderRepositoryControl();
   }
 
   async function listAllRepositories() {
@@ -1251,17 +1275,19 @@
       const names = session.repositories.slice(0, 4).map((repository) => `${stringValue(repository.owner)}/${stringValue(repository.name)}`);
       const preview = names.join(", ") + (count > 4 ? ` and ${count - 4} more` : "");
       session.connectedRepositoryCount = count;
-      ui.contextRepositories.textContent = preview;
       ui.repositoryNote.textContent = "Your organization's current selection is pre-checked. This team keeps its own list — pick at least one.";
       // Name the repositories: a bare count can't tell the user WHICH repos
       // are on offer, which is the one thing they check here.
       setStep("repositories", "complete", `${count} connected`, `Your GitHub App reaches ${preview}. Choose which of them this team works in when you name it.`);
     } else {
       session.connectedRepositoryCount = 0;
-      ui.contextRepositories.textContent = "No accessible repositories";
       ui.repositoryNote.textContent = "No accessible repositories were returned. Grant repository access in GitHub, then refresh.";
       setStep("repositories", "blocked", "No repositories", "The installation is active, but GitHub returned no accessible repositories. Grant access in GitHub and refresh.");
     }
+    // The header line speaks for the selected TEAM when there is one; the
+    // Settings checklist may have been waiting on this list to arrive.
+    renderContextRepositories();
+    renderRepositoryControl();
   }
 
   function selectedRepositoryIdsFromForm() {
@@ -1731,6 +1757,220 @@
     }
   }
 
+  // ── Settings → Repositories ────────────────────────────────────────────────
+  // The customer's words: "I can't switch the repo here and I should be able
+  // to select multiple repos." This section is the create-flow picker pointed
+  // at an EXISTING team: accessible repositories, the team's current set
+  // pre-checked, minimum one, and an explicit save that re-provisions.
+
+  function sortedRepositoryIds(ids) {
+    return [...ids].sort((left, right) => (BigInt(left) < BigInt(right) ? -1 : BigInt(left) > BigInt(right) ? 1 : 0));
+  }
+
+  function sameRepositorySet(left, right) {
+    const a = sortedRepositoryIds(left);
+    const b = sortedRepositoryIds(right);
+    return a.length === b.length && a.every((id, index) => id === b[index]);
+  }
+
+  // The team's current repository set, as the client best knows it: the set a
+  // server-confirmed mutation recorded in this session, else the
+  // organization's durable selection — the exact set CreateTeam copies onto a
+  // team at birth, and the same signals the create picker pre-checks from
+  // (mode ALL, the durable id list, and per-repository selected_for_teams).
+  function knownTeamRepositoryIds(teamId) {
+    const recorded = session.teamRepositoryIds.get(stringValue(teamId));
+    if (Array.isArray(recorded) && recorded.length) return [...recorded];
+    const mode = launchContract.repositorySelectionMode(session.repositorySelection?.mode) || launchContract.REPOSITORY_SELECTION_MODE.SELECTED;
+    const selected = new Set(launchContract.selectedRepositoryIds(session.repositorySelection || {}));
+    return session.repositories
+      .filter((repository) => mode === launchContract.REPOSITORY_SELECTION_MODE.ALL || selected.has(String(repository.githubRepositoryId)) || repository.selectedForTeams === true)
+      .map((repository) => String(repository.githubRepositoryId));
+  }
+
+  function checkedSettingsRepositoryIds() {
+    if (!ui.settingsRepositoryList) return [];
+    return [...ui.settingsRepositoryList.querySelectorAll('input[name="settingsGithubRepositoryId"]:checked')].map((input) => input.value);
+  }
+
+  function buildRepositoryControlChecklist(currentIds) {
+    if (!ui.settingsRepositoryList) return;
+    const current = new Set(currentIds);
+    ui.settingsRepositoryList.replaceChildren();
+    session.repositories.forEach((repository) => {
+      const id = String(repository.githubRepositoryId);
+      const label = document.createElement("label");
+      label.className = "repository-option";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = "settingsGithubRepositoryId";
+      checkbox.value = id;
+      checkbox.checked = current.has(id);
+      const copy = document.createElement("span");
+      const name = document.createElement("strong");
+      const branch = document.createElement("small");
+      name.textContent = `${stringValue(repository.owner)}/${stringValue(repository.name)}`;
+      branch.textContent = `Default branch: ${stringValue(repository.defaultBranch) || "not reported"}`;
+      copy.append(name, branch);
+      label.append(checkbox, copy);
+      ui.settingsRepositoryList.append(label);
+    });
+  }
+
+  function renderRepositoryControl() {
+    if (!ui.repoSettings) return;
+    const team = selectedTeam();
+    const resetSection = (stateLabel, tone, message) => {
+      repositoryControlTeamId = "";
+      repositoryControlListSignature = "";
+      setSourceState(ui.repoSettingsState, stateLabel, tone);
+      if (ui.repoSettingsTeam) { ui.repoSettingsTeam.hidden = false; ui.repoSettingsTeam.textContent = message; }
+      if (ui.repoSettingsField) ui.repoSettingsField.hidden = true;
+      if (ui.settingsRepositoriesNote) ui.settingsRepositoriesNote.hidden = true;
+      setFieldError(ui.settingsRepositoriesError, "");
+      if (ui.settingsRepositoriesApply) ui.settingsRepositoriesApply.disabled = true;
+    };
+    if (!team) {
+      resetSection("Waiting", "", "Select a team to change which repositories it works in.");
+      return;
+    }
+    if (!session.repositoryServiceAvailable || session.repositories.length === 0) {
+      resetSection("Unavailable", "", "The accessible repository list has not loaded. Refresh repository access in GitHub setup, then return here.");
+      return;
+    }
+    const teamId = stringValue(team.id);
+    const listSignature = session.repositories.map((repository) => String(repository.githubRepositoryId)).join(",");
+    // Rebuild the checklist only when the team or the accessible list itself
+    // changes; a background re-render must never clobber an in-progress edit.
+    if (repositoryControlTeamId !== teamId || repositoryControlListSignature !== listSignature) {
+      repositoryControlTeamId = teamId;
+      repositoryControlListSignature = listSignature;
+      buildRepositoryControlChecklist(knownTeamRepositoryIds(teamId));
+      setFieldError(ui.settingsRepositoriesError, "");
+    }
+    const active = lifecycleLabel(team.state) === "active";
+    const current = knownTeamRepositoryIds(teamId);
+    if (ui.repoSettingsField) ui.repoSettingsField.hidden = false;
+    if (ui.settingsRepositoriesNote) ui.settingsRepositoriesNote.hidden = false;
+    if (ui.repoSettingsTeam) {
+      ui.repoSettingsTeam.hidden = false;
+      ui.repoSettingsTeam.textContent = active
+        ? `${stringValue(team.name) || "This team"} works in ${current.length} ${current.length === 1 ? "repository" : "repositories"} today.`
+        : `${stringValue(team.name) || "This team"} must be active before its repositories can change.`;
+    }
+    setSourceState(ui.repoSettingsState, active ? "Active" : capitalize(lifecycleLabel(team.state) || "pending"), active ? "success" : "");
+    syncRepositoryControl();
+  }
+
+  // Recompute button/checkbox states from the current checklist without
+  // rebuilding it: save stays disabled until the selection differs from the
+  // team's current set, and an empty selection can never be submitted.
+  function syncRepositoryControl() {
+    const team = selectedTeam();
+    if (!team || !ui.repoSettingsField || ui.repoSettingsField.hidden) return;
+    const manageable = lifecycleLabel(team.state) === "active" && !repositoryControlBusy;
+    const checked = checkedSettingsRepositoryIds();
+    const unchanged = sameRepositorySet(checked, knownTeamRepositoryIds(team.id));
+    if (ui.settingsRepositoryList) ui.settingsRepositoryList.querySelectorAll("input").forEach((checkbox) => { checkbox.disabled = !manageable; });
+    if (checked.length === 0) setFieldError(ui.settingsRepositoriesError, "Your team needs at least one repository.");
+    if (ui.settingsRepositoriesApply) ui.settingsRepositoriesApply.disabled = !manageable || unchanged || checked.length === 0;
+  }
+
+  function repositoryControlErrorMessage(error) {
+    if (error instanceof ApiError && error.code === "failed_precondition") {
+      const raw = stringValue(error.message).toLowerCase();
+      if (raw.includes("accessible")) {
+        return "GitHub no longer grants the deep navy app access to one of the selected repositories. Refresh the repository list in GitHub setup and choose from what it offers.";
+      }
+      if (raw.includes("at least one") || raw.includes("selection")) {
+        return "Your team needs at least one repository.";
+      }
+      return "Another change is still being applied to this team. Wait for the current provisioning run to finish, then save again.";
+    }
+    return apiErrorMessage(error, "The repositories were not changed and nothing was re-provisioned. It is safe to retry; the request uses an idempotency key.");
+  }
+
+  async function applyTeamRepositories() {
+    const team = selectedTeam();
+    if (!team || repositoryControlBusy) return;
+    const teamId = stringValue(team.id);
+    const teamName = stringValue(team.name) || "the team";
+    const target = sortedRepositoryIds(checkedSettingsRepositoryIds());
+    setFieldError(ui.settingsRepositoriesError, "");
+    if (target.length === 0) {
+      setFieldError(ui.settingsRepositoriesError, "Your team needs at least one repository.");
+      ui.settingsRepositoryList?.querySelector('input[name="settingsGithubRepositoryId"]')?.focus();
+      return;
+    }
+    if (sameRepositorySet(target, knownTeamRepositoryIds(teamId))) return;
+    repositoryControlBusy = true;
+    if (ui.settingsRepositoriesApply) {
+      ui.settingsRepositoriesApply.disabled = true;
+      ui.settingsRepositoriesApply.textContent = "Updating…";
+    }
+    syncRepositoryControl();
+    try {
+      const result = await apiRequest("update_team_repositories", {
+        id: teamId,
+        repositoryIds: target,
+        idempotencyKey: mutationKeys.for("updateTeamRepositories", `${teamId}:${target.join(",")}`)
+      });
+      const updated = result.team;
+      if (!updated || stringValue(updated.id) !== teamId || stringValue(updated.organizationId) !== session.organizationId) {
+        throw new ApiError("Team service returned a team outside the selected organization scope", 0, "invalid_response", "");
+      }
+      mutationKeys.clear("updateTeamRepositories");
+      // The server persisted the selection and enqueued the re-provision
+      // atomically; the validated set is now the team's own.
+      session.teamRepositoryIds.set(teamId, target);
+      const record = session.teams.find((candidate) => stringValue(candidate.id) === teamId);
+      if (record) Object.assign(record, updated);
+      toast(`Repositories updated for “${teamName}”. The team is re-provisioning — agents keep their memory.`, "success");
+      renderTeamList();
+      renderContextRepositories();
+      // The refreshed team record carries the new provisioning command, so
+      // the standard reload hands the workspace to the existing provisioning
+      // stream: the re-provision renders exactly like any provision.
+      await reloadTeamsAfterLifecycle();
+    } catch (error) {
+      setFieldError(ui.settingsRepositoriesError, repositoryControlErrorMessage(error));
+    } finally {
+      repositoryControlBusy = false;
+      if (ui.settingsRepositoriesApply) ui.settingsRepositoriesApply.textContent = "Update repositories";
+      renderRepositoryControl();
+    }
+  }
+
+  // The workspace header's repository line. With a team selected it names the
+  // TEAM's current set, plural-aware — one repository renders as its bare
+  // owner/name (the line the customer reads today), several as a count plus
+  // the first few names. Without a team it falls back to what the
+  // installation reaches, exactly as before.
+  function renderContextRepositories() {
+    if (!ui.contextRepositories) return;
+    const team = selectedTeam();
+    if (team && session.repositoryServiceAvailable && session.repositories.length > 0) {
+      const labels = new Map(session.repositories.map((repository) => [String(repository.githubRepositoryId), `${stringValue(repository.owner)}/${stringValue(repository.name)}`]));
+      const names = knownTeamRepositoryIds(team.id).map((id) => labels.get(id)).filter(Boolean);
+      if (names.length === 1) {
+        ui.contextRepositories.textContent = names[0];
+        return;
+      }
+      if (names.length > 1) {
+        const preview = names.slice(0, 3).join(", ") + (names.length > 3 ? ` and ${names.length - 3} more` : "");
+        ui.contextRepositories.textContent = `${names.length} repositories · ${preview}`;
+        return;
+      }
+    }
+    const count = session.repositories.length;
+    if (!session.repositoryServiceAvailable || count === 0) {
+      ui.contextRepositories.textContent = session.repositoryServiceAvailable ? "No accessible repositories" : "Not loaded";
+      return;
+    }
+    const names = session.repositories.slice(0, 4).map((repository) => `${stringValue(repository.owner)}/${stringValue(repository.name)}`);
+    ui.contextRepositories.textContent = names.join(", ") + (count > 4 ? ` and ${count - 4} more` : "");
+  }
+
   function subscriptionStatusLabel(subscription) {
     if (typeof subscription?.subscriptionStatus === "number") {
       return ["", "incomplete", "incomplete expired", "trialing", "active", "past due", "canceled", "unpaid", "paused"][subscription.subscriptionStatus] || "";
@@ -2126,7 +2366,7 @@
     const label = stateValue === "blocked" ? "Waiting" : "Unavailable";
     ["github", "repositories", "team"].forEach((name) => setStep(name, stateValue, label, message));
     ui.githubAction.disabled = true;
-    ui.repositoryRefresh.disabled = true;
+    if (ui.repositoryRefresh) ui.repositoryRefresh.disabled = true;
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
     ui.refresh.disabled = true;
@@ -2505,6 +2745,8 @@
       ui.contextTeam.textContent = "Not selected";
       ui.dashboardState.textContent = "Select a team to load its live workspace.";
       renderEngineerControl();
+      renderRepositoryControl();
+      renderContextRepositories();
       return;
     }
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
@@ -2531,6 +2773,8 @@
     session.workspaceTeamName = stringValue(team.name) || "Your team";
     renderWorkspaceHeadline();
     renderEngineerControl();
+    renderRepositoryControl();
+    renderContextRepositories();
   }
 
   // "Provisioning succeeded" is a past event, not a present state. A team can
@@ -6727,6 +6971,10 @@
       const existing = session.teams.find((team) => stringValue(team.id) === stringValue(pending.id));
       if (existing) Object.assign(existing, pending);
       else session.teams = [pending, ...session.teams];
+      // The server validated exactly this set as the new team's own durable
+      // selection; remember it so Settings and the header can speak for the
+      // team without re-deriving from org-level state.
+      session.teamRepositoryIds.set(stringValue(pending.id), sortedRepositoryIds(repositoryIds));
       renderTeamList();
       renderTeamSelector(pending.id);
       renderSettingsBilling();
@@ -6902,6 +7150,7 @@
     session.subscriptionManageable = false;
     session.creditPacks = [];
     session.creditControl = null;
+    session.teamRepositoryIds.clear();
     session.objectivesByTeam.clear();
     session.objectiveListsByTeam.clear();
     setAuthPhase("signed_out");
@@ -6923,6 +7172,7 @@
       resetSubscriptionCapacity();
       renderSettingsAccount();
       renderSettingsBilling();
+      renderRepositoryControl();
       resetApprovalView("Sign in and select a team to load pending decisions.", "Waiting");
       ui.contextOrganization.textContent = "Not selected";
       ui.contextRepositories.textContent = "Not loaded";
@@ -6957,7 +7207,12 @@
   ui.organizationSelectForm.addEventListener("submit", selectOrganization);
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
   ui.githubAction.addEventListener("click", startGitHubInstallation);
-  ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  if (ui.repositoryRefresh) ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  // The picker can only offer what the GitHub App has been granted; when the
+  // grant is one repository, a multi-select with one row reads as broken.
+  // The way to widen it lives on GitHub, so the door is beside the list.
+  if (ui.repositoryManageAccess) ui.repositoryManageAccess.addEventListener("click", startGitHubInstallation);
+  if (ui.repositoryRefreshInline) ui.repositoryRefreshInline.addEventListener("click", refreshRepositoryAccess);
   // Touching the picker clears its "needs at least one" error the moment the
   // customer acts on it.
   ui.repositoryList.addEventListener("change", () => setFieldError(ui.teamRepositoriesError, ""));
@@ -6990,6 +7245,13 @@
   if (ui.settingsEngineerDecrement) ui.settingsEngineerDecrement.addEventListener("click", () => stepEngineerInput(ui.settingsEngineerInput, -1, syncEngineerControl));
   if (ui.settingsEngineerIncrement) ui.settingsEngineerIncrement.addEventListener("click", () => stepEngineerInput(ui.settingsEngineerInput, 1, syncEngineerControl));
   if (ui.settingsEngineerApply) ui.settingsEngineerApply.addEventListener("click", applyEngineerCount);
+  // Settings → Repositories: touching a checkbox clears the min-one error and
+  // recomputes whether the selection differs from the team's current set.
+  if (ui.settingsRepositoryList) ui.settingsRepositoryList.addEventListener("change", () => {
+    setFieldError(ui.settingsRepositoriesError, "");
+    syncRepositoryControl();
+  });
+  if (ui.settingsRepositoriesApply) ui.settingsRepositoriesApply.addEventListener("click", applyTeamRepositories);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
   // The objective form left the shell when the console became the only ask.
   // Its pipeline remains for programmatic flows, so the listeners are guarded
@@ -7059,6 +7321,7 @@
   renderProgressSummary();
   renderTeamSetupPricing();
   renderEngineerControl();
+  renderRepositoryControl();
   renderConfiguration();
   const initialQuery = typeof window.deepNavyInitialQuery === "string" ? window.deepNavyInitialQuery : window.location.search;
   try { delete window.deepNavyInitialQuery; } catch { window.deepNavyInitialQuery = ""; }

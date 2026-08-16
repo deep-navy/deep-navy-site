@@ -20,6 +20,7 @@ test("the browser bundle exposes the pinned generated contract", () => {
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("request_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("suspend_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("resume_team"));
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_team_repositories"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("delete_team"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("provisioning_status"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("agents"));
@@ -245,6 +246,56 @@ test("RequestTeam carries the team's own repository choice as validated int64 id
     );
     assert.equal(touchedNetwork, false);
   }
+});
+
+test("UpdateTeamRepositories replaces an existing team's own selection and returns the refreshed team", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      return new Response(JSON.stringify({
+        team: {
+          id: "team-1", organizationId: "org-1", name: "Product engineering", state: "LIFECYCLE_STATE_ACTIVE",
+          provisioning: { teamId: "team-1", provisioningState: "PROVISIONING_STATE_QUEUED", operationType: "PROVISIONING_OPERATION_PROVISION", desiredGeneration: "2" }
+        }
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const result = await api.request("update_team_repositories", {
+    id: "team-1",
+    repositoryIds: ["101", "102"],
+    idempotencyKey: "update-repos-1"
+  }, { accessToken: "access-token", requestId: "update-repos-request" });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/UpdateTeamRepositories");
+  assert.deepEqual(calls[0].body, { id: "team-1", repositoryIds: ["101", "102"], idempotencyKey: "update-repos-1" });
+  // The response is the team carrying the refreshed re-provision command, so
+  // the workspace's provisioning stream can take over immediately.
+  assert.equal(result.team.state, 2);
+  assert.equal(result.team.provisioning.desiredGeneration, 2n);
+
+  // A team id and idempotency key are required, and a malformed repository id
+  // is rejected at the client boundary — none of these reach the network.
+  let touchedNetwork = false;
+  const rejecting = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async () => { touchedNetwork = true; throw new Error("must not run"); }
+  });
+  await assert.rejects(
+    rejecting.request("update_team_repositories", { id: "", repositoryIds: ["101"], idempotencyKey: "k" }, { accessToken: "access-token", requestId: "r" }),
+    /id is required/
+  );
+  await assert.rejects(
+    rejecting.request("update_team_repositories", { id: "team-1", repositoryIds: ["101"], idempotencyKey: "" }, { accessToken: "access-token", requestId: "r" }),
+    /idempotencyKey is required/
+  );
+  await assert.rejects(
+    rejecting.request("update_team_repositories", { id: "team-1", repositoryIds: ["0"], idempotencyKey: "k" }, { accessToken: "access-token", requestId: "r" }),
+    /repositoryIds is invalid/
+  );
+  assert.equal(touchedNetwork, false);
 });
 
 test("SetTeamEngineerCount changes an existing team's engineering capacity and decodes the settlement", async () => {

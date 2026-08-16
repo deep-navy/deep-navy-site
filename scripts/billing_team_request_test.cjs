@@ -81,7 +81,12 @@ test("the first-run screen is name + repositories: the name is the hero, the pic
   assert.ok(teamForm, "the name form must exist");
   assert.deepEqual(teamForm[0].match(/<(?:input|textarea|select)\b/g), ["<input"], "the name field is the only static input in the team form");
   assert.match(teamForm[0], /name="teamName"/);
-  assert.deepEqual(teamForm[0].match(/<button\b/g), ["<button"], "one button carries the create action");
+  // One PRIMARY action. Inline text-buttons (class="button-link") are part of
+  // sentences - "Add repositories on GitHub", "refresh the list" - and do not
+  // compete with the create action, so the pin counts real buttons only.
+  const realButtons = (teamForm[0].match(/<button\b[^>]*>/g) || []).filter((tag) => !tag.includes("button-link"));
+  assert.equal(realButtons.length, 1, "one primary button carries the create action");
+  assert.match(realButtons[0], /type="submit"/);
   // The picker always renders with the form — not only when something blocks.
   assert.match(teamForm[0], /<fieldset class="team-repos" data-team-repositories>/);
   assert.match(teamForm[0], /<legend>Which repositories should it work in\?<\/legend>/);

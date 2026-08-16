@@ -1235,3 +1235,14 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .lp-btn-github { background: var(--brand-github-bg); color: var(--brand-github-fg); border: 1px solid var(--brand-github-bg); gap: .6rem; }
 .lp-btn-github:hover { background: var(--brand-github-bg-hover); border-color: var(--brand-github-bg-hover); }
 .lp-btn-github .github-mark { flex: none; }
+
+/* Inline text-buttons: actions that read as part of a sentence. */
+.button-link { background: none; border: 0; padding: 0; font: inherit; color: var(--accent-text); text-decoration: underline; cursor: pointer; }
+.button-link:hover { color: var(--accent); }
+.repo-access-line { margin-top: .5rem; }
+
+/* Settings → Repositories: the create-flow picker restyled for a settings
+   card (the card header already says "Repositories", so no top rule), and
+   the honest re-provision line sits directly under the save button. */
+.settings-card .settings-repos { margin: 0; padding: 0; border: 0; }
+.settings-repos-note { margin-top: .55rem; }

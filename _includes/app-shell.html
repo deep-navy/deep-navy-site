@@ -127,6 +127,13 @@
               <p class="form-help form-help-neutral" id="team-repositories-help" data-repository-note>Loading the repositories your GitHub App can reach…</p>
               <div class="repository-list" data-repository-list role="group" aria-label="Accessible repositories" aria-describedby="team-repositories-help team-repositories-error"></div>
               <p class="form-error" id="team-repositories-error" data-team-repositories-error role="alert" hidden></p>
+              <!-- The list can only ever show what the GitHub App has been
+                   granted. When that grant is narrow, the fix lives on GitHub,
+                   not here - so the door to GitHub sits beside the list
+                   instead of leaving a one-repo picker looking broken. -->
+              <p class="form-help form-help-neutral repo-access-line">Only repositories the deep navy app can access are listed.
+                <button class="button-link" type="button" data-repository-manage-access>Add repositories on GitHub</button>
+                — then <button class="button-link" type="button" data-repository-refresh-inline>refresh the list</button>.</p>
             </fieldset>
             <div class="team-price">
               <div>
@@ -523,6 +530,25 @@
               <p class="form-help form-help-neutral" data-settings-engineer-note hidden>Increasing charges the prorated remainder now; decreasing credits your next invoice.</p>
               <p class="form-error" data-settings-engineer-error role="alert" hidden></p>
               <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-engineer-apply disabled>Update engineering capacity</button></div>
+            </article>
+            <!-- Repositories: the same multi-select the create flow uses -
+                 every repository the installation reaches, this TEAM's current
+                 selection pre-checked, minimum one. Saving replaces the team's
+                 own durable selection and re-provisions it (the seeded roster,
+                 token scope, webhook fencing, and merge gates all follow), so
+                 the button says exactly that and one honest line under it says
+                 what survives and what is interrupted. -->
+            <article class="app-dashboard settings-card" data-repo-settings aria-labelledby="settings-repos-title">
+              <div class="app-dashboard-header"><h3 id="settings-repos-title">Repositories</h3><span class="data-source-badge" data-repo-settings-state>Waiting</span></div>
+              <p class="form-help form-help-neutral" data-repo-settings-team>Select a team to change which repositories it works in.</p>
+              <fieldset class="team-repos settings-repos" data-repo-settings-field hidden>
+                <legend class="visually-hidden">Which repositories should this team work in?</legend>
+                <p class="form-help form-help-neutral" id="settings-repositories-help" data-settings-repository-note>Every repository the deep navy GitHub App can reach. This team's current selection is checked — keep at least one.</p>
+                <div class="repository-list" data-settings-repository-list role="group" aria-label="Accessible repositories" aria-describedby="settings-repositories-help settings-repositories-error"></div>
+                <p class="form-error" id="settings-repositories-error" data-settings-repositories-error role="alert" hidden></p>
+              </fieldset>
+              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-repositories-apply disabled>Update repositories</button></div>
+              <p class="form-help form-help-neutral settings-repos-note" data-settings-repositories-note hidden>Saving re-provisions the team. Agents keep their memory; work in progress is interrupted.</p>
             </article>
           </div>
         </section>

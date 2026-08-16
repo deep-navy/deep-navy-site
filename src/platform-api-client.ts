@@ -58,6 +58,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "set_team_engineer_count",
   "suspend_team",
   "resume_team",
+  "update_team_repositories",
   "delete_team",
   "provisioning_status",
   "agents",
@@ -475,6 +476,17 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await teams.suspendTeam({ id: textField(payload, "id"), reason: textField(payload, "reason", false) }, callOptions);
         case "resume_team":
           return await teams.resumeTeam({ id: textField(payload, "id") }, callOptions);
+        case "update_team_repositories":
+          // The team's own repository selection replaced in full. The server
+          // revalidates every id against the active installation and enqueues
+          // a re-provision; the empty list is rejected server-side and the UI
+          // never submits it, so the ids ride the same strict int64 list the
+          // create path uses.
+          return await teams.updateTeamRepositories({
+            id: textField(payload, "id"),
+            repositoryIds: int64ListField(payload.repositoryIds, "repositoryIds"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
         case "delete_team":
           return await teams.deleteTeam({ id: textField(payload, "id") }, callOptions);
         case "provisioning_status":
