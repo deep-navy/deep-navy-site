@@ -316,3 +316,26 @@ test("every test file in scripts/ is wired into npm test", () => {
     .filter((file) => !command.includes(`scripts/${file}`));
   assert.deepEqual(unwired, [], `these test files never run:\n${unwired.join("\n")}`);
 });
+
+// A data-* hook in the shell is a promise that something acts on it. When one
+// is referenced nowhere at all it is either a control nothing wired up - the
+// defect that shipped buttons which did nothing when clicked - or a leftover
+// that makes the next person searching for a live hook find a dead one.
+// Scripts, stylesheets and the suite itself all count as readers: a test that
+// pins a hook as the anchor for a piece of copy is depending on it just as
+// surely as a click handler. The rule is only that SOMETHING looks for it.
+test("every data hook in the shell is read by something", () => {
+  const { readdirSync } = require("node:fs");
+  const read = (dir, ext) => readdirSync(dir).filter((f) => f.endsWith(ext))
+    .map((f) => readFileSync(`${dir}/${f}`, "utf8")).join("\n");
+  const consumers = [read("assets/js", ".js"), read("assets/css", ".css"), read("scripts", "_test.cjs"),
+    readFileSync("_layouts/app.html", "utf8")].join("\n");
+  const orphans = [];
+  for (const hook of new Set([...shell.matchAll(/\bdata-([a-z0-9-]+)[=\s>]/g)].map((m) => m[1]))) {
+    const camel = hook.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+    const referenced = new RegExp(`data-${hook}\\b`).test(consumers)
+      || new RegExp(`dataset\\.${camel}\\b`).test(consumers);
+    if (!referenced) orphans.push(`data-${hook}`);
+  }
+  assert.deepEqual(orphans, [], `nothing reads these hooks:\n${orphans.join("\n")}`);
+});

@@ -41,6 +41,9 @@ test("onboarding has no Subscription step, and reads as sign in then create team
   // stays machine-readable (app.js still writes each step's state) but it is
   // background now: one visible fact line, no chips to review and no wizard.
   assert.match(shell, /data-progress-auto-organization/);
+  // The GitHub App step auto-connects exactly like its two siblings; pinning
+  // only two of the three left the middle one readable by nothing.
+  assert.match(shell, /data-progress-auto-github/);
   assert.match(shell, /data-progress-auto-repositories/);
   assert.match(shell, /connect automatically|connected automatically/i);
   // The organization is auto-derived, not a manual "establish" form step.
