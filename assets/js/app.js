@@ -34,6 +34,7 @@
     organizationSelectSubmit: document.querySelector("[data-organization-select] button"),
     organizationSwitch: document.querySelector("[data-organization-switch]"),
     organizationSwitchInput: document.querySelector("[data-organization-switch-input]"),
+    organizationConnectOther: document.querySelector("[data-organization-connect-other]"),
     profileRetry: document.querySelector("[data-profile-retry]"),
     githubAction: document.querySelector("[data-github-action]"),
     repositoryList: document.querySelector("[data-repository-list]"),
@@ -6687,7 +6688,11 @@
       await completePendingGitHubInstallation();
       return;
     }
-    ui.githubAction.disabled = true;
+    // Called from the GitHub card's own action AND from "use a different
+    // organization" in the identity chip, so guard rather than assume which
+    // control is on screen.
+    if (ui.githubAction) ui.githubAction.disabled = true;
+    if (ui.organizationConnectOther) ui.organizationConnectOther.disabled = true;
     try {
       const idempotencyKey = mutationKeys.for("githubStart", session.organizationId);
       const result = await apiRequest("github_install_start", { organizationId: session.organizationId, idempotencyKey });
@@ -6702,8 +6707,9 @@
       }
       window.location.assign(destination);
     } catch (error) {
-      toast(apiErrorMessage(error, "The API could not start the GitHub installation. No installation completion was assumed."), "error");
-      ui.githubAction.disabled = false;
+      toast(apiErrorMessage(error, "GitHub could not be reached to connect an organization. Nothing changed."), "error");
+      if (ui.githubAction) ui.githubAction.disabled = false;
+      if (ui.organizationConnectOther) ui.organizationConnectOther.disabled = false;
     }
   }
 
@@ -7365,6 +7371,11 @@
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   if (ui.repositoryRefresh) ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
   if (ui.organizationSwitchInput) ui.organizationSwitchInput.addEventListener("change", switchOrganization);
+  // The install flow is how a customer connects an organization deep navy has
+  // never seen - GitHub asks which account to install on. Distinct from the
+  // manage link beside the repository list, which only widens access within
+  // the installation that already exists.
+  if (ui.organizationConnectOther) ui.organizationConnectOther.addEventListener("click", startGitHubInstallation);
   // The picker can only offer what the customer has granted; when the grant is
   // one repository, a multi-select with one row reads as broken. Widening it
   // happens on GitHub, so the door is beside the list — and it is an ordinary

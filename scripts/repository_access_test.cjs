@@ -514,3 +514,18 @@ test("the first-run screen can change organization when there is a choice", () =
   assert.match(app, /memberships\.length < 2/);
   assert.match(app, /organizationCoordinator\.select\(organizationId\)/);
 });
+
+// "Change the org" means two different things and the screen must serve both:
+// switching between deep navy organizations you already belong to, and
+// pointing deep navy at a GitHub organization it has never seen - which only
+// the install flow can do. The second is always available; a customer with one
+// organization and no teams could otherwise never connect another account.
+test("the first-run screen can connect a different GitHub organization", () => {
+  const shell = readFileSync("_includes/app-shell.html", "utf8");
+  const app = readFileSync("assets/js/app.js", "utf8");
+  assert.match(shell, /data-organization-connect-other/);
+  assert.match(app, /organizationConnectOther.*addEventListener\("click", startGitHubInstallation\)/s);
+  // It is NOT hidden behind the multi-membership condition.
+  const chip = shell.match(/<div class="user-org">[\s\S]*?<\/div>\s*<\/div>/);
+  assert.ok(chip && !/data-organization-connect-other[^>]*hidden/.test(chip[0]), "the install door is always available");
+});

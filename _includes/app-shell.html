@@ -64,9 +64,20 @@
                this is the only screen a customer with no team can reach:
                Settings lives inside a workspace, and a workspace needs a team.
                Rendered only when this account belongs to more than one. -->
-          <div class="user-org" data-organization-switch hidden>
-            <label class="visually-hidden" for="organization-switch">Organization</label>
-            <select id="organization-switch" data-organization-switch-input></select>
+          <div class="user-org">
+            <!-- Two different things a customer means by "change the org":
+                 switch between deep navy organizations they already belong to
+                 (only when there is more than one), and point deep navy at a
+                 DIFFERENT GitHub organization, which means installing the app
+                 there. The second is always available, because it is the only
+                 way to reach an account this one has never been connected to -
+                 and this screen is the only surface a customer without a team
+                 can reach at all. -->
+            <div data-organization-switch hidden>
+              <label class="visually-hidden" for="organization-switch">Organization</label>
+              <select id="organization-switch" data-organization-switch-input></select>
+            </div>
+            <button class="button-link" type="button" data-organization-connect-other>Use a different GitHub organization</button>
           </div>
         </div>
 
