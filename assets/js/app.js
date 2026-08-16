@@ -6716,25 +6716,45 @@
   async function completePendingGitHubInstallation() {
     const pending = readGitHubCompletion();
     if (!pending || session.completingGitHub || !session.accessToken || !session.organizationId) return;
-    if (pending.organizationId && pending.organizationId !== session.organizationId) {
-      setStep("github", "error", "Wrong organization", "The installation was started for another organization available to this account. Select that organization and retry.");
-      return;
-    }
+    // The handoff belongs to the workspace it started in, so that is the one to
+    // finish it against - not whichever workspace happens to be current now.
+    // They differ whenever the page reloads after the API has already claimed
+    // the installation into a newly connected organization and made it current,
+    // and refusing to finish there stranded a completed installation behind
+    // "Wrong organization". Completion is idempotent, so finishing an already
+    // claimed handoff returns the same answer.
+    const flowOrganizationId = stringValue(pending.organizationId) || session.organizationId;
     session.completingGitHub = true;
     ui.githubAction.disabled = true;
     ui.githubAction.textContent = "Completing…";
     setStep("github", "loading", "Completing", "Verifying the one-time OAuth authorization and installation with GitHub. No callback credential will be displayed or retained after completion.");
     try {
       const result = await apiRequest("github_install_complete", {
-        organizationId: session.organizationId,
+        organizationId: flowOrganizationId,
         installationId: pending.installationId,
         setupAction: pending.setupAction,
         stateToken: pending.stateToken,
         idempotencyKey: pending.idempotencyKey,
         authorizationCode: pending.authorizationCode
       });
-      if (stringValue(result.installation?.organizationId) !== session.organizationId || !launchContract.githubInstallationActive(result.installation)) {
+      const landedOrganizationId = stringValue(result.installation?.organizationId);
+      if (!landedOrganizationId || !launchContract.githubInstallationActive(result.installation)) {
         throw new ApiError("The API did not confirm an active GitHub installation", 0, "invalid_response", "");
+      }
+      // One GitHub organization is one workspace, so installing the App on a
+      // GitHub organization this account has not connected before lands in a
+      // workspace of its own - which the API has already made current. Requiring
+      // the answer to name the workspace the customer started from rejected that
+      // as an invalid response and left "use a different GitHub organization"
+      // looking broken even once the API supported it.
+      if (landedOrganizationId !== session.organizationId) {
+        clearGitHubFlow();
+        const account = stringValue(result.installation?.accountLogin);
+        toast(account ? `${account} is connected. You are now in its workspace.` : "The organization is connected. You are now in its workspace.", "success");
+        const state = await organizationCoordinator.load();
+        renderProfile(state.profile);
+        await renderOrganizationState(state);
+        return;
       }
       session.githubInstalled = true;
       setGitHubInstallation(result.installation);

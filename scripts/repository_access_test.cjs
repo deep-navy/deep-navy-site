@@ -529,3 +529,39 @@ test("the first-run screen can connect a different GitHub organization", () => {
   const chip = shell.match(/<div class="user-org">[\s\S]*?<\/div>\s*<\/div>/);
   assert.ok(chip && !/data-organization-connect-other[^>]*hidden/.test(chip[0]), "the install door is always available");
 });
+
+// Connecting a GitHub organization the account has not connected before lands
+// in a workspace of its own, because one GitHub organization is one workspace.
+// The app used to demand that the API's answer name the workspace the customer
+// started from and threw a correct answer away as "invalid_response", so the
+// door to a different organization opened onto an error either way.
+test("finishing an installation accepts the workspace it landed in", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  const handler = source.slice(
+    source.indexOf("async function completePendingGitHubInstallation"),
+    source.indexOf("async function manageBilling")
+  );
+  assert.ok(handler.length > 0, "completePendingGitHubInstallation is gone");
+
+  // The answer is judged on being an active installation, never on naming the
+  // workspace that happened to be current.
+  assert.doesNotMatch(
+    handler,
+    /stringValue\(result\.installation\?\.organizationId\) !== session\.organizationId/,
+    "a correct installation in a newly connected workspace is rejected as invalid"
+  );
+  assert.match(handler, /const landedOrganizationId = stringValue\(result\.installation\?\.organizationId\)/);
+  // Landing elsewhere reloads the profile so the customer is in that workspace,
+  // rather than being told it worked while still looking at the old one.
+  assert.match(handler, /if \(landedOrganizationId !== session\.organizationId\)/);
+  assert.match(handler, /await organizationCoordinator\.load\(\)/);
+  assert.match(handler, /await renderOrganizationState\(state\)/);
+
+  // The handoff is finished against the workspace it started in; a reload after
+  // the API already claimed it must not strand it behind "Wrong organization".
+  assert.match(handler, /const flowOrganizationId = stringValue\(pending\.organizationId\)/);
+  assert.match(handler, /organizationId: flowOrganizationId/);
+  // Match the dead end itself, not the word: the comment above the fix
+  // explains what "Wrong organization" used to do and is not the defect.
+  assert.doesNotMatch(handler, /setStep\("github", "error", "Wrong organization"/);
+});
