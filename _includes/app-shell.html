@@ -131,12 +131,25 @@
                    and the grant is changed on GitHub, not here - so the door
                    to GitHub sits beside the list instead of leaving a one-repo
                    picker looking broken. It is a REAL link to this
-                   installation's own settings page (app.js fills the
-                   org-aware href once the API confirms the installation), not
-                   a button that restarts the install flow. -->
+                   installation's own settings page (app.js prefers the URL
+                   GitHub itself named and falls back to building an org-aware
+                   one), not a button that restarts the install flow.
+
+                   On the approval clause: an org member who is not a GitHub
+                   organization owner is only offered a REQUEST over there, not
+                   a change. We cannot detect that here - the deep navy
+                   membership role (owner/admin/member) is OUR role and says
+                   nothing about who administers the GitHub account, and the
+                   API tells us nothing about the signed-in person's GitHub
+                   permissions. So the sentence is written to be true either
+                   way: an owner reads a clause that does not apply to them, a
+                   member is told what will actually happen instead of being
+                   promised a change they cannot make. Do not "improve" this
+                   into a promise. -->
               <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
                 <a class="button-link" data-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
-                — this list updates when you come back, or <button class="button-link" type="button" data-repository-refresh-inline>refresh it now</button>.</p>
+                — if you are not an owner of that account, GitHub will ask an owner to approve your choice.
+                This list updates when you come back, or <button class="button-link" type="button" data-repository-refresh-inline>refresh it now</button>.</p>
             </fieldset>
             <div class="team-price">
               <div>
@@ -556,7 +569,8 @@
                    needs the way to GitHub and the way to retry. -->
               <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
                 <a class="button-link" data-settings-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
-                — this list updates when you come back, or <button class="button-link" type="button" data-settings-repository-refresh>refresh it now</button>.</p>
+                — if you are not an owner of that account, GitHub will ask an owner to approve your choice.
+                This list updates when you come back, or <button class="button-link" type="button" data-settings-repository-refresh>refresh it now</button>.</p>
               <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-repositories-apply disabled>Update repositories</button></div>
               <p class="form-help form-help-neutral settings-repos-note" data-settings-repositories-note hidden>Saving re-provisions the team. Agents keep their memory; work in progress is interrupted.</p>
             </article>

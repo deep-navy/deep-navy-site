@@ -1182,6 +1182,16 @@
   // restarts the install flow, which is what it used to be and which sent
   // people through an installation they had already completed.
   //
+  // GitHub itself names that page. Every installation-bearing response carries
+  // the installation's own html_url, so when the API forwards it as manageUrl
+  // that value is authoritative: it is the page GitHub built for THIS
+  // installation, on whatever account shape GitHub actually used. Prefer it.
+  //
+  // Construction below is the fallback, not the source of truth. It still has
+  // to be right — an installation confirmed before the API carried the field
+  // has nothing else — but it is only ever our guess at what GitHub already
+  // told us, so it never overrides a supplied URL.
+  //
   // Org-owned installations live under the organization; personal ones under
   // the signed-in account. Until the API confirms an installation, the honest
   // destination is the plain installations list, which is valid for whoever is
@@ -1193,8 +1203,19 @@
     return /^[1-9][0-9]{0,18}$/.test(raw) ? raw : "";
   }
 
+  // A server-supplied URL is still an outbound handoff, so it goes through the
+  // same trusted-host discipline as every other one. Anything that is not an
+  // https github.com URL is discarded and we fall back to construction rather
+  // than putting an unvetted destination behind the customer's click.
+  function githubInstallationManageUrl(installation) {
+    const supplied = stringValue(installation?.manageUrl) || stringValue(installation?.manage_url);
+    return supplied ? validatedRedirect(supplied, ["github.com"]) : "";
+  }
+
   function githubInstallationSettingsUrl() {
     const installation = session.githubInstallation;
+    const supplied = githubInstallationManageUrl(installation);
+    if (supplied) return supplied;
     const id = githubInstallationIdentifier(installation);
     if (!id) return githubInstallationsUrl;
     const login = stringValue(installation?.accountLogin) || stringValue(installation?.account_login);
@@ -1225,6 +1246,18 @@
   // still shows the old repositories is what made people reload the app by
   // hand, so record the departure and refetch when they return. Only a real
   // departure arms it — an ordinary tab switch must not fire a request.
+  //
+  // Why this is the ceiling, not a shortcut. GitHub does tell the platform:
+  // installation_repositories is delivered to the App the moment the grant
+  // changes. But nothing carries that to this page. Every live stream the
+  // client has is scoped to ONE team — activity, conversation, provisioning —
+  // and the repository grant belongs to the organization's installation, which
+  // no team owns and no stream covers. There is no organization-scoped stream
+  // to listen on, so inventing a poll would be spending requests to fake a
+  // liveness we do not have. Returning to the tab is the honest signal: it is
+  // the exact moment the stale list is about to be read. If an
+  // organization-scoped stream ever ships, this is the code that should be
+  // replaced by it — the guard test on the client's streams will say so.
   function markGitHubAccessDeparture() {
     session.githubAccessDepartedAt = Date.now();
   }
