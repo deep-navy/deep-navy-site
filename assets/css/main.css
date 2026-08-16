@@ -1249,3 +1249,9 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    the honest re-provision line sits directly under the save button. */
 .settings-card .settings-repos { margin: 0; padding: 0; border: 0; }
 .settings-repos-note { margin-top: .55rem; }
+
+/* The organization sits in the identity chip: part of who you are here, and
+   changeable from the one screen a customer without a team can reach. */
+.user-org { margin-left: auto; }
+.user-org select { background: var(--surface-sunken); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem .5rem; font: inherit; font-size: .82rem; max-width: 15rem; }
+.user-org select:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: 2px; }

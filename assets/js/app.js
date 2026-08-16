@@ -32,6 +32,8 @@
     organizationSelectForm: document.querySelector("[data-organization-select]"),
     organizationSelectInput: document.querySelector("[data-organization-select] select"),
     organizationSelectSubmit: document.querySelector("[data-organization-select] button"),
+    organizationSwitch: document.querySelector("[data-organization-switch]"),
+    organizationSwitchInput: document.querySelector("[data-organization-switch-input]"),
     profileRetry: document.querySelector("[data-profile-retry]"),
     githubAction: document.querySelector("[data-github-action]"),
     repositoryList: document.querySelector("[data-repository-list]"),
@@ -953,6 +955,7 @@
     renderSettingsAccount();
     renderSettingsBilling();
     ui.contextOrganization.textContent = organizationName;
+    renderOrganizationSwitch(state);
     // The chip shows the concrete organization, not an abstract "Ready".
     setStep("organization", "complete", shortLabel(organizationName), `${organizationName} is connected as your organization for this session.`);
     ui.organizationDependent.hidden = false;
@@ -1052,6 +1055,47 @@
       ui.organizationBootstrapSubmit.disabled = false;
     } finally {
       ui.organizationBootstrapSubmit.textContent = "Create organization";
+    }
+  }
+
+  // The identity chip carries the organization switcher, because the first-run
+  // screen is the only surface a customer without a team can reach - Settings
+  // lives inside a workspace and a workspace needs a team, so an account in
+  // two organizations could otherwise never change which one it was creating
+  // teams for. Only rendered when there is genuinely a choice to make.
+  function renderOrganizationSwitch(state) {
+    if (!ui.organizationSwitch || !ui.organizationSwitchInput) return;
+    const memberships = Array.isArray(state?.memberships) ? state.memberships : [];
+    const currentId = stringValue(state?.organization?.id);
+    if (memberships.length < 2) {
+      ui.organizationSwitch.hidden = true;
+      return;
+    }
+    ui.organizationSwitchInput.replaceChildren();
+    memberships.forEach((membership) => {
+      const option = document.createElement("option");
+      option.value = stringValue(membership.id);
+      option.textContent = stringValue(membership.name) || stringValue(membership.id);
+      option.selected = option.value === currentId;
+      ui.organizationSwitchInput.append(option);
+    });
+    ui.organizationSwitchInput.disabled = false;
+    ui.organizationSwitch.hidden = false;
+  }
+
+  async function switchOrganization() {
+    const organizationId = stringValue(ui.organizationSwitchInput.value);
+    if (!organizationId || organizationId === session.organizationId) return;
+    ui.organizationSwitchInput.disabled = true;
+    setStep("organization", "loading", "Switching", "Confirming this membership with the API.");
+    try {
+      const state = await organizationCoordinator.select(organizationId);
+      await renderOrganizationState(state);
+    } catch (error) {
+      toast(organizationErrorMessage(error, "That organization could not be selected. Nothing changed."), "error");
+      // Put the control back on the organization that is actually current.
+      ui.organizationSwitchInput.value = session.organizationId;
+      ui.organizationSwitchInput.disabled = false;
     }
   }
 
@@ -7320,6 +7364,7 @@
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   if (ui.repositoryRefresh) ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  if (ui.organizationSwitchInput) ui.organizationSwitchInput.addEventListener("change", switchOrganization);
   // The picker can only offer what the customer has granted; when the grant is
   // one repository, a multi-select with one row reads as broken. Widening it
   // happens on GitHub, so the door is beside the list — and it is an ordinary

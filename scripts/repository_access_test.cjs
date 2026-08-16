@@ -495,3 +495,22 @@ test("the link's destination tracks only an active, in-scope installation", () =
   assert.match(setter, /session\.githubInstallation = installation \|\| null;/);
   assert.match(setter, /renderRepositoryManageLinks\(\);/);
 });
+
+// Settings lives inside a workspace and a workspace needs a team, so a
+// customer with zero teams can reach exactly one screen. If their account
+// belongs to more than one organization, that screen has to carry the
+// switcher or the organization is unchangeable - which is precisely the dead
+// end a customer hit.
+test("the first-run screen can change organization when there is a choice", () => {
+  const shell = readFileSync("_includes/app-shell.html", "utf8");
+  const app = readFileSync("assets/js/app.js", "utf8");
+  assert.match(shell, /data-organization-switch\b/);
+  assert.match(shell, /data-organization-switch-input/);
+  // Inside the identity chip, not floating elsewhere on the screen.
+  const chip = shell.match(/<div class="user-summary"[\s\S]*?<\/div>\s*<\/div>/);
+  assert.ok(chip && /data-organization-switch/.test(chip[0]), "the switcher belongs to the identity chip");
+  // Only when there is genuinely a choice, and it goes through the same
+  // server-confirmed selection path as the first-time chooser.
+  assert.match(app, /memberships\.length < 2/);
+  assert.match(app, /organizationCoordinator\.select\(organizationId\)/);
+});

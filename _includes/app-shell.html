@@ -59,6 +59,15 @@
         <div class="user-summary" data-user-summary hidden>
           <span class="user-avatar" data-user-initial aria-hidden="true">D</span>
           <div><strong data-user-name></strong><span data-user-login></span></div>
+          <!-- The organization is part of who you are on this screen, so it
+               belongs in the identity chip - and it is changeable HERE because
+               this is the only screen a customer with no team can reach:
+               Settings lives inside a workspace, and a workspace needs a team.
+               Rendered only when this account belongs to more than one. -->
+          <div class="user-org" data-organization-switch hidden>
+            <label class="visually-hidden" for="organization-switch">Organization</label>
+            <select id="organization-switch" data-organization-switch-input></select>
+          </div>
         </div>
 
         <!-- The connection model stays machine-readable for app.js and for
