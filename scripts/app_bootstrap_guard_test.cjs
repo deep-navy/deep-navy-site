@@ -304,3 +304,15 @@ test("every property access on a ui element the shell no longer ships is guarded
   }
   assert.deepEqual(problems, [], `${problems.length} unguarded null dereference(s):\n${problems.join("\n")}`);
 });
+
+// A test file that npm test does not name never runs, and a test that never
+// runs is indistinguishable from one that does not exist: two of these sat in
+// scripts/ for weeks, one of them failing against copy that had since changed.
+test("every test file in scripts/ is wired into npm test", () => {
+  const { readdirSync } = require("node:fs");
+  const command = JSON.parse(readFileSync("package.json", "utf8")).scripts.test;
+  const unwired = readdirSync("scripts")
+    .filter((file) => file.endsWith("_test.cjs"))
+    .filter((file) => !command.includes(`scripts/${file}`));
+  assert.deepEqual(unwired, [], `these test files never run:\n${unwired.join("\n")}`);
+});

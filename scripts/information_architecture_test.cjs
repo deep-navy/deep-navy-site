@@ -16,16 +16,22 @@ const requiredDestinations = [
   ["Resources", "/blog/"],
   ["Docs", "/docs/"],
   ["Security", "/security/"],
-  ["Sign in", "/app/"]
+  // The sign-in door carries ?signin=1. A bare /app/ link bounces a signed-out
+  // visitor straight back to the homepage, so it is not a way in at all.
+  ["Sign in", "/app/?signin=1"]
 ];
 
 test("desktop and mobile navigation expose the complete customer information architecture", () => {
   for (const [label, path] of requiredDestinations) {
-    const occurrences = header.match(new RegExp(`href=\\"\\{\\{ '${path.replaceAll("/", "\\/")}' \\| relative_url \\}\\}\\"`, "g")) || [];
+    // Escape the query separator too: unescaped, "?" makes the slash before
+    // it optional and the pattern stops matching the link it is looking for.
+    const pattern = path.replaceAll("/", "\\/").replaceAll("?", "\\?");
+    const occurrences = header.match(new RegExp(`href=\\"\\{\\{ '${pattern}' \\| relative_url \\}\\}\\"`, "g")) || [];
     const expected = label === "Sign in" ? 3 : 2;
     assert.ok(occurrences.length >= expected, `${label} must be reachable in desktop and mobile navigation`);
   }
-  assert.match(header, />Start onboarding</);
+  assert.match(header, />Continue with GitHub</);
+  assert.match(header, />Sign in with GitHub</);
 });
 
 test("footer keeps product, solution, customer, resource, documentation, and trust paths reachable", () => {
