@@ -47,3 +47,27 @@ test("callback query is captured non-enumerably and removed from address history
   assert.equal(replacements[0].url, "/deep-navy-site/app/github/callback/#continue");
   assert.doesNotMatch(replacements[0].url, /code|state|\?/);
 });
+
+// /app/github/callback/ stamps data-github-callback on every load, not only the
+// one that carries GitHub's handoff. Once the one-time parameters were stripped
+// a plain reload was still treated as a callback with nothing to parse, so it
+// answered "Sign-in was not completed", restarted the GitHub round trip, and
+// came back to the same bare URL - a loop with no exit but clearing site data.
+test("a callback page load with no handoff leaves instead of failing", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  assert.match(source, /const carriesCallback = callbackParams\.has\("code"\) \|\| callbackParams\.has\("state"\)/);
+  assert.match(source, /callbackParams\.has\("installation_id"\) \|\| callbackParams\.has\("setup_action"\)/);
+  // Nothing to receive: go to the app, which decides workspace or homepage.
+  assert.match(
+    source,
+    /if \(document\.body\.dataset\.githubCallback === "true" && !carriesCallback\) \{\s*\n\s*window\.location\.replace\(new URL\("\.\.\/\.\.\/", window\.location\.href\)/,
+    "a bare callback load must leave the page rather than report a failed sign-in"
+  );
+  // ...and the stamp alone no longer makes a load a callback.
+  assert.doesNotMatch(
+    source,
+    /const githubCallback = document\.body\.dataset\.githubCallback === "true" \|\|/,
+    "the page stamp alone still marks any load as a callback"
+  );
+  assert.match(source, /const githubCallback = \(document\.body\.dataset\.githubCallback === "true" && carriesCallback\)/);
+});

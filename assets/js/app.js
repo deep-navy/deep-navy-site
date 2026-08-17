@@ -7532,7 +7532,21 @@
   // button again. Anyone who lands here signed out without having asked to
   // sign in is sent back to the homepage, so there is no login page at all.
   const signInRequested = callbackParams.get("signin") === "1";
-  const githubCallback = document.body.dataset.githubCallback === "true" || callbackParams.has("installation_id") || callbackParams.has("setup_action");
+  // The callback page carries data-github-callback on EVERY load, so once its
+  // one-time parameters have been stripped a reload was still treated as a
+  // callback - with nothing to parse. That answered every reload with "sign-in
+  // was not completed" and restarted the GitHub round trip, which came back to
+  // the same bare URL: a loop with no way out but clearing site data. The page
+  // exists only to receive a handoff, so with no handoff to receive there is
+  // nothing to do here.
+  const carriesCallback = callbackParams.has("code") || callbackParams.has("state")
+    || callbackParams.has("installation_id") || callbackParams.has("setup_action");
+  if (document.body.dataset.githubCallback === "true" && !carriesCallback) {
+    window.location.replace(new URL("../../", window.location.href).toString());
+    return;
+  }
+  const githubCallback = (document.body.dataset.githubCallback === "true" && carriesCallback)
+    || callbackParams.has("installation_id") || callbackParams.has("setup_action");
   const billingReturn = captureBillingReturn(callbackParams);
   stripCallbackQuery();
 
