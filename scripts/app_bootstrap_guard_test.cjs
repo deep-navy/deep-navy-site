@@ -324,14 +324,24 @@ test("every test file in scripts/ is wired into npm test", () => {
 // Scripts, stylesheets and the suite itself all count as readers: a test that
 // pins a hook as the anchor for a piece of copy is depending on it just as
 // surely as a click handler. The rule is only that SOMETHING looks for it.
-test("every data hook in the shell is read by something", () => {
+test("every data hook in the shell and app layout is read by something", () => {
   const { readdirSync } = require("node:fs");
   const read = (dir, ext) => readdirSync(dir).filter((f) => f.endsWith(ext))
     .map((f) => readFileSync(`${dir}/${f}`, "utf8")).join("\n");
+  // Only the layout's inline SCRIPTS count as readers, never its markup: the
+  // layout is where several hooks are stamped, so including the whole file let
+  // every one of them satisfy the check by existing.
+  const layoutScripts = [...readFileSync("_layouts/app.html", "utf8")
+    .matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
   const consumers = [read("assets/js", ".js"), read("assets/css", ".css"), read("scripts", "_test.cjs"),
-    readFileSync("_layouts/app.html", "utf8")].join("\n");
+    layoutScripts].join("\n");
   const orphans = [];
-  for (const hook of new Set([...shell.matchAll(/\bdata-([a-z0-9-]+)[=\s>]/g)].map((m) => m[1]))) {
+  // The layout stamps hooks too, and one of them sat there read by nothing
+  // while its sibling drove the whole callback path. Scanning only the shell
+  // could not see it. Name no hook literally in these comments: this file is
+  // itself one of the consumers scanned, so a mention would count as a reader.
+  const markup = shell + "\n" + readFileSync("_layouts/app.html", "utf8");
+  for (const hook of new Set([...markup.matchAll(/\bdata-([a-z0-9-]+)[=\s>]/g)].map((m) => m[1]))) {
     const camel = hook.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
     const referenced = new RegExp(`data-${hook}\\b`).test(consumers)
       || new RegExp(`dataset\\.${camel}\\b`).test(consumers);
