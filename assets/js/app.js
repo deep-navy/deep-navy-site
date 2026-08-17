@@ -116,6 +116,7 @@
     conversationHint: document.querySelector("[data-conversation-hint]"),
     conversationError: document.querySelector("[data-conversation-error]"),
     conversationRetry: document.querySelector("[data-conversation-retry]"),
+    conversationFormat: document.querySelector("[data-conversation-format]"),
     objectiveState: document.querySelector("[data-objective-state]"),
     objectiveEmpty: document.querySelector("[data-objective-empty]"),
     objectiveSelectControl: document.querySelector("[data-objective-select-control]"),
@@ -287,6 +288,7 @@
     conversationById: new Map(),
     lastConversationSequence: 0n,
     conversationSending: false,
+    conversationFormat: "markdown",
     provisioningAbort: null,
     provisioningReconnectTimer: null,
     provisioningStreamLive: false,
@@ -598,7 +600,9 @@
       window.location.assign(destination);
     } catch {
       clearSignInTransaction();
-      setAuthPhase("signed_out");
+      session.conversationFormat = loadConversationFormat();
+  renderConversationFormatControl();
+  setAuthPhase("signed_out");
       if (bounceToHomepage()) return;
       showAuthError("Could not start sign-in", "deep navy could not begin GitHub sign-in. No credentials were sent. Try again in a moment.");
       if (ui.signIn) ui.signIn.disabled = !identity.ready;
@@ -3664,6 +3668,181 @@
     return { label: "Sending…", tone: "loading" };
   }
 
+  // A Product Manager writes like a colleague: headings, lists, code, links.
+  // The console printed all of it as one flat run of characters, so a PRD came
+  // through as a wall of asterisks.
+  //
+  // This renderer builds DOM NODES and never assembles an HTML string, so
+  // nothing an agent writes can become markup - the text of a link is text, and
+  // a <script> an agent typed stays five visible characters. It covers the
+  // constructs that actually appear and deliberately no more.
+  const MARKDOWN_LINK = /^\[([^\]]{1,200})\]\(([^)\s]{1,2000})\)/;
+  function safeHref(raw) {
+    try {
+      const url = new URL(raw, window.location.href);
+      return ["https:", "http:", "mailto:"].includes(url.protocol) ? url.href : "";
+    } catch { return ""; }
+  }
+  function appendInline(parent, text) {
+    let rest = String(text);
+    while (rest) {
+      const code = rest.match(/^`([^`]{1,500})`/);
+      if (code) {
+        const element = document.createElement("code");
+        element.textContent = code[1];
+        parent.append(element);
+        rest = rest.slice(code[0].length);
+        continue;
+      }
+      const strong = rest.match(/^\*\*([^*]{1,500})\*\*/);
+      if (strong) {
+        const element = document.createElement("strong");
+        appendInline(element, strong[1]);
+        parent.append(element);
+        rest = rest.slice(strong[0].length);
+        continue;
+      }
+      const emphasis = rest.match(/^(?:\*([^*\n]{1,500})\*|_([^_\n]{1,500})_)/);
+      if (emphasis) {
+        const element = document.createElement("em");
+        appendInline(element, emphasis[1] ?? emphasis[2]);
+        parent.append(element);
+        rest = rest.slice(emphasis[0].length);
+        continue;
+      }
+      const link = rest.match(MARKDOWN_LINK);
+      if (link) {
+        const href = safeHref(link[2]);
+        if (href) {
+          const anchorElement = document.createElement("a");
+          anchorElement.href = href;
+          anchorElement.rel = "noopener noreferrer";
+          anchorElement.target = "_blank";
+          anchorElement.textContent = link[1];
+          parent.append(anchorElement);
+          rest = rest.slice(link[0].length);
+          continue;
+        }
+      }
+      // Nothing matched at this position: take one character and carry on, so
+      // an unmatched * or [ is shown rather than swallowed.
+      const next = rest.search(/[`*_[]/);
+      const plain = next === -1 ? rest : (next === 0 ? rest.slice(0, 1) : rest.slice(0, next));
+      parent.append(document.createTextNode(plain));
+      rest = rest.slice(plain.length);
+    }
+  }
+  function renderMarkdownInto(container, text) {
+    const lines = String(text ?? "").replace(/\r\n?/g, "\n").split("\n");
+    let index = 0;
+    const paragraph = [];
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      const element = document.createElement("p");
+      paragraph.forEach((line, position) => {
+        if (position) element.append(document.createElement("br"));
+        appendInline(element, line);
+      });
+      container.append(element);
+      paragraph.length = 0;
+    };
+    while (index < lines.length) {
+      const line = lines[index];
+      const fence = line.match(/^```(\w{0,20})\s*$/);
+      if (fence) {
+        flushParagraph();
+        const body = [];
+        index += 1;
+        while (index < lines.length && !/^```\s*$/.test(lines[index])) {
+          body.push(lines[index]);
+          index += 1;
+        }
+        index += 1;
+        const pre = document.createElement("pre");
+        pre.className = "md-code";
+        const code = document.createElement("code");
+        code.textContent = body.join("\n");
+        pre.append(code);
+        container.append(pre);
+        continue;
+      }
+      const heading = line.match(/^(#{1,6})\s+(.+)$/);
+      if (heading) {
+        flushParagraph();
+        const element = document.createElement(`h${Math.min(heading[1].length + 2, 6)}`);
+        element.className = "md-heading";
+        appendInline(element, heading[2]);
+        container.append(element);
+        index += 1;
+        continue;
+      }
+      if (/^\s*(?:---|\*\*\*|___)\s*$/.test(line)) {
+        flushParagraph();
+        container.append(document.createElement("hr"));
+        index += 1;
+        continue;
+      }
+      const bullet = line.match(/^\s*[-*+]\s+(.*)$/);
+      const numbered = line.match(/^\s*\d{1,3}[.)]\s+(.*)$/);
+      if (bullet || numbered) {
+        flushParagraph();
+        const list = document.createElement(bullet ? "ul" : "ol");
+        list.className = "md-list";
+        while (index < lines.length) {
+          const item = lines[index].match(bullet ? /^\s*[-*+]\s+(.*)$/ : /^\s*\d{1,3}[.)]\s+(.*)$/);
+          if (!item) break;
+          const entry = document.createElement("li");
+          appendInline(entry, item[1]);
+          list.append(entry);
+          index += 1;
+        }
+        container.append(list);
+        continue;
+      }
+      const quote = line.match(/^>\s?(.*)$/);
+      if (quote) {
+        flushParagraph();
+        const block = document.createElement("blockquote");
+        block.className = "md-quote";
+        const inner = document.createElement("p");
+        appendInline(inner, quote[1]);
+        block.append(inner);
+        container.append(block);
+        index += 1;
+        continue;
+      }
+      if (!line.trim()) {
+        flushParagraph();
+        index += 1;
+        continue;
+      }
+      paragraph.push(line);
+      index += 1;
+    }
+    flushParagraph();
+  }
+
+  // Markdown is the default because that is how the reply was written; the
+  // choice is remembered so nobody has to re-pick it every visit.
+  const conversationFormatKey = "deepnavy.conversation.format";
+  function loadConversationFormat() {
+    try {
+      return window.localStorage.getItem(conversationFormatKey) === "raw" ? "raw" : "markdown";
+    } catch { return "markdown"; }
+  }
+  function setConversationFormat(format) {
+    session.conversationFormat = format === "raw" ? "raw" : "markdown";
+    try { window.localStorage.setItem(conversationFormatKey, session.conversationFormat); } catch { /* private mode */ }
+    renderConversationFormatControl();
+    renderConversation();
+  }
+  function renderConversationFormatControl() {
+    if (!ui.conversationFormat) return;
+    const raw = session.conversationFormat === "raw";
+    ui.conversationFormat.setAttribute("aria-pressed", raw ? "true" : "false");
+    ui.conversationFormat.textContent = raw ? "Show formatted" : "Show Markdown source";
+  }
+
   function renderConversation() {
     if (!ui.conversationThread) return;
     // SYSTEM rows are wake plumbing between the dispatcher and the runtime;
@@ -3681,9 +3860,19 @@
       const who = document.createElement("span");
       who.className = "msg-who";
       who.textContent = entry.author === "customer" ? "You" : `${productManagerName()} · Product Manager`;
-      const bubble = document.createElement("p");
-      bubble.className = "msg-text";
-      bubble.textContent = entry.text;
+      // Your own words are shown exactly as you typed them. The Product
+      // Manager writes Markdown, so that is rendered - unless you ask to read
+      // the source, which the toggle above the thread does.
+      let bubble;
+      if (entry.author === "customer" || session.conversationFormat === "raw") {
+        bubble = document.createElement("p");
+        bubble.className = entry.author === "customer" ? "msg-text" : "msg-text msg-raw";
+        bubble.textContent = entry.text;
+      } else {
+        bubble = document.createElement("div");
+        bubble.className = "msg-text msg-md";
+        renderMarkdownInto(bubble, entry.text);
+      }
       const meta = document.createElement("span");
       meta.className = "msg-meta";
       const time = document.createElement("time");
@@ -3988,11 +4177,16 @@
     return summary.length > 96 ? `${summary.slice(0, 95).trimEnd()}…` : summary;
   }
 
+  // Newest first. session.activityEvents is append-ordered - push to add, shift
+  // to drop the oldest - so scanning it forwards returned the OLDEST retained
+  // event for the role. Every caller wanted the latest: the crew tile showed a
+  // stale line, and liveness measured the age of an old event, so an agent
+  // working right now read as "waiting for work".
   function latestEventForRole(roleKey) {
     const events = Array.isArray(session.activityEvents) ? session.activityEvents : [];
-    for (const event of events) {
-      const role = agentRoleContract?.canonicalAgentRole?.(event?.agentRole);
-      if (role && role.key === roleKey) return event;
+    for (let index = events.length - 1; index >= 0; index -= 1) {
+      const role = agentRoleContract?.canonicalAgentRole?.(events[index]?.agentRole);
+      if (role && role.key === roleKey) return events[index];
     }
     return null;
   }
@@ -7428,6 +7622,11 @@
   ui.profileRetry.addEventListener("click", initializeAuthenticatedSession);
   ui.githubAction.addEventListener("click", startGitHubInstallation);
   if (ui.repositoryRefresh) ui.repositoryRefresh.addEventListener("click", refreshRepositoryAccess);
+  if (ui.conversationFormat) {
+    ui.conversationFormat.addEventListener("click", () => {
+      setConversationFormat(session.conversationFormat === "raw" ? "markdown" : "raw");
+    });
+  }
   if (ui.organizationSwitchInput) ui.organizationSwitchInput.addEventListener("change", switchOrganization);
   // The install flow is how a customer connects an organization deep navy has
   // never seen - GitHub asks which account to install on. Distinct from the

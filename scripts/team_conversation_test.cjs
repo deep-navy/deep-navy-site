@@ -173,3 +173,40 @@ test("the composer is honest about why it is off, and the empty console promises
   assert.match(shell, /Your Product Manager will open the conversation when the team is ready\./);
   assert.doesNotMatch(app, /author: "product_manager"/);
 });
+
+// The crew tile and its liveness dot both ask "what is this agent doing now?".
+// session.activityEvents is append-ordered - push to add, shift to drop the
+// oldest - so a forward scan answered with the OLDEST event still retained for
+// that role. The tile showed a stale line and liveness aged an old event past
+// its window, so an agent mid-run read as "waiting for work".
+test("the crew reads an agent's newest event, not its oldest", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  const start = source.indexOf("function latestEventForRole");
+  const lookup = start === -1 ? "" : source.slice(start, start + 600);
+  assert.ok(lookup.length > 0, "latestEventForRole is gone");
+  assert.match(lookup, /for \(let index = events\.length - 1; index >= 0; index -= 1\)/,
+    "the newest event is found by scanning from the end");
+  assert.doesNotMatch(lookup, /for \(const event of events\)/,
+    "a forward scan returns the oldest retained event for the role");
+  // The array really is oldest-first, which is what makes direction matter.
+  assert.match(source, /session\.activityEvents\.push\(entry\)/);
+  assert.match(source, /session\.activityEvents\.shift\(\)/);
+});
+
+// A reply written in Markdown is rendered as Markdown, and the source stays one
+// click away. The renderer builds nodes; it must never assemble markup.
+test("Product Manager replies render as Markdown by default", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  const shell = readFileSync("_includes/app-shell.html", "utf8");
+  assert.match(shell, /data-conversation-format/, "the raw/Markdown toggle is missing from the console");
+  assert.match(source, /session\.conversationFormat = loadConversationFormat\(\)/);
+  assert.match(source, /window\.localStorage\.getItem\(conversationFormatKey\) === "raw" \? "raw" : "markdown"/,
+    "Markdown must be the default, with raw the explicit opt-in");
+  assert.match(source, /renderMarkdownInto\(bubble, entry\.text\)/);
+  // Your own words stay literal; only the agent's Markdown is rendered.
+  assert.match(source, /entry\.author === "customer" \|\| session\.conversationFormat === "raw"/);
+  // Nothing an agent writes may become markup.
+  assert.doesNotMatch(source, /innerHTML\s*=/, "the app must not assign innerHTML anywhere");
+  assert.match(source, /\["https:", "http:", "mailto:"\]\.includes\(url\.protocol\)/,
+    "link hrefs must be restricted to safe protocols");
+});

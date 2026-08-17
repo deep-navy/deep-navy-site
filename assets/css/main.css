@@ -966,6 +966,24 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .msg-who { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .msg-text { margin: 0; font-size: var(--t-sm); line-height: 1.55; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .msg.is-you .msg-text { border: 1px solid var(--line); border-radius: 3px; background: var(--panel-1); padding: .55rem .75rem; }
+/* A rendered reply is a small document, so it gets document spacing rather
+   than the pre-wrap run used for literal text. white-space returns to normal
+   because the block structure now carries the line breaks. */
+.msg-md { white-space: normal; display: flex; flex-direction: column; gap: .5rem; }
+.msg-md > :first-child { margin-top: 0; }
+.msg-md > :last-child { margin-bottom: 0; }
+.msg-md p { margin: 0; }
+.md-heading { margin: .25rem 0 0; font-family: var(--font-display); font-size: var(--t-sm); font-weight: 600; letter-spacing: .01em; color: var(--ink-strong, var(--ink)); }
+.msg-md .md-list { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: .25rem; }
+.msg-md li { margin: 0; }
+.msg-md code { font-family: var(--font-mono); font-size: .92em; background: var(--panel-1); border: 1px solid var(--line); border-radius: 2px; padding: .05rem .25rem; }
+.msg-md .md-code { margin: 0; overflow-x: auto; background: var(--panel-1); border: 1px solid var(--line); border-radius: 3px; padding: .6rem .7rem; }
+.msg-md .md-code code { background: none; border: 0; padding: 0; font-size: var(--t-xs, .8rem); line-height: 1.5; }
+.msg-md .md-quote { margin: 0; padding-left: .7rem; border-left: 2px solid var(--line); color: var(--ink-muted, var(--ink)); }
+.msg-md hr { border: 0; border-top: 1px solid var(--line); margin: .25rem 0; width: 100%; }
+.msg-md a { color: var(--accent, currentColor); }
+/* Reading the source: keep it literal and let long lines scroll, never reflow. */
+.msg-raw { font-family: var(--font-mono); font-size: var(--t-xs, .8rem); overflow-x: auto; }
 .msg-meta { display: inline-flex; align-items: baseline; gap: .7rem; font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }
 .msg-state { text-transform: uppercase; letter-spacing: .1em; }
 .msg-state[data-tone="success"] { color: var(--aqua); }

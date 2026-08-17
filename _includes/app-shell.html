@@ -291,6 +291,10 @@
                 <div class="console-head">
                   <h3 id="console-title">Talk to your Product Manager</h3>
                   <span class="stream-state" data-conversation-state>Waiting for a team</span>
+                  <!-- Replies are written in Markdown, so they are rendered as
+                       Markdown. This shows the source instead, for anyone who
+                       wants to copy a PRD out exactly as it was written. -->
+                  <button class="button button-quiet button-small" type="button" data-conversation-format aria-pressed="false">Show Markdown source</button>
                   <button class="button button-quiet button-small" type="button" data-conversation-retry hidden>Reconnect</button>
                 </div>
                 <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p></div>
