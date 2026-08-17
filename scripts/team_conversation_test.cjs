@@ -210,3 +210,27 @@ test("Product Manager replies render as Markdown by default", () => {
   assert.match(source, /\["https:", "http:", "mailto:"\]\.includes\(url\.protocol\)/,
     "link hrefs must be restricted to safe protocols");
 });
+
+// The reply is written over seconds or minutes, and the server now sends it as
+// it grows: the same sequence, longer text, partial until it settles. The
+// console has to follow that instead of waiting for the whole answer.
+test("a reply still being written grows in place", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  // The upsert updates text, not only the delivery chip.
+  assert.match(source, /if \(!partial \|\| text\.length >= stringValue\(existing\.text\)\.length\) existing\.text = text;/,
+    "a growing reply must update the row's text in place");
+  assert.match(source, /existing\.partial = partial;/);
+  assert.match(source, /const partial = message\.partial === true;/);
+  // Text never moves backwards, even if a frame arrives out of order.
+  // An assignment alone on its line is an UNGUARDED one; the guarded form
+  // above carries its condition on the same line.
+  assert.doesNotMatch(source, /\n\s*existing\.text = text;/,
+    "text must only be accepted when it is not shorter than what is on screen");
+  // The shimmer stands down once the real reply is arriving.
+  assert.match(source, /if \(visible\.some\(\(entry\) => entry\.partial\)\) \{/);
+  // And the row says it is still being written.
+  assert.match(source, /item\.classList\.add\("is-writing"\)/);
+  const css = readFileSync("assets/css/main.css", "utf8");
+  assert.match(css, /\.msg\.is-writing \.msg-text::after/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+});

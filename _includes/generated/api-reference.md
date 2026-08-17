@@ -162,6 +162,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.RenewConversationDispatchLeaseRequest`](#deepnavy-v1-renewconversationdispatchleaserequest)
   - [Message `deepnavy.v1.RenewConversationDispatchLeaseResponse`](#deepnavy-v1-renewconversationdispatchleaseresponse)
   - [Message `deepnavy.v1.AcknowledgeConversationDispatchRequest`](#deepnavy-v1-acknowledgeconversationdispatchrequest)
+  - [Message `deepnavy.v1.PublishConversationReplyDraftRequest`](#deepnavy-v1-publishconversationreplydraftrequest)
+  - [Message `deepnavy.v1.PublishConversationReplyDraftResponse`](#deepnavy-v1-publishconversationreplydraftresponse)
   - [Message `deepnavy.v1.AcknowledgeConversationDispatchResponse`](#deepnavy-v1-acknowledgeconversationdispatchresponse)
   - [Message `deepnavy.v1.FailConversationDispatchRequest`](#deepnavy-v1-failconversationdispatchrequest)
   - [Message `deepnavy.v1.FailConversationDispatchResponse`](#deepnavy-v1-failconversationdispatchresponse)
@@ -2020,6 +2022,7 @@ TeamConversationMessage is one customer-safe row of a team's conversation
 | `created_at` | 6 | `google.protobuf.Timestamp` | singular | — |
 | `delivery_state` | 7 | [`deepnavy.v1.ConversationDeliveryState`](#deepnavy-v1-conversationdeliverystate) | singular | delivery_state tracks CUSTOMER-authored rows to the Product Manager<br> session; PRODUCT_MANAGER and SYSTEM rows are always DELIVERED. |
 | `safe_error` | 8 | `string` | singular | safe_error is a bounded customer-safe summary set only when<br> delivery_state is FAILED. |
+| `partial` | 9 | `bool` | singular | partial is true while the Product Manager is still writing this reply.<br> The row keeps its sequence and its text grows, so a client that upserts<br> on sequence shows the answer arriving instead of waiting for all of it.<br> The final observation clears it; a client must never treat a partial row<br> as the finished answer. |
 
 <a id="deepnavy-v1-sendteammessagerequest"></a>
 ### Message `deepnavy.v1.SendTeamMessageRequest`
@@ -2150,6 +2153,29 @@ ConversationDispatchPayload is an immutable, credential-free command. The
 | `observed_at` | 4 | `google.protobuf.Timestamp` | singular | — |
 | `reply_text` | 5 | `string` | singular | reply_text is the Product Manager's in-session reply captured by the<br> deliverer, already stripped of the delivery envelope. When present and<br> non-empty after trimming, the server records it as a PRODUCT_MANAGER<br> message in the same transaction that marks the dispatch DELIVERED. |
 
+<a id="deepnavy-v1-publishconversationreplydraftrequest"></a>
+### Message `deepnavy.v1.PublishConversationReplyDraftRequest`
+
+PublishConversationReplyDraftRequest carries the Product Manager's reply as
+ it is being written. The deliverer already observes the text growing while it
+ waits for the answer to settle; publishing those observations is what makes
+ the console show the reply arriving rather than appearing whole.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `dispatch_id` | 1 | `string` | singular | — |
+| `lease_token` | 2 | `string` | singular | — |
+| `event_id` | 3 | `string` | singular | event_id is a worker-generated UUID reused after an ambiguous response. |
+| `observed_at` | 4 | `google.protobuf.Timestamp` | singular | — |
+| `reply_text` | 5 | `string` | singular | reply_text is the reply so far, already stripped of the delivery envelope.<br> Drafts only ever grow; the server ignores an observation shorter than the<br> one it already holds, so an out-of-order publish cannot rewind the console. |
+
+<a id="deepnavy-v1-publishconversationreplydraftresponse"></a>
+### Message `deepnavy.v1.PublishConversationReplyDraftResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `reply` | 1 | [`deepnavy.v1.TeamConversationMessage`](#deepnavy-v1-teamconversationmessage) | singular | reply is the PRODUCT_MANAGER row as recorded, with partial = true. Its<br> sequence is allocated once and reused by every later draft and by the<br> acknowledgment that finishes it. |
+
 <a id="deepnavy-v1-acknowledgeconversationdispatchresponse"></a>
 ### Message `deepnavy.v1.AcknowledgeConversationDispatchResponse`
 
@@ -2249,6 +2275,7 @@ TeamConversationWorkerService is internal and provisioning-worker
 | `LeaseConversationDispatches` | [`deepnavy.v1.LeaseConversationDispatchesRequest`](#deepnavy-v1-leaseconversationdispatchesrequest) | [`deepnavy.v1.LeaseConversationDispatchesResponse`](#deepnavy-v1-leaseconversationdispatchesresponse) | unary | LeaseConversationDispatches atomically claims queued or retryable<br> dispatches. An expired lease makes the dispatch eligible for redelivery. |
 | `RenewConversationDispatchLease` | [`deepnavy.v1.RenewConversationDispatchLeaseRequest`](#deepnavy-v1-renewconversationdispatchleaserequest) | [`deepnavy.v1.RenewConversationDispatchLeaseResponse`](#deepnavy-v1-renewconversationdispatchleaseresponse) | unary | — |
 | `AcknowledgeConversationDispatch` | [`deepnavy.v1.AcknowledgeConversationDispatchRequest`](#deepnavy-v1-acknowledgeconversationdispatchrequest) | [`deepnavy.v1.AcknowledgeConversationDispatchResponse`](#deepnavy-v1-acknowledgeconversationdispatchresponse) | unary | AcknowledgeConversationDispatch marks the customer message DELIVERED and,<br> when reply_text is present, records the Product Manager reply atomically. |
+| `PublishConversationReplyDraft` | [`deepnavy.v1.PublishConversationReplyDraftRequest`](#deepnavy-v1-publishconversationreplydraftrequest) | [`deepnavy.v1.PublishConversationReplyDraftResponse`](#deepnavy-v1-publishconversationreplydraftresponse) | unary | PublishConversationReplyDraft records the reply captured so far as a<br> PRODUCT_MANAGER row marked partial, allocating its sequence on the first<br> call and reusing it thereafter. AcknowledgeConversationDispatch finishes<br> that same row rather than adding a second one. |
 | `FailConversationDispatch` | [`deepnavy.v1.FailConversationDispatchRequest`](#deepnavy-v1-failconversationdispatchrequest) | [`deepnavy.v1.FailConversationDispatchResponse`](#deepnavy-v1-failconversationdispatchresponse) | unary | FailConversationDispatch records a bounded failure. A retryable failure<br> requeues the dispatch until attempts are exhausted; a terminal one marks<br> the customer message FAILED with its customer-safe error. |
 
 

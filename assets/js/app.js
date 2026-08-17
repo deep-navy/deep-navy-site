@@ -3612,16 +3612,25 @@
     const deliveryState = conversationDeliveryLabel(message.deliveryState);
     const safeError = stringValue(message.safeError);
     if (sequence > session.lastConversationSequence) session.lastConversationSequence = sequence;
+    const partial = message.partial === true;
     const existing = session.conversationById.get(id);
     if (existing) {
-      // A delivery-state transition re-sends the same sequence; update the
-      // row in place so the chip moves without the message duplicating.
+      // The same sequence is re-sent for two reasons: a delivery-state
+      // transition, and a reply that is still being written and has grown.
+      // Both update the row in place, so the chip moves and the answer
+      // lengthens without the message duplicating.
+      //
+      // Text only ever moves forward. The server refuses a shorter draft, and
+      // refusing one here too means an out-of-order frame cannot rewind text
+      // the customer has already read.
       existing.sequence = sequence;
       existing.deliveryState = deliveryState;
       existing.safeError = safeError;
       existing.createdAt = createdAt;
       existing.pending = false;
       existing.sendState = "";
+      if (!partial || text.length >= stringValue(existing.text).length) existing.text = text;
+      existing.partial = partial;
       return;
     }
     // The stream can outrun the send response: a replayed customer row that
@@ -3641,7 +3650,7 @@
       session.conversationById.set(id, pendingRow);
       return;
     }
-    const entry = { localId: "", id, sequence, author, text, createdAt, deliveryState, safeError, pending: false, sendState: "" };
+    const entry = { localId: "", id, sequence, author, text, createdAt, deliveryState, safeError, pending: false, sendState: "", partial };
     session.conversationById.set(id, entry);
     session.conversationMessages.push(entry);
     if (session.conversationMessages.length > 200) {
@@ -3886,6 +3895,14 @@
         setSourceState(state, chip.label, chip.tone);
         meta.append(state);
       }
+      // A reply still being written says so, right where it is being written.
+      if (entry.partial) {
+        item.classList.add("is-writing");
+        const writing = document.createElement("span");
+        writing.className = "msg-writing";
+        writing.textContent = "still writing";
+        meta.append(writing);
+      }
       item.append(who, bubble, meta);
       if (entry.sendState === "failed") {
         const failure = document.createElement("p");
@@ -3920,6 +3937,12 @@
     const team = selectedTeam();
     const visible = session.conversationMessages.filter((entry) => entry.author !== "system");
     const newest = visible[visible.length - 1];
+    // A reply that is arriving is its own proof that one is coming, so the
+    // shimmer stands down and lets the customer read what has landed.
+    if (visible.some((entry) => entry.partial)) {
+      ui.conversationTyping.hidden = true;
+      return;
+    }
     const awaitingReply = Boolean(team) && lifecycleLabel(team.state) === "active"
       && newest && newest.author === "customer" && newest.deliveryState === "delivered";
     if (!awaitingReply) {
