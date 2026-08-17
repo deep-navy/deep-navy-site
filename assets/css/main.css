@@ -142,8 +142,14 @@ p { color: var(--muted); }
 /* "Sign in with GitHub" — GitHub brand button: unmodified white Invertocat on
    GitHub's near-black surface, per brand.github.com (mark shown white/black only,
    not recolored, kept no more prominent than the deep navy wordmark). */
-.button-github { color: var(--brand-github-fg); background: var(--brand-github-bg); border: 1px solid var(--text-a20); }
-.button-github:hover { background: var(--brand-github-bg-hover); border-color: var(--text-a38); }
+/* The one thing a visitor is meant to do is the brightest thing on the page.
+   GitHub's own button colour measures 1.33:1 against the void — on the old
+   navy ground it read fine, and moving the ground to black turned it into a
+   surface nobody can see. The label takes the page's own ground so it
+   inverts with the theme, and --accent rather than --accent-graphic because
+   the graphic seafoam is a fill for shapes and is far too pale on white. */
+.button-github { color: var(--surface); background: var(--accent); border: 1px solid var(--accent); }
+.button-github:hover { background: var(--accent-graphic); border-color: var(--accent-graphic); color: var(--surface); }
 .github-mark { flex: 0 0 auto; }
 .button-small { min-height: 44px; padding: .55rem .85rem; font-size: .82rem; }
 .button-large { min-height: 54px; padding: .9rem 1.4rem; }
@@ -1256,8 +1262,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .wfoot h3 { margin: 0 0 .7rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 
 /* The GitHub sign-in button. It lives here, on the homepage, and nowhere else. */
-.lp-btn-github { background: var(--brand-github-bg); color: var(--brand-github-fg); border: 1px solid var(--brand-github-bg); gap: .6rem; }
-.lp-btn-github:hover { background: var(--brand-github-bg-hover); border-color: var(--brand-github-bg-hover); }
+.lp-btn-github { background: var(--accent); color: var(--surface); border: 1px solid var(--accent); gap: .6rem; }
+.lp-btn-github:hover { background: var(--accent-graphic); border-color: var(--accent-graphic); color: var(--surface); }
 .lp-btn-github .github-mark { flex: none; }
 
 /* Inline text-buttons: actions that read as part of a sentence. */
@@ -1383,3 +1389,4 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .instrument-facts li {
   color: var(--muted);
 }
+

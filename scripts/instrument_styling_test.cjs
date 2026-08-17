@@ -135,3 +135,46 @@ test("the console is shown, not just described", () => {
   // not a blinking block.
   assert.match(index, /<span class="console-caret" aria-hidden="true">/);
 });
+
+// The one thing a visitor is meant to do must be findable. GitHub's own button
+// colour measures 1.33:1 against the void — on the old navy ground it read
+// fine, and moving the ground to black made it a surface you cannot see.
+test("the primary action is legible on whichever ground it lands on", () => {
+  const value = (name) => {
+    const match = tokens.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, "i"));
+    assert.ok(match, `${name} is missing from the token file`);
+    return match[1];
+  };
+  const luminance = (hex) => {
+    const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const contrast = (a, b) => {
+    const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+    return (x + 0.05) / (y + 0.05);
+  };
+
+  // Dark: the bright seafoam fill on the void, labelled in the void's own black.
+  const darkFill = value("seafoam-4");
+  const dark = contrast(darkFill, value("abyss-0"));
+  assert.ok(dark >= 4.5, `dark primary is ${dark.toFixed(2)}:1 against the ground, want >= 4.5`);
+
+  // Light: the darker seafoam on white, labelled white. Both the label and the
+  // control's own edge have to clear their thresholds - 4.5 for text this size,
+  // 3 for the boundary of something you have to find and click.
+  const lightFill = value("seafoam-2");
+  const lightLabel = contrast(lightFill, value("white"));
+  assert.ok(lightLabel >= 4.5, `light primary label is ${lightLabel.toFixed(2)}:1, want >= 4.5`);
+  assert.ok(lightLabel >= 3, `light primary edge is ${lightLabel.toFixed(2)}:1 against white, want >= 3`);
+
+  // And the rule must take the theme-aware accent, not the graphic one: the
+  // graphic seafoam is a fill for shapes and is far too pale on white.
+  assert.match(main, /\.button-github \{[^}]*background: var\(--accent\);/);
+  assert.match(main, /\.lp-btn-github \{[^}]*background: var\(--accent\);/);
+  // The label inverts with the theme by taking the page's own ground.
+  assert.match(main, /\.button-github \{[^}]*color: var\(--surface\);/);
+  assert.match(main, /\.lp-btn-github \{[^}]*color: var\(--surface\);/);
+  // No dead declaration left behind to be overridden from further down.
+  assert.doesNotMatch(main, /background: var\(--brand-github-bg\)/);
+});
