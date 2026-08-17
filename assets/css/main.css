@@ -1279,3 +1279,107 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .user-org { margin-left: auto; }
 .user-org select { background: var(--surface-sunken); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem .5rem; font: inherit; font-size: .82rem; max-width: 15rem; }
 .user-org select:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: 2px; }
+
+/* ===========================================================================
+   INSTRUMENT LAYER
+   ===========================================================================
+   The product is an instrument panel for work you did not do yourself, so the
+   chrome is set in the machine's own face. Monospace carries anything that is
+   a FACT the machine produced or accepts - navigation, controls, labels,
+   identifiers, quantities, timestamps. It never carries prose: headlines and
+   sentences stay in the sans faces, because a paragraph set in mono is a
+   costume, not an instrument.
+
+   The ground says who is speaking. Black is the void the product sits in and
+   carries our words to you; navy is the ground of machine output and carries
+   the machine's. ========================================================== */
+
+.desktop-nav a,
+.mobile-menu nav a {
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+.button,
+.lp-btn {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: .01em;
+  border-radius: 0;
+}
+
+/* Quantities line up under one another or they are not quantities. */
+.data-table td, .data-table th,
+.metric-value, .lp-amount, .msg-meta time, .economics-metric, .invoice-amount {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- The instrument: a label, a reading, and what it means ---------------
+   Modelled on a rack panel rather than a marketing card. The figure is drawn
+   in text because the thing being drawn IS text - an allocation, a gate, a
+   trace - and a hand-drawn diagram in the machine's own face is honest in a
+   way an illustration of one is not. */
+.instrument {
+  display: grid;
+  gap: .9rem;
+  padding: 1.6rem 1.5rem 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.instrument-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--aqua);
+}
+.instrument-figure {
+  margin: 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: clamp(.58rem, 1.05vw, .78rem);
+  line-height: 1.35;
+  white-space: pre;
+  color: var(--muted-bright);
+  -webkit-overflow-scrolling: touch;
+}
+.instrument-figure b { color: var(--accent-graphic); font-weight: inherit; }
+.instrument-figure i { color: var(--muted); font-style: normal; }
+.instrument-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: .95rem;
+  line-height: 1.55;
+}
+.instrument-facts {
+  display: grid;
+  gap: .4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  padding-top: .9rem;
+}
+.instrument-facts li {
+  display: flex;
+  gap: .6rem;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--ink);
+}
+.instrument-facts li::before {
+  content: "·";
+  color: var(--accent-graphic);
+}
+
+.instrument-facts li strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.instrument-facts li {
+  color: var(--muted);
+}

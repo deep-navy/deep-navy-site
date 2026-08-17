@@ -7,15 +7,23 @@ const test = require("node:test");
 const header = readFileSync("_includes/header.html", "utf8");
 const footer = readFileSync("_includes/footer.html", "utf8");
 
+// The top navigation is five destinations, not the whole sitemap. A reader
+// deciding whether to put a team on their repository needs to know what it is,
+// what it costs, how it works, whether it is safe, and what we have written -
+// and every other page stays one click away in the footer, which is where a
+// sitemap belongs. Solutions, Economics and Customers were dropped from the
+// header for that reason; "Economics" was internal vocabulary besides.
+// Five destinations, named the way the reader would name them rather than the
+// way a sitemap would. "Economics" was our word for the page; "Ledger" is
+// theirs, and the receipts are the argument, so it sits second. Product and
+// Solutions collapse into one question a buyer actually asks. Blog and
+// Customers moved to the footer, which is where a sitemap belongs.
 const requiredDestinations = [
-  ["Product", "/product/"],
-  ["Solutions", "/solutions/"],
-  ["Economics", "/economics/"],
-  ["Customers", "/customers/"],
-  ["Pricing", "/pricing/"],
-  ["Resources", "/blog/"],
-  ["Docs", "/docs/"],
+  ["How it works", "/product/"],
+  ["Ledger", "/economics/"],
+  ["What it costs", "/pricing/"],
   ["Security", "/security/"],
+  ["Docs", "/docs/"],
   // The sign-in door carries ?signin=1. A bare /app/ link bounces a signed-out
   // visitor straight back to the homepage, so it is not a way in at all.
   ["Sign in", "/app/?signin=1"]

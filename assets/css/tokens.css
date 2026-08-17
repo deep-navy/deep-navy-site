@@ -26,17 +26,26 @@
 
 :root {
   /* ---- TIER 1: PRIMITIVES ------------------------------------------------
-     The abyss ramp. Deliberately blue-black: at the top of the ramp you
-     cannot tell it from black, and the hue only declares itself as surfaces
-     rise. Each step is a real elevation — the previous palette collapsed
-     five of these to one value, which is why every "raised" surface in the
-     old build rendered perfectly flat. */
-  --abyss-0:  #000f1a;   /* the brand blue — the ground everything sits on */
-  --abyss-1:  #04182a;
-  --abyss-2:  #082238;
-  --abyss-3:  #0d2c47;
-  --abyss-4:  #123857;
-  --abyss-5:  #184568;
+     The abyss ramp. Two materials, not one: step 0 is the void, and every
+     step above it is navy. The ground is black and the instruments mounted
+     on it are blue — which is what keeps a black ground from reading as the
+     generic dark theme, where the panels are simply grey.
+
+     Step 1 is the brand blue itself. It used to BE the ground, where a
+     colour that fills the whole screen is wallpaper rather than a choice;
+     against the void it finally reads as a tone, which is what lets it work
+     as an accent.
+
+     The hue therefore declares itself the moment a surface rises, and each
+     step is a real elevation: the palette before this one collapsed five of
+     them to a single value, which is why every "raised" surface in that
+     build rendered perfectly flat. */
+  --abyss-0:  #000000;   /* the void — the ground everything is mounted on */
+  --abyss-1:  #000f1a;   /* the brand blue — the ground of machine output */
+  --abyss-2:  #04192b;
+  --abyss-3:  #0a2740;
+  --abyss-4:  #113651;
+  --abyss-5:  #184464;
 
   /* Seafoam — bioluminescence, and the only thing in the product that glows.
      --seafoam-4 is the signature; the darker steps exist because seafoam on
@@ -135,9 +144,9 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --surface:         var(--abyss-0);
-    --surface-sunken:  var(--abyss-0);
+    --surface-sunken:  var(--abyss-1);
     --surface-raised:  var(--abyss-2);
-    --surface-overlay: rgb(0 15 26 / .72);
+    --surface-overlay: rgb(0 0 0 / .78);
 
     --text:            var(--ink-0);
     --text-muted:      var(--slate-1);
@@ -150,8 +159,8 @@
     --accent-strong:   var(--seafoam-5);
     --accent-rgb:      94 240 168;
 
-    --border:          rgb(244 247 245 / .12);
-    --border-strong:   rgb(244 247 245 / .2);
+    --border:          rgb(244 247 245 / .16);
+    --border-strong:   rgb(244 247 245 / .28);
     --text-rgb:        244 247 245;
 
     /* App-shell panels. These were a second, dark-only palette inside
@@ -164,7 +173,7 @@
     --text-dim:     #b7c4c8;
     --signal-warn:  #f5c97b;
     --signal-crit:  #f58e7e;
-    --scrim:        rgb(0 8 14 / .86);
+    --scrim:        rgb(0 0 0 / .88);
     --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
     --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
@@ -175,9 +184,9 @@
 /* ---- Explicit user choice. Must override the media query both ways. ----- */
 :root[data-theme="dark"] {
   --surface:         var(--abyss-0);
-  --surface-sunken:  var(--abyss-0);
+  --surface-sunken:  var(--abyss-1);
   --surface-raised:  var(--abyss-2);
-  --surface-overlay: rgb(0 15 26 / .72);
+  --surface-overlay: rgb(0 0 0 / .78);
 
   --text:            var(--ink-0);
   --text-muted:      var(--slate-1);
@@ -190,8 +199,8 @@
   --accent-strong:   var(--seafoam-5);
   --accent-rgb:      94 240 168;
 
-  --border:          rgb(244 247 245 / .12);
-  --border-strong:   rgb(244 247 245 / .2);
+  --border:          rgb(244 247 245 / .16);
+  --border-strong:   rgb(244 247 245 / .28);
   --text-rgb:        244 247 245;
 
   /* App-shell panels. These were a second, dark-only palette inside
@@ -204,7 +213,7 @@
   --text-dim:     #b7c4c8;
   --signal-warn:  #f5c97b;
   --signal-crit:  #f58e7e;
-  --scrim:        rgb(0 8 14 / .86);
+  --scrim:        rgb(0 0 0 / .88);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 

@@ -150,3 +150,100 @@
   .lp-step, .lp-crew li, .lp-review, .pr-review { animation: none; }
   .lp-btn:active { transform: none; }
 }
+
+/* The instruments sit two-up on a wide screen and stack on a narrow one. The
+   figures scroll inside themselves rather than widening the page, because a
+   monospace diagram cannot reflow and must not be allowed to. */
+.lp-instruments {
+  display: grid;
+  gap: 1px;
+  margin-top: 2.6rem;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+@media (min-width: 900px) {
+  .lp-instruments { grid-template-columns: 1fr 1fr; }
+}
+.lp-instruments .instrument { border: 0; }
+
+/* ---- The ledger sections -------------------------------------------------
+   Each one is a label, a drawing, what it means, the facts, and the line that
+   says where you can check it yourself. The verify line is the page's
+   signature: every claim above it names the URL that settles it. */
+.lp-section .instrument-figure {
+  margin: 2.2rem 0 0;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.lp-facts {
+  display: grid;
+  gap: .85rem;
+  max-width: 68ch;
+  margin: 2.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-facts li {
+  padding-top: .85rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.lp-term,
+.lp-roster strong {
+  display: block;
+  margin-bottom: .2rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.lp-facts code {
+  font-family: var(--font-mono);
+  font-size: .92em;
+  font-variant-numeric: tabular-nums;
+  color: var(--aqua);
+}
+.lp-verify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .7rem;
+  margin: 1.9rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--accent-graphic);
+}
+.lp-verify span {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lp-verify code {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--aqua);
+  overflow-wrap: anywhere;
+}
+
+/* A grid item's default min-width is auto, so a long word refuses to shrink
+   below its own width and pushes the item wider than its track — which is how
+   a 350px column ends up 404px wide and the whole page scrolls sideways. */
+.lp-hero-grid > *,
+.lp-shell > * { min-width: 0; }
+.lp-h1, .lp-h2, .lp-lede, .lp-sub { overflow-wrap: break-word; }
+
+/* The drawing is the one thing on the page that cannot reflow: its lines are
+   a grid. So the PRE scrolls inside its own frame rather than widening the
+   page, and the frame never exceeds the column. */
+.instrument-figure { max-width: 100%; }
+.instrument-figure > pre {
+  margin: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
