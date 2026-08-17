@@ -247,3 +247,79 @@
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
+
+/* ---- The console, depicted --------------------------------------------
+   The product's own surface, drawn the way the pull request above it is
+   drawn: machine output on the navy ground, every fact in the machine's
+   face, and the one moment that matters — a reply arriving — shown mid
+   sentence rather than described. */
+.console-shot {
+  margin: 2.2rem 0 0;
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.console-shot-bar {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .7rem .95rem;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--ink);
+}
+.console-shot-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent-graphic);
+}
+.console-shot-meta { margin-left: auto; color: var(--muted); }
+.console-shot-body { display: grid; }
+@media (min-width: 860px) {
+  .console-shot-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  .console-stream { border-right: 1px solid var(--line); }
+}
+.console-stream {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  padding: 1rem .95rem;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.console-stream li { display: flex; flex-wrap: wrap; gap: .5rem; }
+.console-stream span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.console-stream b { color: var(--aqua); font-weight: 600; }
+.console-talk { display: grid; gap: .8rem; padding: 1rem .95rem; align-content: start; }
+.console-msg { margin: 0; font-size: .88rem; line-height: 1.55; color: var(--ink); }
+.console-msg span {
+  display: block;
+  margin-bottom: .25rem;
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.console-msg.is-you { padding: .6rem .75rem; border: 1px solid var(--line); }
+.console-caret {
+  display: inline-block;
+  width: .5em;
+  height: 1em;
+  margin-left: .12em;
+  background: var(--accent-graphic);
+  vertical-align: -.14em;
+  animation: console-caret 1.1s steps(1, end) infinite;
+}
+@keyframes console-caret { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+.console-writing {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--aqua);
+}

@@ -112,3 +112,26 @@ test("nothing widens the page on a narrow screen", () => {
     "the drawing scrolls inside its frame, never the page");
   assert.match(home, /\.instrument-figure \{ max-width: 100%; \}/);
 });
+
+// The page shows a pull request and a console because those are the two
+// surfaces a customer actually looks at. Both are depictions drawn in the same
+// materials as the rest of the page, not screenshots that will go stale, and
+// both show the product doing something real — a reply arriving mid-sentence
+// is the streaming behaviour the runtime actually has.
+test("the console is shown, not just described", () => {
+  assert.match(index, /<figure class="console-shot"[^>]*aria-label="[^"]{60,}"/,
+    "the console depiction needs a real description for anyone who cannot see it");
+  // The activity stream: who did what, when, in the machine's face.
+  assert.match(index, /<ol class="console-stream">/);
+  assert.equal((index.match(/<li><span>\d{2}:\d{2}:\d{2}<\/span>/g) || []).length, 5);
+  // The conversation, caught mid-reply.
+  assert.match(index, /class="console-msg is-you"/);
+  assert.match(index, /class="console-msg is-pm"/);
+  assert.match(index, /class="console-writing">still writing</);
+  const css = readFileSync("assets/css/home.css", "utf8");
+  assert.match(css, /\.console-stream span \{[^}]*tabular-nums/, "timestamps must line up");
+  assert.match(css, /@keyframes console-caret/);
+  // The caret is decoration; a reader using a screen reader hears the sentence,
+  // not a blinking block.
+  assert.match(index, /<span class="console-caret" aria-hidden="true">/);
+});

@@ -72,6 +72,23 @@ extra_css: /assets/css/home.css
 <i>                                       ▲
                           nothing is filed before this point</i></pre>
       </figure>
+    <figure class="console-shot" aria-label="The console: a live activity stream on the left showing each agent's events, and a conversation with the product manager on the right, mid-reply.">
+      <div class="console-shot-bar"><span class="console-shot-dot" aria-hidden="true"></span>Web Team<span class="console-shot-meta">6 agents · live</span></div>
+      <div class="console-shot-body">
+        <ol class="console-stream">
+          <li><span>14:02:11</span><b>PM</b> filed issue #291 · escape key path</li>
+          <li><span>14:02:44</span><b>EM</b> assigned #291 to engineer-2</li>
+          <li><span>14:06:03</span><b>ENG2</b> opened pull request #284</li>
+          <li><span>14:09:37</span><b>ENG1</b> review · approved</li>
+          <li><span>14:10:02</span><b>EM</b> review · changes required</li>
+        </ol>
+        <div class="console-talk">
+          <p class="console-msg is-you"><span>You</span>Start with checkout. Address form is where we lose people.</p>
+          <p class="console-msg is-pm"><span>Riley · Product Manager</span>Before I write the PRD — is the drop-off on the address form itself, or at the validation step after it<span class="console-caret" aria-hidden="true"></span></p>
+          <p class="console-writing">still writing</p>
+        </div>
+      </div>
+    </figure>
     <ul class="lp-facts">
       <li><span class="lp-term">You open</span> One sentence, in your own words. Nothing has been filed anywhere yet.</li>
       <li><span class="lp-term">It asks back</span> Who it is for, what is out of scope, what done looks like. You can tell it to leave something alone.</li>
