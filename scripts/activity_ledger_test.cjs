@@ -83,3 +83,30 @@ test("reconnecting is a different promise than terminal unavailability", () => {
   assert.match(app, /setSourceState\(ui\.activityState, "Reconnecting", "loading"\)/);
   assert.match(app, /setSourceState\(ui\.activityState, "Unavailable", "error"\)/);
 });
+
+// The log is read by the person paying for the work, not by the service that
+// emitted the event. It printed enum names in sentence position - "Provisioning
+// is succeeded", "ready · attempt 2" - and explained a number by saying what it
+// was NOT ("not a streamed usage event"), which answers a question nobody asked.
+test("the activity log speaks to the customer, not in service vocabulary", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+
+  assert.doesNotMatch(source, /`Provisioning is \$\{label\}\.`/, "a state enum is still used as a sentence");
+  assert.doesNotMatch(source, /title: `Provisioning · \$\{label\}`/, "the log still titles entries with the internal state");
+  assert.doesNotMatch(source, /attributable cost/, "\"attributable cost\" is service vocabulary");
+  assert.doesNotMatch(source, /not a streamed usage event/, "the explanation still says what the number is not");
+  assert.doesNotMatch(source, /`attempt \$\{record\.attempt\}`/, "a raw retry counter is still shown");
+
+  // What it says instead: a sentence about the team, and a credit balance the
+  // customer can act on.
+  assert.match(source, /const SETUP_SENTENCE = \{/);
+  assert.match(source, /succeeded: \["Setup finished", "Your team finished setting up and is ready to work\."\]/);
+  assert.match(source, /credits used, \$\{formatCreditMicros\(economics\.creditsRemainingMicros\)\} left/);
+  // The stated rate must match the published one: 1 credit = $0.01.
+  assert.match(source, /100 credits = \$1\.00 of model, compute and storage usage/);
+  const pricing = readFileSync("pricing/index.md", "utf8");
+  assert.match(pricing, /1 credit = \$0\.01 of billable model, compute, storage, and service usage/,
+    "the pricing page no longer states the rate the app quotes");
+  // Retries are only worth mentioning when there was more than one.
+  assert.match(source, /record\.attempt > 1 \? `took \$\{record\.attempt\} attempts`/);
+});

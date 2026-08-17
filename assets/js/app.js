@@ -4458,7 +4458,7 @@
     ui.economicsCreditsRemaining.textContent = formatCreditMicros(economics.creditsRemainingMicros);
     const measured = timestampDate(economics.measuredAt);
     ui.economicsMeasured.textContent = measured ? `Measured ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(measured)}.` : "Measurement time was not reported.";
-    ui.economicsMessage.textContent = "Team-scoped cost and credit balances from the economics ledger.";
+    ui.economicsMessage.textContent = "Credits are what this team spends as it works. 100 credits = $1.00 of model, compute and storage usage.";
     ui.economicsEmpty.hidden = true;
     ui.economicsMetrics.hidden = false;
     ui.economicsMeasured.hidden = false;
@@ -4467,9 +4467,13 @@
       id: `cost:${teamId}`,
       category: "cost",
       source: "economics",
-      title: "Cost and credits measured",
-      safeSummary: `${formatCanonicalMoney(economics.directCost)} attributable cost · ${formatCreditMicros(economics.creditsUsedMicros)} credits used · ${formatCreditMicros(economics.creditsRemainingMicros)} credits remaining.`,
-      detail: "Point-in-time team economics; not a streamed usage event.",
+      title: "Credits updated",
+      // Lead with the balance, because that is the number the customer spends.
+      safeSummary: `${formatCreditMicros(economics.creditsUsedMicros)} credits used, ${formatCreditMicros(economics.creditsRemainingMicros)} left. Measured cost of the work so far: ${formatCanonicalMoney(economics.directCost)}.`,
+      // Saying what this is beats saying what it is not. The old line denied
+      // being a live feed, which answers a question nobody asked and leaves the
+      // real one - how current is this number? - unanswered.
+      detail: "A measurement taken at a point in time, so the newest work may not be counted yet.",
       status: "measured",
       sequenceLabel: "Snapshot",
       occurredAt: economics.measuredAt
@@ -6327,6 +6331,35 @@
     }
   }
 
+  // Setup states are enum names - "succeeded", "waiting for gateway" - and the
+  // log used to print them raw: "Provisioning is succeeded", "ready · attempt
+  // 2". A colleague would say what happened to your team, so that is what the
+  // log says; the state itself stays available as the status chip.
+  const SETUP_SENTENCE = {
+    succeeded: ["Setup finished", "Your team finished setting up and is ready to work."],
+    ready: ["Setup finished", "Your team finished setting up and is ready to work."],
+    running: ["Setting up", "Your team is being set up."],
+    queued: ["Setting up", "Your team is waiting its turn to be set up."],
+    retrying: ["Setting up", "Setup hit a problem and is being retried."],
+    failed: ["Setup failed", "Setup did not finish, so the team is not running yet."],
+    suspended: ["Paused", "Your team is paused."],
+    deleting: ["Shutting down", "Your team is being shut down."]
+  };
+  // The steps are the machine's checklist. Say them the way you would to the
+  // person waiting, and drop the ones that only name plumbing.
+  const SETUP_STEP = {
+    "queued": "waiting to start",
+    "validating prerequisites": "checking your GitHub connection",
+    "creating namespace": "reserving space for the team",
+    "configuring runtime": "configuring the team",
+    "creating openclaw instance": "starting the agents",
+    "waiting for gateway": "waiting for the agents to answer",
+    "ready": "ready",
+    "suspending": "pausing",
+    "backing up": "backing up",
+    "deleting": "shutting down"
+  };
+
   function provisioningEntry(record, source, idPrefix) {
     const teamId = stringValue(record?.teamId);
     if (!teamId || teamId !== session.selectedTeamId) throw new ApiError("ProvisioningService returned a record outside the selected team scope", 0, "invalid_response", "");
@@ -6334,7 +6367,8 @@
     const presentation = launchContract?.provisioningPresentation(record) || {};
     const label = stringValue(presentation.label) || lifecycleLabel(record.provisioningState || record.status) || "state not reported";
     const step = stringValue(presentation.step) || stringValue(record.provisioningStep || record.step).replaceAll("_", " ").toLowerCase();
-    const safeSummary = stringValue(record.safeSummary) || `Provisioning is ${label}.`;
+    const [spokenTitle, spokenSummary] = SETUP_SENTENCE[String(label).toLowerCase()] || ["Setup", `Setup is ${label}.`];
+    const safeSummary = stringValue(record.safeSummary) || spokenSummary;
     const safeError = stringValue(record.safeError);
     if (safeSummary.length > 1000 || safeError.length > 1000 || /[\u0000-\u001f\u007f]/.test(safeSummary + safeError)) {
       throw new ApiError("ProvisioningService returned invalid customer-safe text", 0, "invalid_response", "");
@@ -6343,9 +6377,13 @@
       id: `${idPrefix}:${stringValue(record.id) || sequence.toString() || teamId}`,
       category: "provisioning",
       source,
-      title: `Provisioning · ${label}`,
+      title: spokenTitle,
       safeSummary,
-      detail: [step, safeError, Number.isInteger(record.attempt) && record.attempt > 0 ? `attempt ${record.attempt}` : ""].filter(Boolean).join(" · "),
+      // "attempt 2" is only worth saying when there was more than one, and then
+      // it should read as a fact about the work, not a counter.
+      detail: [SETUP_STEP[step] || step, safeError,
+        Number.isInteger(record.attempt) && record.attempt > 1 ? `took ${record.attempt} attempts` : ""]
+        .filter(Boolean).join(" · "),
       status: label,
       sequenceLabel: sequence > 0n ? `Provisioning event ${sequence.toString()}` : "Snapshot",
       occurredAt: record.occurredAt || record.updatedAt
