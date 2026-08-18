@@ -178,3 +178,24 @@ test("the primary action is legible on whichever ground it lands on", () => {
   // No dead declaration left behind to be overridden from further down.
   assert.doesNotMatch(main, /background: var\(--brand-github-bg\)/);
 });
+
+// The mark is fine line art and a favicon is 16 pixels. The vector stays the
+// primary icon; these PNGs exist for the two sizes where a browser rasterising
+// it produces noise. Each is rendered AT its size — downsampling from a large
+// render averages white hairlines against the dark ground into mid-grey, which
+// measured worse than the aliasing it was meant to fix.
+test("the icon ships raster sizes for the ones the vector cannot win", () => {
+  const { statSync } = require("node:fs");
+  const head = readFileSync("_includes/head.html", "utf8");
+  assert.match(head, /rel="icon"[^>]*favicon\.svg[^>]*type="image\/svg\+xml"/,
+    "the vector stays the primary icon");
+  for (const size of [16, 32]) {
+    assert.match(head, new RegExp(`icon-${size}\\.png[^>]*sizes="${size}x${size}"`),
+      `the ${size}px raster is not declared`);
+  }
+  assert.match(head, /rel="apple-touch-icon"[^>]*icon-180\.png/);
+  for (const size of [16, 32, 48, 180, 192, 512]) {
+    const file = `assets/images/icons/icon-${size}.png`;
+    assert.ok(statSync(file).size > 200, `${file} is missing or empty`);
+  }
+});

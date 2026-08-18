@@ -37,7 +37,16 @@
 <meta name="twitter:description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
 <meta name="twitter:image" content="{{ og_image }}">
 <meta name="twitter:image:alt" content="{{ og_image_alt | escape }}">
+<!-- The SVG is the icon; the PNGs exist for the sizes where it cannot win.
+     At 16 and 32 pixels the mark is fine line art with more strokes than the
+     grid has rows, and a browser rasterising the vector at that size aliases
+     them into noise. These are rendered at their exact size — NOT downsampled
+     from a large one, which averages white hairlines against the dark ground
+     into mid-grey and reads worse than the aliasing it replaces. -->
 <link rel="icon" href="{{ '/assets/images/favicon.svg' | relative_url }}" type="image/svg+xml">
+<link rel="icon" href="{{ '/assets/images/icons/icon-32.png' | relative_url }}" type="image/png" sizes="32x32">
+<link rel="icon" href="{{ '/assets/images/icons/icon-16.png' | relative_url }}" type="image/png" sizes="16x16">
+<link rel="apple-touch-icon" href="{{ '/assets/images/icons/icon-180.png' | relative_url }}" sizes="180x180">
 <link rel="alternate" type="application/atom+xml" title="deep navy updates" href="{{ '/feed.xml' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/tokens.css' | relative_url }}">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ '/assets/fonts/inter-400.woff2' | relative_url }}">
