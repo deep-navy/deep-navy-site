@@ -198,4 +198,13 @@ test("the icon ships raster sizes for the ones the vector cannot win", () => {
     const file = `assets/images/icons/icon-${size}.png`;
     assert.ok(statSync(file).size > 200, `${file} is missing or empty`);
   }
+  // Reproducible, and the reasoning travels with it: each size rendered at its
+  // size, and the smallest ones drawn with more ink because a 16px grid has
+  // fewer rows than this mark has strokes.
+  const generator = readFileSync("scripts/generate_icons.mjs", "utf8");
+  assert.match(generator, /new Map\(\[\[16, 20\], \[32, 8\], \[48, 0\]/,
+    "the stroke compensation must fall as the grid grows and reach zero by 48px");
+  assert.doesNotMatch(generator, /-Z |sips/, "sizes are rendered, never downsampled");
+  const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+  assert.equal(pkg.scripts.icons, "node scripts/generate_icons.mjs");
 });
