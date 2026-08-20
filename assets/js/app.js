@@ -3924,8 +3924,28 @@
     });
     ui.conversationEmpty.hidden = ordered.length > 0;
     thread.hidden = ordered.length === 0;
+    if (ordered.length === 0) renderConversationStage();
     if (ordered.length && nearBottom) thread.scrollTop = thread.scrollHeight;
     renderConversationTyping();
+  }
+
+  // Before the first visible message, the SYSTEM rows already on the stream
+  // say exactly where team creation stands - the platform sends one to ask
+  // engineering for the repository briefing, and a second to wake the Product
+  // Manager once the briefing lands. Counting them needs no new plumbing and
+  // cannot claim anything the server has not actually done.
+  function renderConversationStage() {
+    if (!ui.conversationEmpty) return;
+    const team = selectedTeam();
+    if (!team || lifecycleLabel(team.state) !== "active") return;
+    const systemRows = session.conversationMessages.filter((entry) => entry.author === "system").length;
+    if (systemRows === 1) {
+      setEmptyState(ui.conversationEmpty, "Engineering is reading your repositories",
+        "Your Engineering Manager is surveying the code before anyone speaks. Your Product Manager opens the conversation with what they find - usually a few minutes.");
+    } else if (systemRows >= 2) {
+      setEmptyState(ui.conversationEmpty, "Your Product Manager is writing to you",
+        "Engineering's briefing is in. The greeting arrives as it is written.");
+    }
   }
 
   // The shimmer row is a claim that the Product Manager is composing, so it is

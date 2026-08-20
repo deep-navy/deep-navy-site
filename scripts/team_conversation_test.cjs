@@ -234,3 +234,20 @@ test("a reply still being written grows in place", () => {
   assert.match(css, /\.msg\.is-writing \.msg-text::after/);
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
+
+// Team creation is no longer silent. The system rows already on the stream say
+// where it stands - one row means engineering is surveying the repositories,
+// two means the briefing landed and the Product Manager is being woken - and
+// counting them claims nothing the server has not actually done. No text
+// matching: server wording may change; the count is the contract.
+test("the console narrates team creation from the system rows", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  assert.match(source, /function renderConversationStage\(\)/);
+  assert.match(source, /if \(ordered\.length === 0\) renderConversationStage\(\);/,
+    "the stage renders only while nothing visible exists");
+  assert.match(source, /entry\.author === "system"/);
+  assert.match(source, /Engineering is reading your repositories/);
+  assert.match(source, /Your Product Manager is writing to you/);
+  // Never for a team that is not active - the provisioning card owns that.
+  assert.match(source, /lifecycleLabel\(team\.state\) !== "active"\) return;/);
+});
