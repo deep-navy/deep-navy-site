@@ -306,3 +306,21 @@ test("the stage parsers extract exactly what the server wrote", () => {
   assert.equal(parsers.engineeringBriefing([request, plain]), "");
   assert.deepEqual(parsers.briefingRepositories([plain]), []);
 });
+
+// "Talk to your Product Manager" must be true before the composer says it:
+// the input opens only once a Product Manager row exists on the stream -
+// which happens only after engineering's briefing is in and evaluated - with
+// a terminal introduction failure as the honest escape hatch, so a broken
+// wake-up can never lock the customer out of their own console.
+test("the composer opens only when the Product Manager has actually written", () => {
+  const sync = between("function syncConversationComposer()", "function resetConversationView(");
+  assert.match(sync, /entry\.author === "product_manager"/);
+  assert.match(sync, /entry\.author === "system" && entry\.deliveryState === "failed"/);
+  assert.match(sync, /const open = active && \(pmReady \|\| introFailed\);/);
+  assert.match(sync, /ui\.conversationInput\.disabled = !open;/);
+  assert.match(sync, /Engineering is briefing your Product Manager/);
+  // The gate depends on streamed rows, so every conversation render
+  // re-evaluates it - not just team switches and sends.
+  const render = between("function renderConversation()", "function renderConversationStage()");
+  assert.match(render, /syncConversationComposer\(\);/);
+});

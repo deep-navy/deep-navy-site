@@ -3930,6 +3930,10 @@
     if (ordered.length === 0) renderConversationStage();
     if (ordered.length && nearBottom) thread.scrollTop = thread.scrollHeight;
     renderConversationTyping();
+    // The composer's gate depends on what the stream has delivered (the
+    // Product Manager's first row is what opens it), so every render
+    // re-evaluates it.
+    syncConversationComposer();
   }
 
   // Before the first visible message, the SYSTEM rows already on the stream
@@ -4043,14 +4047,25 @@
     if (composing && ui.conversationTypingCopy) ui.conversationTypingCopy.textContent = `${productManagerName()} is working on a reply`;
   }
 
-  // Honest composer state: the input explains why it is off instead of sitting
-  // disabled without a reason, and it only opens for a provisioned team.
+  // Honest composer state: the input explains why it is off instead of
+  // sitting disabled without a reason - and it only opens when there is
+  // actually someone to talk to. A provisioned team is not that moment:
+  // engineering reads the repositories first, the Product Manager evaluates
+  // the briefing, and only their opening message - the questions that map
+  // business objectives to the code - makes "talk to your Product Manager"
+  // true. A Product Manager row (even one still being written) is the proof.
+  // If the introduction terminally fails, the composer opens anyway: a
+  // broken wake-up must never lock the customer out of their own console.
   function syncConversationComposer() {
     if (!ui.conversationForm) return;
     const team = selectedTeam();
     const active = Boolean(team) && lifecycleLabel(team.state) === "active";
-    ui.conversationInput.disabled = !active;
-    ui.conversationSubmit.disabled = !active || session.conversationSending;
+    const pmReady = session.conversationMessages.some((entry) => entry.author === "product_manager");
+    const introFailed = session.conversationMessages.some(
+      (entry) => entry.author === "system" && entry.deliveryState === "failed");
+    const open = active && (pmReady || introFailed);
+    ui.conversationInput.disabled = !open;
+    ui.conversationSubmit.disabled = !open || session.conversationSending;
     if (session.conversationSending) {
       ui.conversationSubmit.setAttribute("aria-busy", "true");
       ui.conversationSubmit.textContent = "Sending…";
@@ -4060,6 +4075,7 @@
     }
     if (!team) ui.conversationHint.textContent = "Choose a team to talk to its Product Manager.";
     else if (!active) ui.conversationHint.textContent = "The conversation opens when your team finishes setting up.";
+    else if (!open) ui.conversationHint.textContent = "Engineering is briefing your Product Manager. The conversation opens when they write to you with their questions.";
     else ui.conversationHint.textContent = "Goes straight to your Product Manager. They reply right here.";
   }
 
