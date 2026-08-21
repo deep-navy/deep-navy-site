@@ -6191,15 +6191,20 @@
   }
 
   const activityCategories = new Set(["all", "conversations", "sessions", "tools", "workspace", "delivery", "approvals", "provisioning", "cost"]);
-  const runtimeActivityTypes = new Set(["a2a.message", "tool.call", "session.status", "artifact.summary"]);
+  const runtimeActivityTypes = new Set(["a2a.message", "tool.call", "session.status", "artifact.summary", "agent.note"]);
   const workspaceArtifactTypes = new Set(["workspace_change", "commit", "plan", "design", "decision_record", "test_report", "deployment"]);
   const deliveryArtifactTypes = new Set(["issue", "pull_request"]);
   const activityDetailKeys = Object.freeze({
     "a2a.message": new Set(["from_agent_id", "to_agent_id", "message_kind"]),
     "tool.call": new Set(["tool_name", "result", "duration_ms"]),
     "session.status": new Set(["previous_status", "current_status", "reason_code"]),
-    "artifact.summary": new Set(["artifact_type", "artifact_id", "uri", "change_kind"])
+    "artifact.summary": new Set(["artifact_type", "artifact_id", "uri", "change_kind"]),
+    // The note's own text IS the event's summary; the duplicate details.note
+    // is ignored below rather than validated, because prose has no place in
+    // the strict key/value validator.
+    "agent.note": new Set(["about"])
   });
+  const activityDetailIgnoredKeys = Object.freeze({ "agent.note": new Set(["note"]) });
 
   function activityDetails(event, type) {
     const details = event?.details;
@@ -6207,7 +6212,9 @@
     const allowed = activityDetailKeys[type];
     if (!allowed) return {};
     const normalized = {};
+    const ignored = activityDetailIgnoredKeys[type];
     for (const [name, value] of Object.entries(details)) {
+      if (ignored && ignored.has(name)) continue;
       if (!allowed.has(name)) throw new ApiError("ActivityService returned an unexpected detail field", 0, "invalid_response", "");
       if (typeof value === "string" && value.length <= 512 && !/[\u0000-\u001f\u007f]/.test(value)) normalized[name] = value;
       else if (typeof value === "number" && Number.isFinite(value) && value >= 0) normalized[name] = value;
@@ -6234,7 +6241,12 @@
     const safeSummary = stringValue(event?.safeSummary);
     const status = stringValue(event?.status);
     const sequence = typeof event?.sequence === "bigint" ? event.sequence : BigInt(event?.sequence || 0);
-    if (!id || id.length > 128 || /[\u0000-\u001f\u007f]/.test(id) || !runtimeActivityTypes.has(type) || !safeSummary || safeSummary.length > 1000 || sequence <= 0n) {
+    // An event TYPE this build does not know is the server being newer, not
+    // the server being wrong: skip the event and keep the stream alive. Every
+    // other malformation on a KNOWN type still fails closed - the day an
+    // unknown type killed the stream permanently, the failure was ours.
+    if (!runtimeActivityTypes.has(type)) return null;
+    if (!id || id.length > 128 || /[\u0000-\u001f\u007f]/.test(id) || !safeSummary || safeSummary.length > 1000 || sequence <= 0n) {
       throw new ApiError("ActivityService returned an invalid normalized event", 0, "invalid_response", "");
     }
     const details = activityDetails(event, type);
@@ -6298,6 +6310,13 @@
 
   function appendActivityEvent(event) {
     const entry = normalizedRuntimeActivity(event);
+    if (entry === null) {
+      // Skipped-but-seen: advance the cursor so a reconnect does not replay
+      // an event this build will only skip again.
+      const sequence = typeof event?.sequence === "bigint" ? event.sequence : BigInt(event?.sequence || 0);
+      if (sequence > session.lastActivitySequence) session.lastActivitySequence = sequence;
+      return;
+    }
     if (session.activityEventIds.has(entry.id)) return;
     if (entry.sequence <= session.lastActivitySequence) throw new ApiError("ActivityService returned a non-monotonic sequence", 0, "invalid_response", "");
     session.lastActivitySequence = entry.sequence;
@@ -6712,8 +6731,11 @@
       safeSummary,
       // "attempt 2" is only worth saying when there was more than one, and then
       // it should read as a fact about the work, not a counter.
+      // Reconcile passes are how declarative provisioning works, not a
+      // struggle: the counter is only worth showing when something actually
+      // failed and the number explains the wait.
       detail: [SETUP_STEP[step] || step, safeError,
-        Number.isInteger(record.attempt) && record.attempt > 1 ? `took ${record.attempt} attempts` : ""]
+        Number.isInteger(record.attempt) && record.attempt > 1 && /fail|error|degraded/i.test(String(label)) ? `tried ${record.attempt} times` : ""]
         .filter(Boolean).join(" · "),
       status: label,
       sequenceLabel: sequence > 0n ? `Provisioning event ${sequence.toString()}` : "Snapshot",

@@ -107,6 +107,25 @@ test("the activity log speaks to the customer, not in service vocabulary", () =>
   const pricing = readFileSync("pricing/index.md", "utf8");
   assert.match(pricing, /1 credit = \$0\.01 of billable model, compute, storage, and service usage/,
     "the pricing page no longer states the rate the app quotes");
-  // Retries are only worth mentioning when there was more than one.
-  assert.match(source, /record\.attempt > 1 \? `took \$\{record\.attempt\} attempts`/);
+  // Reconcile passes are how declarative provisioning works: the counter
+  // appears only when something actually failed and the number explains the
+  // wait - a successful setup never brags about its retries.
+  assert.doesNotMatch(source, /record\.attempt > 1 \? `took \$\{record\.attempt\} attempts`/);
+  assert.match(source, /tried \$\{record\.attempt\} times/);
+});
+
+// The ledger accepts the agent's own sentence and survives event types newer
+// than this build; provisioning reconcile passes stop masquerading as
+// struggle on success rows.
+test("agent notes render and unknown event types skip instead of killing the stream", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  assert.match(source, /runtimeActivityTypes = new Set\(\[.*"agent\.note"\]\)/);
+  assert.match(source, /if \(!runtimeActivityTypes\.has\(type\)\) return null;/);
+  assert.match(source, /if \(entry === null\) \{/);
+  // The duplicate details.note is ignored, never validated as a code value.
+  assert.match(source, /activityDetailIgnoredKeys = Object\.freeze\(\{ "agent\.note": new Set\(\["note"\]\) \}\)/);
+  // The attempts counter appears only when something actually failed.
+  assert.match(source, /record\.attempt > 1 && \/fail\|error\|degraded\/i\.test\(String\(label\)\)/);
+  assert.doesNotMatch(source, /took \$\{record\.attempt\} attempts/);
+  assert.doesNotMatch(source, /`attempt \$\{record\.attempt\}`/);
 });
