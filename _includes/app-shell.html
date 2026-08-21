@@ -297,7 +297,13 @@
                   <button class="button button-quiet button-small" type="button" data-conversation-format aria-pressed="false">Show Markdown source</button>
                   <button class="button button-quiet button-small" type="button" data-conversation-retry hidden>Reconnect</button>
                 </div>
-                <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p></div>
+                <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p>
+                  <!-- The platform's own SYSTEM rows carry what the team knows
+                       so far: the briefing request names the repositories, and
+                       the introduction embeds engineering's briefing verbatim.
+                       This block shows that text to the customer while they
+                       wait - it never invents a word. -->
+                  <div class="console-briefing" data-conversation-briefing hidden><span class="console-briefing-label" data-conversation-briefing-label></span><div class="console-briefing-body" data-conversation-briefing-body></div></div></div>
                 <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
                 <!-- The Product Manager mid-reply: shown only while their
                      crew-tile liveness says they are actually working after

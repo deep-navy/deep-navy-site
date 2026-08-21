@@ -107,6 +107,9 @@
     agentList: document.querySelector("[data-agent-list]"),
     conversationState: document.querySelector("[data-conversation-state]"),
     conversationEmpty: document.querySelector("[data-conversation-empty]"),
+    conversationBriefing: document.querySelector("[data-conversation-briefing]"),
+    conversationBriefingLabel: document.querySelector("[data-conversation-briefing-label]"),
+    conversationBriefingBody: document.querySelector("[data-conversation-briefing-body]"),
     conversationThread: document.querySelector("[data-conversation-thread]"),
     conversationTyping: document.querySelector("[data-conversation-typing]"),
     conversationTypingCopy: document.querySelector("[data-conversation-typing-copy]"),
@@ -3938,14 +3941,77 @@
     if (!ui.conversationEmpty) return;
     const team = selectedTeam();
     if (!team || lifecycleLabel(team.state) !== "active") return;
-    const systemRows = session.conversationMessages.filter((entry) => entry.author === "system").length;
-    if (systemRows === 1) {
+    const rows = conversationSystemRows();
+    if (rows.length === 0) return;
+    // The introduction embeds engineering's briefing between fixed markers.
+    // When it is there, the customer reads the real thing while the Product
+    // Manager writes; when the platform fell back to the plain greeting there
+    // is nothing to quote, and the stage copy alone stays honest.
+    const briefing = engineeringBriefing(rows);
+    if (briefing) {
+      setEmptyState(ui.conversationEmpty, "What engineering found",
+        "The Engineering Manager's read of your repositories, verbatim. Your Product Manager opens the conversation with it in hand.");
+      showConversationBriefing("Engineering briefing", briefing, true);
+    } else if (rows.length === 1) {
       setEmptyState(ui.conversationEmpty, "Engineering is reading your repositories",
         "Your Engineering Manager is surveying the code before anyone speaks. Your Product Manager opens the conversation with what they find - usually a few minutes.");
-    } else if (systemRows >= 2) {
+      showConversationBriefing("Reading", briefingRepositories(rows).join("\n"), false);
+    } else {
       setEmptyState(ui.conversationEmpty, "Your Product Manager is writing to you",
         "Engineering's briefing is in. The greeting arrives as it is written.");
+      showConversationBriefing("Reading", briefingRepositories(rows).join("\n"), false);
     }
+  }
+
+  // The SYSTEM rows the stage counter reads also carry the platform's own
+  // words. Two shapes are parsed and nothing else: the briefing request ends
+  // by naming the team's repositories ("The team's repositories are: X, Y."),
+  // and the Product Manager's introduction embeds engineering's briefing
+  // between BRIEFING START/END markers. Both strings are written by
+  // platform-api, so the parse can only ever show what the server said.
+  function conversationSystemRows() {
+    return session.conversationMessages.filter((entry) => entry.author === "system");
+  }
+
+  function briefingRepositories(rows) {
+    for (const entry of rows) {
+      const match = /The team's repositories are: (.+)\.\s*$/.exec(entry.text || "");
+      if (match) return match[1].split(", ").filter(Boolean);
+    }
+    return [];
+  }
+
+  function engineeringBriefing(rows) {
+    for (let index = rows.length - 1; index >= 0; index -= 1) {
+      const text = rows[index].text || "";
+      const start = text.indexOf("BRIEFING START\n");
+      if (start === -1) continue;
+      const end = text.indexOf("\nBRIEFING END", start);
+      if (end === -1) continue;
+      const briefing = text.slice(start + "BRIEFING START\n".length, end).trim();
+      if (briefing) return briefing;
+    }
+    return "";
+  }
+
+  function showConversationBriefing(label, body, markdown) {
+    if (!ui.conversationBriefing) return;
+    const trimmed = (body || "").trim();
+    if (!trimmed) {
+      ui.conversationBriefing.hidden = true;
+      return;
+    }
+    ui.conversationBriefingLabel.textContent = label;
+    if (markdown) renderMarkdownInto(ui.conversationBriefingBody, trimmed);
+    else {
+      ui.conversationBriefingBody.replaceChildren();
+      for (const line of trimmed.split("\n")) {
+        const item = document.createElement("code");
+        item.textContent = line;
+        ui.conversationBriefingBody.append(item);
+      }
+    }
+    ui.conversationBriefing.hidden = false;
   }
 
   // The shimmer row is a claim that the Product Manager is composing, so it is
@@ -4007,6 +4073,9 @@
     ui.conversationTyping.hidden = true;
     ui.conversationEmpty.hidden = false;
     setEmptyState(ui.conversationEmpty, title, message);
+    // The briefing block quotes SYSTEM rows this reset just dropped; a
+    // switched team must never read the previous team's briefing.
+    if (ui.conversationBriefing) ui.conversationBriefing.hidden = true;
     setFieldError(ui.conversationError, "");
     ui.conversationRetry.hidden = true;
     setSourceState(ui.conversationState, label, tone);

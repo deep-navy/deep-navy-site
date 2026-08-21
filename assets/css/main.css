@@ -1005,6 +1005,19 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* The Product Manager mid-reply: the same breathing accent as a live
    crew dot, because it is the same claim from the same evidence. */
 .console-typing { display: flex; align-items: center; gap: .6rem; margin: 0 0 .8rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-bright); }
+/* What the team knows so far, quoted from the platform's own SYSTEM rows: the
+   repository list while engineering reads, the briefing itself while the
+   Product Manager writes. Scrolls past ~14rem so a thorough briefing never
+   buries the composer. display:grid would defeat [hidden], so hidden wins
+   explicitly. */
+.console-briefing { display: grid; gap: .55rem; max-width: 560px; margin-top: 1.15rem; padding: .85rem .95rem; border: 1px solid var(--line); border-left: 2px solid var(--aqua-dim); background: var(--navy-900); text-align: left; }
+.console-briefing[hidden] { display: none; }
+.console-briefing-label { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; }
+.console-briefing-body { display: grid; gap: .45rem; max-height: 14rem; overflow-y: auto; color: var(--ink); font-size: .78rem; line-height: 1.55; }
+.console-briefing-body > code { font-family: var(--font-mono); font-size: .68rem; color: var(--aqua); }
+.console-briefing-body p { margin: 0; }
+.console-briefing-body ul, .console-briefing-body ol { margin: 0; padding-left: 1.15rem; }
+.console-briefing-body h1, .console-briefing-body h2, .console-briefing-body h3, .console-briefing-body h4 { margin: .3rem 0 0; font-size: .8rem; }
 .console-typing-dots { display: inline-flex; gap: 4px; }
 .console-typing-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-graphic); animation: crew-breathe 1.4s ease-in-out infinite; }
 .console-typing-dots i:nth-child(2) { animation-delay: .2s; }

@@ -251,3 +251,58 @@ test("the console narrates team creation from the system rows", () => {
   // Never for a team that is not active - the provisioning card owns that.
   assert.match(source, /lifecycleLabel\(team\.state\) !== "active"\) return;/);
 });
+
+// The stage does more than count: the SYSTEM rows carry the platform's own
+// words, and the customer reads them while they wait. Two shapes only, both
+// written by platform-api - the repository list at the tail of the briefing
+// request, and the briefing between BRIEFING START/END inside the Product
+// Manager's introduction. The parse quotes; it never composes.
+test("the creation stage quotes the briefing and the repository list from the system rows", () => {
+  const source = readFileSync("assets/js/app.js", "utf8");
+  // The two parsers exist and anchor on the server's exact wording.
+  assert.match(source, /function briefingRepositories\(rows\)/);
+  assert.match(source, /The team's repositories are: \(\.\+\)/,
+    "the repository list is the request tail, greedy to the final period so dotted repo names survive");
+  assert.match(source, /function engineeringBriefing\(rows\)/);
+  assert.match(source, /BRIEFING START\\n/);
+  assert.match(source, /\\nBRIEFING END/);
+  // The briefing renders as markdown; the repository list renders as literal
+  // code lines - agent prose gets formatting, filenames do not.
+  const show = between("function showConversationBriefing(", "ui.conversationBriefing.hidden = false;");
+  assert.match(show, /renderMarkdownInto\(ui\.conversationBriefingBody, trimmed\)/);
+  assert.match(show, /textContent = line/);
+  // An empty body hides the block instead of rendering an empty quote.
+  assert.match(show, /if \(!trimmed\) \{\s*ui\.conversationBriefing\.hidden = true;/);
+  // A briefing outranks the row count: when the introduction carries one, the
+  // customer sees it whether or not the count reads two.
+  const stage = between("function renderConversationStage()", "function conversationSystemRows()");
+  assert.match(stage, /const briefing = engineeringBriefing\(rows\);/);
+  assert.match(stage, /What engineering found/);
+  // The shell carries the block, and switching teams drops the quoted text.
+  assert.match(shell, /data-conversation-briefing\b/);
+  assert.match(shell, /data-conversation-briefing-body/);
+  const reset = between("function resetConversationView(", "ui.conversationRetry.hidden = true;");
+  assert.match(reset, /ui\.conversationBriefing\.hidden = true;/);
+});
+
+// The parsers are pure functions of the rows, so run the real code against
+// the server's real shapes instead of trusting a source pattern.
+test("the stage parsers extract exactly what the server wrote", () => {
+  const parserSource = between("function briefingRepositories(rows)", "function showConversationBriefing(");
+  const parsers = new Function(`${parserSource}; return { briefingRepositories, engineeringBriefing };`)();
+  const request = { author: "system", text: "Your team was just provisioned. Read the actual repositories." +
+    " The team's repositories are: BriefOrg/storefront, BriefOrg/deep.navy." };
+  // Greedy to the final period: a dotted repository name is one name, not two.
+  assert.deepEqual(parsers.briefingRepositories([request]),
+    ["BriefOrg/storefront", "BriefOrg/deep.navy"]);
+  const intro = { author: "system", text: "Engineering has already read the repositories; their briefing " +
+    "follows between the markers. BRIEFING START\nstorefront is a Rails monolith; deep.navy is the " +
+    "marketing site.\nBRIEFING END\nIntroduce yourself as this team's product manager." };
+  assert.equal(parsers.engineeringBriefing([request, intro]),
+    "storefront is a Rails monolith; deep.navy is the marketing site.");
+  // The plain-greeting fallback carries no markers, and an older request
+  // carries no list: both parse to nothing rather than to an invented quote.
+  const plain = { author: "system", text: "Your team is provisioned. Introduce yourself." };
+  assert.equal(parsers.engineeringBriefing([request, plain]), "");
+  assert.deepEqual(parsers.briefingRepositories([plain]), []);
+});
