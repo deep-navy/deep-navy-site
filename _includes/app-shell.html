@@ -289,7 +289,7 @@
                    not rendered as chat. -->
               <section class="console" aria-labelledby="console-title">
                 <div class="console-head">
-                  <h3 id="console-title">Talk to your Product Manager</h3>
+                  <h3 id="console-title" data-console-title>Your Product Manager</h3>
                   <span class="stream-state" data-conversation-state>Waiting for a team</span>
                   <!-- Replies are written in Markdown, so they are rendered as
                        Markdown. This shows the source instead, for anyone who
@@ -377,7 +377,7 @@
                 <button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button>
               </div>
 <div class="activity-workspace">
-            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Talk to your Product Manager</a></div>
+            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
             <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
             <!-- Paging lives after the events, reached by running out of them,
                  rather than above the feed as a control panel. -->

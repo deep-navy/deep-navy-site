@@ -107,6 +107,8 @@
     agentList: document.querySelector("[data-agent-list]"),
     conversationState: document.querySelector("[data-conversation-state]"),
     conversationEmpty: document.querySelector("[data-conversation-empty]"),
+    consoleTitle: document.querySelector("[data-console-title]"),
+    activityConsoleLink: document.querySelector("[data-activity-console-link]"),
     conversationBriefing: document.querySelector("[data-conversation-briefing]"),
     conversationBriefingLabel: document.querySelector("[data-conversation-briefing-label]"),
     conversationBriefingBody: document.querySelector("[data-conversation-briefing-body]"),
@@ -4077,6 +4079,13 @@
     else if (!active) ui.conversationHint.textContent = "The conversation opens when your team finishes setting up.";
     else if (!open) ui.conversationHint.textContent = "Engineering is briefing your Product Manager. The conversation opens when they write to you with their questions.";
     else ui.conversationHint.textContent = "Goes straight to your Product Manager. They reply right here.";
+    // The section stops INVITING before there is anyone to talk to: the
+    // heading is a plain noun until the Product Manager has actually
+    // written, and the activity log's "Talk to your Product Manager"
+    // jump-link stays hidden on the same condition. Vocabulary is a promise;
+    // these keep it only when it is true.
+    if (ui.consoleTitle) ui.consoleTitle.textContent = open ? "Talk to your Product Manager" : "Your Product Manager";
+    if (ui.activityConsoleLink) ui.activityConsoleLink.hidden = !open;
   }
 
   function resetConversationView(message, label = "Waiting", tone = "", title = "No conversation yet") {

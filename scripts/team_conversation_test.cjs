@@ -324,3 +324,15 @@ test("the composer opens only when the Product Manager has actually written", ()
   const render = between("function renderConversation()", "function renderConversationStage()");
   assert.match(render, /syncConversationComposer\(\);/);
 });
+
+// The section headline and the activity log's jump-link stop INVITING before
+// there is anyone to talk to: both flip on exactly the composer's own open
+// condition, so "Talk to your Product Manager" is never written next to a
+// disabled input or a team still assembling.
+test("the invitation vocabulary appears only when the conversation is actually open", () => {
+  const sync = between("function syncConversationComposer()", "function resetConversationView(");
+  assert.match(sync, /ui\.consoleTitle\.textContent = open \? "Talk to your Product Manager" : "Your Product Manager";/);
+  assert.match(sync, /ui\.activityConsoleLink\.hidden = !open;/);
+  assert.match(shell, /data-console-title>Your Product Manager</);
+  assert.match(shell, /data-activity-console-link hidden>/);
+});
