@@ -2677,15 +2677,51 @@
       const note = document.createElement("p");
       note.className = "team-actions-note";
       note.id = `team-delete-confirm-${teamId}`;
-      note.textContent = lifecycleLabel(team?.state) === "deleting"
+      const retrying = lifecycleLabel(team?.state) === "deleting";
+      note.textContent = retrying
         ? `Retry removing “${stringValue(team.name) || "this team"}”? The previous attempt failed partway through.`
-        : `Delete “${stringValue(team.name) || "this team"}” for good? Running agents stop and this cannot be undone.`;
+        : `Delete “${stringValue(team.name) || "this team"}” for good? Running agents stop and the workspace is deleted — this cannot be undone. Code, PRDs, and designs stay in your GitHub organization.`;
       const group = document.createElement("div");
       group.className = "team-actions";
-      const confirmButton = lifecycleButton("delete-confirm", teamId, "Confirm delete", "button-danger", busy);
+      const confirmButton = lifecycleButton("delete-confirm", teamId, retrying ? "Confirm delete" : "Delete team", "button-danger", busy);
       confirmButton.setAttribute("aria-describedby", note.id);
+      let ackField = null;
+      if (!retrying) {
+        // Deletion is the one action on this row with no undo, so the confirm
+        // affordance demands the strongest signal of intent the row can carry:
+        // the team's own name, typed. The match gates the button directly (no
+        // re-render per keystroke - focus must survive typing) and
+        // confirmTeamDeletion re-checks it, so a click on a stale or replayed
+        // row can never delete on its own. A retry of an already-confirmed,
+        // failed deletion keeps the two-step button: the name was already
+        // typed once for this intent and the team is past the point of keeping.
+        const expected = deleteConfirmationPhrase(team);
+        const ackLabel = document.createElement("label");
+        ackLabel.className = "team-actions-note";
+        ackLabel.htmlFor = `team-delete-ack-${teamId}`;
+        ackLabel.textContent = `Type “${expected}” to confirm.`;
+        ackField = document.createElement("input");
+        ackField.type = "text";
+        ackField.id = `team-delete-ack-${teamId}`;
+        ackField.className = "team-delete-ack";
+        ackField.autocomplete = "off";
+        ackField.spellcheck = false;
+        ackField.disabled = busy;
+        ackField.setAttribute("data-team-delete-ack", teamId);
+        ackField.setAttribute("aria-describedby", note.id);
+        confirmButton.disabled = true;
+        ackField.addEventListener("input", () => {
+          confirmButton.disabled = busy || ackField.value.trim() !== expected;
+        });
+        ackField.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !confirmButton.disabled) confirmButton.click();
+        });
+        container.append(note, ackLabel, ackField);
+      } else {
+        container.append(note);
+      }
       group.append(confirmButton, lifecycleButton("delete-cancel", teamId, "Keep team", "button-quiet", busy));
-      container.append(note, group);
+      container.append(group);
       return container;
     }
 
@@ -2724,7 +2760,8 @@
     if (!teamId || session.teamLifecycleBusy.has(teamId)) return;
     session.teamLifecyclePendingDelete = teamId;
     renderTeamList();
-    ui.teamList.querySelector('[data-team-action="delete-confirm"]')?.focus();
+    (ui.teamList.querySelector("[data-team-delete-ack]")
+      || ui.teamList.querySelector('[data-team-action="delete-confirm"]'))?.focus();
   }
 
   function cancelTeamDeletion() {
@@ -2753,7 +2790,20 @@
     });
   }
 
+  // The phrase the customer must type to release a deletion: the team's own
+  // name. A team that somehow has no name falls back to a fixed word rather
+  // than an empty string that would match an untouched field.
+  function deleteConfirmationPhrase(team) {
+    return stringValue(team?.name).trim() || "delete";
+  }
+
   function confirmTeamDeletion(team) {
+    // Re-check the typed acknowledgement at fire time, not only at render
+    // time: the button's disabled state is UI, this is the gate.
+    if (lifecycleLabel(team?.state) !== "deleting") {
+      const ackField = ui.teamList.querySelector(`[data-team-delete-ack="${CSS.escape(stringValue(team.id))}"]`);
+      if (!ackField || ackField.value.trim() !== deleteConfirmationPhrase(team)) return;
+    }
     return runTeamLifecycleMutation(team, {
       procedure: "delete_team",
       payload: { id: stringValue(team.id) },
