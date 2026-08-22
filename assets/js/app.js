@@ -4886,16 +4886,52 @@
     return stringValue(approval?.approvalStatus) === (approved ? "APPROVAL_STATUS_APPROVED" : "APPROVAL_STATUS_DENIED");
   }
 
+  // Voiding reuses the FAILED status plus voided_reason rather than a status
+  // of its own, so "voided" is only ever the pair: FAILED and a reason.
+  function voidedApprovalStatus(approval) {
+    if (typeof approval?.approvalStatus === "number") return approval.approvalStatus === 6;
+    return stringValue(approval?.approvalStatus) === "APPROVAL_STATUS_FAILED";
+  }
+
+  // The PRD sign-off certifies a document that lives on GitHub as a
+  // discussion. Only that exact shape earns a link out of the queue:
+  // https://github.com/<owner>/<repo>/discussions/<number> with nothing else
+  // riding along. Another host, another path, credentials, a port, a query,
+  // or a fragment renders no link at all rather than a nearly-right one.
+  function prdReferenceUrl(value) {
+    const raw = stringValue(value);
+    if (!raw || raw.length > 512) return "";
+    let url;
+    try {
+      url = new URL(raw);
+    } catch {
+      return "";
+    }
+    if (url.protocol !== "https:" || url.hostname !== "github.com" || url.username || url.password || url.port || url.search || url.hash) return "";
+    if (!/^\/[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}\/discussions\/[1-9][0-9]{0,9}$/.test(url.pathname)) return "";
+    return url.toString();
+  }
+
   function validPendingApproval(approval, teamId) {
     const id = stringValue(approval?.id);
     const summary = stringValue(approval?.safeSummary);
     const actionType = stringValue(approval?.actionType);
+    const referenceUrl = stringValue(approval?.referenceUrl);
+    const referenceNodeId = stringValue(approval?.referenceNodeId);
+    const voidedReason = stringValue(approval?.voidedReason);
     return Boolean(
       id && id.length <= 128 && !/[\u0000-\u001f\u007f]/.test(id) &&
       stringValue(approval?.teamId) === stringValue(teamId) &&
       summary && summary.length <= 1000 &&
       actionType && actionType.length <= 160 &&
-      pendingApprovalStatus(approval)
+      referenceUrl.length <= 512 && !/[\u0000-\u001f\u007f]/.test(referenceUrl) &&
+      referenceNodeId.length <= 256 && !/[\u0000-\u001f\u007f]/.test(referenceNodeId) &&
+      voidedReason.length <= 1000 && !/[\u0000-\u001f\u007f]/.test(voidedReason) &&
+      // A record in this queue is either genuinely undecided, or it is the
+      // platform's own withdrawal of one: FAILED plus the reason the customer
+      // deserves to read. Any other status, a voided record missing its
+      // reason, or a pending record claiming one rejects the page.
+      (voidedReason ? voidedApprovalStatus(approval) : pendingApprovalStatus(approval))
     );
   }
 
@@ -4927,6 +4963,8 @@
       const id = stringValue(approval.id);
       const actionType = stringValue(approval.actionType);
       const summary = stringValue(approval.safeSummary);
+      const prdSignoff = actionType === "prd_signoff";
+      const voidedReason = stringValue(approval.voidedReason);
       const pending = session.approvalDecisionIds.has(id);
       const item = document.createElement("li");
       const form = document.createElement("form");
@@ -4955,6 +4993,42 @@
       requestedBy.textContent = stringValue(approval.requestedByAgentId)
         ? `Requested by ${stringValue(approval.requestedByAgentId)}`
         : "Requesting agent not reported";
+      form.append(header, safeSummary, requestedBy);
+
+      // The PRD is the document being signed, so the card links out to it -
+      // but only through the strict discussion shape above. A reference that
+      // does not parse simply renders no link.
+      const referenceUrl = prdSignoff ? prdReferenceUrl(approval.referenceUrl) : "";
+      if (referenceUrl) {
+        const reference = document.createElement("p");
+        reference.className = "approval-reference";
+        const referenceLink = document.createElement("a");
+        referenceLink.href = referenceUrl;
+        referenceLink.target = "_blank";
+        referenceLink.rel = "noopener noreferrer";
+        referenceLink.referrerPolicy = "no-referrer";
+        referenceLink.textContent = "Read the PRD on GitHub";
+        reference.append(referenceLink);
+        form.append(reference);
+      }
+
+      if (voidedReason) {
+        // The platform withdrew this request itself. There is no decision
+        // left to make, so the card carries the reason instead of controls.
+        const voided = document.createElement("p");
+        voided.className = "approval-voided";
+        const voidedLabel = document.createElement("span");
+        voidedLabel.className = "approval-voided-label";
+        voidedLabel.textContent = prdSignoff ? "Sign-off voided" : "Request voided";
+        const voidedDetail = document.createElement("span");
+        voidedDetail.className = "approval-voided-reason";
+        voidedDetail.textContent = voidedReason;
+        voided.append(voidedLabel, voidedDetail);
+        form.append(voided);
+        item.append(form);
+        ui.approvalList.append(item);
+        return;
+      }
 
       const reasonId = `approval-reason-${index}`;
       const reasonLabel = document.createElement("label");
@@ -4985,9 +5059,9 @@
       approve.type = "submit";
       approve.value = "approve";
       approve.dataset.approvalDecision = "approve";
-      approve.textContent = pending ? "Saving…" : "Approve";
+      approve.textContent = pending ? "Saving…" : (prdSignoff ? "Sign off" : "Approve");
       approve.disabled = pending;
-      approve.setAttribute("aria-label", `Approve ${actionType.replaceAll("_", " ")}`);
+      approve.setAttribute("aria-label", prdSignoff ? "Sign off on the PRD" : `Approve ${actionType.replaceAll("_", " ")}`);
       const deny = document.createElement("button");
       deny.className = "button button-quiet button-small approval-deny";
       deny.type = "submit";
@@ -4997,16 +5071,17 @@
       deny.disabled = pending;
       deny.setAttribute("aria-label", `Deny ${actionType.replaceAll("_", " ")}`);
       actions.append(approve, deny);
-      form.append(header, safeSummary, requestedBy, reasonLabel, reason, help, error, actions);
+      form.append(reasonLabel, reason, help, error, actions);
       item.append(form);
       ui.approvalList.append(item);
     });
 
     const count = session.approvals.length;
+    const undecided = session.approvals.filter((approval) => !stringValue(approval.voidedReason)).length;
     ui.approvalsEmpty.hidden = count > 0;
     ui.approvalList.hidden = count === 0;
     if (!count) setEmptyState(ui.approvalsEmpty, "No pending approvals", "The API returned no pending decisions for this team.");
-    setSourceState(ui.approvalsState, count ? `${count} pending` : "Clear", count ? "loading" : "success");
+    setSourceState(ui.approvalsState, undecided ? `${undecided} pending` : "Clear", undecided ? "loading" : "success");
     ui.approvalsMore.hidden = !session.approvalNextPageToken;
     ui.approvalsMore.disabled = !session.approvalNextPageToken;
     replaceActivityProjections("approval-pending:", session.approvals.map((approval) => ({
@@ -5015,8 +5090,10 @@
       source: "approval queue",
       title: stringValue(approval.actionType).replaceAll("_", " ") || "Approval requested",
       safeSummary: stringValue(approval.safeSummary),
-      detail: stringValue(approval.requestedByAgentId) ? `Requested by agent ${stringValue(approval.requestedByAgentId)}` : "Requesting agent not reported.",
-      status: "pending",
+      detail: stringValue(approval.voidedReason)
+        ? `Voided: ${stringValue(approval.voidedReason)}`
+        : (stringValue(approval.requestedByAgentId) ? `Requested by agent ${stringValue(approval.requestedByAgentId)}` : "Requesting agent not reported."),
+      status: stringValue(approval.voidedReason) ? "voided" : "pending",
       sequenceLabel: "Snapshot",
       occurredAt: approval.requestedAt
     })));
@@ -5103,21 +5180,25 @@
         id: `approval-decision:${id}`,
         category: "approvals",
         source: "approval decision",
-        title: `${actionType.replaceAll("_", " ")} · ${approved ? "approved" : "denied"}`,
+        title: `${actionType.replaceAll("_", " ")} · ${approved ? (actionType === "prd_signoff" ? "signed off" : "approved") : "denied"}`,
         safeSummary: stringValue(decided.safeSummary) || stringValue(approval.safeSummary),
-        detail: "Decision confirmed.",
+        detail: actionType === "prd_signoff" && approved ? "The PRD is being locked as the signed record." : "Decision confirmed.",
         status: approved ? "approved" : "denied",
         sequenceLabel: "Decision",
         occurredAt: decided.decidedAt || approval.requestedAt
       });
       renderApprovalQueue();
-      toast(approved ? "Approval recorded. The authorized action may proceed." : "Denial recorded with its audit note.", "success");
+      toast(approved
+        ? (actionType === "prd_signoff"
+          ? "Sign-off recorded. The PRD is being locked as the signed record."
+          : "Approval recorded. The authorized action may proceed.")
+        : "Denial recorded with its audit note.", "success");
     } catch (caught) {
       if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
       session.approvalDecisionIds.delete(id);
       form.removeAttribute("aria-busy");
       form.querySelectorAll("button, textarea").forEach((control) => { control.disabled = false; });
-      submitter.textContent = approved ? "Approve" : "Deny";
+      submitter.textContent = approved ? (actionType === "prd_signoff" ? "Sign off" : "Approve") : "Deny";
       setFieldError(error, apiErrorMessage(caught, "The decision was not recorded. It is safe to retry."));
       setSourceState(ui.approvalsState, `${session.approvals.length} pending`, "error");
     }

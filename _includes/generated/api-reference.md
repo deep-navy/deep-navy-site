@@ -87,8 +87,11 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.ListApprovalsResponse`](#deepnavy-v1-listapprovalsresponse)
   - [Message `deepnavy.v1.DecideApprovalRequest`](#deepnavy-v1-decideapprovalrequest)
   - [Message `deepnavy.v1.DecideApprovalResponse`](#deepnavy-v1-decideapprovalresponse)
+  - [Message `deepnavy.v1.RequestApprovalRequest`](#deepnavy-v1-requestapprovalrequest)
+  - [Message `deepnavy.v1.RequestApprovalResponse`](#deepnavy-v1-requestapprovalresponse)
   - [Enum `deepnavy.v1.ApprovalStatus`](#deepnavy-v1-approvalstatus)
   - [Service `deepnavy.v1.ApprovalService`](#deepnavy-v1-approvalservice)
+  - [Service `deepnavy.v1.ApprovalWorkerService`](#deepnavy-v1-approvalworkerservice)
 - [deepnavy/v1/auth.proto](#deepnavy-v1-auth-proto)
   - [Message `deepnavy.v1.CurrentUser`](#deepnavy-v1-currentuser)
   - [Message `deepnavy.v1.GetCurrentUserRequest`](#deepnavy-v1-getcurrentuserrequest)
@@ -1338,6 +1341,9 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | `requested_at` | 8 | `google.protobuf.Timestamp` | singular | — |
 | `decided_at` | 9 | `google.protobuf.Timestamp` | singular | — |
 | `approval_status` | 10 | [`deepnavy.v1.ApprovalStatus`](#deepnavy-v1-approvalstatus) | singular | — |
+| `reference_url` | 11 | `string` | singular | External artifact the approval certifies, when the action has one. For<br> prd_signoff this is the PRD discussion's html URL plus its GraphQL node<br> id; the node id is the durable handle because a discussion URL can change<br> when a repository is renamed or transferred. |
+| `reference_node_id` | 12 | `string` | singular | — |
+| `voided_reason` | 13 | `string` | singular | Human-readable explanation set when the platform voids an approval on its<br> own. Voiding reuses APPROVAL_STATUS_FAILED plus this reason rather than<br> adding a VOIDED enum value: the backing Postgres enum would need a<br> nontransactional ALTER TYPE, which is deliberately avoided. |
 
 <a id="deepnavy-v1-listapprovalsrequest"></a>
 ### Message `deepnavy.v1.ListApprovalsRequest`
@@ -1372,6 +1378,34 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | --- | ---: | --- | --- | --- |
 | `approval` | 1 | [`deepnavy.v1.Approval`](#deepnavy-v1-approval) | singular | — |
 
+<a id="deepnavy-v1-requestapprovalrequest"></a>
+### Message `deepnavy.v1.RequestApprovalRequest`
+
+RequestApprovalRequest is accepted only on platform-api's private worker
+ listener after agent-stream has authenticated the current team-generation
+ credential. The relay proves which team is speaking; the platform still
+ enforces the requesting role and action type server-side.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `request_id` | 1 | `string` | singular | Deterministic UUID derived by the caller; the idempotency key. Replaying<br> the same request_id returns the originally created approval unchanged. |
+| `team_id` | 2 | `string` | singular | — |
+| `team_generation` | 3 | `int64` | singular | Must match the team's current generation. A request from a superseded<br> runtime generation is rejected so a stale workspace cannot raise<br> approvals against a team that has since been re-provisioned. |
+| `requesting_agent_key` | 4 | `string` | singular | — |
+| `action_type` | 5 | `string` | singular | Only "prd_signoff" is accepted today. New action types require their own<br> server-side validation and execution path before the gate widens. |
+| `safe_summary` | 6 | `string` | singular | Customer-facing one-liner. Must already be safe to show verbatim in the<br> approvals inbox; the platform does not rewrite it. |
+| `reference_url` | 7 | `string` | singular | The PRD discussion's html URL, shown to the deciding human. |
+| `reference_node_id` | 8 | `string` | singular | The discussion's GraphQL node id — the durable handle used to lock the<br> PRD body after approval. |
+| `expires_at` | 9 | `google.protobuf.Timestamp` | singular | — |
+| `repository_id` | 10 | `int64` | singular | Repository the discussion lives in. Recorded now so the eventual lock<br> call can mint a least-privilege installation token scoped to this one<br> repository. |
+
+<a id="deepnavy-v1-requestapprovalresponse"></a>
+### Message `deepnavy.v1.RequestApprovalResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `approval` | 1 | [`deepnavy.v1.Approval`](#deepnavy-v1-approval) | singular | — |
+
 <a id="deepnavy-v1-approvalstatus"></a>
 ### Enum `deepnavy.v1.ApprovalStatus`
 
@@ -1392,6 +1426,16 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | --- | --- | --- | --- | --- |
 | `ListApprovals` | [`deepnavy.v1.ListApprovalsRequest`](#deepnavy-v1-listapprovalsrequest) | [`deepnavy.v1.ListApprovalsResponse`](#deepnavy-v1-listapprovalsresponse) | unary | — |
 | `DecideApproval` | [`deepnavy.v1.DecideApprovalRequest`](#deepnavy-v1-decideapprovalrequest) | [`deepnavy.v1.DecideApprovalResponse`](#deepnavy-v1-decideapprovalresponse) | unary | — |
+
+<a id="deepnavy-v1-approvalworkerservice"></a>
+### Service `deepnavy.v1.ApprovalWorkerService`
+
+ApprovalWorkerService is server-to-server only. It must never be mounted
+ on the public customer mux or authenticated with the provisioning token.
+
+| RPC | Request | Response | Streaming | Description |
+| --- | --- | --- | --- | --- |
+| `RequestApproval` | [`deepnavy.v1.RequestApprovalRequest`](#deepnavy-v1-requestapprovalrequest) | [`deepnavy.v1.RequestApprovalResponse`](#deepnavy-v1-requestapprovalresponse) | unary | — |
 
 
 <a id="deepnavy-v1-auth-proto"></a>
