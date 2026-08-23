@@ -194,7 +194,10 @@ test("the figure shown as remaining credit is the pool, never the team's filtere
   const surface = creditSurface();
   surface.renderCreditBalanceResult(balanceResponse(ORGANIZATION_POOL, TEAM_FILTERED_SUM));
   assert.equal(surface.session.creditBalance, ORGANIZATION_POOL);
-  assert.equal(surface.ui.creditBalanceValue.textContent, "308,944.522099");
+  // Rounded for reading: a microcredit is a hundred-millionth of a dollar and
+  // the last four places were unreadable noise. scripts/credit_number_test.cjs
+  // holds the formatter itself.
+  assert.equal(surface.ui.creditBalanceValue.textContent, "308,945");
   assert.notEqual(surface.ui.creditBalanceValue.textContent.startsWith("−"), true,
     "a fully funded team was shown a negative balance");
   assert.equal(surface.called("resetCreditBalanceView"), false);

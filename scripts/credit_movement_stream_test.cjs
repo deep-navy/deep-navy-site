@@ -262,12 +262,27 @@ test("the last frame and the balance panel are one number, not two readings", ()
   assert.match(balance, /if \(!streamed\)/);
 });
 
-test("a provider cost is never presented as what the customer paid", () => {
+/* CHANGED DELIBERATELY, and in the direction this test was always pointing.
+ *
+ * It used to require the row to LABEL direct_cost honestly — "metered provider
+ * cost USD 0.1600 (not customer impact)". The label was true and the number was
+ * still useless: a customer can neither act on our cost of goods nor reconcile
+ * it against anything they are charged, and its presence beside delta_micros
+ * put two currencies in one row. So direct_cost is no longer rendered at all,
+ * which satisfies "never presented as what the customer paid" absolutely rather
+ * than by careful wording.
+ *
+ * The reasoning stays in the source as a comment, so the next person to reach
+ * for movement.directCost finds the decision instead of an empty space. */
+test("a provider cost is not presented to the customer at all", () => {
   const row = between(app, "function creditMovementRow(movement)", "// The mockup's live line");
-  assert.match(row, /metered provider cost/);
-  assert.match(row, /not customer impact/);
-  // The ledger converts cost to credits at the published rate, so the raw figure
-  // understates customer impact and may never stand in for it.
+  assert.doesNotMatch(row, /parts\.push\(`metered provider cost/, "our provider cost is rendered into the row again");
+  assert.doesNotMatch(row, /movement\?\.directCost/, "the row reads direct_cost again");
+  // delta_micros is this movement in the customer's own money, and is exact
+  // because reconciling against the ledger is what this row is for.
+  assert.match(row, /formatCreditMicrosExact\(deltaMicros < 0n \? -deltaMicros : deltaMicros\)/);
+  // The decision is recorded where it would be undone.
+  assert.match(row, /direct_cost IS NOT RENDERED/);
   assert.match(row, /It is NOT what the customer paid/);
 });
 

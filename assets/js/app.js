@@ -282,7 +282,8 @@
     economicsMessage: document.querySelector("[data-economics-message]"),
     economicsEmpty: document.querySelector("[data-economics-empty]"),
     economicsMetrics: document.querySelector("[data-economics-metrics]"),
-    economicsDirectCost: document.querySelector("[data-economics-direct-cost]"),
+    economicsCreditValue: document.querySelector("[data-economics-credit-value]"),
+    economicsBreakdownNote: document.querySelector("[data-economics-breakdown-note]"),
     economicsCreditsUsed: document.querySelector("[data-economics-credits-used]"),
     economicsCreditsRemaining: document.querySelector("[data-economics-credits-remaining]"),
     economicsMeasured: document.querySelector("[data-economics-measured]"),
@@ -435,7 +436,7 @@
     invoicePageTokens: new Set(),
     invoiceLoading: false,
     economicsBreakdowns: new Map(),
-    selectedEconomicsGroup: "initiative",
+    selectedEconomicsGroup: "operation",
     teamServiceAvailable: false,
     teams: [],
     // The repository set each team is KNOWN to run with, keyed by team id —
@@ -7746,7 +7747,18 @@
   // "which run" is the question the Runs screen already asks in full.
   const SESSION_SPEND_GROUP = Object.freeze({ key: "session", label: "Run", scopeType: 11 });
 
+  // OPERATION LEADS, and that is the whole point of adding it.
+  //
+  // "Credits used" invites one question — what on? — and every dimension here
+  // answered it by unit of WORK: which initiative, which agent, which pull
+  // request. On a real team that answer was mostly blank, because most of the
+  // spend is not work. Of the live team's 18,883 credits, 18,750 were the
+  // one-shot team_runtime_month provisioning charge and roughly 133 were model
+  // calls. Grouped by initiative that reads as "no attribution"; grouped by
+  // operation it reads as one large line called provisioning and a small one
+  // called inference, which is the truth and is immediately legible.
   const economicsGroupDefinitions = Object.freeze([
+    { key: "operation", label: "Operation", scopeType: 14 },
     { key: "initiative", label: "Initiative", scopeType: 7 },
     { key: "agent", label: "Agent", scopeType: 4 },
     { key: "agent_role", label: "Agent role", scopeType: 5 },
@@ -7820,7 +7832,7 @@
       const values = document.createElement("span");
       const time = document.createElement("span");
       name.textContent = stringValue(record.displayName);
-      values.textContent = `${formatCanonicalMoney(record.directCost)} cost · ${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatIntegerCount(record.usageEventCount)} usage events`;
+      values.textContent = `${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatCreditValue(record.creditsUsedMicros)} · ${formatIntegerCount(record.usageEventCount)} usage events`;
       const measured = result.value.measuredAt;
       const first = timestampDate(record.firstOccurredAt);
       const last = timestampDate(record.lastOccurredAt);
@@ -7831,6 +7843,45 @@
     ui.economicsBreakdownEmpty.hidden = result.value.records.length > 0;
     ui.economicsBreakdownList.hidden = result.value.records.length === 0;
     if (!result.value.records.length) setEmptyState(ui.economicsBreakdownEmpty, `No ${definition.label.toLowerCase()} usage`, "The authoritative ledger returned no rows for the current paid period.");
+    renderEconomicsBreakdownNote(definition, result.value.records);
+  }
+
+  // WHY THE BIGGEST NUMBER IS THE BIGGEST NUMBER.
+  //
+  // A customer reading "18,883 credits used" reasonably assumes they bought
+  // 18,883 credits of agent work. They did not: on the live team 18,750 of it
+  // was the one-shot charge for standing the team's runtime up, and about 133
+  // was model calls. Both are legitimate, and the difference between them is
+  // the difference between "this is expensive" and "this was a setup fee".
+  //
+  // The sentence is computed from the rows on screen rather than written down,
+  // so it states the leading line's real share and cannot go stale when the
+  // shape of a team's spend changes. It says nothing at all when there is
+  // nothing to say — one row is not a distribution, and a leader under a third
+  // of the total is not a story.
+  function renderEconomicsBreakdownNote(definition, records) {
+    const note = ui.economicsBreakdownNote;
+    if (!note) return;
+    note.hidden = true;
+    note.textContent = "";
+    if (definition.key !== "operation" || records.length < 2) return;
+    let total = 0n;
+    let leader = null;
+    let leaderMicros = 0n;
+    for (const record of records) {
+      const micros = int64Value(record?.creditsUsedMicros);
+      if (micros === null) return;
+      total += micros;
+      if (micros > leaderMicros) {
+        leaderMicros = micros;
+        leader = stringValue(record?.displayName);
+      }
+    }
+    if (total <= 0n || !leader) return;
+    const share = Number((leaderMicros * 1000n) / total) / 10;
+    if (share < 33) return;
+    note.textContent = `Most of this is one operation: ${leader} accounts for ${formatCreditMicros(leaderMicros)} of the ${formatCreditMicros(total)} credits measured here — ${share.toFixed(share >= 10 ? 0 : 1)}%. Standing a team's runtime up is charged once, not per unit of work, so a large share here is setup rather than agent effort.`;
+    note.hidden = false;
   }
 
   function renderEconomicsBreakdownsResult(result) {
@@ -7875,7 +7926,7 @@
   function resetEconomicsView(message, label, tone = "") {
     replaceActivityProjections("cost:", []);
     session.economicsBreakdowns = new Map();
-    session.selectedEconomicsGroup = "initiative";
+    session.selectedEconomicsGroup = "operation";
     ui.economicsBreakdown.hidden = true;
     ui.economicsGroup.disabled = true;
     ui.economicsGroup.replaceChildren();
@@ -8077,7 +8128,9 @@
     const withinRange = proposed !== null && proposed >= committed && proposed <= prepaidCeiling && proposed > 0n;
     ui.creditControlSummary.textContent = withinRange
       ? `${formatCreditMicros(proposed)} credit hard limit · ${ui.creditCustomerPaused.checked ? "billable work paused" : "billable work enabled"} · version ${String(control.version)}`
-      : `Choose a limit from ${formatCreditMicros(committed)} to ${formatCreditMicros(prepaidCeiling)} available prepaid credits.`;
+      // Exact: these are the bounds the server enforces to the microcredit, and
+      // a rounded ceiling would be a number the field then refuses.
+      : `Choose a limit from ${formatCreditMicrosExact(committed)} to ${formatCreditMicrosExact(prepaidCeiling)} available prepaid credits.`;
     ui.creditControlSubmit.disabled = !withinRange;
   }
 
@@ -8134,7 +8187,13 @@
       resetEconomicsView("The economics service did not return a matching team-scoped summary. No metrics were displayed.", "Invalid response", "error");
       return;
     }
-    ui.economicsDirectCost.textContent = formatCanonicalMoney(economics.directCost);
+    // The customer's money, not ours. economics.directCost is what the work cost
+    // DEEP NAVY at the provider; the ledger converts cost to credits at the
+    // published rate, so the two sit a margin apart and only one of them is the
+    // customer's. Showing ours here — unlabelled, beside a credit figure — is
+    // what made the panel unreadable: two currencies in one row, and no way to
+    // tell which one you had actually spent.
+    ui.economicsCreditValue.textContent = formatCreditValue(economics.creditsUsedMicros);
     ui.economicsCreditsUsed.textContent = formatCreditMicros(economics.creditsUsedMicros);
     ui.economicsCreditsRemaining.textContent = formatCreditMicros(economics.creditsRemainingMicros);
     const measured = timestampDate(economics.measuredAt);
@@ -8150,7 +8209,9 @@
       source: "economics",
       title: "Credits updated",
       // Lead with the balance, because that is the number the customer spends.
-      safeSummary: `${formatCreditMicros(economics.creditsUsedMicros)} credits used, ${formatCreditMicros(economics.creditsRemainingMicros)} left. Measured cost of the work so far: ${formatCanonicalMoney(economics.directCost)}.`,
+      // One quantity, both units — the money is the credits restated at
+      // $0.01 each, so the two figures can never disagree.
+      safeSummary: `${formatCreditMicros(economics.creditsUsedMicros)} credits used (${formatCreditValue(economics.creditsUsedMicros)}), ${formatCreditMicros(economics.creditsRemainingMicros)} left in the organization's pool.`,
       // Saying what this is beats saying what it is not. The old line denied
       // being a live feed, which answers a question nobody asked and leaves the
       // real one - how current is this number? - unanswered.
@@ -8626,7 +8687,54 @@
     }
   }
 
+  // Credits, ROUNDED FOR READING.
+  //
+  // A microcredit is a ledger storage unit — a millionth of a credit, which is a
+  // hundred-millionth of a dollar. Printing the whole fraction meant a customer
+  // read "18,883.403215 credits used, 308,944.522099 left" and had to count
+  // digits to find the magnitude. Nobody can hold that, and the six places
+  // carried no information anyone could act on: the last four are worth less
+  // than a hundredth of a cent.
+  //
+  // The scale sets the precision, so a figure never shows more places than it
+  // has meaning:
+  //
+  //   >= 1,000 credits   whole credits          308,945
+  //   >= 1 credit        two places, a cent     133.41
+  //   < 1 credit         up to six, never 0     0.000241
+  //   exactly zero       "0"
+  //
+  // The third rule is the one that matters. Rounding a real but tiny movement to
+  // "0.00" would print a ZERO — a claim that we counted and there was nothing —
+  // over a fact that is not nothing. So beneath a credit the fraction is kept
+  // until it is true.
+  //
+  // Where exact reconciliation is the point rather than reading — the ledger's
+  // own movement rows, and the bounds of an input the server validates to the
+  // microcredit — use formatCreditMicrosExact instead.
   function formatCreditMicros(value) {
+    try {
+      const micros = typeof value === "bigint" ? value : BigInt(value || 0);
+      if (micros === 0n) return "0";
+      const negative = micros < 0n;
+      const absolute = negative ? -micros : micros;
+      const sign = negative ? "−" : "";
+      if (absolute >= 1_000_000_000n) {
+        return `${sign}${new Intl.NumberFormat().format((absolute + 500_000n) / 1_000_000n)}`;
+      }
+      if (absolute >= 1_000_000n) {
+        const hundredths = (absolute + 5_000n) / 10_000n;
+        return `${sign}${new Intl.NumberFormat().format(hundredths / 100n)}.${(hundredths % 100n).toString().padStart(2, "0")}`;
+      }
+      return `${sign}0.${absolute.toString().padStart(6, "0").replace(/0+$/, "")}`;
+    } catch {
+      return "Not reported";
+    }
+  }
+
+  // Every microcredit, for the surfaces where reconciling to the ledger IS the
+  // task and a rounded figure would be the wrong answer.
+  function formatCreditMicrosExact(value) {
     try {
       const micros = typeof value === "bigint" ? value : BigInt(value || 0);
       const negative = micros < 0n;
@@ -8634,6 +8742,32 @@
       const whole = absolute / 1_000_000n;
       const fraction = (absolute % 1_000_000n).toString().padStart(6, "0").replace(/0+$/, "");
       return `${negative ? "−" : ""}${new Intl.NumberFormat().format(whole)}${fraction ? `.${fraction}` : ""}`;
+    } catch {
+      return "Not reported";
+    }
+  }
+
+  // The same credits, in the money the customer is charged.
+  //
+  // This is NOT a second measurement standing beside the credit figure — it is
+  // the identical quantity in the other unit, because 1 credit is $0.01 of
+  // credit value by definition. That is exactly why it is safe to show and why
+  // our measured direct cost is not: direct cost is what the work cost US, it
+  // sits a margin away from what the customer pays, and putting the two in one
+  // sentence is what made a customer unable to tell whether they had spent $75
+  // or $188.
+  function formatCreditValue(value) {
+    try {
+      const micros = typeof value === "bigint" ? value : BigInt(value || 0);
+      if (micros === 0n) return formatCents(0n);
+      const negative = micros < 0n;
+      const absolute = negative ? -micros : micros;
+      // 1 credit = 1,000,000 micros = one cent.
+      const cents = (absolute + 500_000n) / 1_000_000n;
+      // Real spend that rounds below a cent is not "$0.00" — that would be the
+      // same false zero the credit formatter refuses.
+      if (cents === 0n) return `less than ${formatCents(1n)}`;
+      return `${negative ? "−" : ""}${formatCents(cents)}`;
     } catch {
       return "Not reported";
     }
@@ -9290,7 +9424,7 @@
       ui.agentSpend.textContent = "No usage has been attributed to this agent in the current paid period.";
       return;
     }
-    ui.agentSpend.textContent = `${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatCanonicalMoney(record.directCost)} measured cost · ${formatIntegerCount(record.usageEventCount)} usage events · measured ${relativeTime(result.value.measuredAt)}`;
+    ui.agentSpend.textContent = `${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatCreditValue(record.creditsUsedMicros)} · ${formatIntegerCount(record.usageEventCount)} usage events · measured ${relativeTime(result.value.measuredAt)}`;
   }
 
   // Three readings, every one from data already on this screen. A count the
@@ -10147,7 +10281,8 @@
       // The sign is spelled out in the glyph and the leading character, so the
       // direction survives with the colour removed.
       delta.dataset.direction = deltaMicros < 0n ? "debit" : "credit";
-      delta.textContent = `${deltaMicros < 0n ? "−" : "+"}${formatCreditMicros(deltaMicros < 0n ? -deltaMicros : deltaMicros)}`;
+      // Exact: this row is the ledger, and reconciling against it is its job.
+      delta.textContent = `${deltaMicros < 0n ? "−" : "+"}${formatCreditMicrosExact(deltaMicros < 0n ? -deltaMicros : deltaMicros)}`;
     }
 
     const meta = document.createElement("span");
@@ -10158,18 +10293,20 @@
     const unit = stringValue(movement?.unit);
     const quantity = signedInt64Value(movement?.quantity);
     if (unit && quantity !== null) parts.push(`${new Intl.NumberFormat().format(quantity)} ${unit}`);
-    // direct_cost is the provider cost, present only once a call has settled.
-    // It is NOT what the customer paid — the ledger converts cost to credits
-    // at the published rate — so it is never presented as customer impact.
-    const cost = movement?.directCost;
-    if (cost) {
-      const units = signedInt64Value(cost.units);
-      const nanos = Number(cost.nanos || 0);
-      if (units !== null) {
-        const amount = Number(units) + nanos / 1_000_000_000;
-        parts.push(`metered provider cost ${stringValue(cost.currencyCode) || "USD"} ${amount.toFixed(4)} (not customer impact)`);
-      }
-    }
+    // direct_cost IS NOT RENDERED, deliberately, and this comment is the record
+    // of that decision rather than an oversight waiting to be corrected.
+    //
+    // It is the provider cost of the movement — what the work cost DEEP NAVY.
+    // It is NOT what the customer paid: the ledger converts cost to credits at
+    // the published rate, so it understates their impact by the margin. It used
+    // to be printed here as "metered provider cost USD 0.1600 (not customer
+    // impact)", which is an honest label on a number that still had no use: a
+    // customer can neither act on our cost of goods nor reconcile it against
+    // anything they are charged, and its presence beside delta_micros put two
+    // currencies in one row.
+    //
+    // delta_micros, already rendered above, is this movement in the customer's
+    // own money. That is the whole of what this row owes them.
     const occurred = timestampDate(movement?.occurredAt);
     if (occurred) parts.push(relativeTime(occurred));
     meta.textContent = parts.join(" · ");

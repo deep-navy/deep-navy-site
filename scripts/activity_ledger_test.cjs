@@ -52,11 +52,24 @@ test("objective recovery is team-scoped, paginated, and selectable after refresh
 });
 
 test("customer economics breakdowns are server-calculated, scoped, and bounded", () => {
-  for (const group of ["initiative", "agent", "agent_role", "repository", "issue", "pull_request"]) assert.match(app, new RegExp(`key: "${group}"`));
+  for (const group of ["operation", "initiative", "agent", "agent_role", "repository", "issue", "pull_request"]) assert.match(app, new RegExp(`key: "${group}"`));
+  // Operation leads, because on a real team most of the spend is not a unit of
+  // work: the one-shot provisioning charge dwarfs the model calls, and every
+  // other dimension renders that as "no attribution" rather than as a fact.
+  assert.match(app, /economicsGroupDefinitions = Object\.freeze\(\[\s*\n\s*\{ key: "operation"/);
   assert.match(app, /apiRequest\("economics_breakdowns"/);
   assert.match(app, /parentScopeType: "team"/);
   assert.match(app, /Economics breakdown exceeded the supported 500-row dimension limit/);
-  assert.match(app, /formatCanonicalMoney\(record\.directCost\).*formatCreditMicros\(record\.creditsUsedMicros\)/s);
+  /* CHANGED DELIBERATELY: this pinned formatCanonicalMoney(record.directCost)
+   * leading the row. directCost is what the work cost DEEP NAVY at the
+   * provider; the ledger converts cost to credits at the published rate, so it
+   * is roughly 2.5x away from what the customer is charged. Printing it beside
+   * a credit figure put two currencies in one line with no label saying which
+   * was which. The money shown now is the credits restated at $0.01 each — the
+   * same quantity in the other unit, so the two can never disagree. */
+  assert.match(app, /formatCreditMicros\(record\.creditsUsedMicros\).*formatCreditValue\(record\.creditsUsedMicros\)/s);
+  assert.doesNotMatch(app, /formatCanonicalMoney\(record\.directCost\)/,
+    "our measured direct cost is cost of goods and does not belong on a customer surface");
   assert.match(client, /economics\.listEconomicsBreakdowns/);
 });
 
@@ -101,7 +114,12 @@ test("the activity log speaks to the customer, not in service vocabulary", () =>
   // customer can act on.
   assert.match(source, /const SETUP_SENTENCE = \{/);
   assert.match(source, /succeeded: \["Setup finished", "Your team finished setting up and is ready to work\."\]/);
-  assert.match(source, /credits used, \$\{formatCreditMicros\(economics\.creditsRemainingMicros\)\} left/);
+  // The summary carries both units of the SAME figure — credits, and those
+  // credits in money — and no longer quotes our measured direct cost beside them.
+  assert.match(source, /credits used \(\$\{formatCreditValue\(economics\.creditsUsedMicros\)\}\)/);
+  assert.match(source, /\$\{formatCreditMicros\(economics\.creditsRemainingMicros\)\} left in the organization's pool/);
+  assert.doesNotMatch(source, /Measured cost of the work so far/,
+    "our direct cost is not the customer's bill and is no longer quoted as one");
   // The stated rate must match the published one: 1 credit = $0.01.
   assert.match(source, /100 credits = \$1\.00 of model, compute and storage usage/);
   const pricing = readFileSync("pricing/index.md", "utf8");

@@ -61,13 +61,25 @@ test("customer app fails closed through the canonical role contract", () => {
   assert.doesNotMatch(app, /Product engineer|Reliability engineer|Code reviewer/i);
 });
 
-test("customer economics expose only usage, credits, budgets, and attributable cost", () => {
+/* CHANGED DELIBERATELY: the reading was "Attributable cost", which rendered
+ * economics.directCost — OUR provider cost for the work. It was never the
+ * customer's money: the ledger converts cost to credits at the published rate,
+ * so the two sit a margin apart, and an unlabelled dollar figure next to a
+ * credit figure is how a customer ends up unable to say whether they spent $75
+ * or $188. The panel now reads the credits and those same credits in money.
+ *
+ * The margin assertions below are the point of this test and are unchanged —
+ * they are what keeps an internal profitability figure off a customer screen,
+ * and taking direct cost off the panel only strengthens that. */
+test("customer economics expose usage, credits and budgets — never our own cost or margin", () => {
   const app = read("assets/js/app.js");
   const shell = read("_includes/app-shell.html");
   for (const source of [app, shell]) {
     assert.doesNotMatch(source, /gross\s*profit|gross\s*margin|data-economics-revenue|economicsRevenue/i);
   }
-  assert.match(shell, /Attributable cost/);
   assert.match(shell, /Credits used/);
+  assert.match(shell, /What that is in money/);
   assert.match(shell, /Credits remaining/);
+  assert.doesNotMatch(shell, /Attributable cost/, "our provider cost is not a customer reading");
+  assert.doesNotMatch(app, /economicsDirectCost/, "the direct-cost hook is gone, not merely unread");
 });

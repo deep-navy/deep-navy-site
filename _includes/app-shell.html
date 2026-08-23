@@ -849,13 +849,13 @@
         <!-- ===== ECONOMICS ===== -->
         <section class="wview" data-view="economics" id="workspace-economics" aria-labelledby="workspace-economics-title">
           <div class="wview-head">
-            <div><h2 id="workspace-economics-title">Economics</h2><p data-economics-message>Measured cost and prepaid credits for this team, calculated server-side.</p></div>
+            <div><h2 id="workspace-economics-title">Economics</h2><p data-economics-message>What this team has spent from the organization's prepaid credits, calculated server-side.</p></div>
             <span class="data-source-badge" data-economics-state>Waiting</span>
           </div>
           <div class="empty-state" data-economics-empty><strong>No spend yet</strong><p>Once your team works, every cost is attributed here — by agent and by issue — against your prepaid credits.</p></div>
           <dl class="economics-metrics" data-economics-metrics hidden>
-            <div><dt>Attributable cost</dt><dd data-economics-direct-cost></dd></div>
             <div><dt>Credits used</dt><dd data-economics-credits-used></dd></div>
+            <div><dt>What that is in money</dt><dd data-economics-credit-value></dd></div>
             <div><dt>Credits remaining</dt><dd data-economics-credits-remaining></dd></div>
           </dl>
           <p class="measured-note" data-economics-measured hidden></p>
@@ -868,6 +868,7 @@
             <select id="economics-group" data-economics-group disabled></select>
             <div class="empty-state economics-breakdown-empty" data-economics-breakdown-empty><strong>No breakdown loaded</strong><p>Select a team to query server-calculated dimensions.</p></div>
             <ol class="economics-breakdown-list" data-economics-breakdown-list hidden></ol>
+            <p class="measured-note" data-economics-breakdown-note hidden></p>
           </section>
           <section class="credit-control" data-credit-balance-panel hidden aria-labelledby="credit-balance-title">
             <div class="credit-pack-heading">
