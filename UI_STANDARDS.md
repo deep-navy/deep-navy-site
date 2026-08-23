@@ -18,6 +18,9 @@ is whether the check runs.
 | `script-src` never allows `'unsafe-inline'` | `check_site.rb` |
 | Inline pre-paint scripts syntax-checked | `check_inline_scripts.cjs` |
 | One `<h1>`, unique ids, valid internal links | `check_site.rb` |
+| Width queries only at 1200 · 900 · 600 | `breakpoint_scale_test.cjs` |
+| Every `var()` resolves or carries a fallback | `css_token_resolution_test.cjs` |
+| Chrome achromatic; hue only from the meaning set | `achromatic_chrome_test.cjs` |
 
 ## Buttons
 
@@ -28,10 +31,20 @@ is whether the check runs.
 - **Destructive actions get their own semantic colour**, never a neutral
   outline. Delete previously rendered as a dashed grey border, which reads as
   an unfinished placeholder rather than something that erases a team and its
-  work. *(applied)*
+  work. *(applied — Delete and Confirm delete ride the coral crit tokens, and
+  the shadowed legacy dashed rule is deleted from the stylesheet, not just
+  overridden)*
 - **One primary button per decision point.** Two primaries means the hierarchy
-  was never decided. *(5 `button-primary` in the shell — they live in different
-  views, but this needs a per-view audit)*
+  was never decided. *(audited: six `button-primary` in the shell, none of
+  which can meet on one decision. The four first-run primaries are mutually
+  exclusive — the organization card shows one form at a time, and a blocking
+  card replaces the name form while it shows; the floor keeps Send as its one
+  ask; Start subscription lives alone in the checkout dialog. Approve is the
+  one primary of each approval card. The remaining tension: while a PRD
+  sign-off is pending, its card sits above the composer, so Sign off and Send
+  share the console — two decision points, two primaries, one panel. Held as
+  is, because the sign-off card is the queue's own render pass and must not
+  disagree with it.)*
 - **Label the outcome, not the interaction.** "Delete team", not "Confirm". If
   the label would make sense on any page, it is too generic.
 - **A disabled button must say why.** "Complete all required fields" beats a
@@ -52,8 +65,12 @@ is whether the check runs.
   on demand.
 - Keep related information together — validate inline, next to the field, not
   in a summary elsewhere.
-- **Known violation:** the overview still gives `Suspend` and `Delete` the same
-  weight as the work itself. Destructive team lifecycle belongs in Settings.
+- **Resolved:** team lifecycle no longer competes with the work. It sits in
+  the floor's quiet footer at reduced opacity, `Suspend` is a quiet button,
+  `Delete` carries the crit tokens, and confirming a delete means typing the
+  team's name. It stayed on the floor rather than moving to Settings — the
+  footer treatment says "not work" without hiding the controls a screen away
+  from the team they end.
 
 ## Language
 

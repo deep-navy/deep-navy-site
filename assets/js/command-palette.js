@@ -46,12 +46,13 @@
     return value - text.length * 0.01;                   // shorter beats longer
   }
 
-  // The same destination is often reachable from several elements — a nav link
-  // and an inline link to the same view — and nav links carry a pending count
-  // inside them, which would otherwise become part of the name ("Approvals0").
+  // The same destination is often reachable from several elements — a menu
+  // link and an inline link to the same view — and the approvals menu link
+  // carries a pending count inside it, which would otherwise become part of
+  // the name ("Approvals 0").
   function labelOf(element) {
     const clone = element.cloneNode(true);
-    clone.querySelectorAll(".wsnav-count, [data-activity-filter-count]").forEach((node) => node.remove());
+    clone.querySelectorAll(".wsmenu-count").forEach((node) => node.remove());
     return (clone.textContent || "").replace(/\s+/g, " ").trim();
   }
 
@@ -65,7 +66,6 @@
       seen.add(key);
       found.push({ label, hint, run: () => element.click() });
     };
-    document.querySelectorAll(".wsnav-link").forEach((element) => add(element, "Go to"));
     document.querySelectorAll("[data-view-link]").forEach((element) => add(element, "Go to"));
     const objective = document.querySelector("#objective-description");
     if (objective && !objective.disabled) {

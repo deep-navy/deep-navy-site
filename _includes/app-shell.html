@@ -192,7 +192,7 @@
             <span class="visually-hidden" data-step-state>Checking</span>
             <h2>Connect GitHub</h2>
             <p data-step-message>Checking your GitHub connection.</p>
-            <div class="card-action"><button class="button button-primary" type="button" data-github-action disabled>Connect GitHub</button></div>
+            <button class="button button-primary" type="button" data-github-action disabled>Connect GitHub</button>
           </article>
 
           <!-- Repositories: connect themselves from what you granted the
@@ -526,7 +526,7 @@
                roster. Calm sentence, one door back. -->
           <div class="empty-state" data-agent-missing hidden><strong>This agent is no longer on the crew</strong><p>A team update can replace crew members; the work they shipped stays on the team record. Your current crew is on the floor.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Back to the floor</a></div>
 
-          <div class="agent-detail" data-agent-body hidden>
+          <div data-agent-body hidden>
             <header class="agent-hero">
               <span class="user-avatar agent-monogram" data-agent-monogram aria-hidden="true">·</span>
               <div class="agent-hero-copy">
@@ -621,7 +621,7 @@
             <div class="empty-state economics-breakdown-empty" data-economics-breakdown-empty><strong>No breakdown loaded</strong><p>Select a team to query server-calculated dimensions.</p></div>
             <ol class="economics-breakdown-list" data-economics-breakdown-list hidden></ol>
           </section>
-          <section class="credit-control credit-balance" data-credit-balance-panel hidden aria-labelledby="credit-balance-title">
+          <section class="credit-control" data-credit-balance-panel hidden aria-labelledby="credit-balance-title">
             <div class="credit-pack-heading">
               <div><span class="eyebrow">Authoritative ledger</span><strong id="credit-balance-title">Team credit balance</strong></div>
               <span class="data-source-badge" data-credit-balance-state>Waiting</span>

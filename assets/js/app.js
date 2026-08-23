@@ -68,7 +68,6 @@
     engineerInput: document.querySelector("[data-engineer-input]"),
     engineerDecrement: document.querySelector("[data-engineer-decrement]"),
     engineerIncrement: document.querySelector("[data-engineer-increment]"),
-    teamRoster: document.querySelector("[data-team-roster]"),
     teamPriceAmount: document.querySelector("[data-team-price-amount]"),
     teamPriceBreakdown: document.querySelector("[data-team-price-breakdown]"),
     engineerSettings: document.querySelector("[data-engineer-settings]"),
@@ -1748,36 +1747,6 @@
     return `${base} + ${engineers} = ${formatCents(pricing.totalCents)}/mo`;
   }
 
-  function renderTeamRoster(listEl, engineerCount) {
-    if (!listEl) return;
-    const roster = launchContract
-      ? launchContract.teamRoster(engineerCount)
-      : [
-          { code: "PM", label: "Product Manager", scope: "GitHub issues", count: 1 },
-          { code: "EM", label: "Engineering Manager", scope: "Triage & routing", count: 1 },
-          { code: "PD", label: "Designer", scope: "Figma", count: 1 },
-          { code: "ENG", label: normalizeEngineerCount(engineerCount) === 1 ? "Engineer" : "Engineers", scope: "Code + MCP docs", count: normalizeEngineerCount(engineerCount) }
-        ];
-    listEl.replaceChildren();
-    roster.forEach((entry) => {
-      const item = document.createElement("li");
-      const role = document.createElement("span");
-      role.className = "roster-role";
-      const count = document.createElement("span");
-      count.className = "roster-count";
-      count.textContent = `${entry.count}×`;
-      const label = document.createElement("span");
-      label.className = "roster-label";
-      label.textContent = entry.label;
-      role.append(count, label);
-      const scope = document.createElement("span");
-      scope.className = "roster-scope";
-      scope.textContent = entry.scope;
-      item.append(role, scope);
-      listEl.append(item);
-    });
-  }
-
   // True only when the server will actually charge the saved card off-session:
   // a LIVE subscription plus a card on file. A canceled/incomplete subscription
   // row re-opens checkout server-side (Stripe: canceled subscriptions cannot be
@@ -1813,7 +1782,6 @@
       ui.teamPriceAmount.append(per);
     }
     if (ui.teamPriceBreakdown) ui.teamPriceBreakdown.textContent = pricingBreakdown(pricing);
-    renderTeamRoster(ui.teamRoster, pricing.engineerCount);
     if (ui.engineerDecrement) ui.engineerDecrement.disabled = pricing.engineerCount <= ENGINEER_FLOOR;
     if (ui.engineerIncrement) ui.engineerIncrement.disabled = pricing.engineerCount >= ENGINEER_MAX;
     updateTeamSubmitLabel();
