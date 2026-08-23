@@ -65,23 +65,6 @@
 .lp-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.028em; margin: 0 0 .6rem; max-width: 22ch; }
 .lp-sub { color: var(--text-muted); max-width: 58ch; margin: 0 0 2rem; }
 
-/* Steps are a real sequence, so they are numbered: work only reaches a
-   pull request after it has been an issue and a branch. */
-.lp-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; counter-reset: step; }
-.lp-step { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: 1.2rem; padding: 1.2rem 0; border-top: 1px solid var(--line); align-items: start; }
-.lp-step:last-child { border-bottom: 1px solid var(--line); }
-.lp-step::before { counter-increment: step; content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .12em; color: var(--muted); padding-top: .3rem; }
-.lp-step h3 { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .25rem; }
-.lp-step p { margin: 0; color: var(--text-muted); font-size: var(--t-sm); max-width: 60ch; }
-
-/* ---- the roster -------------------------------------------------------- */
-.lp-crew { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-.lp-crew li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1.2rem; padding: .85rem 0; border-top: 1px solid var(--line); align-items: baseline; }
-.lp-crew li:last-child { border-bottom: 1px solid var(--line); }
-.lp-crew strong { font-size: var(--t-sm); font-weight: 600; }
-.lp-crew span { color: var(--text-muted); font-size: var(--t-sm); }
-@media (max-width: 600px) { .lp-crew li { grid-template-columns: 1fr; gap: .2rem; } }
-
 /* ---- price ------------------------------------------------------------- */
 .lp-price { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: start; }
 @media (min-width: 900px) { .lp-price { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -111,21 +94,6 @@
    loops for decoration. One easing, three durations. */
 :root { --ease: cubic-bezier(.2,.7,.3,1); --quick: 140ms; --settle: 260ms; --arrive: 420ms; }
 
-/* Rows and steps state their presence on arrival, staggered so the eye reads
-   them as a sequence rather than a block appearing. */
-@keyframes lp-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.lp-step, .lp-crew li { animation: lp-rise var(--arrive) var(--ease) both; }
-.lp-step:nth-child(2), .lp-crew li:nth-child(2) { animation-delay: 60ms; }
-.lp-step:nth-child(3), .lp-crew li:nth-child(3) { animation-delay: 120ms; }
-.lp-step:nth-child(4), .lp-crew li:nth-child(4) { animation-delay: 180ms; }
-
-/* The step number turns seafoam as you read its row: the page tracks where
-   you are without a scroll spy or a highlight bar. */
-.lp-step { transition: border-color var(--settle) var(--ease); }
-.lp-step::before { transition: color var(--settle) var(--ease); }
-.lp-step:hover::before { color: var(--accent-text); }
-.lp-step:hover { border-top-color: var(--accent-a35); }
-
 /* Buttons: press is acknowledged, and the arrow leads. */
 .lp-btn { transition: background var(--quick) var(--ease), border-color var(--quick) var(--ease), color var(--quick) var(--ease), transform var(--quick) var(--ease); }
 .lp-btn:active { transform: translateY(1px); }
@@ -145,13 +113,8 @@
 .pr-review:nth-child(3) { animation-delay: 1020ms; }
 .pr-ok .i { color: var(--accent-text); }
 
-/* Crew and roster icons carry role, so they are not decoration. */
-.lp-crew strong { display: inline-flex; align-items: center; gap: .5rem; }
-.lp-crew .i { color: var(--muted); transition: color var(--quick) var(--ease); }
-.lp-crew li:hover .i { color: var(--accent-text); }
-
 @media (prefers-reduced-motion: reduce) {
-  .lp-step, .lp-crew li, .lp-review, .pr-review { animation: none; }
+  .pr-review { animation: none; }
   .lp-btn:active { transform: none; }
 }
 
