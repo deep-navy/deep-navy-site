@@ -3308,7 +3308,15 @@
     // Once the Product Manager has spoken, the conversation carries the
     // state of the team better than any summary sentence could - the
     // paragraph stands down rather than paraphrasing the thread above it.
-    const pmHasSpoken = (session.conversationMessages || []).some((m) => m.author === "CONVERSATION_AUTHOR_PRODUCT_MANAGER" || m.author === 2);
+    // Compare against the NORMALISED author, not the wire values. Every entry
+    // has already been through conversationAuthorLabel(), which folds both the
+    // numeric 2 and "CONVERSATION_AUTHOR_PRODUCT_MANAGER" down to
+    // "product_manager" — so testing for either raw form never matched, this
+    // stayed false for the life of the team, and the dashboard told a customer
+    // "your Product Manager is writing the first message" for three hours while
+    // that message sat in the transcript directly below it. Everywhere else in
+    // this file already reads the normalised value; see pmReady.
+    const pmHasSpoken = (session.conversationMessages || []).some((m) => m.author === "product_manager");
     if (pmHasSpoken) {
       ui.dashboardState.textContent = "";
       return;
