@@ -1,0 +1,18 @@
+/* deep.navy design system — vendored entry point.
+   Copied verbatim from the design-system project (2d29095b-22a4-43ad-a08b-a967d2e93eea)
+   with exactly two edits, both required by this site's CSP:
+     1. no @import of the Google Fonts CDN — the three faces are self-hosted in type.css;
+     2. no brand/ or icons-motion imports — the site keeps its own mark and inline-SVG icons.
+   Everything else is the system's own bytes. Do not hand-edit the files under ds/:
+   re-vendor them from the design system instead, or the console stops matching the mockups. */
+@import "ds/tokens/palette.css";
+@import "ds/tokens/typography.css";
+@import "ds/tokens/space.css";
+@import "ds/tokens/breakpoints.css";
+@import "ds/tokens/shape.css";
+@import "ds/tokens/motion.css";
+@import "ds/tokens/semantic.css";
+@import "ds/tokens/roles.css";
+@import "ds/tokens/base.css";
+@import "ds/components/motion/motion.css";
+@import "ds/components/components.css";
