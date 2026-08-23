@@ -42,7 +42,13 @@
         id,
         name: stringValue(organization.name) || "Organization",
         slug: stringValue(organization.slug),
-        role: stringValue(membership.role),
+        // The role travels as it arrived. MembershipRole is a proto enum, so
+        // over Connect JSON it reaches the browser as a NUMBER; stringValue()
+        // flattened every one of them to "" here, which is why an owner was
+        // labelled "member" on every surface that shows a role. Resolving the
+        // enum is the console's job, not the contract's — this module only
+        // guarantees the field is carried, not what it is called.
+        role: membership.role,
         organization
       };
     });

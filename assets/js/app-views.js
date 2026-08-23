@@ -123,7 +123,11 @@
   function selectedTeamName() {
     if (!teamSelect || teamSelect.selectedIndex < 0) return "";
     const option = teamSelect.options[teamSelect.selectedIndex];
-    return option && option.value ? option.textContent.trim() : "";
+    if (!option || !option.value) return "";
+    // The label carries the lifecycle for the switcher's own sake; the name is
+    // on the option. Reading the label put "Beacon · active" in the rail's
+    // heading and in the crumb, which is a state word masquerading as a name.
+    return (option.dataset.teamName || option.textContent).trim();
   }
 
   // Where you are, in the two scopes the rail is divided into. Everything here

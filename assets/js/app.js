@@ -1723,9 +1723,15 @@
     return [{ name, login, role: membershipRoleLabel(membership?.role), self: true }];
   }
 
+  // MembershipRole is a proto enum, and protobuf-es hands it back as a NUMBER
+  // even though Connect JSON put the name on the wire — the same shape that
+  // made every agent read as not-active until lifecycleLabel learned it. Until
+  // this, an owner was labelled "member" everywhere the role is shown, because
+  // stringValue(1) is "" and the fallback took over. An unrecognised value
+  // returns nothing rather than a plausible-looking "member".
   function membershipRoleLabel(value) {
-    const cleaned = stringValue(value).replace(/^MEMBERSHIP_ROLE_/, "").replaceAll("_", " ").toLowerCase();
-    return cleaned || "member";
+    if (typeof value === "number") return ({ 1: "owner", 2: "admin", 3: "member", 4: "billing" })[value] || "";
+    return stringValue(value).replace(/^MEMBERSHIP_ROLE_/, "").replaceAll("_", " ").toLowerCase();
   }
 
   function renderSettingsAccount() {
@@ -1759,7 +1765,9 @@
       copy.append(name, login);
       const role = document.createElement("span");
       role.className = "settings-member-role";
-      role.textContent = stringValue(member.role) || "member";
+      // The label is already resolved by buildOrganizationMembers; an empty one
+      // means the response did not say, which is a different fact from "member".
+      role.textContent = stringValue(member.role) || "role not reported";
       item.append(avatar, copy, role);
       ui.settingsMembers.append(item);
     });
@@ -3054,7 +3062,13 @@
       const option = document.createElement("option");
       option.value = stringValue(team.id);
       const lifecycle = lifecycleLabel(team.state) || "created";
-      option.textContent = `${stringValue(team.name) || "Unnamed team"} · ${lifecycle}`;
+      // The option's label carries the lifecycle so the switcher says whether a
+      // team is running; the NAME rides its own attribute, because the rail's
+      // scope headings and the crumb echo the team and were echoing
+      // "Beacon · active" as if that were what the customer called it.
+      const name = stringValue(team.name) || "Unnamed team";
+      option.dataset.teamName = name;
+      option.textContent = `${name} · ${lifecycle}`;
       ui.teamSelect.append(option);
     });
     const selected = session.teams.find((team) => team.id === previous) || session.teams[0];
@@ -5078,7 +5092,10 @@
         agentId: stringValue(agent.id),
         roleKey: canonicalRole.key,
         code: canonicalRole.code,
-        label: canonicalRole.label,
+        // Three engineers are three people. The canonical label is the same
+        // word for all of them, so the rail numbers them from the code the
+        // roster already assigned rather than listing "Engineer" three times.
+        label: /^E\d+$/.test(canonicalRole.code) ? `Engineer ${canonicalRole.code.slice(1)}` : canonicalRole.label,
         live: live.state === "working" || live.state === "briefed"
       });
     });

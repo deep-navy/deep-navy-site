@@ -255,3 +255,33 @@ test("a signed-out app load with no sign-in request returns to the homepage", ()
   assert.match(appSource, /!session\.accessToken && document\.body\.dataset\.githubCallback !== "true"/);
   assert.match(appSource, /window\.location\.replace\(new URL\("\.\.\/", window\.location\.href\)/);
 });
+
+// MembershipRole is a proto enum, so over Connect JSON it reaches the browser
+// as a number. The contract carried the field through stringValue(), which
+// flattened every numeric role to "" — and every surface that shows a role
+// fell back to "member", including for an owner.
+test("a membership carries its role exactly as the wire delivered it", () => {
+  const numeric = decisionFromProfile({
+    user: { id: "user-1" },
+    onboardingState: 3,
+    currentOrganization: { id: "org-1", name: "Northwind Retail" },
+    memberships: [{ role: 1, organization: { id: "org-1", name: "Northwind Retail" } }]
+  });
+  assert.equal(numeric.memberships[0].role, 1, "a numeric enum role must survive the contract");
+  const named = decisionFromProfile({
+    user: { id: "user-1" },
+    onboardingState: 3,
+    currentOrganization: { id: "org-1", name: "Northwind Retail" },
+    memberships: [{ role: "MEMBERSHIP_ROLE_OWNER", organization: { id: "org-1", name: "Northwind Retail" } }]
+  });
+  assert.equal(named.memberships[0].role, "MEMBERSHIP_ROLE_OWNER", "a named role must survive it too");
+});
+
+// The resolution itself lives in the console, because the contract has no
+// opinion about what a role is called — only that it is carried.
+test("the console resolves the numeric enum rather than falling back to member", () => {
+  assert.match(appSource, /function membershipRoleLabel\(value\) \{/);
+  assert.match(appSource, /if \(typeof value === "number"\) return \(\{ 1: "owner", 2: "admin", 3: "member", 4: "billing" \}\)\[value\] \|\| "";/);
+  assert.doesNotMatch(appSource, /return cleaned \|\| "member";/,
+    "an unrecognised role must read as unreported, not as a plausible-looking member");
+});
