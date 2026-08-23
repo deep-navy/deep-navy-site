@@ -86,8 +86,8 @@ const CARDS = [
   {
     file: 'pricing.png',
     kicker: 'Commercial terms / early access',
-    title: '$599 per engineering team, per month.',
-    subtitle: '50,000 credits per team · Prepaid usage · No overage',
+    title: '$199 per organization, per month.',
+    subtitle: 'Unlimited teams · 10,000 credits included · No overage',
     path: '/pricing/',
   },
   {

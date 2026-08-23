@@ -1868,6 +1868,10 @@
     });
   }
 
+  // The plan's recurring price, with the published figure as the fallback the
+  // create screen needs before the plan has come back. It licenses the
+  // ORGANIZATION, not a team: the name says "unit amount" because that is what
+  // the catalog calls it, and nothing may multiply it by a team count.
   function teamUnitAmountCents() {
     const money = session.billingPlan?.recurringPrice;
     const units = signedInt64Value(money?.units);
@@ -1876,7 +1880,7 @@
       const cents = units * 100n + BigInt(Math.round(nanos / 10_000_000));
       if (cents > 0n) return cents;
     }
-    return 59900n; // $599.00/month founding-team default
+    return 19900n; // $199.00/month founding-organization default
   }
 
   function formatCents(cents) {
@@ -1887,9 +1891,10 @@
     catch { return `$${dollars.toFixed(2)}`; }
   }
 
-  // Engineering-agent count: a floor of three (the adversarial-review floor) up to
-  // fifty. The team base price includes the three floor engineers; each engineer
-  // above the floor is a $199/month add-on, matched against the server.
+  // Engineering-agent count: a floor of three (the adversarial-review floor) up
+  // to fifty. Every team includes its three floor engineers at no extra charge;
+  // each engineer above the floor is a $199/month per-seat add-on, matched
+  // against the server.
   const ENGINEER_FLOOR = launchContract?.ENGINEER_FLOOR ?? 3;
   const ENGINEER_MAX = launchContract?.ENGINEER_MAX ?? 50;
 
@@ -1900,21 +1905,37 @@
     return Math.min(ENGINEER_MAX, Math.max(ENGINEER_FLOOR, parsed));
   }
 
+  // What creating THIS team costs. The base is charged once, by the team that
+  // starts the organization's subscription; every team after it is covered by
+  // that same licence and costs nothing unless it asks for engineers above the
+  // floor. Charging the base again is exactly the bug the unlimited-teams plan
+  // was shipped to end.
   function teamPricingFor(engineerCount) {
-    if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents() });
+    const includeBase = !session.subscriptionActive;
+    if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents(), includeBase });
     const count = normalizeEngineerCount(engineerCount);
     const additional = Math.max(0, count - ENGINEER_FLOOR);
     const base = teamUnitAmountCents();
     const addon = 19900n;
-    return { engineerCount: count, includedEngineers: ENGINEER_FLOOR, additionalEngineers: additional, baseCents: base, addonCents: addon, addonTotalCents: addon * BigInt(additional), totalCents: base + addon * BigInt(additional) };
+    return { engineerCount: count, includedEngineers: ENGINEER_FLOOR, additionalEngineers: additional, includesBase: includeBase, baseCents: base, addonCents: addon, addonTotalCents: addon * BigInt(additional), totalCents: (includeBase ? base : 0n) + addon * BigInt(additional) };
   }
 
-  // "$599 team (includes 3 engineers)" or, with add-ons,
-  // "$599 team + 2 × $199 engineers = $997/mo".
+  // What this team adds to the bill, in the customer's own arithmetic:
+  //
+  //   first team, floor crew   "$199 a month for your organization
+  //                             (includes 3 engineers, and every team after)"
+  //   later team, floor crew   "Covered by your subscription — no extra charge"
+  //   with engineers above     "… + 2 × $199 engineers = $597/mo"
   function pricingBreakdown(pricing) {
-    const base = `${formatCents(pricing.baseCents)} team`;
-    if (pricing.additionalEngineers <= 0) return `${base} (includes ${pricing.includedEngineers} engineers)`;
-    const engineers = `${pricing.additionalEngineers} × ${formatCents(pricing.addonCents)} engineers`;
+    const engineers = pricing.additionalEngineers > 0
+      ? `${pricing.additionalEngineers} × ${formatCents(pricing.addonCents)} engineers`
+      : "";
+    if (!pricing.includesBase) {
+      if (!engineers) return "Covered by your subscription — no extra charge";
+      return `${engineers} = ${formatCents(pricing.totalCents)}/mo on top of your subscription`;
+    }
+    const base = `${formatCents(pricing.baseCents)} a month for your organization`;
+    if (!engineers) return `${base} (includes ${pricing.includedEngineers} engineers, and every team after this one)`;
     return `${base} + ${engineers} = ${formatCents(pricing.totalCents)}/mo`;
   }
 
@@ -1935,6 +1956,13 @@
     if (!ui.teamSubmit || ui.teamSubmit.dataset.busy === "1") return;
     const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
     const total = `${formatCents(pricing.totalCents)}/month`;
+    // A team the subscription already covers charges nothing, and the button
+    // has to say so: "Continue to payment — $199/month" in front of a free
+    // second team is the paywall the unlimited plan removed.
+    if (pricing.totalCents === 0n) {
+      ui.teamSubmit.textContent = "Create team — covered by your subscription";
+      return;
+    }
     ui.teamSubmit.textContent = savedCardChargeExpected()
       ? `Create team — ${total} on your saved card`
       : `Continue to payment — ${total}`;
@@ -1947,10 +1975,16 @@
     const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
     if (ui.teamPriceAmount) {
       ui.teamPriceAmount.replaceChildren();
-      ui.teamPriceAmount.append(document.createTextNode(formatCents(pricing.totalCents)));
-      const per = document.createElement("small");
-      per.textContent = " / month";
-      ui.teamPriceAmount.append(per);
+      if (pricing.totalCents === 0n) {
+        // Not a zero standing in for a price: it IS the price, and the word is
+        // what says so. A "$0.00" here reads as a reading that failed.
+        ui.teamPriceAmount.append(document.createTextNode("Included"));
+      } else {
+        ui.teamPriceAmount.append(document.createTextNode(formatCents(pricing.totalCents)));
+        const per = document.createElement("small");
+        per.textContent = " / month";
+        ui.teamPriceAmount.append(per);
+      }
     }
     if (ui.teamPriceBreakdown) ui.teamPriceBreakdown.textContent = pricingBreakdown(pricing);
     if (ui.engineerDecrement) ui.engineerDecrement.disabled = pricing.engineerCount <= ENGINEER_FLOOR;
@@ -2750,7 +2784,11 @@
     ui.teamInput.disabled = !ready;
     ui.teamSubmit.disabled = !ready;
     ui.repositoryList.querySelectorAll("input").forEach((checkbox) => { checkbox.disabled = !ready; });
-    updateTeamSubmitLabel();
+    // The whole price block, not just the button. Whether this team costs
+    // anything depends on the subscription, which lands after the first paint:
+    // repainting only the button left the figure above it still charging for a
+    // team the licence already covers.
+    renderTeamSetupPricing();
   }
 
   function setAllStepsUnavailable(message, stateValue = "error") {

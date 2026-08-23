@@ -314,7 +314,7 @@ makes the product real.
 
 ## Not doing
 
-- No free tier. Priced at $599/month, one team.
+- No free tier. Priced at $199/month per organization, unlimited teams.
 - No Tailwind: the CSP is style-src 'self' and the hand-written system is
   coherent. A build step would fight it.
 - No charts until there is a series worth plotting. Chart.js when spend over

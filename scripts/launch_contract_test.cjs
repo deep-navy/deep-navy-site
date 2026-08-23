@@ -37,20 +37,35 @@ test("engineer count is floored at three, capped at fifty, and defaults to the f
   assert.equal(normalizeEngineerCount("nonsense"), 3, "an unparseable count falls back to the floor");
 });
 
-test("team pricing is $599 base including three engineers plus $199 per engineer above the floor", () => {
+test("pricing is a $199 organization licence plus $199 per engineer above the floor", () => {
   const floor = teamPricing({ engineerCount: 3 });
-  assert.equal(floor.totalCents, 59900n);
+  assert.equal(floor.totalCents, 19900n);
   assert.equal(floor.additionalEngineers, 0);
+  assert.equal(floor.includesBase, true);
 
   const five = teamPricing({ engineerCount: 5 });
   assert.equal(five.additionalEngineers, 2);
   assert.equal(five.addonTotalCents, 39800n);
-  assert.equal(five.totalCents, 99700n, "$599 + 2 × $199 = $997/mo");
+  assert.equal(five.totalCents, 59700n, "$199 + 2 × $199 = $597/mo");
 
   // Below the floor is treated as the floor: never priced under the base.
-  assert.equal(teamPricing({ engineerCount: 2 }).totalCents, 59900n);
+  assert.equal(teamPricing({ engineerCount: 2 }).totalCents, 19900n);
   // The base can be overridden by the signed billing plan; the add-on is per-seat.
   assert.equal(teamPricing({ engineerCount: 4, baseCents: 60000n }).totalCents, 79900n);
+});
+
+// Unlimited teams: the licence belongs to the ORGANIZATION and is bought once.
+// A second team is covered by it and costs nothing, unless it asks for
+// engineers above the floor — which is a genuine per-seat item and still bills.
+test("a team the subscription already covers charges nothing for its base", () => {
+  const covered = teamPricing({ engineerCount: 3, includeBase: false });
+  assert.equal(covered.totalCents, 0n, "a second team at the floor is free");
+  assert.equal(covered.includesBase, false);
+  assert.equal(covered.baseCents, 19900n, "the licence's price is still reported, it is just not charged again");
+
+  const coveredWithSeats = teamPricing({ engineerCount: 5, includeBase: false });
+  assert.equal(coveredWithSeats.totalCents, 39800n, "only the two seats above the floor");
+  assert.equal(coveredWithSeats.addonTotalCents, 39800n);
 });
 
 test("the roster a count implies is PM + EM + Designer + the chosen engineers", () => {

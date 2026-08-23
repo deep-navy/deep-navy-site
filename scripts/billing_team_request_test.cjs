@@ -68,7 +68,7 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   // price plainly and asks for no payment detail; the app collects it once, in
   // Stripe checkout, when a team is created.
   assert.doesNotMatch(home, /card|payment|billing/i);
-  assert.match(home, /\$599 a month/);
+  assert.match(home, /\$199 a month for your organization/);
   // Onboarding never mounts checkout; only the paid team path and credit packs do.
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
@@ -100,11 +100,16 @@ test("the first-run screen is name + repositories: the name is the hero, the pic
   const pickerIndex = teamForm[0].indexOf("data-team-repositories");
   const priceIndex = teamForm[0].indexOf("data-team-price-amount");
   assert.ok(nameIndex < pickerIndex && pickerIndex < priceIndex, "the picker sits under the name and above the price");
-  // The $599/month line sits with the field, and the price still renders live
-  // from the plan against the included-engineer floor.
+  // The $199/month line sits with the field, and the price still renders live
+  // from the plan against the included-engineer floor. It is the ORGANIZATION's
+  // licence, bought once — a second team is covered by it, which is what
+  // teamPricingFor's includeBase decides and what the button then says.
   assert.match(teamForm[0], /data-team-price-amount/);
   assert.match(teamForm[0], /data-team-price-breakdown/);
-  assert.match(teamForm[0], /\$599/);
+  assert.match(teamForm[0], /\$199/);
+  assert.doesNotMatch(teamForm[0], /\$599/, "the per-team charge was removed with the unlimited-teams plan");
+  assert.match(app, /const includeBase = !session\.subscriptionActive/);
+  assert.match(app, /ui\.teamSubmit\.textContent = "Create team — covered by your subscription"/);
   assert.match(app, /function renderTeamSetupPricing/);
   assert.match(app, /teamPricingFor\(/);
   assert.match(app, /function pricingBreakdown/);
@@ -264,14 +269,16 @@ test("Settings surface renders the account, billing, and Customer Portal", () =>
   assert.match(shell, /data-settings-members/);
   assert.match(app, /function renderSettingsAccount/);
   assert.match(app, /function renderSettingsMembers/);
-  // Billing: active team count × $599, the default card, and Manage billing.
+  // Billing: the organization's one subscription, the teams it covers, the
+  // default card, and Manage billing. Never a price multiplied by a count.
   assert.match(shell, /data-settings-team-count/);
   assert.match(shell, /data-settings-billing-amount/);
   assert.match(shell, /data-settings-payment-method/);
   assert.match(shell, /data-settings-billing-manage/);
   assert.match(app, /function renderSettingsBilling/);
   assert.match(app, /teamUnitAmountCents/);
-  assert.match(app, /59900n/);
+  assert.match(app, /19900n; \/\/ \$199\.00\/month founding-organization default/);
+  assert.doesNotMatch(app, /59900n/, "the per-team base went with the unlimited-teams plan");
   assert.match(app, /paymentMethodSummary\(session\.subscription\?\.defaultPaymentMethod\)/);
 });
 

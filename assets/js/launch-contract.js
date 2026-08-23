@@ -383,7 +383,7 @@
   // The example run: the proof-of-work moment shown BEFORE the paywall.
   //
   // Every measured source on this funnel points at the same weakness — the
-  // customer is asked for $599 before seeing any agent work. Navattic's 2025
+  // customer is asked for $199 before seeing any agent work. Navattic's 2025
   // interactive-demo study (28,000+ demos) measured a 20-25% lift in qualified
   // leads for interactive proof over static claims, and NN/g's first-10-seconds
   // finding says the value proposition has to land immediately.
@@ -459,12 +459,17 @@
     ].filter(Boolean);
   }
 
-  // Team pricing mirrors the server: $599/month per team includes the floor of
-  // three engineering agents; every engineer above the floor is a $199/month
-  // add-on. The floor of three keeps two peer reviewers on every shipped ticket.
+  // Pricing mirrors the server: $199/month licenses the ORGANIZATION and covers
+  // as many teams as it runs, each with the floor of three engineering agents;
+  // every engineer above that floor is a $199/month per-seat add-on. The floor
+  // of three keeps two peer reviewers on every shipped ticket.
+  //
+  // The base was a per-team charge until the licence moved to the organization.
+  // A second team is now free, so the base is charged once — which is why
+  // teamPricing takes includeBase rather than always adding it.
   const ENGINEER_FLOOR = 3;
   const ENGINEER_MAX = 50;
-  const TEAM_BASE_CENTS = 59900n;
+  const ORGANIZATION_BASE_CENTS = 19900n;
   const ENGINEER_ADDON_CENTS = 19900n;
 
   function normalizeEngineerCount(value, { floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
@@ -483,23 +488,31 @@
     return null;
   }
 
-  // Pure price calculation: base + addon × max(0, engineerCount − floor). The base
-  // and add-on can be overridden (e.g. from the signed billing plan) but default
-  // to the founding-team figures.
-  function teamPricing({ engineerCount, baseCents, addonCents, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
+  // Pure price calculation: (base if this team starts the subscription) plus
+  // addon × max(0, engineerCount − floor). The base and add-on can be
+  // overridden (e.g. from the signed billing plan) but default to the
+  // founding-organization figures.
+  //
+  // includeBase is the whole difference between the first team and the second.
+  // The first starts the organization's subscription and costs the base; every
+  // team after it is covered by that same licence and costs nothing unless it
+  // asks for engineers above the floor.
+  function teamPricing({ engineerCount, baseCents, addonCents, includeBase = true, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
     const count = normalizeEngineerCount(engineerCount, { floor, max });
     const additional = Math.max(0, count - floor);
-    const base = toCents(baseCents) ?? TEAM_BASE_CENTS;
+    const base = toCents(baseCents) ?? ORGANIZATION_BASE_CENTS;
     const addon = toCents(addonCents) ?? ENGINEER_ADDON_CENTS;
     const addonTotal = addon * BigInt(additional);
+    const charged = includeBase ? base : 0n;
     return Object.freeze({
       engineerCount: count,
       includedEngineers: floor,
       additionalEngineers: additional,
+      includesBase: includeBase,
       baseCents: base,
       addonCents: addon,
       addonTotalCents: addonTotal,
-      totalCents: base + addonTotal
+      totalCents: charged + addonTotal
     });
   }
 
@@ -567,7 +580,7 @@
     LaunchContractError,
     PROVISIONING_STATE,
     REPOSITORY_SELECTION_MODE,
-    TEAM_BASE_CENTS,
+    ORGANIZATION_BASE_CENTS,
     accessibleRepositories,
     buildRepositorySelectionRequest,
     createMutationKeys,

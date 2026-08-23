@@ -166,11 +166,11 @@ test("the mobile nav is the kit's full-height sheet", () => {
 
 /* ---- pricing: the kit's plans and FAQ over the real numbers ---------------- */
 test("pricing restyles the contracted numbers — it invents none", () => {
-  assert.match(pricing, /<span class="lp-plan-price">\$599 <span class="lp-plan-per">per team · month<\/span><\/span>/);
+  assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per organization · month<\/span><\/span>/);
   assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per engineer · month<\/span><\/span>/);
   assert.match(pricing, /<span class="lp-plan-price">\$100 <span class="lp-plan-per">per 10,000 credits<\/span><\/span>/);
   assert.equal((pricing.match(/class="lp-plan-price"/g) || []).length, 3, "three prices exist; a fourth would be invented");
-  assert.match(pricing, /class="lp-plan lp-plan-featured dn-reveal"/, "the team plan is the featured card");
+  assert.match(pricing, /class="lp-plan lp-plan-featured dn-reveal"/, "the organization plan is the featured card");
   // The terms table — the contract, field by field — survives the restyle.
   assert.match(pricing, /<table class="data-table">/);
   assert.match(pricing, /1 credit = \$0\.01 of billable model, compute, storage, and service usage/);

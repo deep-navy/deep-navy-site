@@ -1772,7 +1772,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .settings-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--muted-bright); font-size: .8rem; text-align: right; }
 /* Evidence is a typeface: machine facts (logins, org slugs, card summaries)
    read in mono; money stacks in tabular figures and always carries its unit
-   in the same string ($599.00/month — the renderer never splits them). */
+   in the same string ($199.00/month — the renderer never splits them). */
 .settings-list dd.settings-fact { overflow: hidden; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
 .settings-list dd.settings-fig { font-family: var(--font-mono); font-size: .78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .settings-list dd.settings-emphasis { color: var(--ink); font-size: .95rem; font-weight: 600; }
