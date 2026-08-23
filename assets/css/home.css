@@ -127,7 +127,7 @@
   transform: scaleX(0);
   transform-origin: left;
 }
-.lp-btn-quiet { border-color: var(--border-strong); color: var(--ink); }
+.lp-btn-quiet { border-color: var(--line-strong); color: var(--ink); }
 .lp-note { margin: 1rem 0 0; font-size: var(--t-xs); line-height: 1.65; color: var(--muted); max-width: 62ch; }
 
 /* ---- the crew strip -------------------------------------------------------
@@ -220,7 +220,7 @@
    every token inside it (tokens.css scopes the theme blocks to any
    [data-theme=…] element, and restarts colour inheritance there). Never
    patch colours class by class inside a band — the scope is the mechanism. */
-.lp-band-ink { padding: clamp(3.2rem, 7vw, 5.4rem) 0; background: var(--surface-sunken); }
+.lp-band-ink { padding: clamp(3.2rem, 7vw, 5.4rem) 0; background: var(--surface-well); }
 
 /* ---- the four steps -------------------------------------------------------- */
 .lp-steps {
@@ -369,7 +369,7 @@
   gap: .55rem;
   padding: .7rem 1.1rem;
   border-bottom: 1px solid var(--line);
-  background: var(--surface-sunken);
+  background: var(--surface-well);
   font-family: var(--font-mono);
   font-size: var(--t-2xs);
   color: var(--ink);
@@ -497,8 +497,8 @@
 @media (hover: hover) {
   .lp-btn-github:hover::after { animation: dn-sweep var(--dur-slow) var(--ease-out) both; }
   .lp-btn-quiet:hover { border-color: var(--accent-graphic); color: var(--accent-text); }
-  .lp-crew-cell:hover { transform: translateY(-3px); border-color: var(--border-strong); border-top-color: var(--dn-role, var(--line)); }
-  .lp-plan:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+  .lp-crew-cell:hover { transform: translateY(-3px); border-color: var(--line-strong); border-top-color: var(--dn-role, var(--line)); }
+  .lp-plan:hover { transform: translateY(-3px); border-color: var(--line-strong); }
   .lp-plan-featured:hover { border-color: var(--accent); }
   .pr:hover { border-color: var(--accent-a35); }
 }

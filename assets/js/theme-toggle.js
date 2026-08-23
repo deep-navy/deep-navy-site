@@ -5,9 +5,15 @@
    people leave open across a working day that is the state most of them
    actually want. So the control cycles system -> light -> dark -> system.
 
-   "system" is represented by the ABSENCE of data-theme, which lets the
-   prefers-color-scheme query in tokens.css stay live: change the OS theme
-   with the tab open and the page follows without a reload.
+   "system" used to be represented by the ABSENCE of data-theme, leaning on the
+   prefers-color-scheme query in tokens.css. It cannot be any more: the vendored
+   design system the console is built from carries no media query at all — every
+   dark value it has hangs off [data-theme="dark"] — so an absent attribute in a
+   dark-preferring browser resolves tokens.css dark and ds.css light on the same
+   page. So "system" now RESOLVES: the attribute is always present, and this file
+   re-resolves it when the OS flips, which is what keeps "follow my OS" live
+   without a reload. What is stored is still the three-state preference; what is
+   stamped is always one of the two themes.
 
    The pre-paint reader for the stored value lives inline in head.html; this
    file only handles interaction, so a slow script load can never cause a
@@ -44,10 +50,16 @@
     }
   }
 
+  var osDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function resolve(state) {
+    if (state === "light" || state === "dark") return state;
+    return osDark && osDark.matches ? "dark" : "light";
+  }
+
   function apply(state, buttons) {
     var root = document.documentElement;
-    if (state === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", state);
+    root.setAttribute("data-theme", resolve(state));
 
     for (var i = 0; i < buttons.length; i += 1) {
       var button = buttons[i];
@@ -72,6 +84,15 @@
         state = ORDER[(ORDER.indexOf(state) + 1) % ORDER.length];
         write(state);
         apply(state, buttons);
+      });
+    }
+
+    // The half of "follow my OS" that the pre-paint script cannot do: it runs
+    // once, this listens. Only while the preference is actually "system" —
+    // an explicit choice must not be overwritten by the OS changing.
+    if (osDark && osDark.addEventListener) {
+      osDark.addEventListener("change", function () {
+        if (state === "system") apply(state, buttons);
       });
     }
   }

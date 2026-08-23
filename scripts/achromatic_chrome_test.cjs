@@ -10,13 +10,26 @@
 // is broken and this file goes red.
 
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { readFileSync, readdirSync } = require("node:fs");
 const test = require("node:test");
 
 const tokens = readFileSync("assets/css/tokens.css", "utf8");
 const main = readFileSync("assets/css/main.css", "utf8");
 const home = readFileSync("assets/css/home.css", "utf8");
 const typeCss = readFileSync("assets/css/type.css", "utf8");
+const console_ = readFileSync("assets/css/console.css", "utf8");
+
+// The vendored design system is now the console's chrome, so the thesis has to
+// be enforced against it too — otherwise the achromatic rule stops at the file
+// boundary and everything a dn-* class paints is unpoliced. These files are
+// read, never edited: if one of them goes red the answer is to re-vendor or to
+// stop using that component, not to widen the rule.
+const dsFiles = [
+  ...readdirSync("assets/css/ds/tokens").sort().map((f) => `assets/css/ds/tokens/${f}`),
+  ...readdirSync("assets/css/ds/components", { recursive: true })
+    .filter((f) => f.endsWith(".css")).sort().map((f) => `assets/css/ds/components/${f}`),
+].map((file) => [file.replace("assets/css/", ""), readFileSync(file, "utf8")]);
+const dsTokenSheets = dsFiles.filter(([file]) => file.startsWith("ds/tokens/"));
 const header = readFileSync("_includes/header.html", "utf8");
 const head = readFileSync("_includes/head.html", "utf8");
 const index = readFileSync("index.md", "utf8");
@@ -120,19 +133,24 @@ const contrast = (a, b) => {
 // aliases that ride them, the diff evidence pair, the brand navy on the
 // logo tile, and GitHub's own brand button. Everything else in tokens.css
 // must be ink.
-const HUE_BEARING = /^--(?:abyss-1|brand-navy|brand-github-[a-z-]+|role-[a-z-]+|lumen(?:-[a-z0-9-]+)?|kelp(?:-[a-z0-9-]+)?|brass(?:-[a-z0-9-]+)?|coral(?:-[a-z0-9-]+)?|seafoam(?:-[a-z0-9-]+)?|signal-[a-z-]+|status-[a-z-]+|diff-(?:add|del)-[a-z-]+|rose-\d+|iris-\d+|anemone-\d+|current-\d+)$/;
+// --glow-* joined the set with the vendored system: a glow is a lit edge around
+// something that is running, which is the lumen meaning, and it is spelled as a
+// tinted rgba() literal rather than a token reference.
+const HUE_BEARING = /^--(?:glow-[a-z-]+|abyss-1|brand-navy|brand-github-[a-z-]+|role-[a-z-]+|lumen(?:-[a-z0-9-]+)?|kelp(?:-[a-z0-9-]+)?|brass(?:-[a-z0-9-]+)?|coral(?:-[a-z0-9-]+)?|seafoam(?:-[a-z0-9-]+)?|signal-[a-z-]+|status-[a-z-]+|diff-(?:add|del)-[a-z-]+|rose-\d+|iris-\d+|anemone-\d+|current-\d+)$/;
 
 /* ---- (a) the surface/text ramp is achromatic ---------------------------- */
 test("every greyscale token is a true grey: |r-g| <= 2 and |g-b| <= 2", () => {
   let checked = 0;
-  for (const { selector, body } of rules(tokens)) {
+  const ramps = [["tokens.css", tokens], ...dsTokenSheets];
+  for (const [file, sheet] of ramps)
+  for (const { selector, body } of rules(sheet)) {
     if (!selector.startsWith(":root")) continue;
     for (const { prop, value } of declsOf(body)) {
       if (!prop.startsWith("--") || HUE_BEARING.test(prop)) continue;
       const hex = value.match(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i);
       if (hex) {
         assert.ok(isAchromatic(hexChannels(hex[0])),
-          `${prop}: ${value} is tinted; the chrome ramp must be pure grey`);
+          `${file} ${prop}: ${value} is tinted; the chrome ramp must be pure grey`);
         checked += 1;
         continue;
       }
@@ -140,13 +158,13 @@ test("every greyscale token is a true grey: |r-g| <= 2 and |g-b| <= 2", () => {
       const triplet = value.match(/^(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})$/);
       if (triplet) {
         assert.ok(isAchromatic(triplet.slice(1, 4).map(Number)),
-          `${prop}: ${value} is a tinted triplet; chrome alphas must be grey`);
+          `${file} ${prop}: ${value} is a tinted triplet; chrome alphas must be grey`);
         checked += 1;
         continue;
       }
       for (const literal of value.matchAll(/rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})/g)) {
         assert.ok(isAchromatic(literal.slice(1, 4).map(Number)),
-          `${prop}: ${value} carries a tinted rgb() literal`);
+          `${file} ${prop}: ${value} carries a tinted rgb() literal`);
         checked += 1;
       }
     }
@@ -191,12 +209,29 @@ test("role and status hues exist, and never style base chrome", () => {
   // only while something genuinely streams.
   const HUE_REF = /var\(--(?:role-|signal-|status-|diff-|lumen|kelp|brass|coral|amber|warning|warn-a|crit-a)/;
   const STATE_SCOPED = /(data-tone|data-status|data-state|\[data-role-key=|\.is-(?:blocked|live|on|writing)\b|\.dn-(?:caret|livebar)\b|\.console-typing\b|danger|voided|error|warn|wait|crit|status|\.del\b|\.add\b|\.pr-ok\b)/;
-  for (const [file, css] of [["main.css", main], ["home.css", home]]) {
+  // The design system's own way of scoping the same rule. Three admissions,
+  // and each one is the meaning written into the class name:
+  //   1. a LEVEL modifier — .dn-badge--attention, .dn-input--invalid;
+  //   2. a leaf whose noun IS the status — the dot, the ring, the tick, the
+  //      flag, the count, the threshold marker;
+  //   3. the handful of base components that exist only to carry a level and
+  //      therefore paint idle by default — Badge, Dot, Notice, SystemBar,
+  //      Callout, ErrorDetail, NotificationItem, DataState, Objective, Work.
+  // A dn- class that is none of those three still has to be ink: .dn-card,
+  // .dn-btn, .dn-nav, .dn-table and the rest are held to the same rule as
+  // .team-tile is.
+  const DS_STATE = new RegExp([
+    "--(?:idle|live|success|attention|danger|tip|urgent|met|blocked|running|open|review|merged|invalid|missing|up|down|on)\\b",
+    "__(?:dot|ring|check|pip|flag|failed-flag|glyph|icon|thresh|bar|count|code|delta|caveat|ttft|lvglyph|metabit|badge|req|err|ok)\\b",
+    "\\.dn-(?:badge|dot|notice|sysbar|callout|errd|nitem|dstate|obj|work|agent)(?!\\w)",
+  ].join("|"));
+  const SCOPED = (selector) => STATE_SCOPED.test(selector) || DS_STATE.test(selector);
+  for (const [file, css] of [["main.css", main], ["home.css", home], ["console.css", console_], ...dsFiles]) {
     for (const { selector, body } of rules(css)) {
       for (const { prop, value } of declsOf(body)) {
         if (prop.startsWith("--")) continue; // token plumbing, not paint
         if (!HUE_REF.test(value)) continue;
-        assert.match(selector, STATE_SCOPED,
+        assert.ok(SCOPED(selector),
           `${file}: "${selector}" paints chrome with a hue (${prop}: ${value}); colour must mean status or role`);
       }
     }

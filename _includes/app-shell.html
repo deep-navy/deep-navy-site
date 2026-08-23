@@ -253,50 +253,112 @@
       </div>
     </section>
 
-    <!-- ---------- WORKSPACE ---------- -->
-    <div class="workspace" data-workspace>
-      <div class="wsbar" data-authenticated-nav aria-label="Workspace">
+    <!-- ---------- WORKSPACE ----------
+         Two scopes, and the rail must not blur them. ORGANIZATION doors are
+         about the account and every team in it; TEAM doors are about the one
+         team the switcher has selected — and the switcher sits between the two
+         groups, because it is the boundary. They used to be one flat overflow
+         menu behind a "…" summary, which is how "Your teams" came to sit under
+         the same heading as the selected team's own screens, and how six real
+         destinations came to hide behind three dots.
 
-        <div class="wsnav-team">
-          <label class="visually-hidden" for="workspace-team">Team</label>
-          <select id="workspace-team" data-team-select disabled><option value="">No teams available</option></select>
-          <button class="button button-quiet button-small wsnav-refresh" type="button" data-refresh aria-label="Refresh">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11A8 8 0 0 0 6.3 5.3L2 9m0 0h5m-5 0V4m2 9a8 8 0 0 0 13.7 5.7L22 15m0 0h-5m5 0v5"/></svg>
+         Below 900 the rail cannot fit, so the tab bar at the foot of this block
+         takes over. Both are always mounted and the breakpoint picks — no
+         viewport ends up with two navs or none. -->
+    <div class="workspace" data-workspace>
+
+      <aside class="cs-rail" data-authenticated-nav aria-label="Workspace">
+        <div class="cs-rail-head">
+          <a class="cs-rail-brand dn-bare" href="{{ '/' | relative_url }}" aria-label="deep navy home">
+            {% include logo.svg %}<span>deep navy</span>
+          </a>
+        </div>
+
+        <nav class="cs-rail-nav" data-view-nav aria-label="Organization and team">
+        <p class="dn-eyebrow cs-rail-group" data-rail-organization>Your organization</p>
+        <a class="dn-nav dn-bare" data-view-link="dashboard" href="#workspace-dashboard"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-teams"></use></svg></span><span class="dn-nav__label">Teams</span><span class="dn-nav__meta" data-rail-team-count hidden>0</span></a>
+        <a class="dn-nav dn-bare" data-view-link="people" href="#workspace-people"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-people"></use></svg></span><span class="dn-nav__label">People</span></a>
+        <a class="dn-nav dn-bare" data-view-link="billing" href="#workspace-billing"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-billing"></use></svg></span><span class="dn-nav__label">Billing</span></a>
+
+        <div class="cs-rail-rule" role="presentation"></div>
+
+        <!-- The switcher, between the scopes. A native select because app.js
+             populates it and reads it; a bespoke menu would be a second
+             opinion about which team is open. The monogram beside it is
+             derived from the selected option, so the plate and the name
+             cannot disagree. -->
+        <div class="cs-switcher">
+          <span class="dn-avatar dn-avatar--sm cs-switcher-mark" data-rail-team-initial aria-hidden="true">—</span>
+          <span class="cs-switcher-field">
+            <label class="visually-hidden" for="workspace-team">Team</label>
+            <span class="dn-select dn-select--sm">
+              <select id="workspace-team" data-team-select disabled><option value="">No teams available</option></select>
+              <span class="dn-select__caret" aria-hidden="true"><svg class="dn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#i-caret-down"></use></svg></span>
+            </span>
+          </span>
+          <button class="dn-iconbtn dn-iconbtn--sm cs-switcher-refresh" type="button" data-refresh aria-label="Refresh">
+            <svg class="dn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-refresh"></use></svg>
           </button>
         </div>
-        <div class="wsbar-spend" data-rail-spend hidden>
-          <span class="wsbar-spend-value" data-rail-spend-value>—</span>
-          <span class="wsbar-track"><i data-rail-spend-fill></i></span>
-          <span class="visually-hidden" data-rail-spend-note>of your prepaid balance</span>
-        </div>
-        <details class="wsmenu">
-          <summary aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></summary>
-          <div class="wsmenu-panel">
-            <!-- The teams surface is the workspace's landing layer when more
-                 than one team exists: every team as a door. The floor stays
-                 the single-team deep view underneath it. -->
-            <a data-view-link="dashboard" href="#workspace-dashboard">Your teams</a>
-            <a data-view-link="overview" href="#workspace-overview">The floor</a>
-            <!-- Objectives got their own screen when acceptance evidence
-                 arrived: proof per objective is a record to inspect, not a
-                 line to squeeze into the floor's at-a-glance card. -->
-            <a data-view-link="objectives" href="#workspace-objectives">Objectives</a>
-            <!-- The approvals view was reachable only through one inline link
-                 buried in the plan detail. It is a real destination - the full
-                 queue and its history live there - so it gets a real door, and
-                 the door carries the pending count (app-views.js keeps the
-                 number in step with the rendered queue). -->
-            <a data-view-link="approvals" href="#workspace-approvals">Approvals <span class="wsmenu-count" data-approvals-count hidden>0</span></a>
-            <a data-view-link="economics" href="#workspace-economics">Economics</a>
-            <a data-view-link="settings" href="#workspace-settings">Settings</a>
-          </div>
-        </details>
-        <button class="button button-secondary button-small wsnav-new" type="button" data-new-team>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          New team</button>
-      
-      </div>
 
+        <p class="dn-eyebrow cs-rail-group" data-rail-team-scope>This team</p>
+        <a class="dn-nav dn-bare" data-view-link="overview" href="#workspace-overview"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-dashboard"></use></svg></span><span class="dn-nav__label">Dashboard</span></a>
+        <a class="dn-nav dn-bare" data-view-link="activity" href="#workspace-activity"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-activity"></use></svg></span><span class="dn-nav__label">Activity</span></a>
+        <a class="dn-nav dn-bare" data-view-link="runs" href="#workspace-runs"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-runs"></use></svg></span><span class="dn-nav__label">Runs</span></a>
+        <a class="dn-nav dn-bare" data-view-link="economics" href="#workspace-economics"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-economics"></use></svg></span><span class="dn-nav__label">Economics</span></a>
+        <a class="dn-nav dn-bare" data-view-link="approvals" href="#workspace-approvals"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-decisions"></use></svg></span><span class="dn-nav__label">Decisions</span><span class="dn-nav__meta" data-approvals-count hidden>0</span></a>
+        <a class="dn-nav dn-bare" data-view-link="settings" href="#workspace-settings"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-settings"></use></svg></span><span class="dn-nav__label">Settings</span></a>
+        </nav>
+
+        <div class="cs-rail-foot">
+          <div class="cs-rail-spend" data-rail-spend hidden>
+            <span class="cs-rail-spend-head"><span class="dn-eyebrow">Credits</span><span class="cs-rail-spend-value" data-rail-spend-value>—</span></span>
+            <span class="dn-progress dn-progress--sm"><i class="dn-progress__fill" data-rail-spend-fill></i></span>
+            <span class="visually-hidden" data-rail-spend-note>of your prepaid balance</span>
+          </div>
+          <div class="cs-rail-identity">
+            <span class="dn-badge environment-pill" data-environment>Local</span>
+            <button class="theme-toggle cs-theme" type="button" data-theme-toggle aria-live="polite">
+              <span class="theme-toggle-icon" aria-hidden="true"></span>
+              <span class="visually-hidden" data-theme-label>Theme: match system</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="cs-topcol">
+        <header class="cs-topbar">
+          <!-- Where you are, in two scopes and one word. The team crumb is
+               absent on an organization screen, because an organization screen
+               is not inside a team. -->
+          <nav class="dn-crumbs" aria-label="Breadcrumb">
+            <a class="dn-bare dn-sweep" data-view-link="dashboard" href="#workspace-dashboard" data-crumb-organization>Your organization</a>
+            <span class="cs-crumb-team" data-crumb-team-wrap hidden><span class="dn-crumbs__sep" aria-hidden="true">/</span><a class="dn-bare dn-sweep" data-view-link="overview" href="#workspace-overview" data-crumb-team>Team</a></span>
+            <span class="dn-crumbs__sep" aria-hidden="true">/</span>
+            <span class="dn-crumbs__current" data-crumb-view>Teams</span>
+          </nav>
+          <div class="cs-topbar-actions">
+            <button class="theme-toggle cs-theme cs-theme--top" type="button" data-theme-toggle aria-live="polite">
+              <span class="theme-toggle-icon" aria-hidden="true"></span>
+              <span class="visually-hidden" data-theme-label>Theme: match system</span>
+            </button>
+            <!-- Not a notification centre: the only thing in this product that
+                 genuinely waits on a person is a decision, so the bell counts
+                 the approval queue and its door is that queue. A bell that
+                 opened an empty inbox would be furniture. -->
+            <button class="dn-bell" type="button" data-view-link="approvals" aria-label="Decisions that need you">
+              <svg class="dn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-bell"></use></svg>
+              <span class="dn-bell__count" data-approvals-count hidden>0</span>
+              <span class="dn-bell__ring" aria-hidden="true"></span>
+            </button>
+            <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-sign-out hidden>Sign out</button>
+            <button class="dn-btn dn-btn--primary dn-btn--sm" type="button" data-new-team>
+              <svg class="dn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg>
+              New team</button>
+          </div>
+        </header>
+
+        <div class="cs-scroll">
       <div class="wsmain">
         <!-- ===== DASHBOARD ===== -->
         <section class="wview" data-view="dashboard" id="workspace-dashboard" aria-labelledby="workspace-dashboard-title">
@@ -914,7 +976,68 @@
             </article>
           </div>
         </section>
+        <!-- ===== ACTIVITY ===== -->
+        <section class="wview" data-view="activity" id="workspace-activity" aria-labelledby="workspace-activity-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-activity-title">Activity</h2><p>Every plan, code change, review and pull request this team has made, as one ledger.</p></div>
+          </div>
+          <div class="dn-card dn-card--pad cs-stub">
+            <p class="dn-eyebrow">Not built yet</p>
+            <p class="cs-stub-body">The log is real and it is running — it just does not have this screen yet. Today it renders on the dashboard beside the work it narrates, with its own filters, because a separate activity screen once meant reading cause and effect required changing screens. The approved design gives it a screen of its own with the filters, the paging and the per-agent breakdown at full width; this door is here so the navigation already says where that will be.</p>
+            <p class="cs-stub-note">No data of its own. Nothing on this screen is a placeholder for a reading that exists elsewhere — the reading is on the dashboard, and the button below goes there.</p>
+            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="overview" href="#workspace-overview">Read the log on the dashboard</a></p>
+          </div>
+        </section>
+        <!-- ===== RUNS ===== -->
+        <section class="wview" data-view="runs" id="workspace-runs" aria-labelledby="workspace-runs-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-runs-title">Runs and workspaces</h2><p>One row per run: which agent started it, the workspace it holds, and the log while it is still going.</p></div>
+          </div>
+          <div class="dn-card dn-card--pad cs-stub">
+            <p class="dn-eyebrow">Not built yet</p>
+            <p class="cs-stub-body">A run is one stretch of work in one workspace, from the moment an agent picks up an assignment to the moment it hands the result back. That evidence exists — it is what the session records on each agent are built from — but it has never had a screen that lists runs across the whole team, with the live ones first.</p>
+            <p class="cs-stub-note">Not built yet. Until it is, a run is visible through the agent who started it: open the crew on the dashboard and read that agent's sessions.</p>
+            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="overview" href="#workspace-overview">Open the crew</a></p>
+          </div>
+        </section>
+        <!-- ===== PEOPLE ===== -->
+        <section class="wview" data-view="people" id="workspace-people" aria-labelledby="workspace-people-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-people-title">People</h2><p>The humans in this organization, and what each of them may do.</p></div>
+          </div>
+          <div class="dn-card dn-card--pad cs-stub">
+            <p class="dn-eyebrow">Not built yet</p>
+            <p class="cs-stub-body">Everyone in the GitHub organization, the role they hold here, and which of them can sign off a PRD, buy credits or archive a team. The member list itself is already fetched and already rendered — it sits inside Settings, under the account card, because that is where it landed first.</p>
+            <p class="cs-stub-note">Not built yet. The list and the counts are on the Settings screen today; the permissions half of this page does not exist anywhere.</p>
+            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="settings" href="#workspace-settings">See members in Settings</a></p>
+          </div>
+        </section>
+        <!-- ===== BILLING ===== -->
+        <section class="wview" data-view="billing" id="workspace-billing" aria-labelledby="workspace-billing-title">
+          <div class="wview-head">
+            <div><h2 id="workspace-billing-title">Billing</h2><p>What the organization is paying for, what it has spent, and every invoice behind both.</p></div>
+          </div>
+          <div class="dn-card dn-card--pad cs-stub">
+            <p class="dn-eyebrow">Not built yet</p>
+            <p class="cs-stub-body">One organization-wide view: the teams being charged for, the credit balance and its hard limit, the card Stripe holds, and the invoice history. Each of those is already wired — the balance and the limit on Settings, the invoices with them — but they answer per-team questions from an organization-shaped page.</p>
+            <p class="cs-stub-note">Not built yet. Credits, the card and the invoice history are on the Settings screen; per-team spend is on Economics.</p>
+            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="economics" href="#workspace-economics">See spend on Economics</a></p>
+          </div>
+        </section>
       </div>
+        </div>
+      </div>
+
+      <!-- The same doors as the rail, for the viewport the rail cannot fit.
+           Five of the nine: the two scopes' landing screens plus the three
+           things a person opens the console on a phone to check. -->
+      <nav class="dn-tabbar" data-view-nav aria-label="Workspace">
+        <button class="dn-tabbar__item" type="button" data-view-link="dashboard"><span class="dn-tabbar__glyph"><svg class="dn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-teams"></use></svg></span><span class="dn-tabbar__label">Teams</span></button>
+        <button class="dn-tabbar__item" type="button" data-view-link="overview"><span class="dn-tabbar__glyph"><svg class="dn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-dashboard"></use></svg></span><span class="dn-tabbar__label">Dashboard</span></button>
+        <button class="dn-tabbar__item" type="button" data-view-link="activity"><span class="dn-tabbar__glyph"><svg class="dn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-activity"></use></svg></span><span class="dn-tabbar__label">Activity</span></button>
+        <button class="dn-tabbar__item" type="button" data-view-link="economics"><span class="dn-tabbar__glyph"><svg class="dn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-economics"></use></svg></span><span class="dn-tabbar__label">Economics</span></button>
+        <button class="dn-tabbar__item" type="button" data-view-link="approvals"><span class="dn-tabbar__glyph"><svg class="dn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-decisions"></use></svg><span class="dn-tabbar__badge" data-approvals-count hidden>0</span></span><span class="dn-tabbar__label">Decisions</span></button>
+      </nav>
     </div>
   </div>
 </div>

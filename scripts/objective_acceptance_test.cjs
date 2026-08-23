@@ -39,18 +39,21 @@ const timestampDate = (timestamp) => {
 const stringValue = (value) => (typeof value === "string" ? value.trim() : "");
 
 test("the objectives view is registered, shipped in the shell, and every hook has a reader", () => {
-  assert.match(views, /const VIEWS = \["overview", "economics", "approvals", "settings", "agent", "objectives", "dashboard"\];/);
+  assert.match(views, /const INLINE_VIEWS = \["agent", "objectives"\];/);
   assert.match(shell, /<section class="wview" data-view="objectives" id="workspace-objectives" aria-labelledby="workspace-objectives-title">/);
   assert.match(shell, /id="workspace-objectives-title"/);
   for (const hook of ["data-objectives-view-state", "data-objectives-view-empty", "data-objectives-view-list"]) {
     assert.ok(new RegExp(`${hook}(?![\\w-])`).test(shell), `shell is missing ${hook}`);
     assert.ok(app.includes(`[${hook}]`), `app.js never reads ${hook}`);
   }
-  // The way back is the agent view's own affordance, and the doors in are
-  // ordinary view links: the overflow menu and the "On now" card.
+  // The way back is the agent view's own affordance, and the door in is the
+  // "On now" card. The overflow menu that used to hold a second door is gone
+  // with the rest of the "…": objectives is a record you open from the thing
+  // it describes, which is why it has no entry in either rail scope.
   const section = shell.slice(shell.indexOf('data-view="objectives"'), shell.indexOf('data-view="agent"'));
   assert.match(section, /data-view-link="overview" href="#workspace-overview">Back to the floor</);
-  assert.match(shell, /data-view-link="objectives" href="#workspace-objectives">Objectives</);
+  assert.doesNotMatch(shell, /<a class="dn-nav[^>]*data-view-link="objectives"/,
+    "objectives has no rail door: the On now card is its door");
   const onnow = shell.slice(shell.indexOf("data-objective-record"), shell.indexOf("wspace-log"));
   assert.match(onnow, /data-view-link="objectives" href="#workspace-objectives"/,
     "the overview's at-a-glance card must carry a real door into the objectives view");

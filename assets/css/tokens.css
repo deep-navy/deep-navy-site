@@ -26,10 +26,36 @@
                      mapped onto tier 2 so the existing stylesheet became
                      theme-aware without touching its 800+ rules.
 
-   Theming: the OS preference arrives via prefers-color-scheme; an explicit
-   user choice arrives as data-theme on <html> and must beat the media query
-   in BOTH directions, which is why light is re-stated as its own block
-   rather than left to the :root default.
+   Theming: data-theme on <html> is authoritative and is ALWAYS present —
+   the pre-paint script in head.html resolves "follow my OS" to a concrete
+   light/dark before the first frame, and theme-toggle.js re-resolves it when
+   the OS flips. The prefers-color-scheme block below stays as the no-script
+   floor, which is why light is re-stated as its own block rather than left
+   to the :root default. It has to be authoritative because the vendored
+   design system (assets/css/ds/**) is a data-theme system with no media
+   query of its own: leave "system" as the ABSENCE of the attribute and the
+   two token sets resolve to different themes on the same page.
+
+   WHO OWNS A SHARED NAME. On /app/ the design system loads between this file
+   and main.css, and it defines some of these names itself. The rule is that
+   the system owns any name a dn-* class consumes:
+
+     · Names whose values agree — the palette hues, the durations and easings,
+       the status and role sets — are left here, because ds.css is app-only
+       and the marketing pages still need them. Agreement makes the winner
+       moot. Ones nothing consumed at all were deleted outright, except where
+       another test reads the set as a set: --status-idle-dot has no consumer
+       here but completes the idle quartet, and a quartet with a hole in it is
+       how a status stops having a dot.
+     · Names whose values DIFFER and that only the 343 legacy families need
+       kept their value under a site-local name: --border-strong is now
+       --line-strong, --surface-sunken is --surface-well, --shadow-lg is
+       --shadow-dialog. The bare names belong to the system.
+     · Names defined only at :root (the ink ramp, the radii, the type stack)
+       need no alias: ds.css loads after this file, so the system already
+       wins on /app/ and the marketing pages, which never load it, keep these
+       values. The console's legacy screens therefore ride the system's ink
+       ramp — one step darker in most places, which is the point.
    ========================================================================= */
 
 :root {
@@ -42,7 +68,6 @@
   --ink-50:   #f5f5f5;
   --ink-100:  #ebebeb;
   --ink-150:  #e0e0e0;
-  --ink-200:  #d4d4d4;
   --ink-300:  #bdbdbd;
   --ink-400:  #a3a3a3;
   --ink-600:  #525252;
@@ -87,10 +112,10 @@
      600 (light fg), 400 (dark fg), 500 (the alpha recipes), 200/50 (light
      border/soft). The three engineers share one azure and are told apart
      as E1/E2/E3. */
-  --rose-600: #bc2a61; --rose-500: #d93e77; --rose-400: #ee6e9b; --rose-200: #fbc7d9; --rose-50: #fef3f7;
-  --iris-600: #5941c6; --iris-500: #6e56e0; --iris-400: #8e7bec; --iris-200: #cfc7f9; --iris-50: #f4f2fe;
-  --anemone-600: #962ba3; --anemone-500: #af3cbc; --anemone-400: #c769d2; --anemone-200: #edc6f1; --anemone-50: #fcf4fd;
-  --current-600: #1d63c9; --current-500: #2a78e0; --current-400: #5c9aec; --current-200: #bdd6f9; --current-50: #f1f6fe;
+  --rose-600: #bc2a61; --rose-400: #ee6e9b; --rose-200: #fbc7d9; --rose-50: #fef3f7;
+  --iris-600: #5941c6; --iris-400: #8e7bec; --iris-200: #cfc7f9; --iris-50: #f4f2fe;
+  --anemone-600: #962ba3; --anemone-400: #c769d2; --anemone-200: #edc6f1; --anemone-50: #fcf4fd;
+  --current-600: #1d63c9; --current-400: #5c9aec; --current-200: #bdd6f9; --current-50: #f1f6fe;
 
   /* The raw triplets back the alpha monogram washes; they ride the -500
      step, the same step the design system's dark rgba() recipes use. The
@@ -175,14 +200,12 @@
    paints ink — which is exactly what lets a coloured pixel mean something. */
 :root {
   --surface:          var(--ink-0);
-  --surface-sunken:   var(--ink-50);
+  --surface-well:     var(--ink-50);
   --surface-raised:   var(--ink-0);
-  --surface-overlay:  rgb(255 255 255 / .82);
 
   --text:             var(--ink-900);
   --text-muted:       var(--ink-600);
   --text-bright:      var(--ink-1000);
-  --text-on-accent:   var(--ink-0);
 
   --accent:           var(--ink-900);
   --accent-text:      var(--ink-900);
@@ -191,7 +214,7 @@
   --accent-rgb:       10 10 10;
 
   --border:           rgb(0 0 0 / .14);
-  --border-strong:    rgb(0 0 0 / .24);
+  --line-strong:      rgb(0 0 0 / .24);
   --text-rgb:         10 10 10;
 
   /* App-shell panels — light. A ladder of greys rising away from white,
@@ -206,7 +229,7 @@
   --signal-warn:  #87590b;
   --signal-crit:  #a32c2c;
   --scrim:        rgb(0 0 0 / .5);
-  --shadow-lg:    0 36px 120px rgb(0 0 0 / .16);
+  --shadow-dialog:    0 36px 120px rgb(0 0 0 / .16);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .3);
 
   /* Role aliases — identity, never state. Light rides the solid 600 step
@@ -265,14 +288,12 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --surface:         var(--ink-1000);
-    --surface-sunken:  var(--ink-900);
+    --surface-well:    var(--ink-900);
     --surface-raised:  var(--ink-850);
-    --surface-overlay: rgb(0 0 0 / .78);
 
     --text:            var(--ink-50);
     --text-muted:      var(--ink-400);
     --text-bright:     var(--ink-0);
-    --text-on-accent:  var(--ink-1000);
 
     --accent:          var(--ink-50);
     --accent-text:     var(--ink-50);
@@ -281,7 +302,7 @@
     --accent-rgb:      245 245 245;
 
     --border:          rgb(255 255 255 / .16);
-    --border-strong:   rgb(255 255 255 / .28);
+    --line-strong:     rgb(255 255 255 / .28);
     --text-rgb:        245 245 245;
 
     /* App-shell panels — dark. Depth comes from surface value, not shadow:
@@ -295,7 +316,7 @@
     --signal-warn:  #f5c97b;
     --signal-crit:  #f58e7e;
     --scrim:        rgb(0 0 0 / .88);
-    --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
+    --shadow-dialog:    0 36px 120px rgb(0 0 0 / .72);
     --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
     /* Role aliases — dark. The 400 step for the tint; the -soft plate and
@@ -356,14 +377,12 @@
 :root[data-theme="dark"],
 [data-theme="dark"] {
   --surface:         var(--ink-1000);
-  --surface-sunken:  var(--ink-900);
+  --surface-well:    var(--ink-900);
   --surface-raised:  var(--ink-850);
-  --surface-overlay: rgb(0 0 0 / .78);
 
   --text:            var(--ink-50);
   --text-muted:      var(--ink-400);
   --text-bright:     var(--ink-0);
-  --text-on-accent:  var(--ink-1000);
 
   --accent:          var(--ink-50);
   --accent-text:     var(--ink-50);
@@ -372,7 +391,7 @@
   --accent-rgb:      245 245 245;
 
   --border:          rgb(255 255 255 / .16);
-  --border-strong:   rgb(255 255 255 / .28);
+  --line-strong:     rgb(255 255 255 / .28);
   --text-rgb:        245 245 245;
 
   /* App-shell panels — dark. Depth comes from surface value, not shadow:
@@ -386,7 +405,7 @@
   --signal-warn:  #eec069;
   --signal-crit:  #ef9a99;
   --scrim:        rgb(0 0 0 / .88);
-  --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
+  --shadow-dialog:    0 36px 120px rgb(0 0 0 / .72);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
   /* Role aliases — dark. The 400 step for the tint; the -soft plate and
@@ -439,14 +458,12 @@
 :root[data-theme="light"],
 [data-theme="light"] {
   --surface:         var(--ink-0);
-  --surface-sunken:  var(--ink-50);
+  --surface-well:    var(--ink-50);
   --surface-raised:  var(--ink-0);
-  --surface-overlay: rgb(255 255 255 / .82);
 
   --text:            var(--ink-900);
   --text-muted:      var(--ink-600);
   --text-bright:     var(--ink-1000);
-  --text-on-accent:  var(--ink-0);
 
   --accent:          var(--ink-900);
   --accent-text:     var(--ink-900);
@@ -455,7 +472,7 @@
   --accent-rgb:      10 10 10;
 
   --border:          rgb(0 0 0 / .14);
-  --border-strong:   rgb(0 0 0 / .24);
+  --line-strong:     rgb(0 0 0 / .24);
   --text-rgb:        10 10 10;
 
   /* App-shell panels — light. A ladder of greys rising away from white,
@@ -470,7 +487,7 @@
   --signal-warn:  #87590b;
   --signal-crit:  #a32c2c;
   --scrim:        rgb(0 0 0 / .5);
-  --shadow-lg:    0 36px 120px rgb(0 0 0 / .16);
+  --shadow-dialog:    0 36px 120px rgb(0 0 0 / .16);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .3);
 
   /* Role aliases — identity, never state. Light rides the solid 600 step
@@ -584,7 +601,7 @@
 :root,
 [data-theme] {
   --navy-950:     var(--surface);
-  --navy-900:     var(--surface-sunken);
+  --navy-900:     var(--surface-well);
   --navy-850:     var(--surface-raised);
   --navy-800:     var(--panel-2);
   --navy-750:     var(--panel-3);

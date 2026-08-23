@@ -93,13 +93,23 @@ test("a recorded sign-off holds a bounded locking beat, not a spinner-forever", 
 });
 
 test("the approvals view has a real door, and the door carries the count", () => {
-  // The overflow menu link exists and wraps the count element app-views.js
-  // has been querying for since the router shipped.
-  assert.match(shell, /data-view-link="approvals" href="#workspace-approvals">Approvals <span[^>]*data-approvals-count/);
+  // The rail door exists and carries the count element app-views.js has been
+  // querying for since the router shipped. It reads "Decisions" now: the queue
+  // is a thing you decide, and "approvals" was the word for the record rather
+  // than for the act.
+  const door = shell.match(/<a class="dn-nav dn-bare" data-view-link="approvals" href="#workspace-approvals">[\s\S]*?<\/a>/);
+  assert.ok(door, "the decisions door is missing from the rail");
+  assert.match(door[0], /<span class="dn-nav__label">Decisions<\/span>/);
+  assert.match(door[0], /data-approvals-count/);
+  // Three places show the same number — the rail, the bell and the tab bar —
+  // so it is written to all of them from the one queue.
+  assert.equal((shell.match(/data-approvals-count/g) || []).length, 3,
+    "the rail, the bell and the tab bar each show the pending count");
+  assert.match(views, /const approvalsCounts = \[\.\.\.document\.querySelectorAll\("\[data-approvals-count\]"\)\]/);
   // app-views.js populates it from the rendered queue and re-counts on every
   // queue mutation, so the number can never disagree with the list.
   assert.match(views, /approvalList\.querySelectorAll\(":scope > li"\)\.length/);
-  assert.match(views, /approvalsCount\.textContent = String\(n\)/);
-  assert.match(views, /approvalsCount\.hidden = n === 0/);
+  assert.match(views, /slot\.textContent = String\(n\)/);
+  assert.match(views, /slot\.hidden = n === 0/);
   assert.match(views, /observer\.observe\(approvalList, \{ childList: true \}\)/);
 });

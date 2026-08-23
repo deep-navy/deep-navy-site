@@ -9,13 +9,23 @@
 // must resolve too.
 
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { readFileSync, readdirSync } = require("node:fs");
 const test = require("node:test");
 
+// The vendored design system is in the search path for both directions: its
+// own var() references have to resolve, and — since it loads between tokens.css
+// and main.css on /app/ — it is also where some of the names the site consumes
+// are now defined. Leave it out and a legitimate reference reads as a missing
+// token, or a dead one in ds/ goes unnoticed.
 const FILES = [
   "assets/css/tokens.css",
   "assets/css/type.css",
+  "assets/css/ds.css",
+  ...readdirSync("assets/css/ds/tokens").sort().map((f) => `assets/css/ds/tokens/${f}`),
+  ...readdirSync("assets/css/ds/components", { recursive: true })
+    .filter((f) => f.endsWith(".css")).sort().map((f) => `assets/css/ds/components/${f}`),
   "assets/css/main.css",
+  "assets/css/console.css",
   "assets/css/home.css",
 ];
 

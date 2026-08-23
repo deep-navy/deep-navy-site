@@ -52,11 +52,32 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ '/assets/fonts/instrument-sans.woff2' | relative_url }}">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ '/assets/fonts/bricolage-grotesque.woff2' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/type.css' | relative_url }}">
+{%- comment -%}
+  The design system, on the console only, and BEFORE main.css: ds/tokens/base.css
+  is a real reset (box-sizing, body type, heading colour, link rules, focus ring,
+  scrollbar, ::selection) and the site's own base rules have to be able to answer
+  it. Loading it after tokens.css is what hands the system every shared token
+  name it defines; see the ownership note at the top of tokens.css.
+
+  The marketing pages deliberately do NOT load it. They were rebuilt on their own
+  kit one commit ago, and ds/tokens/base.css would reset them out from under it.
+{%- endcomment -%}
+{% if page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/ds.css' | relative_url }}">{% endif %}
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+{% if page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/console.css' | relative_url }}">{% endif %}
 {% if page.extra_css %}<link rel="stylesheet" href="{{ page.extra_css | relative_url }}">{% endif %}
 {%- comment -%}
   Deliberately NOT deferred: this must execute before the first paint, or the
   page renders with the media-query theme and snaps to the stored one.
+
+  It resolves "follow my OS" rather than leaving it as the absence of the
+  attribute, because data-theme is now the authoritative signal. The vendored
+  design system on /app/ carries no prefers-color-scheme query at all: its
+  dark values hang off [data-theme="dark"] and nothing else. Leave the
+  attribute off and, in a dark-preferring browser, tokens.css resolves dark
+  while ds.css resolves light — on the same page, in the same pixel.
+  theme-toggle.js re-resolves this when the OS flips, so "system" still
+  follows the OS live; tokens.css keeps its media query as the no-script floor.
 
   It is inline rather than an external file because a render-blocking
   external script in the head is a single point of failure for the product: if
@@ -71,7 +92,7 @@
   a theme flash on the app - never a blank page. Recompute with:
     printf '%s' 'the exact script body' | openssl dgst -sha256 -binary | openssl base64
 {%- endcomment -%}
-<script>(function(){"use strict";try{var s=localStorage.getItem("dn-theme");if(s==="light"||s==="dark"){document.documentElement.setAttribute("data-theme",s);}}catch(e){}})();</script>
+<script>(function(){"use strict";var d=document.documentElement,s=null;try{s=localStorage.getItem("dn-theme");}catch(e){}if(s!=="light"&&s!=="dark"){s=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}d.setAttribute("data-theme",s);})();</script>
 {% unless page.layout == 'app' %}<script type="application/ld+json">
 {
   "@context": "https://schema.org",

@@ -40,8 +40,15 @@ function between(source, startMarker, endMarker) {
 
 test("the teams surface is registered, shipped in the shell, and every hook has a reader", () => {
   assert.match(shell, /<section class="wview" data-view="dashboard" id="workspace-dashboard" aria-labelledby="workspace-dashboard-title">/);
-  assert.match(views, /const VIEWS = \["overview", "economics", "approvals", "settings", "agent", "objectives", "dashboard"\];/);
-  assert.match(shell, /data-view-link="dashboard" href="#workspace-dashboard">Your teams</);
+  // The teams surface leads the ORGANIZATION scope: it is about the account
+  // and every team in it, which is exactly what makes it wrong under a "this
+  // team" heading. The rail says "Teams" because that is what the mockup's
+  // organization group says, and the count beside it is the roster's own.
+  assert.match(views, /const ORG_VIEWS = \["dashboard", "people", "billing"\];/);
+  const teamsDoor = shell.match(/<a class="dn-nav dn-bare" data-view-link="dashboard" href="#workspace-dashboard">[\s\S]*?<\/a>/);
+  assert.ok(teamsDoor, "the teams door is missing from the rail");
+  assert.match(teamsDoor[0], /<span class="dn-nav__label">Teams<\/span>/);
+  assert.match(teamsDoor[0], /data-rail-team-count/);
   for (const hook of [
     "data-team-tiles", "data-team-tiles-empty", "data-team-tiles-state", "data-team-tiles-note",
     "data-lane-chart", "data-lanes-empty", "data-lanes-window",

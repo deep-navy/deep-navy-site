@@ -30,7 +30,15 @@ function between(startMarker, endMarker) {
 test("the agent view is registered, shipped in the shell, and every hook has a reader", () => {
   // The router knows the view; the shell ships its skeleton with a unique id
   // and a labelled heading, and the way back is an ordinary view link.
-  assert.match(views, /const VIEWS = \["overview", "economics", "approvals", "settings", "agent", "objectives", "dashboard"\];/);
+  //
+  // "agent" is one of the two INLINE views — registered so the router will
+  // switch to it, and deliberately absent from the rail, because its door is
+  // the crew tile that names the agent. A rail entry would be a door standing
+  // beside the room it opens onto.
+  assert.match(views, /const INLINE_VIEWS = \["agent", "objectives"\];/);
+  assert.match(views, /const VIEWS = ORG_VIEWS\.concat\(TEAM_VIEWS, INLINE_VIEWS\);/);
+  assert.doesNotMatch(shell, /data-view-link="agent"/,
+    "the agent view has no rail door: the crew tiles are its doors");
   assert.match(shell, /<section class="wview" data-view="agent" id="workspace-agent" aria-labelledby="workspace-agent-title">/);
   assert.match(shell, /id="workspace-agent-title"/);
   const agentSection = shell.slice(shell.indexOf('data-view="agent"'), shell.indexOf('data-view="economics"'));

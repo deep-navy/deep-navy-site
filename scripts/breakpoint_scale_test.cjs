@@ -9,11 +9,21 @@
 // resizing a window sees the whole page fold together.
 
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { readFileSync, readdirSync } = require("node:fs");
 const test = require("node:test");
 
 const ALLOWED = new Set([1200, 900, 600]);
-const FILES = ["assets/css/main.css", "assets/css/home.css"];
+// The vendored design system was written to the same three stops — it has one
+// 600px query in data.css and a pair at 900 — so it is walked here rather than
+// trusted. If a re-vendor ever brings a fourth width in, this is where it stops.
+const FILES = [
+  "assets/css/main.css",
+  "assets/css/home.css",
+  "assets/css/console.css",
+  ...readdirSync("assets/css/ds/tokens").sort().map((f) => `assets/css/ds/tokens/${f}`),
+  ...readdirSync("assets/css/ds/components", { recursive: true })
+    .filter((f) => f.endsWith(".css")).sort().map((f) => `assets/css/ds/components/${f}`),
+];
 
 test("every @media width query sits on the 1200/900/600 scale", () => {
   const offenders = [];

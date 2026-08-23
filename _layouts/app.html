@@ -2,7 +2,7 @@
 <html lang="{{ site.lang | default: 'en-US' }}">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-aqMcT/YTrpcLq3eLVV/SgYSi5dyqRa/6ytspjSxC0tg=' 'sha256-t51TVENnpMHoidhToXBxjXgf0DhJzfkjZ8YZlECywKE=' https://js.stripe.com; style-src 'self'; img-src 'self' data: https://*.stripe.com; font-src 'self'; connect-src 'self' {{ site.runtime.api_base_url | escape }} {{ site.runtime.cognito_domain | escape }} https://api.stripe.com https://checkout.stripe.com https://r.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; form-action 'self'; worker-src 'none'{% if site.runtime.environment == 'production' %}; upgrade-insecure-requests{% endif %}">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-c9NR3kojoozMZhv9MWIxrqPWueu4APvyNh4mh005tFw=' 'sha256-t51TVENnpMHoidhToXBxjXgf0DhJzfkjZ8YZlECywKE=' https://js.stripe.com; style-src 'self'; img-src 'self' data: https://*.stripe.com; font-src 'self'; connect-src 'self' {{ site.runtime.api_base_url | escape }} {{ site.runtime.cognito_domain | escape }} https://api.stripe.com https://checkout.stripe.com https://r.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; form-action 'self'; worker-src 'none'{% if site.runtime.environment == 'production' %}; upgrade-insecure-requests{% endif %}">
     <meta name="referrer" content="no-referrer">
     {%- comment -%}
       Must run before anything else can read location.search, so it cannot be
@@ -18,6 +18,14 @@
   <body class="app-body" data-github-callback="{{ page.github_callback | default: false }}">
 {% include icons.svg %}
     <a class="skip-link" href="#app-main">Skip to application</a>
+    {%- comment -%}
+      The chrome for the two surfaces that are not the workspace: the sign-in
+      handoff and the create-a-team screen. In the workspace it stands down
+      (console.css), because the rail already carries the mark and the top bar
+      already carries the controls, and two stacked bars above a full-height
+      rail is one bar too many. The sign-out control moved with it: it now
+      lives in the workspace top bar, where the mockup puts it.
+    {%- endcomment -%}
     <header class="app-header">
       <a class="brand" href="{{ '/' | relative_url }}" aria-label="deep navy home">
         {% include logo.svg %}
@@ -26,9 +34,8 @@
       <div class="app-header-actions">
         <span class="environment-pill" data-environment>Local</span>
         <span class="session-pill" data-session-state>Signed out</span>
-        <button class="button button-quiet button-small" type="button" data-sign-out hidden>Sign out</button>
         <a class="button button-quiet button-small" href="{{ '/docs/' | relative_url }}">Help</a>
-        <button class="theme-toggle" type="button" data-theme-toggle aria-live="polite">
+        <button class="theme-toggle cs-theme" type="button" data-theme-toggle aria-live="polite">
           <span class="theme-toggle-icon" aria-hidden="true"></span>
           <span class="visually-hidden" data-theme-label>Theme: match system</span>
         </button>

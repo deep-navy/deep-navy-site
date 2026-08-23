@@ -1,0 +1,336 @@
+/* ============================================================================
+   deep navy — the console layer
+   ============================================================================
+
+   Loaded on /app/ only, after ds.css and main.css. Two jobs, and nothing else:
+
+     1. The dark-mode chroma boost. The design system's dark hues are correct
+        and slightly polite; on a black ground they sit back further than they
+        do on the specimen cards. Every mockup therefore re-derives them one
+        notch, and the console reads as a lit instrument panel instead of a
+        grey one. This is a SITE decision about a site surface, so it lives
+        here rather than in ds/ — those files stay byte-identical to the
+        design system so they can be re-vendored without a merge.
+
+     2. The shell's own geometry: the rail, the switcher, the top bar and the
+        tab bar. The design system ships the parts (dn-nav, dn-crumbs, dn-bell,
+        dn-tabbar, dn-select); what it cannot ship is where this product puts
+        them. Everything below is layout and composition — no new colour, no
+        new type scale, no component the system already has.
+
+   No hex values: this file may only spend tokens. Every width query is 1200,
+   900 or 600.
+   ========================================================================= */
+
+/* ---- 1. the chroma boost ------------------------------------------------
+   Verbatim from the mockups' own <style> block, with one adaptation: the
+   selector carries the :root leg as well, because tokens.css declares these
+   same names at :root[data-theme="dark"] and would otherwise win on
+   specificity. Same declarations, same order, same multipliers — 1.22 for the
+   four identity hues, 1.25 for the status dot and foreground pairs, which are
+   the ones asked to read at 6px against black. */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+  --role-pm: oklch(from var(--rose-400) l calc(c * 1.22) h);
+  --role-em: oklch(from var(--iris-400) l calc(c * 1.22) h);
+  --role-design: oklch(from var(--anemone-400) l calc(c * 1.22) h);
+  --role-eng: oklch(from var(--current-400) l calc(c * 1.22) h);
+  --status-live-dot: oklch(from var(--lumen-400) l calc(c * 1.25) h);
+  --status-live-fg: oklch(from var(--lumen-300) l calc(c * 1.25) h);
+  --status-success-dot: oklch(from var(--kelp-400) l calc(c * 1.25) h);
+  --status-success-fg: oklch(from var(--kelp-300) l calc(c * 1.25) h);
+  --status-attention-dot: oklch(from var(--brass-400) l calc(c * 1.25) h);
+  --status-attention-fg: oklch(from var(--brass-300) l calc(c * 1.25) h);
+  --status-danger-dot: oklch(from var(--coral-400) l calc(c * 1.25) h);
+  --status-danger-fg: oklch(from var(--coral-300) l calc(c * 1.25) h);
+}
+
+/* ---- 2. the shell -------------------------------------------------------
+   The workspace is a two-column instrument that owns the viewport: a rail on
+   the left that scrolls its own navigation, and a column on the right whose
+   top bar is pinned while the page under it scrolls. Nothing outside those
+   two columns moves, so switching views never moves the navigation.
+
+   The app layout's own header is the chrome for the signed-out and create-a-
+   team surfaces. In the workspace it would be a second bar above a rail that
+   already carries the mark, so it stands down. */
+body:has([data-shell][data-shell-mode="workspace"]) .app-header { display: none; }
+body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; }
+
+[data-shell][data-shell-mode="workspace"] {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-page);
+}
+.app-body [data-shell][data-shell-mode="workspace"] { padding: 0; }
+[data-shell][data-shell-mode="workspace"] > .config-banner,
+[data-shell][data-shell-mode="workspace"] > .auth-banner { flex: none; }
+/* main.css already makes the shell mode authoritative for the create screen and
+   the workspace. The sign-in card was the exception — it relied on app.js
+   setting [hidden], which meant a render that got as far as the workspace
+   without that call would put a 430px "Taking you to GitHub…" above the rail.
+   Three surfaces, one switch. */
+[data-shell]:not([data-shell-mode="signedout"]) > .signed-out-card { display: none; }
+[data-shell][data-shell-mode="workspace"] [data-authenticated] {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-body [data-shell][data-shell-mode="workspace"] .workspace {
+  display: grid;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+/* ---- the rail ---- */
+.cs-rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: var(--hairline) solid var(--border-subtle);
+  background: var(--surface-card);
+}
+.cs-rail-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: var(--topbar-height);
+  padding: 0 var(--space-4);
+  border-bottom: var(--hairline) solid var(--border-subtle);
+}
+.cs-rail-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-25);
+  min-width: 0;
+  color: var(--text-primary);
+  font: var(--fw-semibold) var(--fs-sm)/1 var(--font-sans);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.cs-rail-brand svg { width: 22px; height: 22px; flex: none; }
+
+.cs-rail-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+/* The two scopes are named, not implied. An organization view is about the
+   account and every team in it; a team view is about the one team the
+   switcher has selected. They were one undifferentiated list, which is how
+   "Teams" ended up reading as something the selected team owned. */
+.cs-rail-group {
+  margin: 0;
+  padding: var(--space-3) var(--space-25) var(--space-15);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-rail-group + .cs-rail-group { padding-top: var(--space-2); }
+.cs-rail-rule {
+  height: 1px;
+  margin: var(--space-4) var(--space-25) var(--space-1);
+  background: var(--border-subtle);
+}
+
+/* ---- the team switcher ----
+   A native select, because app.js populates and reads it and a custom menu
+   would be a second source of truth for which team is open. It wears the
+   switcher's clothes: the monogram beside it comes from the selected option,
+   so the plate and the name can never disagree. */
+.cs-switcher {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2);
+  padding: var(--space-2);
+  border: var(--hairline) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+}
+.cs-switcher-mark {
+  background: var(--action-primary-bg);
+  border-color: transparent;
+  color: var(--action-primary-fg);
+}
+.cs-switcher-field { flex: 1; min-width: 0; }
+.cs-switcher .dn-select select {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding-left: var(--space-15);
+}
+.cs-switcher .dn-select__caret { right: var(--space-15); }
+.cs-switcher-refresh { flex: none; color: var(--text-tertiary); }
+
+/* ---- the rail's foot ----
+   The credit meter is the one reading that belongs beside the navigation
+   rather than on a screen: it decides whether any of the other screens are
+   still being written to. */
+.cs-rail-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: var(--hairline) solid var(--border-subtle);
+}
+.cs-rail-spend { display: grid; gap: var(--space-15); }
+/* app.js writes the fill width through an adopted stylesheet keyed on
+   [data-gauge] — it cannot use element.style, which this page's style-src
+   blocks. The element it writes to is an <i>, and an inline box ignores
+   height, so the system's 100%-tall fill collapsed to nothing. */
+.cs-rail-spend .dn-progress__fill { display: block; }
+.cs-rail-spend-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.cs-rail-spend-value {
+  font: var(--fw-medium) var(--fs-2xs)/1 var(--font-mono);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.cs-rail-identity { display: flex; align-items: center; gap: var(--space-2); }
+.cs-rail-identity .environment-pill {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- the top bar ---- */
+.cs-topcol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.cs-topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--topbar-height);
+  padding: 0 var(--space-6);
+  border-bottom: var(--hairline) solid var(--border-subtle);
+  background: var(--surface-card);
+}
+/* A crumb is a trail, not a paragraph: it may truncate but it may never wrap,
+   or a two-word organization name doubles the height of a 56px bar. */
+.cs-topbar .dn-crumbs { flex: 1; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+.cs-topbar .dn-crumbs a,
+.cs-topbar .dn-crumbs__current {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.cs-topbar .dn-crumbs__sep { flex: none; }
+.cs-topbar-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.cs-crumb-team { display: flex; align-items: center; gap: var(--space-15); }
+/* The ring is the sonar around an unread count. Without a count it is a
+   pulse announcing nothing, so it only exists while the bell is urgent. */
+.dn-bell:not(.dn-bell--urgent) .dn-bell__ring { display: none; }
+
+.cs-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.app-body [data-shell][data-shell-mode="workspace"] .wsmain {
+  padding: var(--page-gutter-y) var(--page-gutter) var(--space-16);
+  max-width: var(--content-max);
+}
+
+/* ---- the theme control ----
+   The site's own three-state control (system → light → dark), wearing the
+   system's control geometry so it sits level with the bell beside it. The
+   glyph is still drawn in CSS by main.css: a control that renders before
+   anything else must not wait on a request. */
+.cs-theme.theme-toggle {
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: var(--hairline) solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  transition: var(--transition-control);
+}
+.cs-theme.theme-toggle:active { transform: scale(.9); }
+.cs-theme.theme-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* Both are always mounted and the breakpoint picks: on the desktop the rail
+   carries it, and the rail is gone below 900, so the top bar takes it there. */
+.cs-theme--top { display: none; }
+
+/* ---- the tab bar ----
+   Mounted always, shown by the design system below 900. The rail and the tab
+   bar are the same five doors, so no viewport ends up with two navs or none. */
+.dn-tabbar { grid-column: 1 / -1; }
+
+/* ---- honest placeholders ----
+   A door in the navigation that opens on nothing is worse than no door. These
+   screens have a route and a name because the navigation is the product's map;
+   what they say is what will be here, and that it is not here yet. */
+.cs-stub { max-width: 68ch; display: grid; gap: var(--space-3); }
+.cs-stub p { margin: 0; }
+.cs-stub-body { font: var(--type-body); color: var(--text-secondary); }
+.cs-stub-note {
+  font: var(--fw-regular) var(--fs-micro)/1.6 var(--font-mono);
+  color: var(--text-tertiary);
+}
+.cs-stub-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* ---- folds ----
+   The three system stops and no others, and only the second one moves the
+   shell: the rail holds its full width down to 900, then folds into the tab
+   bar. A rail that shrinks to icons first was tried in the mockup and cut: a
+   navigation whose labels disappear is a navigation you have to learn.
+   The design system's own --page-gutter steps down at 900 and 600, so the
+   page column follows the fold without a query of its own. */
+@media (max-width: 900px) {
+  [data-shell][data-shell-mode="workspace"] { height: auto; min-height: 100dvh; }
+  .app-body [data-shell][data-shell-mode="workspace"] .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cs-rail { display: none; }
+  .cs-topbar { padding: 0 var(--space-4); }
+  .cs-theme--top { display: grid; }
+  .cs-scroll { overflow: visible; }
+  .app-body [data-shell][data-shell-mode="workspace"] .wsmain {
+    padding-bottom: calc(var(--tabbar-height) + var(--space-8));
+  }
+}
+
+@media (max-width: 600px) {
+  .cs-topbar { gap: var(--space-2); padding: 0 var(--space-3); }
+  /* On a phone the trail collapses to where you are. The scope above it is
+     not lost — the tab bar's own current item says which one you are in — and
+     three segments in a 358px bar truncate to initials, which name nothing. */
+  .cs-topbar .dn-crumbs > :not(.dn-crumbs__current) { display: none; }
+}

@@ -386,7 +386,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .invoice-receipt:hover, .invoice-receipt:focus-visible { text-decoration: underline; text-underline-offset: .24em; }
 .invoice-more { width: 100%; }
 
-.checkout-dialog { width: min(1080px, calc(100vw - 34px)); max-width: none; max-height: calc(100vh - 34px); padding: 0; overflow: auto; color: var(--ink); border: 1px solid var(--accent-a48); border-radius: 0; background: var(--navy-950); box-shadow: var(--shadow-lg); }
+.checkout-dialog { width: min(1080px, calc(100vw - 34px)); max-width: none; max-height: calc(100vh - 34px); padding: 0; overflow: auto; color: var(--ink); border: 1px solid var(--accent-a48); border-radius: 0; background: var(--navy-950); box-shadow: var(--shadow-dialog); }
 .checkout-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(8px); }
 .checkout-frame { display: grid; min-height: min(720px, calc(100vh - 36px)); grid-template-columns: minmax(230px, .32fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; }
 .checkout-header { display: flex; grid-column: 1 / -1; align-items: flex-start; justify-content: space-between; gap: 2rem; padding: 1.4rem 1.6rem 1.25rem; border-bottom: 1px solid var(--line); }
@@ -530,7 +530,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
      as a cycle and throws away, silently unsetting every panel surface.
      Only --panel needs an alias, and only the radii are local to the shell. */
   --panel:var(--panel-1);
-  --line-soft:var(--border); --line-mid:var(--border-strong);
+  --line-soft:var(--border); --line-mid:var(--line-strong);
   --amber:var(--signal-warn); --coral:var(--signal-crit); --ink-dim:var(--text-dim);
   --ra-sm:3px; --ra:5px; --ra-lg:8px;   /* chips 3, controls 5, panels 8 — crisp, never blobby */
   /* Flat. Two radial washes used to sit here, which put a blue-grey haze
@@ -617,14 +617,10 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* roster the chosen count implies */
 .app-body .team-price > div:first-child{ min-width:220px; }
 
-/* ---- workspace: sidebar + one view ---- */
-.app-body .workspace{ grid-template-columns:238px minmax(0,1fr); gap:clamp(18px,2.4vw,34px); align-items:start; }
-.app-body .wsnav-team{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-bottom:1.1rem;
-  padding-bottom:1.1rem; border-bottom:1px solid var(--line); }
-.app-body .wsnav-team select{ min-width:0; height:38px; padding:0 28px 0 10px; color:var(--ink); border:1px solid var(--line-mid);
-  border-radius:var(--ra); background:transparent; font-family:var(--font-mono); font-size:12.5px; letter-spacing:.02em; }
-.app-body .wsnav-refresh{ width:38px; padding:0; }
-.app-body .wsnav-new{ margin-top:1.1rem; padding-top:1.1rem; border-top:1px solid var(--line); justify-content:flex-start; }
+/* ---- workspace: the rail and one view ----
+   The columns, the rail, the switcher and the spend meter moved to console.css
+   when the console was rebuilt on the design system. What is left here is the
+   part that was never chrome: the view column has to be allowed to shrink. */
 .app-body .wsmain{ min-width:0; }
 
 /* views: one at a time */
@@ -656,8 +652,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 @media (max-width:900px){
   .app-body .workspace{ grid-template-columns:1fr; }
-  .app-body .wsnav-team{ flex:1 1 200px; margin-bottom:0; }
-  .app-body .wsnav-new{ margin-top:0; }
 }
 @media (max-width:600px){
   .app-body .team-price{ flex-direction:column; align-items:flex-start; }
@@ -931,7 +925,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* The overflow menu's pending-approvals count: a number, set in the face
    numbers are set in, kept in step with the queue by app-views.js. */
-.wsmenu-count { margin-left: .4rem; font-family: var(--font-mono); font-size: .62rem; font-variant-numeric: tabular-nums; color: var(--muted); }
 
 /* What the team is on now — a state line, not a record card. */
 .onnow { padding: 1.4rem 0 0; }
@@ -1148,31 +1141,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Paging sits after the events, reached by running out of them. */
 .activity-more { display: flex; flex-wrap: wrap; gap: .4rem; padding: .6rem 0; }
 
-/* The workspace bar. This was a 210px sidebar holding a team selector and
-   three links — a column of chrome standing beside the work on every screen.
-   It is now a single strip above it, so the work gets the width and the
-   product stops looking like an admin console with a filing cabinet attached.
-   Everything here is also reachable with Cmd+K. */
-.app-body .wsbar { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap;
-  padding: 0 0 .9rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--line); border-right: 0; position: static; }
-.app-body .wsbar .wsnav-team { display: flex; gap: 6px; margin: 0; padding: 0; border: 0; }
-/* Overflow menu. Economics and settings are places you visit occasionally; as
-   three permanent links they competed with the work for attention every second
-   the page was open. Everything here is also on Cmd+K. */
-.app-body .wsbar .wsmenu { margin-left: auto; position: relative; }
-.wsmenu > summary { list-style: none; cursor: pointer; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--muted); }
-.wsmenu > summary::-webkit-details-marker { display: none; }
-.wsmenu[open] > summary, .wsmenu > summary:hover { color: var(--ink); border-color: var(--accent-a35); }
-.wsmenu-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 172px; display: grid; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem; box-shadow: var(--shadow-panel); }
-.wsmenu-panel a { padding: .42rem .55rem; border-radius: var(--radius-sm); font-size: .78rem; color: var(--text); text-decoration: none; }
-.wsmenu-panel a:hover { background: var(--accent-a12); color: var(--aqua); }
-
-/* Spend rides in the bar as a number. It does not need a screen. */
-.wsbar-spend { display: flex; align-items: center; gap: .5rem; }
-.wsbar-spend-value { font-family: var(--font-mono); font-size: .76rem; font-variant-numeric: tabular-nums; color: var(--text-bright); }
-.wsbar-track { width: 54px; height: 2px; background: var(--line); overflow: hidden; }
-.wsbar-track > i { display: block; height: 100%; background: var(--aqua); }
-
 /* One screen, stacked: the crew, then the work beside the log. */
 .app-body [data-shell][data-shell-mode="workspace"] .workspace { display: block; }
 .app-body .wspace { display: block; }
@@ -1307,7 +1275,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* The organization sits in the identity chip: part of who you are here, and
    changeable from the one screen a customer without a team can reach. */
 .user-org { margin-left: auto; }
-.user-org select { background: var(--surface-sunken); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem .5rem; font: inherit; font-size: .82rem; max-width: 15rem; }
+.user-org select { background: var(--surface-well); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .3rem .5rem; font: inherit; font-size: .82rem; max-width: 15rem; }
 .user-org select:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: 2px; }
 
 /* ===========================================================================
@@ -1355,7 +1323,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   gap: .9rem;
   padding: 1.6rem 1.5rem 1.5rem;
   border: 1px solid var(--line);
-  background: var(--surface-sunken);
+  background: var(--surface-well);
 }
 .instrument-label {
   margin: 0;
@@ -1562,7 +1530,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    light-theme kelp, black on the lighter dark-theme kelp). Lumen breathe
    while the crew works toward proof; coral plate with one shake for a
    proof that stopped holding. The chip beside it carries the word. */
-.obj-check { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text-dim); background: transparent; }
+.obj-check { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); color: var(--text-dim); background: transparent; }
 .obj-check::before { content: ""; font: 600 .68rem/1 var(--font-mono); }
 .obj-check[data-state="proven"] { background: var(--status-success-dot); border-color: var(--status-success-dot); color: var(--surface); }
 .obj-check[data-state="proven"]::before { content: "✓"; animation: dn-tick var(--dur-slow) var(--ease-arrive) both; }
@@ -1653,7 +1621,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .team-tile::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
 .team-tile:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: -2px; }
 @media (hover: hover) {
-  .team-tile:hover { border-color: var(--border-strong); box-shadow: var(--shadow-panel); transform: translateY(-2px); }
+  .team-tile:hover { border-color: var(--line-strong); box-shadow: var(--shadow-panel); transform: translateY(-2px); }
   .team-tile:hover::after { transform: scaleX(1); }
 }
 .team-tile-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }

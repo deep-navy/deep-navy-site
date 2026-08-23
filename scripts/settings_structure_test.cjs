@@ -165,12 +165,22 @@ test("the members empty state follows the three-part formula", () => {
     "name the absence, then say what belongs here and how to get it");
 });
 
-test("the settings door sits last in the overflow menu, after every work surface", () => {
-  const menuStart = shell.indexOf("wsmenu-panel");
-  const menu = shell.slice(menuStart, shell.indexOf("</details>", menuStart));
-  const order = ["dashboard", "overview", "objectives", "approvals", "economics", "settings"]
-    .map((view) => menu.indexOf(`data-view-link="${view}"`));
-  assert.ok(order.every((position) => position !== -1), "every door is in the menu");
+test("the settings door sits last in the team scope, after every work surface", () => {
+  // The six doors behind a "…" became a rail with two named scopes, so the
+  // ordering rule moved with them: settings is still last, but last within the
+  // TEAM scope, because settings is a thing you do to the selected team.
+  // Objectives left the list entirely — it is opened from the record it
+  // describes, not from a navigation entry.
+  const railStart = shell.indexOf('data-rail-team-scope');
+  const rail = shell.slice(railStart, shell.indexOf("</nav>", railStart));
+  const order = ["overview", "activity", "runs", "economics", "approvals", "settings"]
+    .map((view) => rail.indexOf(`data-view-link="${view}"`));
+  assert.ok(order.every((position) => position !== -1), "every team door is in the rail");
   assert.deepEqual([...order].sort((a, b) => a - b), order,
-    "doors read: teams, floor, objectives, approvals, economics, settings — settings last");
+    "doors read: dashboard, activity, runs, economics, decisions, settings — settings last");
+  // And the organization scope sits above the switcher, not below it: the
+  // switcher is the boundary between "the account" and "this team".
+  const orgStart = shell.indexOf('data-rail-organization');
+  assert.ok(orgStart !== -1 && orgStart < shell.indexOf("cs-switcher") && shell.indexOf("cs-switcher") < railStart,
+    "the switcher must sit between the organization scope and the team scope");
 });

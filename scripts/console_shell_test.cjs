@@ -1,0 +1,197 @@
+"use strict";
+
+// The console's chrome, and the one thing about it that is a decision rather
+// than a detail: the rail has TWO SCOPES.
+//
+// Organization doors — Teams, People, Billing — are about the account and every
+// team in it. Team doors — Dashboard, Activity, Runs, Economics, Decisions,
+// Settings — are about the one team the switcher has selected. Before this the
+// six doors sat in one flat list behind a "…" summary, which put "Your teams"
+// under the same heading as the selected team's own screens and hid six real
+// destinations behind three dots. The switcher sits BETWEEN the two groups
+// because it is the boundary between them, and that ordering is what this file
+// exists to keep.
+//
+// It also holds the two rules that make the navigation honest: every door the
+// rail offers must open a section that exists, and a section that has no data
+// yet must say so in its own words rather than render an empty screen.
+
+const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const test = require("node:test");
+
+const shell = readFileSync("_includes/app-shell.html", "utf8");
+const layout = readFileSync("_layouts/app.html", "utf8");
+const head = readFileSync("_includes/head.html", "utf8");
+const views = readFileSync("assets/js/app-views.js", "utf8");
+const console_ = readFileSync("assets/css/console.css", "utf8");
+const themeToggle = readFileSync("assets/js/theme-toggle.js", "utf8");
+const icons = readFileSync("_includes/icons.svg", "utf8");
+
+const ORG = ["dashboard", "people", "billing"];
+const TEAM = ["overview", "activity", "runs", "economics", "approvals", "settings"];
+
+/* ---- the rail ----------------------------------------------------------- */
+
+test("the rail is two named scopes with the switcher on the boundary", () => {
+  assert.match(views, /const ORG_VIEWS = \["dashboard", "people", "billing"\];/);
+  assert.match(views, /const TEAM_VIEWS = \["overview", "activity", "runs", "economics", "approvals", "settings"\];/);
+  assert.match(views, /const VIEWS = ORG_VIEWS\.concat\(TEAM_VIEWS, INLINE_VIEWS\);/);
+
+  const rail = shell.slice(shell.indexOf('class="cs-rail-nav"'), shell.indexOf("</nav>", shell.indexOf('class="cs-rail-nav"')));
+  const at = (needle) => {
+    const index = rail.indexOf(needle);
+    assert.notEqual(index, -1, `${needle} is missing from the rail`);
+    return index;
+  };
+  const orgHeading = at("data-rail-organization");
+  const switcher = at('class="cs-switcher"');
+  const teamHeading = at("data-rail-team-scope");
+  assert.ok(orgHeading < switcher && switcher < teamHeading,
+    "organization scope, then the switcher, then the team scope");
+
+  for (const view of ORG) {
+    assert.ok(at(`data-view-link="${view}"`) < switcher, `${view} is an organization door and belongs above the switcher`);
+  }
+  for (const view of TEAM) {
+    assert.ok(at(`data-view-link="${view}"`) > teamHeading, `${view} is a team door and belongs under the team heading`);
+  }
+});
+
+test("the team crumb appears on team screens and nowhere else", () => {
+  // An organization screen is not inside a team, so it does not get the team
+  // crumb. Everything else does — including the two inline records, which
+  // belong to a team even though they have no rail entry of their own.
+  assert.match(views, /const IN_TEAM = TEAM_VIEWS\.concat\(INLINE_VIEWS\);/);
+  assert.match(views, /crumbTeamWrap\.hidden = !IN_TEAM\.includes\(currentView\)/);
+  assert.match(shell, /<span class="cs-crumb-team" data-crumb-team-wrap hidden>/);
+});
+
+test("the chrome mirrors app.js rather than holding data of its own", () => {
+  // Every name in the rail and the crumb is copied from something a response
+  // already put on the page. Nothing here invents an organization or a team.
+  assert.match(views, /contextOrganization\.textContent\.trim\(\)/);
+  assert.match(views, /teamSelect\.options\[teamSelect\.selectedIndex\]/);
+  assert.match(views, /railTeamCount\.textContent = String\(n\)/);
+  // The switcher is the native select app.js already populates — not a second
+  // opinion about which team is open.
+  assert.match(shell, /<select id="workspace-team" data-team-select disabled>/);
+  assert.equal((shell.match(/data-team-select/g) || []).length, 1);
+});
+
+test("aria-current is the navigation's, and it is the value the system reads", () => {
+  // The design system keys the active plate and the edge marker on
+  // aria-current="page". "true" painted nothing.
+  assert.match(views, /setAttribute\("aria-current", "page"\)/);
+  assert.match(views, /const navLinks = links\.filter\(\(link\) => link\.closest\("\[data-view-nav\]"\)\)/);
+  assert.equal((shell.match(/data-view-nav/g) || []).length, 2, "the rail and the tab bar are the two navigations");
+});
+
+/* ---- the tab bar -------------------------------------------------------- */
+
+test("below 900 the tab bar carries the same doors, and both are always mounted", () => {
+  const tabbar = shell.slice(shell.indexOf('class="dn-tabbar"'), shell.indexOf("</nav>", shell.indexOf('class="dn-tabbar"')));
+  for (const view of ["dashboard", "overview", "activity", "economics", "approvals"]) {
+    assert.ok(tabbar.includes(`data-view-link="${view}"`), `the tab bar is missing ${view}`);
+  }
+  // The rail folds at the tablet stop and the system shows the tab bar at the
+  // same one, so no viewport gets two navs or none.
+  assert.match(console_, /@media \(max-width: 900px\) \{[\s\S]*?\.cs-rail \{ display: none; \}/);
+});
+
+/* ---- honest placeholders ------------------------------------------------ */
+
+test("every rail door opens a section, and the ones with no data say so", () => {
+  for (const view of ORG.concat(TEAM)) {
+    assert.ok(shell.includes(`data-view="${view}"`), `${view} has a door but no section`);
+    assert.ok(shell.includes(`id="workspace-${view}"`), `${view} has no anchor of its own`);
+  }
+  // Four screens the approved design has and the product does not. Each is a
+  // route and a card that names what will live there, admits it is not built,
+  // and points at where the evidence is today. Never a fake screen; never a
+  // blank one.
+  for (const view of ["activity", "runs", "people", "billing"]) {
+    const start = shell.indexOf(`data-view="${view}"`);
+    const stub = shell.slice(start, shell.indexOf("</section>", start));
+    assert.match(stub, /<p class="dn-eyebrow">Not built yet<\/p>/, `${view} must admit it is not built`);
+    assert.match(stub, /class="cs-stub-body"/, `${view} must say what will live there`);
+    assert.match(stub, /class="cs-stub-note"/, `${view} must say what is true today`);
+    assert.match(stub, /class="cs-stub-actions"><a class="dn-btn[^>]*data-view-link="/,
+      `${view} must point at the screen that holds the evidence today`);
+  }
+});
+
+/* ---- the wiring --------------------------------------------------------- */
+
+test("the design system loads on the console only, and before main.css", () => {
+  const ds = head.indexOf("/assets/css/ds.css");
+  const main = head.indexOf("/assets/css/main.css");
+  const layer = head.indexOf("/assets/css/console.css");
+  assert.ok(ds !== -1 && main !== -1 && layer !== -1, "one of the three stylesheets is not linked");
+  assert.ok(ds < main, "ds/tokens/base.css is a reset; the site's base rules must be able to answer it");
+  assert.ok(main < layer, "the console layer is the last word on the console");
+  // Marketing does not load it: those pages were rebuilt on their own kit and
+  // the system's reset would pull it out from under them.
+  for (const sheet of ["ds.css", "console.css"]) {
+    const link = new RegExp(`\\{% if page\\.layout == 'app' %\\}<link rel="stylesheet" href="\\{\\{ '/assets/css/${sheet.replace(".", "\\.")}'`);
+    assert.match(head, link, `${sheet} must be gated to the app layout`);
+  }
+});
+
+test("dark mode re-derives the eight hues one notch, and does it outside ds/", () => {
+  // What makes the console read as a lit instrument panel rather than a grey
+  // one. It lives here and not in ds/ so the vendored files stay byte-identical
+  // to the design system and can be re-vendored without a merge.
+  for (const [token, source, factor] of [
+    ["--role-pm", "--rose-400", "1.22"], ["--role-em", "--iris-400", "1.22"],
+    ["--role-design", "--anemone-400", "1.22"], ["--role-eng", "--current-400", "1.22"],
+    ["--status-live-dot", "--lumen-400", "1.25"], ["--status-live-fg", "--lumen-300", "1.25"],
+    ["--status-success-dot", "--kelp-400", "1.25"], ["--status-success-fg", "--kelp-300", "1.25"],
+    ["--status-attention-dot", "--brass-400", "1.25"], ["--status-attention-fg", "--brass-300", "1.25"],
+    ["--status-danger-dot", "--coral-400", "1.25"], ["--status-danger-fg", "--coral-300", "1.25"],
+  ]) {
+    assert.ok(console_.includes(`${token}: oklch(from var(${source}) l calc(c * ${factor}) h);`),
+      `${token} must be re-derived from ${source} at ${factor}`);
+  }
+  // It has to out-specify tokens.css, which declares the same names at
+  // :root[data-theme="dark"]. Same declarations, adapted selector.
+  assert.match(console_, /:root\[data-theme="dark"\],\n\[data-theme="dark"\] \{\n {2}--role-pm: oklch/);
+});
+
+test("data-theme is always stamped, because the system has no media query", () => {
+  // Leave "system" as the absence of the attribute and, in a dark-preferring
+  // browser, tokens.css resolves dark while ds.css resolves light — on the same
+  // page. The pre-paint script resolves it; the toggle re-resolves it live.
+  assert.match(head, /d\.setAttribute\("data-theme",s\);/);
+  assert.match(head, /matchMedia\("\(prefers-color-scheme: dark\)"\)\.matches\?"dark":"light"/);
+  assert.doesNotMatch(themeToggle, /removeAttribute\("data-theme"\)/,
+    "the attribute is never removed: system resolves, it does not vanish");
+  assert.match(themeToggle, /if \(state === "system"\) apply\(state, buttons\);/,
+    "while the preference is system, an OS flip must re-resolve the theme");
+  // Change the script, change the hash, or the CSP refuses it.
+  assert.match(layout, /'sha256-c9NR3kojoozMZhv9MWIxrqPWueu4APvyNh4mh005tFw='/);
+});
+
+test("the rail's glyphs are in the sprite and the chrome carries no inline style", () => {
+  for (const glyph of [
+    "i-nav-teams", "i-nav-people", "i-nav-billing", "i-nav-dashboard",
+    "i-nav-activity", "i-nav-runs", "i-nav-economics", "i-nav-decisions",
+    "i-nav-settings", "i-bell", "i-caret-down", "i-refresh", "i-plus",
+  ]) {
+    assert.ok(icons.includes(`id="${glyph}"`), `${glyph} is missing from the sprite`);
+    assert.ok(shell.includes(`href="#${glyph}"`), `${glyph} is in the sprite but nothing uses it`);
+  }
+  // style-src 'self' with no 'unsafe-inline' — an inline style attribute here
+  // is not a lint failure, it is a declaration the browser drops.
+  assert.doesNotMatch(shell, /\sstyle="/, "the shell must carry no inline style attribute");
+  assert.doesNotMatch(layout, /\sstyle="/, "the layout must carry no inline style attribute");
+});
+
+test("the layout header stands down in the workspace, and the sign-out went with it", () => {
+  assert.match(console_, /body:has\(\[data-shell\]\[data-shell-mode="workspace"\]\) \.app-header \{ display: none; \}/);
+  // One [data-sign-out], and it is in the top bar the mockup puts it in.
+  assert.equal((shell.match(/data-sign-out(?![\w-])/g) || []).length, 1);
+  assert.doesNotMatch(layout, /data-sign-out/);
+  const actions = shell.slice(shell.indexOf('class="cs-topbar-actions"'), shell.indexOf("</header>", shell.indexOf('class="cs-topbar-actions"')));
+  assert.match(actions, /data-sign-out/, "sign out belongs in the top bar, beside the bell");
+});

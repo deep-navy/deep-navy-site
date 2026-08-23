@@ -84,7 +84,7 @@ test("exactly two ink bands, each carrying data-theme in its own markup", () => 
   assert.match(tokens, /:root\[data-theme="dark"\],\n\[data-theme="dark"\] \{/);
   assert.match(tokens, /:root\[data-theme="light"\],\n\[data-theme="light"\] \{/);
   assert.match(tokens, /\[data-theme\] \{ color: var\(--text\); \}/);
-  assert.match(home, /\.lp-band-ink \{[^}]*background: var\(--surface-sunken\);/);
+  assert.match(home, /\.lp-band-ink \{[^}]*background: var\(--surface-well\);/);
 });
 
 /* ---- the four steps: the doctrine survives verbatim ---------------------- */
