@@ -32,23 +32,32 @@ function rules(css) {
   const out = [];
   const src = stripComments(css);
   let i = 0;
+  const skipBlock = () => { // consume a balanced { ... } we are already inside
+    let depth = 1;
+    while (i < src.length && depth > 0) {
+      if (src[i] === "{") depth += 1;
+      else if (src[i] === "}") depth -= 1;
+      i += 1;
+    }
+  };
   const walk = (media) => {
     while (i < src.length) {
+      while (i < src.length && /\s/.test(src[i])) i += 1;
+      if (i >= src.length) return;
+      if (src[i] === "}") { i += 1; return; } // end of the enclosing at-rule
       const brace = src.indexOf("{", i);
       if (brace === -1) { i = src.length; return; }
-      const close = src.indexOf("}", i);
-      if (close !== -1 && close < brace) { i = close + 1; return; } // end of @media
       const selector = src.slice(i, brace).trim();
       i = brace + 1;
       if (selector.startsWith("@media") || selector.startsWith("@supports")) {
         walk(selector);
         continue;
       }
-      // read until the matching close brace (rules do not nest below @media)
+      if (selector.startsWith("@")) { skipBlock(); continue; } // @keyframes, @font-face, @print
       const end = src.indexOf("}", i);
       const body = src.slice(i, end === -1 ? src.length : end);
       i = end === -1 ? src.length : end + 1;
-      if (!selector.startsWith("@")) out.push({ media, selector, body });
+      out.push({ media, selector, body });
     }
   };
   walk(null);
@@ -228,17 +237,19 @@ test("chrome labels are set in the machine's face, prose is not", () => {
   // Display and body are Bricolage Grotesque and Instrument Sans.
   assert.match(typeCss, /--font-display:\s*"Bricolage Grotesque"/);
   assert.match(typeCss, /--font-sans:\s*"Instrument Sans"/);
-  for (const [family, weights] of [
-    ["Bricolage Grotesque", [500, 600, 700]],
-    ["Instrument Sans", [400, 500, 600]],
-    ["JetBrains Mono", [400, 500]],
+  // Each family is ONE variable file declaring the weight range the file's
+  // own fvar table carries — never a range the browser would have to fake.
+  for (const [family, file, range] of [
+    ["Bricolage Grotesque", "bricolage-grotesque", "200 800"],
+    ["Instrument Sans", "instrument-sans", "400 700"],
+    ["JetBrains Mono", "jetbrains-mono", "400 800"],
   ]) {
-    for (const weight of weights) {
-      const face = new RegExp(
-        `@font-face \\{\\n  font-family: "${family}";\\n  src: url\\("/assets/fonts/[a-z0-9-]+\\.woff2"\\) format\\("woff2"\\);\\n  font-weight: ${weight};`);
-      assert.match(typeCss, face, `${family} ${weight} is not declared as a self-hosted woff2`);
-    }
+    const face = new RegExp(
+      `@font-face \\{\\n  font-family: "${family}";\\n  src: url\\("/assets/fonts/${file}\\.woff2"\\) format\\("woff2"\\);\\n  font-weight: ${range};`);
+    assert.match(typeCss, face, `${family} must be one self-hosted variable woff2 spanning ${range}`);
   }
+  assert.equal((stripComments(typeCss).match(/@font-face/g) || []).length, 3,
+    "three families, three @font-face blocks - a variable font never needs one per weight");
   // The two preloads are the two files the first paint actually needs.
   const preloads = [...head.matchAll(/rel="preload" as="font"[^>]*\/assets\/fonts\/([a-z0-9-]+\.woff2)/g)]
     .map((m) => m[1]);
