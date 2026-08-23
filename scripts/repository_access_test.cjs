@@ -428,7 +428,14 @@ test("no stream carries a grant change, so returning to the tab stays the ceilin
     fetch: async () => { throw new Error("not called"); }
   });
   const streams = Object.keys(api).filter((name) => name.startsWith("stream")).sort();
-  assert.deepEqual(streams, ["streamProvisioningStatus", "streamTeamActivity", "streamTeamConversation"]);
+  // streamCreditMovements joined the set with platform-protos 31a489d8. It does
+  // publish organization GRANTS — but credit grants, which ride a team's stream
+  // because they move the pool that team spends from. A repository grant is a
+  // different fact, belongs to the installation, and is still carried by no
+  // stream here. The tripwire below is what proves that: this one sends a
+  // teamId like the other three, so it cannot deliver an organization's
+  // repository selection either.
+  assert.deepEqual(streams, ["streamCreditMovements", "streamProvisioningStatus", "streamTeamActivity", "streamTeamConversation"]);
 
   // Named team-scoped is not the same as being team-scoped. Each one sends a
   // teamId, which is what makes it unable to carry an organization's grant.

@@ -28,7 +28,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "350acd91b0a15da08fd6a13282f75f36849ce4bf";
+export const PLATFORM_PROTOS_REVISION = "31a489d8f0b073fd499207ab86bdea0f2faea0b7";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
@@ -78,6 +78,31 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "sign_out"
 ] as const);
 
+/* The streaming half of the ceiling.
+ *
+ * SUPPORTED_PROCEDURES above is the list of procedures request() can serve, and
+ * every one of them is unary. The server-streaming procedures have always been
+ * reachable only as named generator functions on the client object, so "what may
+ * this browser subscribe to" had no list to read at all - a screen asking whether
+ * it could follow something had to grep for a method name. StreamCreditMovements
+ * is the fourth, and the fourth is where that stops being tolerable.
+ *
+ * The two lists are kept DISJOINT on purpose. A stream name in
+ * SUPPORTED_PROCEDURES would be a lie: request() has no case for it and would
+ * answer not_configured, so a caller trusting the documented ceiling would be
+ * told the procedure exists and then be refused it. The `stream_` prefix also
+ * keeps `provisioning_status` (unary GetProvisioningStatus) from colliding with
+ * StreamProvisioningStatus, which is a genuinely different call.
+ *
+ * platform_api_client_test.cjs holds both halves: disjointness, and that every
+ * name here resolves to a real function on the client. */
+export const STREAM_PROCEDURES = Object.freeze([
+  "stream_team_activity",
+  "stream_team_conversation",
+  "stream_provisioning_status",
+  "stream_credit_movements"
+] as const);
+
 // Public sign-in procedures are called before a session exists, so they carry
 // no bearer token and are routed through signIn() rather than request().
 export const PUBLIC_PROCEDURES = Object.freeze([
@@ -105,7 +130,8 @@ export const PLATFORM_CAPABILITIES = Object.freeze({
   approvalDecision: true,
   approvalDiscovery: true,
   conversationSend: true,
-  conversationStream: true
+  conversationStream: true,
+  creditMovementStream: true
 });
 
 type ProcedureName = (typeof SUPPORTED_PROCEDURES)[number];
@@ -733,5 +759,43 @@ export function createPlatformApi(options: PlatformApiOptions) {
     }
   }
 
-  return Object.freeze({ request, signIn, streamTeamActivity, streamTeamConversation, streamProvisioningStatus });
+  /* StreamCreditMovements, shaped exactly like the three streams above: bearer
+   * token in a header, no client timeout, the caller's AbortSignal, and an
+   * afterSequence cursor. The identical shape is the point - the contract says
+   * it "follows StreamTeamActivity's resume shape exactly, because a second
+   * cursor idiom on the same console is a second way to lose a row", and the
+   * transport layer is where that promise is either kept or quietly broken. */
+  async function* streamCreditMovements(input: unknown, options: PlatformCallOptions) {
+    const payload = inputRecord(input);
+    const accessToken = options.accessToken.trim();
+    const requestId = options.requestId.trim();
+    if (!accessToken) throw new PlatformClientError("Sign-in is required.", "unauthenticated", 401, requestId);
+    const callOptions: CallOptions = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Request-ID": requestId
+      },
+      signal: options.signal,
+      timeoutMs: 0
+    };
+
+    try {
+      for await (const response of economics.streamCreditMovements({
+        teamId: textField(payload, "teamId"),
+        afterSequence: int64Field(payload.afterSequence ?? 0, "afterSequence")
+      }, callOptions)) {
+        yield response;
+      }
+    } catch (error) {
+      if (error instanceof PlatformClientError) throw error;
+      const connectError = ConnectError.from(error);
+      const responseRequestId = connectError.metadata.get("x-request-id") || requestId;
+      const safeMessage = connectError.code === Code.Unknown
+        ? "The browser could not reach the economics service."
+        : connectError.rawMessage.slice(0, 300) || "The economics service rejected the stream.";
+      throw new PlatformClientError(safeMessage, codeName(connectError.code), httpStatus(connectError.code), responseRequestId);
+    }
+  }
+
+  return Object.freeze({ request, signIn, streamTeamActivity, streamTeamConversation, streamProvisioningStatus, streamCreditMovements });
 }

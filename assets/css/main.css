@@ -1478,6 +1478,65 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* --- numbers that count: tabular figures so a rolling value never reflows --- */
 .dn-odometer { font-variant-numeric: tabular-nums; display: inline-block; }
 
+/* ---- reduced motion: DISABLE, do not shorten ------------------------------
+   The global collapse above sets animation-duration to .01ms and
+   animation-iteration-count to 1. For a keyframe that ends where it started
+   that is the same thing as switching it off. For a keyframe whose LAST frame
+   is off-neutral it is not: the animation still runs, still fills, and parks
+   the element on its final pose in a hundredth of a millisecond.
+
+   dn-travel is exactly that shape — it ends at translateX(360%) — so under a
+   collapse the live rail does not stop travelling, it teleports to the end of
+   its journey and stays there, clipped out of existence by the parent's
+   overflow. The rail vanishes rather than settling, and "actively streaming"
+   silently stops being expressed at all for the readers most likely to be
+   relying on a non-motion cue.
+
+   So the loops that mean something are switched OFF and given an explicit
+   resting pose that still carries the meaning: a lit rail that is simply not
+   moving. Everything else in this block is a one-shot arrival, which has no
+   business running at all when someone has asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .dn-livebar::after {
+    animation: none !important;
+    transform: none;
+    width: 100%;
+    opacity: .5;
+  }
+  .credit-movement-row,
+  .credit-movement-row.dn-in-pop,
+  .movement-live .dn-dot--pulse::after { animation: none !important; }
+}
+
+/* ---- the live credit ledger ---------------------------------------------
+   A movement arrives because an agent spent money, never because the reader
+   did something — which is the one case --ease-arrive exists for. The row
+   uses the vendored .dn-in-pop, so the overshoot is the system's, not a
+   second opinion about what arriving looks like. */
+.credit-movements .credit-pack-heading { align-items: center; }
+.credit-movement-list { display: grid; margin: .35rem 0 0; padding: 0; list-style: none; }
+.credit-movement-row { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: .55rem; padding: .5rem 0; border-top: 1px solid var(--line); }
+.credit-movement-row:first-child { border-top: 0; }
+.credit-movement-kind { display: inline-flex; align-items: center; gap: .3rem; color: var(--muted-bright); font-family: var(--font-mono); font-size: .6rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.credit-movement-what { color: var(--muted); font-size: .7rem; line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
+/* The delta is achromatic on purpose. Direction is not one of the four things
+   colour is allowed to mean here — lumen is live, kelp is met, brass is
+   waiting on a person, coral is failed — and "money came back" is none of
+   them. Painting a release kelp would quietly add a fifth meaning to the
+   palette. The sign is carried by the leading − or + and by the kind's own
+   word and glyph, all of which survive filter: grayscale(1) intact. */
+.credit-movement-delta { font-family: var(--font-mono); font-size: .72rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted-bright); }
+.credit-movement-meta { grid-column: 1 / -1; color: var(--muted); font-family: var(--font-mono); font-size: .56rem; letter-spacing: .05em; text-transform: uppercase; }
+
+/* The live line, copied from the console mockup's own (console.dc.html:591):
+   right-aligned, inline, immediately before the count it qualifies, in mono
+   micro uppercase at tertiary ink. The LINE is achromatic — only .dn-dot--live
+   inside it carries lumen — so with the hue removed the word and the count are
+   still both there and still say the same thing. */
+.movement-live { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-tertiary); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .06em; text-transform: uppercase; }
+.movement-stats { display: grid; gap: 16px; margin: .6rem 0 .2rem; }
+.movement-stats .dn-stat + .dn-stat { padding-left: 20px; border-left: 1px solid var(--line-soft); }
+
 /* --- press physics: everything pressable shares one curve --- */
 .dn-press { transition: transform var(--dur-micro) var(--ease-standard); }
 .dn-press:active { transform: scale(var(--press-scale)); }

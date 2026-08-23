@@ -57,6 +57,9 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent)
   - [Message `deepnavy.v1.ListAdminAuditEventsRequest`](#deepnavy-v1-listadminauditeventsrequest)
   - [Message `deepnavy.v1.ListAdminAuditEventsResponse`](#deepnavy-v1-listadminauditeventsresponse)
+  - [Message `deepnavy.v1.AdminIdentity`](#deepnavy-v1-adminidentity)
+  - [Message `deepnavy.v1.GetAdminIdentityRequest`](#deepnavy-v1-getadminidentityrequest)
+  - [Message `deepnavy.v1.GetAdminIdentityResponse`](#deepnavy-v1-getadminidentityresponse)
   - [Enum `deepnavy.v1.AdminErrorReason`](#deepnavy-v1-adminerrorreason)
   - [Enum `deepnavy.v1.AdminCustomerHealthState`](#deepnavy-v1-admincustomerhealthstate)
   - [Enum `deepnavy.v1.AdminSupportState`](#deepnavy-v1-adminsupportstate)
@@ -74,6 +77,7 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Enum `deepnavy.v1.AdminAlertKind`](#deepnavy-v1-adminalertkind)
   - [Enum `deepnavy.v1.AdminStreamChangeType`](#deepnavy-v1-adminstreamchangetype)
   - [Enum `deepnavy.v1.AdminProjectionAvailability`](#deepnavy-v1-adminprojectionavailability)
+  - [Enum `deepnavy.v1.AdminAuthorizationBasis`](#deepnavy-v1-adminauthorizationbasis)
   - [Service `deepnavy.v1.AdminService`](#deepnavy-v1-adminservice)
 - [deepnavy/v1/agents.proto](#deepnavy-v1-agents-proto)
   - [Message `deepnavy.v1.Agent`](#deepnavy-v1-agent)
@@ -189,7 +193,12 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.EconomicsDailyBucket`](#deepnavy-v1-economicsdailybucket)
   - [Message `deepnavy.v1.ListEconomicsDailyRequest`](#deepnavy-v1-listeconomicsdailyrequest)
   - [Message `deepnavy.v1.ListEconomicsDailyResponse`](#deepnavy-v1-listeconomicsdailyresponse)
+  - [Message `deepnavy.v1.CreditMovementAttribution`](#deepnavy-v1-creditmovementattribution)
+  - [Message `deepnavy.v1.CreditMovement`](#deepnavy-v1-creditmovement)
+  - [Message `deepnavy.v1.StreamCreditMovementsRequest`](#deepnavy-v1-streamcreditmovementsrequest)
+  - [Message `deepnavy.v1.StreamCreditMovementsResponse`](#deepnavy-v1-streamcreditmovementsresponse)
   - [Enum `deepnavy.v1.EconomicsScopeType`](#deepnavy-v1-economicsscopetype)
+  - [Enum `deepnavy.v1.CreditMovementKind`](#deepnavy-v1-creditmovementkind)
   - [Service `deepnavy.v1.EconomicsService`](#deepnavy-v1-economicsservice)
 - [deepnavy/v1/github.proto](#deepnavy-v1-github-proto)
   - [Message `deepnavy.v1.GitHubInstallationErrorDetail`](#deepnavy-v1-githubinstallationerrordetail)
@@ -253,6 +262,7 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.ProvisioningEvent`](#deepnavy-v1-provisioningevent)
   - [Message `deepnavy.v1.ProvisioningRuntimeResult`](#deepnavy-v1-provisioningruntimeresult)
   - [Message `deepnavy.v1.ProvisioningEventInput`](#deepnavy-v1-provisioningeventinput)
+  - [Message `deepnavy.v1.TeamRuntimeHealth`](#deepnavy-v1-teamruntimehealth)
   - [Message `deepnavy.v1.GetProvisioningStatusRequest`](#deepnavy-v1-getprovisioningstatusrequest)
   - [Message `deepnavy.v1.GetProvisioningStatusResponse`](#deepnavy-v1-getprovisioningstatusresponse)
   - [Message `deepnavy.v1.StreamProvisioningStatusRequest`](#deepnavy-v1-streamprovisioningstatusrequest)
@@ -1044,6 +1054,38 @@ AdminAuditEvent is one immutable administrative audit record. It exposes deep
 | `events` | 1 | [`deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent) | repeated | — |
 | `page` | 2 | [`deepnavy.v1.PageResponse`](#deepnavy-v1-pageresponse) | singular | — |
 
+<a id="deepnavy-v1-adminidentity"></a>
+### Message `deepnavy.v1.AdminIdentity`
+
+AdminIdentity is the operator the server authorized for this request. Every
+ field is taken from the verified token and the authorization decision the
+ server already made; nothing here is read from the request, and no field may
+ be treated as a capability - what an operator may do is decided per RPC, not
+ from this message.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `subject` | 1 | `string` | singular | subject is the identifier this session is audited under. It is the verified<br> email address for an allowlisted Google account and the directory subject<br> otherwise. It is the handle to quote when reporting a problem, because it<br> is exactly what the administrative audit trail records. |
+| `email` | 2 | `string` | singular | email is the verified address the pool asserts, and email_verified says the<br> pool asserted it as verified. An unverified address never reaches an<br> authorized session, so false here alongside a successful response would<br> itself be a defect worth reporting. |
+| `email_verified` | 3 | `bool` | singular | — |
+| `display_name` | 4 | `string` | singular | display_name is the most human-readable name the pool asserts, which is not<br> necessarily a person's name: the operator pool maps only the email address<br> from Google, so it is the email address there. It is never a name the<br> caller supplied. |
+| `platform_roles` | 5 | `string` | repeated | platform_roles are the pool group assignments the server read, in the same<br> vocabulary as CurrentUser.platform_roles. The operator pool asserts no<br> groups, so this is empty for an allowlisted Google account and<br> authorization_basis carries the real reason instead. Empty is therefore<br> ordinary and is not an absence of authorization. |
+| `authorization_basis` | 6 | [`deepnavy.v1.AdminAuthorizationBasis`](#deepnavy-v1-adminauthorizationbasis) | singular | — |
+| `authenticated_at` | 7 | `google.protobuf.Timestamp` | singular | authenticated_at is when the operator last authenticated interactively, not<br> when the token was last refreshed. |
+| `session_expires_at` | 8 | `google.protobuf.Timestamp` | singular | session_expires_at is when this administrative session stops being<br> authorized, which is the earlier of the token's own expiry and the server's<br> maximum session age measured from authenticated_at. It is the server's<br> ceiling, published so a console can show the real remaining time instead of<br> counting down against an assumption of its own. |
+
+<a id="deepnavy-v1-getadminidentityrequest"></a>
+### Message `deepnavy.v1.GetAdminIdentityRequest`
+
+This message has no fields.
+
+<a id="deepnavy-v1-getadminidentityresponse"></a>
+### Message `deepnavy.v1.GetAdminIdentityResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `identity` | 1 | [`deepnavy.v1.AdminIdentity`](#deepnavy-v1-adminidentity) | singular | — |
+
 <a id="deepnavy-v1-adminerrorreason"></a>
 ### Enum `deepnavy.v1.AdminErrorReason`
 
@@ -1243,13 +1285,28 @@ AdminProjectionAvailability prevents unsupported or stale founder metrics
 | `ADMIN_PROJECTION_AVAILABILITY_UNAVAILABLE` | 3 | No trustworthy projection exists. RPCs should normally return<br> ADMIN_ERROR_REASON_DATA_UNAVAILABLE instead of a message in this state. |
 | `ADMIN_PROJECTION_AVAILABILITY_STALE` | 4 | A projection exists but is older than its declared freshness objective. |
 
-<a id="deepnavy-v1-adminservice"></a>
-### Service `deepnavy.v1.AdminService`
+<a id="deepnavy-v1-adminauthorizationbasis"></a>
+### Enum `deepnavy.v1.AdminAuthorizationBasis`
 
 AdminService is a read-only projection over the same versioned API used by
  customer clients. Every RPC requires server-side founder/admin authorization,
  an MFA-backed short-lived session, and an audit record. Request fields never
  substitute for authorization.
+ AdminAuthorizationBasis is why this operator is permitted, as the server
+ decided it. The admin console has no other way to state the real reason: the
+ email allowlist is server-side deployment configuration and the pool posture
+ is not a claim any token carries. It exists so the console can say "you are
+ here because your Google account is on the operator allowlist" instead of
+ implying a role the pool never asserted.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `ADMIN_AUTHORIZATION_BASIS_UNSPECIFIED` | 0 | — |
+| `ADMIN_AUTHORIZATION_BASIS_ALLOWLISTED_GOOGLE_ACCOUNT` | 1 | The dedicated Google-federated operator pool: the session presented a<br> verified ID token whose verified email address is on the server-side<br> operator allowlist. The second factor is delegated to the Google account,<br> so no pool MFA posture applies and the pool asserts no group. |
+| `ADMIN_AUTHORIZATION_BASIS_DIRECTORY_ROLE_WITH_MFA` | 2 | The directory pool: the session carries a founder or admin group, an<br> enrolled software-token second factor, and an active Deep Navy<br> administrator identity. |
+
+<a id="deepnavy-v1-adminservice"></a>
+### Service `deepnavy.v1.AdminService`
 
 | RPC | Request | Response | Streaming | Description |
 | --- | --- | --- | --- | --- |
@@ -1268,6 +1325,7 @@ AdminService is a read-only projection over the same versioned API used by
 | `ListAdminAlerts` | [`deepnavy.v1.ListAdminAlertsRequest`](#deepnavy-v1-listadminalertsrequest) | [`deepnavy.v1.ListAdminAlertsResponse`](#deepnavy-v1-listadminalertsresponse) | unary | — |
 | `StreamAdminAlerts` | [`deepnavy.v1.StreamAdminAlertsRequest`](#deepnavy-v1-streamadminalertsrequest) | [`deepnavy.v1.StreamAdminAlertsResponse`](#deepnavy-v1-streamadminalertsresponse) | server | — |
 | `ListAdminAuditEvents` | [`deepnavy.v1.ListAdminAuditEventsRequest`](#deepnavy-v1-listadminauditeventsrequest) | [`deepnavy.v1.ListAdminAuditEventsResponse`](#deepnavy-v1-listadminauditeventsresponse) | unary | ListAdminAuditEvents returns the immutable administrative audit trail<br> (admin RPC access and, in future, privileged mutations). |
+| `GetAdminIdentity` | [`deepnavy.v1.GetAdminIdentityRequest`](#deepnavy-v1-getadminidentityrequest) | [`deepnavy.v1.GetAdminIdentityResponse`](#deepnavy-v1-getadminidentityresponse) | unary | GetAdminIdentity answers "who does the server think I am, and until when".<br> It is the operator equivalent of AuthService/GetCurrentUser, and it exists<br> separately because AuthService is guarded by the customer interceptor,<br> which trusts only the customer pool: an operator token presented there is<br> rejected as unauthenticated, and widening that interceptor to accept<br> operator tokens would let an operator credential authenticate against every<br> customer surface. The privilege boundary is the reason for the second RPC.<br><br> It reports only what the server already established while authorizing this<br> request. The three failures a caller must tell apart stay apart:<br> UNAUTHENTICATED means the token was rejected and signing in again is the<br> fix, PERMISSION_DENIED means the operator authenticated but is not<br> permitted and signing in again will not change that, and UNAVAILABLE means<br> the platform could not decide and the call should be retried. |
 
 
 <a id="deepnavy-v1-agents-proto"></a>
@@ -2516,6 +2574,77 @@ EconomicsDailyBucket is one UTC calendar day of spend inside a reporting
 | `reporting_period` | 2 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
 | `measured_at` | 3 | `google.protobuf.Timestamp` | singular | measured_at is the time through which source ledgers were reconciled. The<br> bucket containing it is still filling and must not be read as final. |
 
+<a id="deepnavy-v1-creditmovementattribution"></a>
+### Message `deepnavy.v1.CreditMovementAttribution`
+
+CreditMovementAttribution is the deep navy work a movement belongs to. Every
+ field is optional and an empty one is ordinary rather than missing data:
+ agents do work that belongs to no initiative, and a grant is attributed to
+ nothing at all. Identifiers are deep navy resource IDs; agent_role is the
+ same stable, non-secret alias ListEconomicsBreakdowns groups by, and the
+ GitHub numbers are repository-relative, so neither is a key on its own.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `agent_id` | 1 | `string` | singular | — |
+| `agent_role` | 2 | `string` | singular | — |
+| `objective_id` | 3 | `string` | singular | — |
+| `initiative_id` | 4 | `string` | singular | — |
+| `session_id` | 5 | `string` | singular | — |
+| `repository_id` | 6 | `int64` | singular | — |
+| `github_issue_number` | 7 | `int64` | singular | — |
+| `github_pull_request_number` | 8 | `int64` | singular | — |
+
+<a id="deepnavy-v1-creditmovement"></a>
+### Message `deepnavy.v1.CreditMovement`
+
+CreditMovement is one entry in the credit ledger, published so a console can
+ watch the balance move as agents work instead of re-reading a total and
+ inferring what changed. It is an immutable accounting fact: an entry is never
+ edited, and a correction arrives as a further movement.
+
+ The stream deliberately lags the ledger by a small, server-chosen interval.
+ A movement's sequence is assigned when its row is inserted but only becomes
+ visible when its transaction commits, so two concurrent transactions can
+ commit out of sequence order for a moment. Emitting the instant a row appears
+ would step the cursor past a lower sequence that has not committed yet and
+ lose that charge permanently, so the server withholds the newest movements
+ until their ordering is settled. A client therefore sees every movement in
+ sequence order, about a second late, and must treat "nothing new" as "nothing
+ has settled yet" rather than "the team has stopped spending".
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `sequence` | 1 | `int64` | singular | sequence is monotonically increasing across the credit ledger and is the<br> resume cursor for StreamCreditMovements. It is not contiguous within one<br> stream: a team sees its own movements and its organization's grants, not<br> every movement in the ledger. |
+| `organization_id` | 2 | `string` | singular | — |
+| `team_id` | 3 | `string` | singular | team_id is empty for an organization-scoped movement such as the grant that<br> funds a billing period. Such a movement still appears on a team's stream,<br> because it moves the organization pool the team spends from. |
+| `team_generation` | 4 | `int64` | singular | team_generation is the generation of the team runtime the movement was<br> metered against. Zero means the movement is not attributable to one, which<br> is ordinary for a grant. |
+| `kind` | 5 | [`deepnavy.v1.CreditMovementKind`](#deepnavy-v1-creditmovementkind) | singular | — |
+| `operation_type` | 6 | `string` | singular | operation_type is the stable, non-secret platform alias of the operation the<br> credits were moved for, and is empty when the movement is not one, such as<br> a grant. |
+| `unit` | 7 | `string` | singular | unit is the stable, non-secret name of what was metered - "tokens" for a<br> model call - and quantity is how many of them. An empty unit means the<br> movement metered nothing, and quantity is then not a count of zero but no<br> count at all. quantity explains the size of the work; it is never a price.<br> Token classes are rated differently and are added together here, so nothing<br> may reconstruct a cost from it: delta_micros and direct_cost remain the only<br> authoritative amounts. |
+| `quantity` | 8 | `int64` | singular | — |
+| `delta_micros` | 9 | `int64` | singular | delta_micros is the signed change this movement made, in microcredits,<br> where 1,000,000 equals one credit. A hold or a charge is negative; a release<br> or a grant is positive. |
+| `team_balance_after_micros` | 10 | `int64` | singular | team_balance_after_micros and organization_balance_after_micros are the<br> balances immediately after this movement, computed from the same ledger sum<br> a balance read returns, so the last movement on a stream and a fresh balance<br> read agree. The team figure is the team's own entries; the organization<br> figure is the shared prepaid pool, which is what a team can actually spend. |
+| `organization_balance_after_micros` | 11 | `int64` | singular | — |
+| `direct_cost` | 12 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | direct_cost is the provider cost recorded for this movement. It is present<br> only once a call has settled and its real cost is known; its absence on a<br> reservation is not missing data. It is never what the customer paid - the<br> ledger converts cost to credits at the published rate - so nothing may<br> present it as customer impact. |
+| `attribution` | 13 | [`deepnavy.v1.CreditMovementAttribution`](#deepnavy-v1-creditmovementattribution) | singular | — |
+| `occurred_at` | 14 | `google.protobuf.Timestamp` | singular | occurred_at is when the movement was metered, not when it was streamed. |
+
+<a id="deepnavy-v1-streamcreditmovementsrequest"></a>
+### Message `deepnavy.v1.StreamCreditMovementsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team_id` | 1 | `string` | singular | The authenticated principal must be a current member of the team's<br> organization. Membership is re-checked while the stream runs, so a revoked<br> member's stream ends rather than idling. |
+| `after_sequence` | 2 | `int64` | singular | Movements with sequence greater than after_sequence are emitted. Zero starts<br> from the oldest retained movement. A negative value is rejected. |
+
+<a id="deepnavy-v1-streamcreditmovementsresponse"></a>
+### Message `deepnavy.v1.StreamCreditMovementsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `movement` | 1 | [`deepnavy.v1.CreditMovement`](#deepnavy-v1-creditmovement) | singular | — |
+
 <a id="deepnavy-v1-economicsscopetype"></a>
 ### Enum `deepnavy.v1.EconomicsScopeType`
 
@@ -2537,6 +2666,24 @@ EconomicsDailyBucket is one UTC calendar day of spend inside a reporting
 | `ECONOMICS_SCOPE_TYPE_PROVIDER` | 13 | — |
 | `ECONOMICS_SCOPE_TYPE_OPERATION` | 14 | — |
 
+<a id="deepnavy-v1-creditmovementkind"></a>
+### Enum `deepnavy.v1.CreditMovementKind`
+
+CreditMovementKind is what moved the money. The four kinds are the whole
+ lifecycle of a credit: a RESERVE holds credits before an agent makes a model
+ call, a SETTLE finalises that hold against what the call actually cost, a
+ RELEASE returns a hold the platform decided will never be spent, and a GRANT
+ funds the organization's pool. Any other shape is UNSPECIFIED and a client
+ renders it from its own fields rather than guessing a lifecycle for it.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `CREDIT_MOVEMENT_KIND_UNSPECIFIED` | 0 | — |
+| `CREDIT_MOVEMENT_KIND_RESERVE` | 1 | — |
+| `CREDIT_MOVEMENT_KIND_SETTLE` | 2 | — |
+| `CREDIT_MOVEMENT_KIND_RELEASE` | 3 | — |
+| `CREDIT_MOVEMENT_KIND_GRANT` | 4 | — |
+
 <a id="deepnavy-v1-economicsservice"></a>
 ### Service `deepnavy.v1.EconomicsService`
 
@@ -2546,6 +2693,7 @@ EconomicsDailyBucket is one UTC calendar day of spend inside a reporting
 | `ListEconomicsBreakdowns` | [`deepnavy.v1.ListEconomicsBreakdownsRequest`](#deepnavy-v1-listeconomicsbreakdownsrequest) | [`deepnavy.v1.ListEconomicsBreakdownsResponse`](#deepnavy-v1-listeconomicsbreakdownsresponse) | unary | — |
 | `ListEconomicsUsageEvents` | [`deepnavy.v1.ListEconomicsUsageEventsRequest`](#deepnavy-v1-listeconomicsusageeventsrequest) | [`deepnavy.v1.ListEconomicsUsageEventsResponse`](#deepnavy-v1-listeconomicsusageeventsresponse) | unary | ListEconomicsUsageEvents pages the individual metered calls behind the<br> summaries, scoped and authorized exactly like ListEconomicsBreakdowns. It<br> is the drill-down that answers "what was this charge for". It is not an<br> aggregation transport: a client that wants a total reads GetEconomics,<br> ListEconomicsBreakdowns, or ListEconomicsDaily rather than paging every<br> event and adding them up. |
 | `ListEconomicsDaily` | [`deepnavy.v1.ListEconomicsDailyRequest`](#deepnavy-v1-listeconomicsdailyrequest) | [`deepnavy.v1.ListEconomicsDailyResponse`](#deepnavy-v1-listeconomicsdailyresponse) | unary | ListEconomicsDaily returns the per-day rollup of those same events for one<br> scope and period, so a console can render a spend trend in a single call. |
+| `StreamCreditMovements` | [`deepnavy.v1.StreamCreditMovementsRequest`](#deepnavy-v1-streamcreditmovementsrequest) | [`deepnavy.v1.StreamCreditMovementsResponse`](#deepnavy-v1-streamcreditmovementsresponse) | server | StreamCreditMovements follows one team's credit ledger live: every hold,<br> settlement, release and organization grant that moves the balance the team<br> spends from, in sequence order, with the balance after each one. It is the<br> subscription behind a console that shows credits moving while agents work,<br> and it replaces polling a total and guessing what changed. Replay from a<br> cursor is bounded; a cursor that would replay more than the server's limit<br> is answered with RESOURCE_EXHAUSTED rather than a truncated history. |
 
 
 <a id="deepnavy-v1-github-proto"></a>
@@ -3261,6 +3409,35 @@ ProvisioningEventInput is the worker-observed portion of an event. The
 | `observed_at` | 8 | `google.protobuf.Timestamp` | singular | — |
 | `result` | 9 | [`deepnavy.v1.ProvisioningRuntimeResult`](#deepnavy-v1-provisioningruntimeresult) | singular | result is accepted only when provisioning_state is SUCCEEDED. The server<br> validates every credential-free runtime identifier and persists them with<br> the terminal event and team status in one transaction. Implementations<br> must never parse safe_summary to recover runtime identifiers. |
 
+<a id="deepnavy-v1-teamruntimehealth"></a>
+### Message `deepnavy.v1.TeamRuntimeHealth`
+
+TeamRuntimeHealth is what a customer may know about whether their team is
+ actually running. It is the customer-safe half of RuntimeHealthSnapshot: the
+ same server-owned report, with every operator-only identifier - the
+ Kubernetes namespace, the OpenClaw instance name, the report id - removed,
+ because those are internal architecture and a customer console must never
+ carry them.
+
+ It exists because a provisioning state of "succeeded" is a fact about the
+ past. It says the runtime was created; it says nothing about whether the
+ runtime is alive now. A console that shows a live indicator from provisioning
+ state alone will keep showing one over a crashlooping runtime, which is a
+ live indicator that has outlived its truth. state, gateway_ready,
+ ready_agent_count and reason are what make the indicator answerable, and
+ observed_at is what makes it falsifiable: a snapshot the server considers too
+ old is reported as DEGRADED with HEARTBEAT_STALE rather than as its last
+ happy value, so silence is never rendered as health.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `state` | 1 | [`deepnavy.v1.RuntimeHealthState`](#deepnavy-v1-runtimehealthstate) | singular | — |
+| `gateway_ready` | 2 | `bool` | singular | — |
+| `ready_agent_count` | 3 | `int32` | singular | ready_agent_count is how many of the team's agents the runtime reports<br> ready. A READY runtime has the team's whole roster ready. |
+| `reason` | 4 | [`deepnavy.v1.RuntimeHealthReason`](#deepnavy-v1-runtimehealthreason) | singular | — |
+| `observed_at` | 5 | `google.protobuf.Timestamp` | singular | observed_at is when the runtime observed this, not when it was streamed. |
+| `sequence` | 6 | `int64` | singular | sequence orders health snapshots. It belongs to runtime health and is not<br> the provisioning sequence StreamProvisioningStatus resumes from. |
+
 <a id="deepnavy-v1-getprovisioningstatusrequest"></a>
 ### Message `deepnavy.v1.GetProvisioningStatusRequest`
 
@@ -3274,6 +3451,7 @@ ProvisioningEventInput is the worker-observed portion of an event. The
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `provisioning` | 1 | [`deepnavy.v1.ProvisioningStatus`](#deepnavy-v1-provisioningstatus) | singular | — |
+| `runtime_health` | 2 | [`deepnavy.v1.TeamRuntimeHealth`](#deepnavy-v1-teamruntimehealth) | singular | runtime_health is absent until the team's runtime has reported once. An<br> absent snapshot means "not observed yet", which is not the same as unhealthy<br> and must not be rendered as a failure. |
 
 <a id="deepnavy-v1-streamprovisioningstatusrequest"></a>
 ### Message `deepnavy.v1.StreamProvisioningStatusRequest`
@@ -3290,6 +3468,7 @@ ProvisioningEventInput is the worker-observed portion of an event. The
 | --- | ---: | --- | --- | --- |
 | `provisioning` | 1 | [`deepnavy.v1.ProvisioningStatus`](#deepnavy-v1-provisioningstatus) | singular | — |
 | `event` | 2 | [`deepnavy.v1.ProvisioningEvent`](#deepnavy-v1-provisioningevent) | singular | — |
+| `runtime_health` | 3 | [`deepnavy.v1.TeamRuntimeHealth`](#deepnavy-v1-teamruntimehealth) | singular | runtime_health carries the team's current runtime readiness. The server<br> emits a frame whenever it changes, so a console subscribed to provisioning<br> learns that a runtime stopped being ready without polling for it. A frame<br> reporting only a health change carries no event. |
 
 <a id="deepnavy-v1-leaseprovisioningcommandsrequest"></a>
 ### Message `deepnavy.v1.LeaseProvisioningCommandsRequest`

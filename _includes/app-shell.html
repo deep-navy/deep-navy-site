@@ -875,9 +875,43 @@
               <span class="data-source-badge" data-credit-balance-state>Waiting</span>
             </div>
             <dl class="economics-metrics credit-control-metrics">
-              <div><dt>Available prepaid balance</dt><dd data-credit-balance-value>Unavailable</dd></div>
+              <div><dt>Available prepaid balance</dt><dd class="dn-odometer" data-credit-balance-value>Unavailable</dd></div>
             </dl>
             <p class="measured-note" data-credit-balance-message>Choose a team to see its balance.</p>
+          </section>
+
+          <!-- The credit ledger, live.
+               StreamCreditMovements publishes every hold, settlement, release and
+               organization grant that moves the balance this team spends from, and
+               carries the balance AFTER each one. That last figure is a window over
+               the same sum the balance read above returns, so the two are one number
+               observed twice, not two numbers to reconcile — which is why the last
+               frame writes the panel above rather than a second reading beside it.
+
+               The travelling hairline is a claim that the transport is open right
+               now, so it is added when the stream establishes and removed the moment
+               it is not, never left painted. Live is said in three ways that survive
+               filter: grayscale(1) — the ladder's word, the ladder's glyph, and the
+               dot — because the lumen hue is not allowed to carry it alone. -->
+          <section class="credit-control credit-movements" data-credit-movements-panel hidden aria-labelledby="credit-movements-title">
+            <div class="credit-pack-heading">
+              <div><span class="eyebrow">Live ledger</span><strong id="credit-movements-title">Credits as they move</strong></div>
+              <!-- The console mockup's own live line (console.dc.html:591): the
+                   indicator sits inline and right-aligned, immediately before the
+                   count it qualifies — "streaming · 1,284 events". The line is
+                   achromatic mono micro; only the dot carries lumen, so the hue is
+                   never doing the work by itself. -->
+              <span class="movement-live" data-credit-movements-live></span>
+              <span class="data-source-badge" data-credit-movements-state>Waiting</span>
+            </div>
+            <!-- A dn-stat cell, the shape the mockup's economics meter uses for a
+                 measured figure (console.dc.html:693-696). -->
+            <div class="movement-stats">
+              <div class="dn-stat"><span class="dn-stat__label">Organization pool after the last movement</span><span class="dn-stat__value dn-odometer" data-credit-movements-org>—</span></div>
+            </div>
+            <div data-credit-movements-empty></div>
+            <ol class="credit-movement-list" data-credit-movement-list aria-live="polite" aria-relevant="additions" hidden></ol>
+            <p class="measured-note" data-credit-movements-message>Every hold, settlement, release and organization grant against the pool this team spends from, in ledger order. The pool is shared across the organization — a team does not hold an allowance of its own.</p>
           </section>
           <section class="credit-control" data-credit-control hidden aria-labelledby="credit-control-title">
             <div class="credit-pack-heading">

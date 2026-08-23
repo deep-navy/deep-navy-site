@@ -294,6 +294,13 @@
     creditBalancePanel: document.querySelector("[data-credit-balance-panel]"),
     creditBalanceState: document.querySelector("[data-credit-balance-state]"),
     creditBalanceValue: document.querySelector("[data-credit-balance-value]"),
+    creditMovementsPanel: document.querySelector("[data-credit-movements-panel]"),
+    creditMovementsState: document.querySelector("[data-credit-movements-state]"),
+    creditMovementsLive: document.querySelector("[data-credit-movements-live]"),
+    creditMovementsOrg: document.querySelector("[data-credit-movements-org]"),
+    creditMovementsEmpty: document.querySelector("[data-credit-movements-empty]"),
+    creditMovementsList: document.querySelector("[data-credit-movement-list]"),
+    creditMovementsMessage: document.querySelector("[data-credit-movements-message]"),
   descent: document.querySelector("[data-descent]"),
   descentList: document.querySelector("[data-descent-list]"),
   teamTiles: document.querySelector("[data-team-tiles]"),
@@ -401,6 +408,22 @@
     creditPacks: [],
     creditBalance: null,
     creditControl: null,
+    // The live credit ledger. lastCreditMovementSequence is the resume cursor
+    // and takes the same shape as lastActivitySequence on purpose — a second
+    // cursor idiom on the same console is a second way to lose a row.
+    creditMovements: [],
+    lastCreditMovementSequence: 0n,
+    creditMovementsAbort: null,
+    creditMovementsReconnectTimer: null,
+    creditMovementsStreamLive: false,
+    // What the odometer currently reads, so a frame that does not move the
+    // balance does not animate a number that did not change.
+    creditBalanceShownMicros: null,
+    creditOrgBalanceShownMicros: null,
+    // Runtime health orders itself. Its sequence belongs to runtime health and
+    // is explicitly NOT the provisioning sequence the status stream resumes
+    // from, so it gets its own cursor and never touches that one.
+    lastRuntimeHealthSequence: 0n,
     // The ORGANIZATION's measured credit position. It is the only credit
     // figure that is organization-scoped: the per-team balances read a shared
     // pool, so summing them would count the same credits several times.
@@ -700,7 +723,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "350acd91b0a15da08fd6a13282f75f36849ce4bf" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "31a489d8f0b073fd499207ab86bdea0f2faea0b7" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -1123,6 +1146,8 @@
     session.creditPacks = [];
     session.creditBalance = null;
     session.creditControl = null;
+    session.creditBalanceShownMicros = null;
+    session.creditOrgBalanceShownMicros = null;
     session.organizationEconomics = null;
     session.organizationEconomicsState = "loading";
     resetInvoiceHistory("Select an organization to load its verified billing records.", "Waiting");
@@ -3372,6 +3397,11 @@
     resetConversationView("Connecting to the conversation with your Product Manager.", "Connecting", "loading", "Your Product Manager is getting set up");
     startActivityStream(team.id, generation);
     startConversationStream(team.id, generation);
+    // Money moves whenever agents work, which is the whole time the team is
+    // selected — so the ledger stream opens with the team, like activity, and
+    // unlike provisioning, which only follows an operation still in flight.
+    resetCreditMovementsView("The credit ledger stream is opening. Movements appear here as the platform settles them.", "loading", "Connecting", "loading");
+    startCreditMovementStream(team.id, generation);
     // A settled team's provisioning is history, not a live operation — only
     // hold the status stream open while it still owes us a terminal state.
     if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
@@ -3569,6 +3599,84 @@
     return objectives.find((candidate) => stringValue(candidate.id) === stringValue(remembered?.id)) || objectives[0] || null;
   }
 
+
+  // ======================================================================
+  // RUNTIME READINESS — the live dot's evidence
+  //
+  // A provisioning state is a fact about the PAST. "succeeded" says the
+  // runtime was created; it says nothing about whether the runtime is alive
+  // now. This console used to render the pulsing live badge from
+  // `state === active` alone, which is how a crashlooping runtime wore a live
+  // indicator all morning: the indicator had outlived its truth and there was
+  // no fact on the wire that could contradict it.
+  //
+  // TeamRuntimeHealth is that fact. It is the customer-safe half of the
+  // operator snapshot — the namespace, the OpenClaw instance name and the
+  // report id are stripped upstream and a contract test holds that boundary,
+  // which is why nothing here reaches for them or works around their absence.
+  //
+  // Staleness is NOT computed here. The server marks a snapshot it considers
+  // too old as DEGRADED with HEARTBEAT_STALE, so silence already arrives as
+  // degraded rather than as its last happy value. A second clock in the
+  // browser would only be able to disagree with it.
+  // ======================================================================
+
+  const RUNTIME_HEALTH_STATE = Object.freeze({ UNSPECIFIED: 0, READY: 1, DEGRADED: 2, SUSPENDED: 3, FAILED: 4 });
+
+  // The bounded, credential-free reasons, in the customer's own terms. Every
+  // one of them is a sentence about their team, never about our cluster.
+  const RUNTIME_HEALTH_REASON_TEXT = Object.freeze({
+    2: "it is still starting up",
+    3: "it is running a previous generation of this team",
+    4: "its gateway is not accepting work yet",
+    5: "some of its agents are not ready",
+    6: "it is suspended",
+    7: "it could not be brought up",
+    8: "it has stopped reporting in"
+  });
+
+  // The roster the runtime is measured against: the three standing roles —
+  // Product Manager, Product Designer, Engineering Manager — plus this team's
+  // engineers. The server-returned agent list is preferred when the workspace
+  // has loaded one, because it is the roster the platform actually built.
+  function teamRosterSize(team) {
+    if (stringValue(team?.id) === session.selectedTeamId && Array.isArray(session.agents) && session.agents.length) {
+      return session.agents.length;
+    }
+    const engineers = Number(team?.engineerCount || 0);
+    if (!Number.isInteger(engineers) || engineers <= 0) return null;
+    return 3 + engineers;
+  }
+
+  // Five verdicts, and "unobserved" is a real one. An absent snapshot means
+  // the runtime has not reported yet, which is NOT the same as unhealthy and
+  // must never be rendered as a failure — but it is also not evidence of
+  // life, so it cannot buy a live indicator either. Saying so out loud is the
+  // same rule the four empties follow: an absence is not a zero.
+  function teamRuntimeReadiness(team) {
+    const health = team?.runtimeHealth;
+    if (!health) return { verdict: "unobserved" };
+    const state = Number(health.state || 0);
+    const reason = RUNTIME_HEALTH_REASON_TEXT[Number(health.reason || 0)] || "";
+    if (state === RUNTIME_HEALTH_STATE.FAILED) return { verdict: "failed", reason };
+    if (state === RUNTIME_HEALTH_STATE.SUSPENDED) return { verdict: "suspended", reason };
+    if (state === RUNTIME_HEALTH_STATE.DEGRADED) return { verdict: "degraded", reason };
+    if (state !== RUNTIME_HEALTH_STATE.READY) return { verdict: "unobserved" };
+    // READY is the server's summary. gateway_ready and ready_agent_count are
+    // the two figures that make it falsifiable, so they are checked rather
+    // than taken on trust: a summary that disagrees with its own numbers is
+    // the exact shape of the bug this field was added to end.
+    if (health.gatewayReady !== true) {
+      return { verdict: "degraded", reason: RUNTIME_HEALTH_REASON_TEXT[4] };
+    }
+    const roster = teamRosterSize(team);
+    const ready = Number(health.readyAgentCount || 0);
+    if (roster !== null && Number.isInteger(ready) && ready < roster) {
+      return { verdict: "degraded", reason: RUNTIME_HEALTH_REASON_TEXT[5], ready, roster };
+    }
+    return { verdict: "ready", ready, roster };
+  }
+
   // Five phases, every one derived from a fact the server confirmed. Nothing
   // here is a mode the console chose for itself.
   function teamPhase(team) {
@@ -3596,6 +3704,22 @@
     // person archives it. A regressed proof is not met — it is a different
     // fact from never-proven and from proven, and all three are kept apart.
     if (objectives.every((objective) => objectiveAcceptanceState(objective) === "proven")) return "met";
+    // "Running" is a claim about RIGHT NOW, so it is the one phase that needs
+    // evidence from right now. Everything above this line is derived from
+    // durable records; this is derived from what the runtime last reported.
+    //
+    // The phase changes, not just the badge: the console mockup binds
+    // streaming, the runs panel and the team banner to phase() rather than to
+    // a colour, so a team that is not ready lands in a different SHAPE of
+    // screen — no live dot, no streaming claim — instead of the running screen
+    // wearing a different hue.
+    const readiness = teamRuntimeReadiness(team);
+    if (readiness.verdict === "failed") return "runtime_failed";
+    // A suspended runtime is the lifecycle's own "stopped", and halted already
+    // says exactly that.
+    if (readiness.verdict === "suspended") return "halted";
+    if (readiness.verdict === "degraded") return "degraded";
+    if (readiness.verdict === "unobserved") return "unreported";
     return "running";
   }
 
@@ -3633,8 +3757,36 @@
     // instead of restating either here. Word plus glyph: "Setup failed" beside
     // the ladder's own error mark survives filter: grayscale(1), and survives a
     // reader who never sees the badge's fill at all.
-    failed: { label: "Setup failed", live: false, level: "error" }
+    failed: { label: "Setup failed", live: false, level: "error" },
+    // The three runtime-readiness phases. Every one of them takes its tone and
+    // its glyph from the ladder, exactly like `failed` does — this file has no
+    // opinion about how loud any of them is, and there is no second tone table
+    // here to disagree with NOTICE_LEVELS.
+    //
+    // The words are chosen against the ones already in use. "Stopped" is a
+    // state somebody chose and nobody chose this. "Setup failed" is about
+    // provisioning, which succeeded. So a runtime that died after a clean
+    // setup says so in its own words, and a runtime that has simply not
+    // reported says THAT, rather than borrowing either.
+    runtime_failed: { label: "Runtime failed", live: false, level: "error" },
+    degraded: { label: "Not ready", live: false, level: "warning" },
+    // Level `info` on purpose: an unreported runtime is an absence, not a
+    // fault, and the contract says in as many words that it must not be
+    // rendered as a failure.
+    unreported: { label: "Readiness not reported", live: false, level: "info" }
   });
+
+  // The badge for a phase, with the readiness phases allowed to name what is
+  // actually short. The LEVEL still comes from the table above, which still
+  // takes its tone and glyph from the ladder — only the words are sharpened.
+  function teamPhaseBadge(team, phase) {
+    const badge = TEAM_PHASE_BADGE[phase];
+    if (!badge) return TEAM_PHASE_BADGE.unreported;
+    if (phase !== "degraded" && phase !== "runtime_failed") return badge;
+    const readiness = teamRuntimeReadiness(team);
+    if (!readiness.reason) return badge;
+    return Object.assign({}, badge, { label: `${badge.label} · ${readiness.reason}` });
+  }
 
   function renderTeamHeadline() {
     if (!ui.teamHeadline) return;
@@ -3703,7 +3855,7 @@
     // The phase badge. Live gets the pulsing dot; the other three do not,
     // because only one of them is a claim about right now.
     if (ui.teamPhase) {
-      const badge = TEAM_PHASE_BADGE[phase];
+      const badge = teamPhaseBadge(team, phase);
       const shape = badge.level ? noticeShape(badge.level) : null;
       ui.teamPhase.className = badge.className || `dn-badge ${noticeLevels?.levelClass?.("dn-badge", badge.level) || ""}`.trim();
       ui.teamPhase.replaceChildren();
@@ -3744,6 +3896,39 @@
       ui.teamSysbar.hidden = false;
       return;
     }
+    // The two runtime-readiness banners. Both take their tone and their glyph
+    // from the ladder rather than naming a class here, so "how loud is this"
+    // is answered in one place for the whole product.
+    //
+    // Three clauses at most, in order: what happened, what it means, what
+    // happens next.
+    if ((phase === "runtime_failed" || phase === "degraded") && noticeShape(TEAM_PHASE_BADGE[phase].level)) {
+      const level = TEAM_PHASE_BADGE[phase].level;
+      const shape = noticeShape(level);
+      ui.teamSysbar.className = `dn-sysbar ${noticeLevels.levelClass("dn-sysbar", level)} cs-sysbar`;
+      ui.teamSysbarGlyph.replaceChildren(spriteIcon(shape.glyph, 15));
+      const readiness = teamRuntimeReadiness(team);
+      const because = readiness.reason ? ` because ${readiness.reason}` : "";
+      ui.teamSysbarMsg.textContent = phase === "runtime_failed"
+        ? `${name}'s runtime is not running`
+        : `${name} is not ready to work`;
+      // A stale heartbeat is a different fact from a slow start, and saying
+      // "up but not accepting work yet because it has stopped reporting in"
+      // contradicts itself in one sentence. When the platform has stopped
+      // hearing from the runtime it does not know whether it is up, and that
+      // is what it says.
+      const silent = readiness.reason === RUNTIME_HEALTH_REASON_TEXT[8];
+      ui.teamSysbarDetail.textContent = phase === "runtime_failed"
+        ? `The runtime this team's agents run in stopped${because}. Nothing is being filed, reviewed or merged, and the work already in your repositories is untouched. The platform brings it back by itself; if it stays down, this line is what to quote.`
+        : silent
+          ? "The platform has stopped hearing from this team's runtime, so it cannot say whether the crew is working. Nothing already in your repositories is affected. If it does not come back on its own, this line is what to quote."
+          : `The runtime is up but not accepting work yet${because}${readiness.roster ? `, with ${readiness.ready} of ${readiness.roster} agents ready` : ""}. This is normally the minute after a start or a restart, and it clears on its own.`;
+      ui.teamSysbar.hidden = false;
+      return;
+    }
+    // An unreported runtime raises NO banner. It is an absence, not an event,
+    // and the badge already says so; a system bar is for the whole product
+    // having something to tell you, and "we have not heard yet" is not that.
     ui.teamSysbar.hidden = true;
   }
 
@@ -3932,6 +4117,7 @@
     resetEconomicsView(message, "Waiting");
     resetCreditBalanceView(message, "Waiting");
     resetCreditControlView(message, "Waiting");
+    resetCreditMovementsView(message, "unavailable", "Waiting");
     resetApprovalView(message, "Waiting");
     renderCreditPackControls();
     resetActivityView(message, "Waiting");
@@ -5830,6 +6016,16 @@
   // this recent outranks stream silence, but never a live stream event.
   const briefedWindowMs = 5 * 60 * 1000;
   function agentLiveness(roleKey) {
+    // "Working" is a claim about right now, and a recent event is a fact about
+    // the past. When the runtime has just told us its agents are not ready,
+    // the runtime wins: a crashlooping pod has no working agents however fresh
+    // its last event was, and a rail full of pulsing dots over a dead runtime
+    // is the same lie as a live badge over one.
+    //
+    // An UNOBSERVED runtime does not suppress anything. Absence of a report is
+    // not evidence against an event that actually arrived.
+    const readiness = teamRuntimeReadiness(selectedTeam());
+    if (["failed", "degraded", "suspended"].includes(readiness.verdict)) return { state: "quiet", since: "" };
     const event = latestEventForRole(roleKey);
     const at = event && event.occurredAt ? new Date(event.occurredAt).getTime() : NaN;
     const age = Number.isFinite(at) ? Date.now() - at : NaN;
@@ -7696,6 +7892,7 @@
 
   function resetCreditBalanceView(message, label = "Waiting", tone = "") {
     session.creditBalance = null;
+    session.creditBalanceShownMicros = null;
     ui.creditBalancePanel.hidden = !selectedTeam();
     ui.creditBalanceValue.textContent = "Unavailable";
     ui.creditBalanceMessage.textContent = message;
@@ -7712,9 +7909,27 @@
       resetCreditBalanceView("BillingService returned an invalid team credit balance. No balance was displayed.", "Invalid response", "error");
       return;
     }
-    session.creditBalance = balance;
     ui.creditBalancePanel.hidden = false;
-    ui.creditBalanceValue.textContent = formatCreditMicros(balance);
+    // A movement that has already arrived supersedes this read.
+    //
+    // team_balance_after_micros is a window over the same ledger sum this RPC
+    // returns, so the two can only ever disagree by being taken at different
+    // moments — and when they do, the movement is the later one: the read was
+    // issued when the workspace loaded and the frame was published after it.
+    // Letting the read win makes the balance visibly run BACKWARDS a second
+    // after it moved, which is the console contradicting itself on screen and
+    // is precisely the disagreement the contract says is a wiring bug rather
+    // than a stream bug. So the read fills the figure in and then stops
+    // touching it; the stream owns it from its first frame.
+    const streamed = session.lastCreditMovementSequence > 0n && typeof session.creditBalanceShownMicros === "bigint";
+    if (!streamed) {
+      // The FIRST reading, not a change — so it is written, never rolled.
+      // Recording what the odometer now shows is what lets the stream's next
+      // frame roll from a real previous value instead of out of nowhere.
+      session.creditBalance = balance;
+      ui.creditBalanceValue.textContent = formatCreditMicros(balance);
+      session.creditBalanceShownMicros = balance;
+    }
     renderRailSpend();
     renderStatStrip();
     ui.creditBalanceMessage.textContent = "Signed grants minus settled usage for this team. Open reservations and the paid-period hard limit are separate execution guardrails below.";
@@ -9604,6 +9819,23 @@
     if (head) head.classList.toggle("dn-livebar", Boolean(on));
   }
 
+  // The single door runtime health comes through, whichever transport carried
+  // it. Out-of-order frames are dropped on health's OWN sequence.
+  //
+  // An absent snapshot is left absent rather than being replaced with a
+  // synthetic healthy one: "not observed yet" is a real answer, and inventing
+  // a value for it is how the live dot got its lie in the first place.
+  function applyTeamRuntimeHealth(team, health) {
+    if (!team || !health) return false;
+    const sequence = signedInt64Value(health.sequence);
+    if (sequence !== null) {
+      if (sequence < session.lastRuntimeHealthSequence) return false;
+      session.lastRuntimeHealthSequence = sequence;
+    }
+    team.runtimeHealth = health;
+    return true;
+  }
+
   function stopProvisioningStream() {
     if (session.provisioningAbort) session.provisioningAbort.abort();
     session.provisioningAbort = null;
@@ -9626,6 +9858,7 @@
     stopRuntimeActivityStream();
     stopConversationStream();
     stopProvisioningStream();
+    stopCreditMovementStream();
   }
 
   // Streams outlive bearer tokens. The access token is minted at sign-in and
@@ -9770,6 +10003,386 @@
     } finally {
       window.clearTimeout(establishTimer);
       if (session.activityAbort === controller) session.activityAbort = null;
+    }
+  }
+
+  // ======================================================================
+  // THE LIVE CREDIT LEDGER
+  //
+  // StreamCreditMovements publishes the credit ledger as it moves: every
+  // hold, settlement, release and organization grant against the pool this
+  // team spends from, in sequence order, each frame carrying the balance
+  // after it. Before this the console could read a total and watch it
+  // change, but it could never say what changed it.
+  //
+  // The transport is startActivityStream's, deliberately and exactly: same
+  // backoff curve, same retry budget, same in-stream `unauthenticated`
+  // healing, same afterSequence resume. The contract asks for that in as
+  // many words, because a second cursor idiom on the same console is a
+  // second way to lose a row.
+  // ======================================================================
+
+  function prefersReducedMotion() {
+    return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  // In-flight odometer rolls, so a second frame arriving mid-roll retargets
+  // the same element instead of racing another rAF loop against it.
+  const odometerFrames = new Map();
+
+  // Roll a credit figure from what it read to what it now reads.
+  //
+  // .dn-odometer is vendored, but the design system's driver (dnMotion.count)
+  // is not, so the roll lives here and borrows only the system's numbers: the
+  // 480ms of --dur-slower, and a decelerate curve. The class itself supplies
+  // the tabular figures that stop a rolling value reflowing its neighbours.
+  //
+  // Two things it must not do:
+  //
+  //   Move when nothing moved. A number that animates without a new fact
+  //   behind it is a live indicator that has outlived its truth — it teaches
+  //   the reader that motion on this screen means nothing. An unchanged value
+  //   is written, not rolled; a first reading is written, not rolled up from
+  //   an imaginary zero.
+  //
+  //   Shorten under reduced motion. It is switched OFF: the final figure is
+  //   written once, synchronously, so the number is right on the first frame
+  //   instead of right at the end of a collapsed animation.
+  function rollOdometer(element, fromMicros, toMicros) {
+    if (!element) return;
+    if (typeof toMicros !== "bigint") return;
+    const settled = formatCreditMicros(toMicros);
+    const previous = odometerFrames.get(element);
+    if (previous) {
+      window.cancelAnimationFrame(previous);
+      odometerFrames.delete(element);
+    }
+    // No prior reading, no change, or the reader asked for less motion.
+    if (typeof fromMicros !== "bigint" || fromMicros === toMicros || prefersReducedMotion()) {
+      element.textContent = settled;
+      return;
+    }
+    const start = performance.now();
+    const from = Number(fromMicros);
+    const to = Number(toMicros);
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / 480);
+      if (progress >= 1) {
+        odometerFrames.delete(element);
+        // The exact figure lands at the end — never a rounded interpolation.
+        element.textContent = settled;
+        return;
+      }
+      const eased = 1 - Math.pow(1 - progress, 3);
+      element.textContent = formatCreditMicros(BigInt(Math.round(from + (to - from) * eased)));
+      odometerFrames.set(element, window.requestAnimationFrame(step));
+    };
+    odometerFrames.set(element, window.requestAnimationFrame(step));
+  }
+
+  // The four kinds are the whole lifecycle of a credit. Anything else is
+  // UNSPECIFIED, and the contract is explicit that a client renders it from
+  // its own fields rather than inventing a lifecycle for it — so the fallback
+  // says only that a movement was recorded.
+  const CREDIT_MOVEMENT_KINDS = Object.freeze({
+    1: Object.freeze({ word: "Reserved", glyph: "circle-dashed" }),
+    2: Object.freeze({ word: "Settled", glyph: "check" }),
+    3: Object.freeze({ word: "Released", glyph: "refresh" }),
+    4: Object.freeze({ word: "Granted", glyph: "plus" })
+  });
+  const CREDIT_MOVEMENT_UNKNOWN = Object.freeze({ word: "Recorded", glyph: "circle-dot" });
+
+  function creditMovementKind(value) {
+    const key = typeof value === "bigint" ? Number(value) : Number(value || 0);
+    return Object.hasOwn(CREDIT_MOVEMENT_KINDS, key) ? CREDIT_MOVEMENT_KINDS[key] : CREDIT_MOVEMENT_UNKNOWN;
+  }
+
+  // One row per movement, built element by element — this console never
+  // assembles markup from strings.
+  function creditMovementRow(movement) {
+    const kind = creditMovementKind(movement?.kind);
+    const row = document.createElement("li");
+    row.className = "credit-movement-row";
+
+    const kindCell = document.createElement("span");
+    kindCell.className = "credit-movement-kind";
+    kindCell.append(spriteIcon(kind.glyph, 12), document.createTextNode(kind.word));
+
+    const what = document.createElement("span");
+    what.className = "credit-movement-what";
+    const operation = stringValue(movement?.operationType);
+    const role = stringValue(movement?.attribution?.agentRole);
+    // operation_type is empty for a movement that is not one, such as a grant.
+    // That absence is ordinary, so it is described rather than left blank.
+    what.textContent = operation
+      ? (role ? `${operation} · ${role}` : operation)
+      : "organization pool, not metered work";
+
+    const delta = document.createElement("span");
+    delta.className = "credit-movement-delta";
+    const deltaMicros = signedInt64Value(movement?.deltaMicros);
+    if (deltaMicros === null) {
+      delta.textContent = "not reported";
+    } else {
+      // The sign is spelled out in the glyph and the leading character, so the
+      // direction survives with the colour removed.
+      delta.dataset.direction = deltaMicros < 0n ? "debit" : "credit";
+      delta.textContent = `${deltaMicros < 0n ? "−" : "+"}${formatCreditMicros(deltaMicros < 0n ? -deltaMicros : deltaMicros)}`;
+    }
+
+    const meta = document.createElement("span");
+    meta.className = "credit-movement-meta";
+    const parts = [];
+    // An empty unit means the movement metered nothing, and quantity is then
+    // not a count of zero but no count at all — so neither is invented.
+    const unit = stringValue(movement?.unit);
+    const quantity = signedInt64Value(movement?.quantity);
+    if (unit && quantity !== null) parts.push(`${new Intl.NumberFormat().format(quantity)} ${unit}`);
+    // direct_cost is the provider cost, present only once a call has settled.
+    // It is NOT what the customer paid — the ledger converts cost to credits
+    // at the published rate — so it is never presented as customer impact.
+    const cost = movement?.directCost;
+    if (cost) {
+      const units = signedInt64Value(cost.units);
+      const nanos = Number(cost.nanos || 0);
+      if (units !== null) {
+        const amount = Number(units) + nanos / 1_000_000_000;
+        parts.push(`metered provider cost ${stringValue(cost.currencyCode) || "USD"} ${amount.toFixed(4)} (not customer impact)`);
+      }
+    }
+    const occurred = timestampDate(movement?.occurredAt);
+    if (occurred) parts.push(relativeTime(occurred));
+    meta.textContent = parts.join(" · ");
+
+    row.append(kindCell, what, delta);
+    if (parts.length) row.append(meta);
+    return row;
+  }
+
+  // The mockup's live line: the dot, the word, then the count it qualifies —
+  // "streaming · 12 movements", or just the count when nothing is streaming.
+  // The word is always written out beside the dot, so the claim survives
+  // filter: grayscale(1) with the lumen gone entirely; and the count is there
+  // in both states, so removing the indicator never removes information.
+  function renderCreditMovementsLive() {
+    const on = session.creditMovementsStreamLive === true;
+    // The travelling hairline is a claim about the transport RIGHT NOW, so it
+    // is added and removed exactly where that claim changes.
+    if (ui.creditMovementsPanel) ui.creditMovementsPanel.classList.toggle("dn-livebar", on);
+    if (!ui.creditMovementsLive) return;
+    ui.creditMovementsLive.replaceChildren();
+    if (on) {
+      const dot = document.createElement("span");
+      dot.className = "dn-dot dn-dot--live dn-dot--pulse";
+      dot.setAttribute("aria-hidden", "true");
+      ui.creditMovementsLive.append(dot, document.createTextNode("streaming · "));
+    }
+    const seen = session.creditMovements.length;
+    ui.creditMovementsLive.append(document.createTextNode(seen === 1 ? "1 movement" : `${new Intl.NumberFormat().format(seen)} movements`));
+  }
+
+  function setCreditMovementsLive(on) {
+    session.creditMovementsStreamLive = Boolean(on);
+    renderCreditMovementsLive();
+  }
+
+  // Empty is four different facts here, and each one is a different DataState:
+  //   loading        the stream is opening
+  //   pending        it is open and the ledger has not settled anything yet —
+  //                  which the contract says explicitly is NOT "the team has
+  //                  stopped spending"
+  //   unavailable    it could not be opened, or this deployment has no client
+  // A zero is never used for any of them: "0 movements" would be a claim that
+  // we counted, and until a frame arrives we have not.
+  function resetCreditMovementsView(why, kind = "loading", label = "Waiting", tone = "") {
+    session.creditMovements = [];
+    session.lastCreditMovementSequence = 0n;
+    session.creditOrgBalanceShownMicros = null;
+    session.creditMovementsStreamLive = false;
+    if (ui.creditMovementsList) {
+      ui.creditMovementsList.replaceChildren();
+      ui.creditMovementsList.hidden = true;
+    }
+    if (ui.creditMovementsOrg) ui.creditMovementsOrg.textContent = "—";
+    if (ui.creditMovementsPanel) {
+      ui.creditMovementsPanel.hidden = !selectedTeam();
+      ui.creditMovementsPanel.classList.remove("dn-livebar");
+    }
+    if (ui.creditMovementsLive) ui.creditMovementsLive.replaceChildren();
+    setDataState(ui.creditMovementsEmpty, kind, why);
+    setSourceState(ui.creditMovementsState, label, tone);
+  }
+
+  // A frame arrived. This is the ONE place a credit figure is allowed to move,
+  // because it is the one place something actually changed.
+  function appendCreditMovement(movement) {
+    const sequence = signedInt64Value(movement?.sequence);
+    if (sequence === null || sequence <= session.lastCreditMovementSequence) return false;
+    session.lastCreditMovementSequence = sequence;
+    session.creditMovements.push(movement);
+    if (session.creditMovements.length > 40) session.creditMovements.shift();
+
+    if (ui.creditMovementsList) {
+      const row = creditMovementRow(movement);
+      // --ease-arrive, the 1.28 overshoot, is reserved for something appearing
+      // that the reader did not trigger. A stream frame is exactly that case,
+      // and .dn-in-pop is the system's own class for it rather than a second
+      // opinion about what arriving looks like.
+      row.classList.add("dn-in-pop");
+      ui.creditMovementsList.prepend(row);
+      while (ui.creditMovementsList.children.length > 40) ui.creditMovementsList.lastElementChild.remove();
+      ui.creditMovementsList.hidden = false;
+      if (ui.creditMovementsEmpty) ui.creditMovementsEmpty.hidden = true;
+    }
+    // The live line states "streaming · N movements", so N has to follow the
+    // list it is counting.
+    renderCreditMovementsLive();
+
+    // team_balance_after_micros is a window over the same ledger sum a balance
+    // read returns, so the last frame and the panel above are one number seen
+    // twice. It is written THROUGH the panel rather than beside it — that way
+    // they cannot drift apart, because there is only one of them.
+    const teamAfter = signedInt64Value(movement?.teamBalanceAfterMicros);
+    if (teamAfter !== null) {
+      const previous = session.creditBalanceShownMicros ?? session.creditBalance;
+      session.creditBalance = teamAfter;
+      session.creditBalanceShownMicros = teamAfter;
+      rollOdometer(ui.creditBalanceValue, typeof previous === "bigint" ? previous : null, teamAfter);
+      renderRailSpend();
+      renderStatStrip();
+    }
+    const organizationAfter = signedInt64Value(movement?.organizationBalanceAfterMicros);
+    if (organizationAfter !== null) {
+      rollOdometer(ui.creditMovementsOrg, session.creditOrgBalanceShownMicros, organizationAfter);
+      session.creditOrgBalanceShownMicros = organizationAfter;
+    }
+    return true;
+  }
+
+  function stopCreditMovementStream() {
+    if (session.creditMovementsAbort) session.creditMovementsAbort.abort();
+    session.creditMovementsAbort = null;
+    if (session.creditMovementsReconnectTimer) window.clearTimeout(session.creditMovementsReconnectTimer);
+    session.creditMovementsReconnectTimer = null;
+    session.creditMovementsStreamLive = false;
+    // The hairline is a claim about the transport right now. A stopped stream
+    // must never leave it painted.
+    setCreditMovementsLive(false);
+  }
+
+  // Reconnection twin of scheduleActivityReconnect: same backoff curve, same
+  // budget, same token remedy.
+  function scheduleCreditMovementReconnect(teamId, generation, attempt, refreshToken) {
+    const delay = Math.min(30000, 1500 * 2 ** attempt);
+    setSourceState(ui.creditMovementsState, "Reconnecting", "loading");
+    setCreditMovementsLive(false);
+    session.creditMovementsReconnectTimer = window.setTimeout(async () => {
+      session.creditMovementsReconnectTimer = null;
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || !session.accessToken) return;
+      // An expired token would fail every retry identically; heal it first.
+      if (refreshToken) await refreshStreamAccessToken();
+      if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+      startCreditMovementStream(teamId, generation, attempt);
+    }, delay);
+  }
+
+  async function startCreditMovementStream(teamId, generation = session.workspaceGeneration, attempt = 0) {
+    stopCreditMovementStream();
+    if (!teamId || typeof platformApi?.streamCreditMovements !== "function") {
+      resetCreditMovementsView("This deployment does not carry the generated EconomicsService streaming client, so no credit movement was read. Nothing was inferred from the balance instead.", "unavailable", "Unavailable", "error");
+      return;
+    }
+    const controller = new AbortController();
+    session.creditMovementsAbort = controller;
+    setSourceState(ui.creditMovementsState, "Connecting", "loading");
+    if (ui.creditMovementsPanel) ui.creditMovementsPanel.hidden = false;
+    // Same settle window as the activity stream: an open stream with nothing
+    // to say is indistinguishable from one that never opened, and the contract
+    // is explicit that "nothing new" means "nothing has settled yet" rather
+    // than "the team has stopped spending".
+    let streamEstablished = false;
+    const markStreamEstablished = () => {
+      if (streamEstablished || controller.signal.aborted) return;
+      streamEstablished = true;
+      setSourceState(ui.creditMovementsState, "Listening", "success");
+      setCreditMovementsLive(true);
+      // Open with nothing to say is a PENDING reading, not an absent one. The
+      // contract is explicit that the ledger withholds the newest movements
+      // until their ordering is settled, so "nothing new" means "nothing has
+      // settled yet" and must never be rendered as "this team is not spending".
+      if (!session.creditMovements.length) {
+        setDataState(ui.creditMovementsEmpty, "pending", "The stream is open. The ledger publishes a movement about a second after it commits, so an empty list means nothing has settled yet — not that this team has stopped spending.");
+      }
+    };
+    const establishTimer = window.setTimeout(markStreamEstablished, 1500);
+    const requestId = window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18);
+    try {
+      for await (const response of platformApi.streamCreditMovements({ teamId, afterSequence: session.lastCreditMovementSequence }, {
+        accessToken: session.accessToken,
+        requestId,
+        signal: controller.signal
+      })) {
+        if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || controller.signal.aborted) return;
+        const movement = response?.movement;
+        if (!movement) continue;
+        // An organization-scoped grant carries no team_id and still belongs on
+        // this stream, because it moves the pool the team spends from. Only a
+        // movement naming a DIFFERENT team is out of scope.
+        const movementTeam = stringValue(movement.teamId);
+        if (movementTeam && movementTeam !== stringValue(teamId)) {
+          throw new ApiError("The economics service returned a movement outside the selected team scope", 0, "invalid_response", requestId);
+        }
+        window.clearTimeout(establishTimer);
+        markStreamEstablished();
+        appendCreditMovement(movement);
+        setSourceState(ui.creditMovementsState, "Ledger live", "success");
+      }
+      if (!controller.signal.aborted && generation === session.workspaceGeneration) {
+        session.creditMovementsStreamLive = false;
+        setCreditMovementsLive(false);
+        // A cleanly closed stream is usually a rolling deploy retiring the pod
+        // behind the load balancer. The cursor makes reconnecting lossless, so
+        // do it before asking anyone to click anything.
+        const nextAttempt = streamEstablished ? 0 : attempt + 1;
+        if (nextAttempt <= activityReconnectLimit) {
+          scheduleCreditMovementReconnect(teamId, generation, nextAttempt, false);
+          return;
+        }
+        setSourceState(ui.creditMovementsState, "Stream ended", "error");
+      }
+    } catch (error) {
+      if (controller.signal.aborted || generation !== session.workspaceGeneration) return;
+      const normalized = error?.name === "PlatformClientError"
+        ? new ApiError(stringValue(error.message), Number(error.status || 0), stringValue(error.code), stringValue(error.requestId) || requestId)
+        : error;
+      session.creditMovementsStreamLive = false;
+      setCreditMovementsLive(false);
+      // A mid-stream token expiry arrives as an in-stream "unauthenticated"
+      // error frame, not an HTTP failure; it heals through the session cookie
+      // exactly as the activity stream's does.
+      const unauthenticated = normalized instanceof ApiError && (normalized.status === 401 || normalized.code === "unauthenticated");
+      const nextAttempt = streamEstablished ? 0 : attempt + 1;
+      if ((unauthenticated || isRetryableApiError(normalized)) && nextAttempt <= activityReconnectLimit) {
+        scheduleCreditMovementReconnect(teamId, generation, nextAttempt, unauthenticated);
+        return;
+      }
+      // A replay window the server will not serve is a designed refusal, not
+      // an outage: the contract answers RESOURCE_EXHAUSTED rather than handing
+      // back a truncated history. Say so, and resume from live.
+      if (normalized instanceof ApiError && normalized.code === "resource_exhausted") {
+        setSourceState(ui.creditMovementsState, "History too long", "error");
+        if (!session.creditMovements.length) {
+          setDataState(ui.creditMovementsEmpty, "unavailable", "The ledger keeps a bounded replay window and this cursor is behind it. Rather than hand back a truncated history the platform refused the replay, so older movements are not shown and none was guessed.");
+        }
+        return;
+      }
+      setSourceState(ui.creditMovementsState, "Unavailable", "error");
+      if (!session.creditMovements.length) {
+        setDataState(ui.creditMovementsEmpty, "unavailable", apiErrorMessage(normalized, "Credit movements could not be streamed, so none is shown. The balance above is a separate read and is unaffected."));
+      }
+    } finally {
+      window.clearTimeout(establishTimer);
+      if (session.creditMovementsAbort === controller) session.creditMovementsAbort = null;
     }
   }
 
@@ -10871,12 +11484,21 @@
         if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId || controller.signal.aborted) return;
         const status = response?.provisioning;
         const event = response?.event;
+        // A frame reporting only a health change carries no event and no
+        // status, so health is read before anything gates on either.
+        const runtimeHealth = response?.runtimeHealth;
         if (status && stringValue(status.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned a status outside the selected team scope", 0, "invalid_response", requestId);
         if (event && stringValue(event.teamId) !== stringValue(teamId)) throw new ApiError("ProvisioningService returned an event outside the selected team scope", 0, "invalid_response", requestId);
         window.clearTimeout(establishTimer);
         markStreamEstablished();
         if (event) appendProvisioningEvent(event);
         const team = selectedTeam();
+        // Readiness reaches the badge through the phase, so a runtime that
+        // stops being ready takes the live dot with it without anyone polling.
+        if (runtimeHealth && team && applyTeamRuntimeHealth(team, runtimeHealth)) {
+          renderTeamList();
+          renderTeamHeadline();
+        }
         if (status && team) {
           team.provisioning = status;
           team._pollingMessage = "";
@@ -10897,7 +11519,13 @@
               return;
             }
             const routeKey = `${stringValue(teamId)}:${stringValue(presented.sequence)}:${presented.state}`;
-            if (session.provisioningRouteKey !== routeKey) {
+            // A team that is already active has nothing to route TO. Since the
+            // stream now stays open past provisioning to follow runtime health,
+            // it replays this terminal snapshot on every reconnect, and routing
+            // on it would re-read the roster each time for no new fact.
+            if (lifecycleLabel(team.state) === "active") {
+              session.provisioningRouteKey = routeKey;
+            } else if (session.provisioningRouteKey !== routeKey) {
               session.provisioningRouteKey = routeKey;
               // Reflect only server truth, like the poll's terminal branch:
               // re-read the team list, and renderTeamList's writes to
@@ -11016,6 +11644,12 @@
   function teamNeedsProvisioningStream(team) {
     if (!stringValue(team?.id)) return false;
     if (lifecycleLabel(team.state) === "deleting") return true;
+    // An active team's PROVISIONING is history — but the same stream now also
+    // carries TeamRuntimeHealth, and that is not history: it is the only fact
+    // on the wire that can withdraw a live indicator when a runtime stops
+    // being ready. Closing the stream the moment provisioning settled is
+    // exactly what left the badge reasoning from a fact about the past.
+    if (lifecycleLabel(team.state) === "active") return true;
     if (!team.provisioning) return false;
     return !launchContract.provisioningTerminal(team.provisioning);
   }
@@ -11047,9 +11681,13 @@
     if (!team) return;
     try {
       let status;
+      // runtime_health rides the same response. It is absent until the team's
+      // runtime has reported once, and that absence is left alone.
+      let runtimeHealth;
       try {
         const response = await apiRequest("provisioning_status", { teamId });
         status = response.provisioning;
+        runtimeHealth = response.runtimeHealth;
       } catch (error) {
         if (!(error instanceof ApiError) || !["unimplemented", "not_configured"].includes(error.code)) throw error;
         const response = await apiRequest("team", { id: teamId });
@@ -11062,6 +11700,7 @@
         status = response.team?.provisioning;
       }
       if (status) team.provisioning = status;
+      if (runtimeHealth) applyTeamRuntimeHealth(team, runtimeHealth);
       team._pollingMessage = "";
       renderTeamList();
       if (teamId === session.selectedTeamId) {
