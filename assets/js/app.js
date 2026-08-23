@@ -1,6 +1,29 @@
 (() => {
   "use strict";
 
+  // ── Icon motion ─────────────────────────────────────────────────────────
+  // "Every icon animates — there are no still icons in this system." The family an icon
+  // moves in is DERIVED from the glyph's own sprite id (icon-motion.js), never chosen at
+  // the call site, so a glyph added tomorrow animates without anyone classifying it.
+  //
+  // Two entry points, because this console builds icons two ways. applyIconMotion() walks
+  // the shell's static markup once; applyIconMotionTo() classifies each icon the renderers
+  // below create. Both read the same table, so they cannot drift into disagreeing about
+  // what a bell does.
+  const iconMotion = window.deepNavyIconMotion || null;
+  if (iconMotion) iconMotion.applyIconMotion(document);
+
+  // The renderers always draw with fill="none" stroke="currentColor", so a glyph here is
+  // stroked whatever the sprite's own artwork is — draw always has a line to run along and
+  // the computed-stroke check applyIconMotion() needs is not in play.
+  function applyIconMotionTo(svg, glyph) {
+    if (!iconMotion) return svg;
+    const motion = iconMotion.motionFor(glyph);
+    svg.classList.add("dn-icon--" + motion);
+    svg.setAttribute("data-motion", motion);
+    return svg;
+  }
+
   const config = window.deepNavyRuntime || {};
   const ui = {
     environmentFields: [...document.querySelectorAll("[data-environment]")],
@@ -3435,7 +3458,7 @@
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
     use.setAttribute("href", `#i-${id}`);
     svg.append(use);
-    return svg;
+    return applyIconMotionTo(svg, id);
   }
 
   // ── Notices ─────────────────────────────────────────────────────────────
@@ -6880,7 +6903,7 @@
     const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
     use.setAttribute("href", `#i-${name}`);
     svg.append(use);
-    return svg;
+    return applyIconMotionTo(svg, name);
   }
 
   /* ── Runs ───────────────────────────────────────────────────────────────

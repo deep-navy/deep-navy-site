@@ -1,6 +1,12 @@
 (() => {
   "use strict";
 
+  // Every icon animates, and none of the marketing pages' icons are written in
+  // JavaScript — so the one pass that classifies static markup runs here. It derives each
+  // glyph's family from its own sprite id rather than reading a class off the markup, so
+  // an icon added to a page tomorrow animates without anyone classifying it by hand.
+  globalThis.deepNavyIconMotion?.applyIconMotion(document);
+
   const header = document.querySelector("[data-site-header]");
   if (header) {
     const updateHeader = () => header.classList.toggle("is-scrolled", window.scrollY > 12);

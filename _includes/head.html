@@ -63,7 +63,21 @@
   kit one commit ago, and ds/tokens/base.css would reset them out from under it.
 {%- endcomment -%}
 {% if page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/ds.css' | relative_url }}">{% endif %}
+{%- comment -%}
+  The marketing pages skip ds.css because ds/tokens/base.css is a real reset — but they
+  draw the same sprite, and "every icon animates" is not a rule that stops at /app/. The
+  icon-motion layer is the one file in the tree they can take: pure @keyframes and hover
+  rules, no reset, no base type, nothing that reaches past an <svg>. On the console it
+  arrives through ds.css -> components.css -> core/core.css, so it is linked here only
+  where ds.css is not, and is never loaded twice.
+{%- endcomment -%}
+{% unless page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/ds/components/core/icons-motion.css' | relative_url }}">{% endunless %}
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+{%- comment -%}
+  Re-points the vendored icon-motion selectors at this site's sprite DOM. Every page, both
+  kits: the class it targets is put on by icon-motion.js wherever a sprite icon renders.
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/icon-motion.css' | relative_url }}">
 {% if page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/console.css' | relative_url }}">{% endif %}
 {% if page.extra_css %}<link rel="stylesheet" href="{{ page.extra_css | relative_url }}">{% endif %}
 {%- comment -%}
