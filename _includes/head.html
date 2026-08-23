@@ -72,12 +72,27 @@
   where ds.css is not, and is never loaded twice.
 {%- endcomment -%}
 {% unless page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/ds/components/core/icons-motion.css' | relative_url }}">{% endunless %}
+{%- comment -%}
+  The brand layer, on the same terms and for the same reason. The lockup is one anchor,
+  a masked mark and a wordmark with a drawn round period; nothing in it resets anything,
+  and the header and footer that carry it are the SAME two includes on both kits. On the
+  console it arrives through ds.css -> components.css -> brand/brand.css, so like
+  icons-motion it is linked here only where ds.css is not, and is never loaded twice.
+{%- endcomment -%}
+{% unless page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/ds/components/brand/brand.css' | relative_url }}">{% endunless %}
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 {%- comment -%}
   Re-points the vendored icon-motion selectors at this site's sprite DOM. Every page, both
   kits: the class it targets is put on by icon-motion.js wherever a sprite icon renders.
 {%- endcomment -%}
 <link rel="stylesheet" href="{{ '/assets/css/icon-motion.css' | relative_url }}">
+{%- comment -%}
+  Points the vendored mark at this site's silhouette file and re-measures that file's arm
+  hinge. Every page, both kits, and AFTER both ds.css and the standalone brand link above,
+  because the two clip-paths and the transform-origin it sets are overrides of the system's
+  own. See the file: the numbers are rasterised out of the artwork, not chosen.
+{%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/brand.css' | relative_url }}">
 {% if page.layout == 'app' %}<link rel="stylesheet" href="{{ '/assets/css/console.css' | relative_url }}">{% endif %}
 {% if page.extra_css %}<link rel="stylesheet" href="{{ page.extra_css | relative_url }}">{% endif %}
 {%- comment -%}

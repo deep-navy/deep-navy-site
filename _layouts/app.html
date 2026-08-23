@@ -27,10 +27,7 @@
       lives in the workspace top bar, where the mockup puts it.
     {%- endcomment -%}
     <header class="app-header">
-      <a class="brand" href="{{ '/' | relative_url }}" aria-label="deep navy home">
-        {% include logo.svg %}
-        <span>deep navy</span>
-      </a>
+      {% include logo.html %}
       <div class="app-header-actions">
         <span class="environment-pill" data-environment>Local</span>
         <span class="session-pill" data-session-state>Signed out</span>

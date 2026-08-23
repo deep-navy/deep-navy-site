@@ -100,6 +100,20 @@
   --brass-rgb: 224 166 58;
   --coral-rgb: 228 112 111;
 
+  /* The two lumen steps the brand lockup's drawn period takes — the -500 on a
+     light ground, the -400 on a dark one. They are the design system's own
+     values, byte for byte, which is why they can live here: ds.css is
+     console-only and the marketing header and footer carry the same lockup.
+     Agreement makes the winner moot when both sheets are loaded.
+
+     This dot is the ONLY chroma in the chrome. It is not a status — it is the
+     period in "deep.navy", drawn as a circle so it stays perfectly round at
+     every size and in every face — and the design system calls it "the only
+     brand chroma in an otherwise achromatic system". Nothing else in the
+     chrome may take a hue; see achromatic_chrome_test.cjs. */
+  --lumen-500: #0B9C8D;
+  --lumen-400: #17BFAD;
+
   /* The semantic status names main.css consumes ride those families. */
   --signal-ok-rgb:   var(--kelp-rgb);
   --signal-warn-rgb: var(--brass-rgb);

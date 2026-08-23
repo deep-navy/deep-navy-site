@@ -1,0 +1,95 @@
+/* deep.navy — the brand lockup, pointed at this site's silhouette.
+   Companion to ds/components/brand/brand.css, which holds the lockup itself: the two-layer
+   masked mark, the dn-mark-sway keyframe, the drawn round period, the size and badge
+   variants, every duration and easing, and the @media (hover:hover) gate. This file adds
+   no lockup of its own. It exists because of two things the vendored sheet cannot know.
+
+   ── 1. WHICH FILE TO MASK ────────────────────────────────────────────────────────────
+   The system's rule is `-webkit-mask: var(--dn-mark-src, url("../../assets/logo-mark-current.svg"))`,
+   and --dn-mark-src is its own opt-out for a project that ships the artwork somewhere else.
+   We do. There are three copies of this silhouette in assets/images/ and only ONE of them
+   can be a mask:
+
+     deep-navy-mark.svg    the supplied mark, ONE evenodd path — and a full-bleed navy
+                           <rect> behind it. A mask-image that references
+                           an image resolves mask-mode: match-source to ALPHA, and that
+                           rect is opaque, so the mask is a solid square and the two layers
+                           clip nothing. Measured, not assumed: rasterised at 600x600, all
+                           600 rows come back fully opaque edge to edge.
+     favicon.svg           the same plated artwork. 468 of 600 rows fully opaque.
+     deep-navy-mark-ghost.svg   the same single evenodd path with the tile removed, on a
+                           transparent ground. 0 fully-opaque rows; the alpha channel IS
+                           the silhouette. It already masks the marketing hero watermark
+                           (home.css), and marketing_structure_test pins that it never
+                           grows a <rect>. One silhouette file, two uses.
+
+   ── 2. WHERE THAT FILE'S HINGE SITS ──────────────────────────────────────────────────
+   The system measures the hinge rather than guessing it — rasterise, count solid runs per
+   row, find where one run becomes four — and gets 35.5% for its own file. Run the same
+   measurement on ours and the answer is 30.4%: one run through the crown to 16.8%, two
+   through the head, four from 30.4% down as the arms separate. Stable across 600px and
+   1200px rasters and across alpha thresholds 8, 128 and 200.
+
+   The two numbers are the same feature. deep-navy-mark.svg frames the silhouette inside
+   `translate(600 600) scale(0.74) translate(-600 -600)`; the ghost drops that inset and
+   lets the path fill its own viewBox. Put our row back through that scale —
+   0.5 + 0.74 * (0.304 - 0.5) = 0.355 — and it lands on the system's 35.5% exactly. So the
+   system's measurement is right for the system's file, and ours is right for ours. Taking
+   35% on this artwork would hinge the arms 4.6% of the box below the row they actually
+   leave the head at.
+
+   Everything else — the 3% clip overlap, the skew angles, the 480ms pointer budget, the
+   hover gate — is the system's, untouched. */
+
+/* The mask source, on every page: the console reaches brand.css through ds.css, the
+   marketing pages link it directly, and both need to be told the same file. */
+:root { --dn-mark-src: url("/assets/images/deep-navy-mark-ghost.svg"); }
+
+/* The hinge, re-measured for that file. Head layer: the top 30.4%. Arm layer: from 27.4%
+   down, so the two clips overlap by the system's own 3% and no seam can show through at
+   the join. The skew pivots on the same 30.4% line, which is what leaves the head still
+   while the arms move. */
+.dn-mark::before { clip-path: inset(0 0 69.6% 0); }
+.dn-mark::after { clip-path: inset(27.4% 0 0 0); transform-origin: 50% 30.4%; }
+
+/* ── the tokens the lockup needs where the system is not loaded ──────────────────────
+   ds.css is console-only: ds/tokens/base.css is a real reset and would pull the marketing
+   kit out from under itself, so the marketing pages take the two component layers they
+   can use (icons-motion and brand) and none of the reset. That leaves five names defined
+   nowhere off /app/, and a custom property that resolves to nothing takes its whole
+   declaration with it — the gap, the wordmark's size and weight, and the lockup's colour
+   would all simply vanish.
+
+   Scoped to the lockup itself, and only where the system is absent, so it can neither
+   leak into another rule nor shadow the system's own values on /app/. .app-body is the
+   app layout's body class, which is the same condition head.html keys the ds.css link on.
+
+   Two names are deliberately NOT bridged here. --lumen-500 and --lumen-400 are colour,
+   and colour is defined in tokens.css and nowhere else; they sit there beside --lumen-rgb.
+   And --text-primary is the one name whose value genuinely differs between the two sets —
+   the system's ink ramp runs a step darker — so off /app/ the lockup takes the marketing
+   kit's own ink rather than a colour the marketing pages never otherwise paint. */
+body:not(.app-body) :where(.dn-logo, .dn-mark) {
+  --text-primary: var(--text);
+  --space-25: 10px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fw-semibold: 600;
+}
+/* ds/tokens/base.css carries `a.dn-logo{text-decoration:none}` for the console. The
+   marketing pages do not load it, and main.css leaves anchors underlined by default. */
+body:not(.app-body) a.dn-logo { text-decoration: none; }
+
+/* ── reduced motion ──────────────────────────────────────────────────────────────────
+   tokens.css collapses every animation to .01ms rather than switching it off. Six of the
+   icon families survived that because their last keyframe is the resting pose; dn-i-spin
+   did not, and held a 50-degree glyph for as long as the pointer stayed. dn-mark-sway
+   does end at skewX(0) scaleY(1), so the collapse alone would not strand it — but a
+   collapsed animation is still an animation that runs, getAnimations() still reports it,
+   and "reduced" has to mean the pass does not happen at all rather than happens fast.
+   So it is switched off outright, and the dot's and plate's transitions with it: under
+   reduce the dot still answers a hover, it just arrives instead of travelling. */
+@media (prefers-reduced-motion: reduce) {
+  .dn-mark::before, .dn-mark::after { animation: none !important; }
+  .dn-logo__dot, .dn-dot-period, .dn-logo__plate { transition: none !important; }
+}

@@ -1,0 +1,25 @@
+{%- comment -%}
+  The brand lockup — the design system's .dn-logo, on every surface that carries the mark.
+  Replaces logo.svg, which inlined the same silhouette as a still <svg>.
+
+  Two things in here are the whole point, and neither survives being simplified back:
+
+  The MARK is an empty element, not an <svg> and not an <img>. brand.css paints it as two
+  stacked copies of the silhouette masked out of currentColor, clipped either side of the
+  row where the arms leave the head. The head copy never moves; the arm copy skews about
+  that same row on hover, which is why the arms sway and the head does not. A skew leaves
+  its origin line stationary, so the two halves stay welded. One element, no geometry —
+  the supplied artwork is a single evenodd path, so an inline <svg> has no addressable
+  arms to move.
+
+  The PERIOD is a drawn circle, not the typeface's period: a perfect round dot at every
+  size and in every face, and the only brand chroma in an otherwise achromatic system.
+  Typing "." here would be a different shape in each of our three faces and would lose
+  the hover scale. The anchor's aria-label carries the spoken name, because the dot is an
+  element and a screen reader would otherwise read "deepnavy".
+
+  Parameters — both optional:
+    size    a lockup size variant: dn-logo--sm | dn-logo--lg | dn-logo--xl
+    class   surface classes for the host layout (positioning only, never type or colour)
+{%- endcomment -%}
+<a class="dn-logo{% if include.size %} {{ include.size }}{% endif %}{% if include.class %} {{ include.class }}{% endif %}" href="{{ '/' | relative_url }}" aria-label="deep navy home"><span class="dn-logo__mark dn-mark" aria-hidden="true"></span><span class="dn-logo__word">deep<span class="dn-logo__dot" aria-hidden="true"></span>navy</span></a>

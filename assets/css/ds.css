@@ -1,12 +1,23 @@
 /* deep.navy design system — vendored entry point.
    Copied verbatim from the design-system project (2d29095b-22a4-43ad-a08b-a967d2e93eea)
-   with exactly two omissions:
-     1. no @import of the Google Fonts CDN — the three faces are self-hosted in type.css;
-     2. components/components.css drops its brand/ import — the site draws its own mark.
-   The icons-motion layer used to be dropped too, on the reasoning that a sprite could not
-   carry the system's seven motion families. It can: ds/components/core/core.css now keeps
-   the system's own `@import "icons-motion.css"` first line, and icon-motion.css beside this
-   file re-points those selectors at our sprite's DOM. See that file for what differs and why.
+   with exactly ONE omission:
+     1. no @import of the Google Fonts CDN — the three faces are self-hosted in type.css.
+
+   Two layers used to be dropped as well, both on guesses that turned out to be wrong.
+
+   icons-motion, on the reasoning that a sprite could not carry the system's seven motion
+   families. It can: ds/components/core/core.css keeps the system's own
+   `@import "icons-motion.css"` first line, and icon-motion.css beside this file re-points
+   those selectors at our sprite's DOM.
+
+   brand, on the reasoning written here as "the site draws its own mark". The site drew the
+   same mark, as a still inline <svg> — so what was actually dropped was the two-layer
+   masked construction whose arms sway on hover, and the drawn round period that is the
+   only brand chroma in the system. components/components.css now keeps its own
+   `@import "brand/brand.css";` first line, and brand.css beside this file supplies the one
+   thing the vendored sheet cannot know: which silhouette file to mask, and where THAT
+   file's arm hinge sits. See both companion files for what differs and why.
+
    Everything else is the system's own bytes. Do not hand-edit the files under ds/:
    re-vendor them from the design system instead, or the console stops matching the mockups. */
 @import "ds/tokens/palette.css";

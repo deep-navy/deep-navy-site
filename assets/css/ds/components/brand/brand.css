@@ -1,0 +1,80 @@
+/* brand lockup */
+.dn-logo{display:inline-flex;align-items:center;gap:var(--space-25);color:var(--text-primary);text-decoration:none}
+.dn-logo__mark{display:block;flex:none;width:28px;height:28px}
+/* The mark paints as two stacked copies of the same silhouette, clipped at the hinge where
+   the arms leave the head. The head layer never moves. The arm layer skews about that same
+   hinge line — and because a skew leaves its origin line stationary, the two layers stay
+   welded with no seam. The clips overlap by 3% so nothing shows through at the join.
+
+   The 35% hinge is measured, not guessed: rasterising the mark and counting solid runs per
+   row, the silhouette is one run through the head and breaks into four at 35.5%.
+
+   This split is why the mark is masked rather than inlined: the supplied file is ONE
+   evenodd path, so individual arms are not addressable geometry. Clipping the silhouette is
+   the only way to move the arms without moving the head. */
+.dn-mark{position:relative;display:block;flex:none;width:28px;height:28px;background:none}
+.dn-mark::before,.dn-mark::after{content:"";position:absolute;inset:0;background:currentColor;-webkit-mask:var(--dn-mark-src,url("../../assets/logo-mark-current.svg")) center/contain no-repeat;mask:var(--dn-mark-src,url("../../assets/logo-mark-current.svg")) center/contain no-repeat}
+.dn-mark::before{clip-path:inset(0 0 65% 0)}
+.dn-mark::after{clip-path:inset(32% 0 0 0);transform-origin:50% 35%}
+/* One pass on hover,of the mark or of whatever hosts it. 480ms — the same pointer budget
+   as .dn-icon--ring and .dn-icon--hop,because a logo hover is the same class of interaction
+   as an icon hover and earns no exemption from the 500ms ceiling.
+   Deliberately not ambient: a logo that moves on its own answers nothing about what changed. */
+@keyframes dn-mark-sway{0%{transform:skewX(0) scaleY(1)}30%{transform:skewX(5.5deg) scaleY(1.018)}65%{transform:skewX(-4.2deg) scaleY(.99)}100%{transform:skewX(0) scaleY(1)}}
+/* An <img> mark cannot be split, so the pinned-theme variants sit still. Prefer theme="auto". */
+.dn-logo__word{font:var(--fw-semibold) var(--fs-md)/1 var(--font-sans);letter-spacing:-0.03em;white-space:nowrap}
+/* The period is a drawn circle, not the typeface's period — a perfect round dot at every
+   size and in every font. It is the only brand chroma in an otherwise achromatic system. */
+.dn-logo__dot{display:inline-block;width:.22em;height:.22em;margin:0 .06em;border-radius:50%;background:var(--lumen-500);vertical-align:baseline;transition:transform var(--dur-slow) var(--ease-arrive)}
+[data-theme="dark"] .dn-logo__dot{background:var(--lumen-400)}
+/* Standalone use of the round period, e.g. in body copy or a nav wordmark. */
+.dn-dot-period{display:inline-block;width:.22em;height:.22em;margin:0 .06em;border-radius:50%;background:var(--lumen-500);vertical-align:baseline}
+[data-theme="dark"] .dn-dot-period{background:var(--lumen-400)}
+/* The mark no longer rotates or scales on hover — a logo that zooms says nothing. The arms
+   move instead; see .dn-mark above. */
+.dn-logo--sm .dn-logo__mark{width:22px;height:22px}
+.dn-logo--sm .dn-logo__word{font-size:var(--fs-sm)}
+.dn-logo--lg .dn-logo__mark{width:40px;height:40px}
+.dn-logo--lg .dn-logo__word{font-size:var(--fs-2xl)}
+.dn-logo--xl .dn-logo__mark{width:64px;height:64px}
+.dn-logo--xl .dn-logo__word{font-size:var(--fs-4xl);letter-spacing:var(--track-display)}
+.dn-logo__tile{box-sizing:border-box;display:grid;place-items:center;background:var(--brand-navy);border-radius:var(--radius-md);width:38px;height:38px;padding:5px}
+.dn-logo--sm .dn-logo__tile{width:30px;height:30px;padding:4px;border-radius:var(--radius-sm)}
+.dn-logo--lg .dn-logo__tile{width:54px;height:54px;padding:7px;border-radius:var(--radius-lg)}
+.dn-logo--xl .dn-logo__tile{width:82px;height:82px;padding:9px;border-radius:var(--radius-xl)}
+/* The mark fills the tile's content box, so the size variants above are the only lever. */
+.dn-logo__tile .dn-logo__mark{width:100%;height:100%}
+
+/* Badge lockup — the marketing primary. Mark AND wordmark sit inside one plate, so the badge
+   is a single enclosed object that survives any background. The mark inherits the plate's
+   colour, which is why it flips correctly across all three plate treatments. */
+.dn-logo--badge{gap:0}
+.dn-logo__plate{display:inline-flex;align-items:center;gap:.34em;padding:.30em .52em .34em .40em;border-radius:.42em;background:var(--action-primary-bg);color:var(--action-primary-fg);transition:transform var(--dur-base) var(--ease-out)}
+.dn-logo__plate .dn-logo__word{color:inherit}
+/* The plate carries the badge's font-size, so every em inside it — mark, gap, padding,
+   radius — scales from the wordmark. Sizing the mark in em off `.dn-logo` instead would
+   pin it to the root 16px and leave it half-size at lg and xl. */
+.dn-logo--badge .dn-logo__plate{font-size:var(--fs-md);gap:.34em;padding:.30em .52em .34em .40em;border-radius:.42em}
+.dn-logo--sm.dn-logo--badge .dn-logo__plate{font-size:var(--fs-sm)}
+.dn-logo--lg.dn-logo--badge .dn-logo__plate{font-size:var(--fs-2xl)}
+.dn-logo--xl.dn-logo--badge .dn-logo__plate{font-size:var(--fs-4xl)}
+.dn-logo--badge .dn-logo__word{font-size:1em}
+.dn-logo--badge .dn-logo__mark,.dn-logo--badge .dn-mark{width:1.3em;height:1.3em}
+/* outline — plain surfaces only */
+.dn-logo--outline .dn-logo__plate{background:transparent;color:var(--text-primary);border:1px solid var(--border-strong);padding:calc(.30em - 1px) calc(.52em - 1px) calc(.34em - 1px) calc(.40em - 1px)}
+/* navy — where the brand colour is the point */
+.dn-logo--navy .dn-logo__plate{background:var(--brand-navy);color:#FFFFFF}
+.dn-logo--badge .dn-logo__dot{background:var(--lumen-400)}
+.dn-logo--outline .dn-logo__dot{background:var(--lumen-500)}
+[data-theme="dark"] .dn-logo--outline .dn-logo__dot{background:var(--lumen-400)}
+/* The misuse example: a plate recoloured off-brand. Only ever used to show what not to do. */
+.mis-a .dn-logo__plate{background:var(--anemone-500);color:#FFFFFF}
+
+/* Hover is a pointer capability, not a device: gating it keeps a tap on iOS and iPad
+   from leaving hover paint stuck, while an iPad with a trackpad still gets it. */
+@media (hover:hover){
+.dn-logo:hover{text-decoration:none}
+:where(.dn-logo,.dn-ihost,a,button):hover .dn-mark::after,.dn-mark:hover::after{animation:dn-mark-sway var(--dur-slower) var(--ease-in-out) 1}
+.dn-logo:hover .dn-logo__dot{transform:scale(1.18)}
+.dn-logo--badge:hover .dn-logo__plate{transform:translateX(2px)}
+}

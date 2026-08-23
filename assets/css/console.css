@@ -108,17 +108,12 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
   padding: 0 var(--space-4);
   border-bottom: var(--hairline) solid var(--border-subtle);
 }
-.cs-rail-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-25);
-  min-width: 0;
-  color: var(--text-primary);
-  font: var(--fw-semibold) var(--fs-sm)/1 var(--font-sans);
-  letter-spacing: -0.03em;
-  white-space: nowrap;
-}
-.cs-rail-brand svg { width: 22px; height: 22px; flex: none; }
+/* The rail's lockup is .dn-logo.dn-logo--sm — which is what every line that used
+   to be here was reproducing by hand: the same gap token, the same 14px semibold
+   wordmark, the same -0.03em, the same 22px mark. All that is left is the one thing
+   the system cannot know, which is that this one sits in a flex head that must be
+   allowed to shrink. */
+.cs-rail-brand { min-width: 0; }
 
 .cs-rail-nav {
   flex: 1;

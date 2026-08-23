@@ -81,7 +81,6 @@ p { color: var(--muted); }
 }
 .site-header.is-scrolled { border-color: var(--line); background: var(--navy-950); }
 .header-inner { display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 1.4rem; }
-.brand { display: inline-flex; align-items: center; gap: .7rem; font-weight: 760; letter-spacing: -.025em; text-decoration: none; }
 .brand-mark {
   position: relative;
   display: grid;
@@ -289,7 +288,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Footer */
 .site-footer { padding: 70px 0 25px; border-top: 1px solid var(--line); background: var(--navy-950); }
 .footer-grid { display: grid; grid-template-columns: 1.2fr 1fr .7fr; gap: clamp(3rem, 8vw, 8rem); }
-.footer-grid a:not(.brand) { color: var(--muted); font-size: .82rem; text-decoration: none; }.footer-grid a:hover { color: var(--aqua); }
+.footer-grid a:not(.dn-logo) { color: var(--muted); font-size: .82rem; text-decoration: none; }.footer-grid a:hover { color: var(--aqua); }
 .footer-brand p { margin: 1rem 0; font-size: .85rem; }
 .early-access-badge { display: inline-flex; align-items: center; gap: .45rem; color: var(--muted); font-family: var(--font-mono); font-size: .62rem; text-transform: uppercase; }
 .footer-index { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: .55rem 2rem; }
@@ -530,7 +529,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .organization-form { grid-template-columns: 1fr; }.organization-form label, .organization-form .form-help, .organization-form .form-error { grid-column: auto; }.organization-form .button { width: 100%; }
   .footer-grid { grid-template-columns: 1fr; }.footer-brand { grid-column: auto; }.footer-bottom { align-items: flex-start; flex-direction: column; }
   .page-hero { padding: 65px 0 55px; }.page-hero h1 { font-size: 2.7rem; }.page-hero p { font-size: 1rem; }
-  .app-header { padding-inline: 14px; }.app-header .brand > span:last-child, .environment-pill { display: none; }.app-header-actions { gap: .25rem; }.app-intro { flex-direction: column; }.config-banner, .auth-banner { grid-template-columns: auto 1fr; }.config-banner > .button, .auth-banner > .button { grid-column: 1 / -1; width: 100%; }
+  .app-header { padding-inline: 14px; }.app-header .dn-logo > span:last-child, .environment-pill { display: none; }.app-header-actions { gap: .25rem; }.app-intro { flex-direction: column; }.config-banner, .auth-banner { grid-template-columns: auto 1fr; }.config-banner > .button, .auth-banner > .button { grid-column: 1 / -1; width: 100%; }
   .workspace-section-heading { flex-direction: column; gap: .7rem; }
   .dashboard-controls { grid-template-columns: 1fr; }.dashboard-controls label { margin-bottom: -.25rem; }.dashboard-controls .button { width: 100%; }.customer-activity-item { grid-template-columns: 34px minmax(0, 1fr); }.customer-activity-item time { grid-column: 2; }
   .activity-source-pages { grid-template-columns: 1fr; }.activity-source-pages > div + div { padding-left: 0; border-top: 1px solid var(--line); border-left: 0; }
@@ -1055,11 +1054,11 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 }
 
 
-/* The mark. One SVG for both themes: it inherits currentColor, so it is navy
-   on light grounds and white on dark without a second file to keep in sync. */
-.brand .mark { width: 30px; height: 30px; flex: none; color: currentColor; }
-.site-footer .mark { width: 24px; height: 24px; }
-.brand { display: inline-flex; align-items: center; gap: .6rem; }
+/* The mark and the wordmark are the design system's .dn-logo now — see
+   _includes/logo.html and assets/css/brand.css. The rules that used to sit here
+   sized a still <svg> and set the wordmark's own type; both belong to the system,
+   which is what makes the arms sway and the period a drawn circle. The footer takes
+   .dn-logo--sm rather than a private 24px, because a size is a step, not a number. */
 
 /* The agent log reads as a work journal: who spoke, what they said, and the
    evidence underneath. Tool calls are set quiet and small because they answer
