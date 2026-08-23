@@ -68,6 +68,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "agents",
   "economics",
   "economics_breakdowns",
+  "economics_daily",
   "objectives",
   "create_objective",
   "initiatives",
@@ -574,6 +575,16 @@ export function createPlatformApi(options: PlatformApiOptions) {
             pageToken: page?.pageToken || ""
           }, callOptions);
         }
+        // The day series behind "spend over time". The server bounds how long a
+        // period may be, so there is no cursor and none is invented here. An
+        // empty reporting_period selects the organization's current
+        // subscription period, which is the period the rest of this screen
+        // already reports — asking for anything else would put two different
+        // periods on one page.
+        case "economics_daily":
+          return await economics.listEconomicsDaily({
+            scope: { type: economicsScopeType(payload.scopeType, "scopeType"), id: textField(payload, "scopeId") }
+          }, callOptions);
         case "objectives":
           return await objectives.listBusinessObjectives({ teamId: textField(payload, "teamId"), page: pageRequest(payload.page) }, callOptions);
         case "create_objective":

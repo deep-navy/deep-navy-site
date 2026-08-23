@@ -287,6 +287,10 @@
     economicsCreditsUsed: document.querySelector("[data-economics-credits-used]"),
     economicsCreditsRemaining: document.querySelector("[data-economics-credits-remaining]"),
     economicsMeasured: document.querySelector("[data-economics-measured]"),
+    economicsDailyPanel: document.querySelector("[data-economics-daily-panel]"),
+    economicsDailyChart: document.querySelector("[data-economics-daily-chart]"),
+    economicsDailyMeta: document.querySelector("[data-economics-daily-meta]"),
+    economicsDailyLegend: document.querySelector("[data-economics-daily-legend]"),
     economicsBreakdown: document.querySelector("[data-economics-breakdown]"),
     economicsBreakdownState: document.querySelector("[data-economics-breakdown-state]"),
     economicsGroup: document.querySelector("[data-economics-group]"),
@@ -3426,6 +3430,7 @@
     }
     resetAgentView("Loading the server-confirmed team roster.", "Loading", "loading");
     resetEconomicsView("Loading the measured economics summary for this team.", "Loading", "loading");
+    resetEconomicsDailyView("Loading this billing period day by day.", "loading");
     resetCreditBalanceView("Loading the authoritative team ledger balance.", "Loading", "loading");
     resetCreditControlView("Loading the current paid-period team budget.", "Loading", "loading");
     resetApprovalView("Loading pending decisions for this team.", "Loading", "loading");
@@ -3453,9 +3458,13 @@
     // hold the status stream open while it still owes us a terminal state.
     if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
 
-    const [agentsResult, economicsResult, economicsBreakdownsResult, sessionSpendResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult, teamRepositoriesResult, teamInitiativesResult] = await Promise.allSettled([
+    const [agentsResult, economicsResult, economicsDailyResult, economicsBreakdownsResult, sessionSpendResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult, teamRepositoriesResult, teamInitiativesResult] = await Promise.allSettled([
       apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
       apiRequest("economics", { scopeType: "team", scopeId: team.id }),
+      // The same period as the summary above it: an empty reporting_period asks
+      // for the organization's current subscription period, which is what every
+      // other figure on this screen reports.
+      apiRequest("economics_daily", { scopeType: "team", scopeId: team.id }),
       loadEconomicsBreakdowns(team.id),
       // The per-run cut of the same ledger. It is its own read because the
       // group-by selector on Economics chooses one dimension at a time and
@@ -3482,6 +3491,7 @@
     if (generation !== session.workspaceGeneration || team.id !== session.selectedTeamId) return;
     renderAgentsResult(agentsResult, team.id);
     renderEconomicsResult(economicsResult, team.id);
+    renderEconomicsDailyResult(economicsDailyResult, team.id);
     renderEconomicsBreakdownsResult(economicsBreakdownsResult);
     renderSessionSpendResult(sessionSpendResult, team.id);
     renderTeamCreditResults(creditBalanceResult, creditControlResult, team.id);
@@ -8518,6 +8528,9 @@
   }
 
   function resetEconomicsView(message, label, tone = "") {
+    // A stale plot beside an emptied summary would claim a period that the
+    // screen has just said it cannot report.
+    if (ui.economicsDailyPanel) ui.economicsDailyPanel.hidden = true;
     replaceActivityProjections("cost:", []);
     session.economicsBreakdowns = new Map();
     session.selectedEconomicsGroup = "operation";
@@ -8768,6 +8781,118 @@
     } finally {
       ui.creditControlSubmit.textContent = "Save budget control";
       if (session.creditControl) updateCreditControlSummary();
+    }
+  }
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  // A fixed viewBox scaled by CSS width. Geometry goes in attributes because
+  // this page's style-src forbids element.style, so every colour is a class.
+  const SPEND_PLOT = { w: 720, h: 208, left: 8, right: 712, top: 16, base: 168, labels: 190 };
+
+  function svgEl(name, attributes) {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+    return node;
+  }
+
+  function resetEconomicsDailyView(why, kind = "pending") {
+    if (!ui.economicsDailyPanel) return;
+    ui.economicsDailyPanel.hidden = false;
+    if (ui.economicsDailyLegend) ui.economicsDailyLegend.hidden = true;
+    if (ui.economicsDailyMeta) ui.economicsDailyMeta.textContent = "";
+    setDataState(ui.economicsDailyChart, kind, why);
+  }
+
+  // ListEconomicsDaily says a client "must never infer a gap as zero or a zero
+  // as a gap", so the two are drawn differently and on purpose: a day the server
+  // returned as zero gets a baseline tick — a measured nothing, visible — while a
+  // day the server did not return is simply not on the axis. A flat line across
+  // an absent range would be the platform inventing data it was never given.
+  function renderEconomicsDailyResult(result, teamId) {
+    if (!ui.economicsDailyPanel || !ui.economicsDailyChart) return;
+    if (result.status === "rejected") {
+      resetEconomicsDailyView(apiErrorMessage(result.reason, "The day-by-day series could not be read, so none is drawn. This is not a period without spend — the record exists and this browser did not get it."), "unavailable");
+      return;
+    }
+    const days = Array.isArray(result.value?.days) ? result.value.days : [];
+    if (!days.length) {
+      resetEconomicsDailyView("No day has been metered in this billing period yet. Each day your team works becomes a bar here, with the running total for the period across it.", "pending");
+      return;
+    }
+
+    const points = days.map((bucket) => ({
+      day: timestampDate(bucket.day),
+      micros: Number(bucket.creditsUsedMicros || 0)
+    })).filter((point) => point.day);
+    if (!points.length) {
+      resetEconomicsDailyView("The series came back without usable dates, so nothing is plotted rather than plotted wrongly.", "unavailable");
+      return;
+    }
+
+    const peak = Math.max(...points.map((p) => p.micros));
+    const total = points.reduce((sum, p) => sum + p.micros, 0);
+    const { w, h, left, right, top, base, labels } = SPEND_PLOT;
+    const span = right - left;
+    const slot = span / points.length;
+    const barWidth = Math.max(2, Math.min(28, slot * 0.62));
+
+    const plot = svgEl("svg", {
+      viewBox: `0 0 ${w} ${h}`, width: "100%", role: "img",
+      "aria-label": `Credits used per day for this billing period: ${points.length} ${points.length === 1 ? "day" : "days"}, ${formatCreditMicros(String(total))} credits in total.`
+    });
+    plot.setAttribute("class", "ec-plot");
+
+    plot.append(svgEl("line", { class: "ec-axis", x1: left, y1: base, x2: right, y2: base }));
+
+    // Bars carry the daily figure. With no spend at all there is no peak to
+    // scale against, so every day is a measured zero and all of them get the
+    // baseline tick rather than a division by zero.
+    const cumulative = [];
+    let running = 0;
+    points.forEach((point, index) => {
+      running += point.micros;
+      cumulative.push(running);
+      const x = left + slot * index + (slot - barWidth) / 2;
+      if (peak > 0 && point.micros > 0) {
+        const height = Math.max(1.5, ((base - top) * point.micros) / peak);
+        plot.append(svgEl("rect", { class: "ec-bar", x, y: base - height, width: barWidth, height, rx: 1.5 }));
+      } else {
+        plot.append(svgEl("rect", { class: "ec-bar ec-bar--zero", x, y: base - 1.5, width: barWidth, height: 1.5 }));
+      }
+    });
+
+    // The running total rides its own scale — it ends at the period total, which
+    // is by definition larger than any single day. Both maxima are printed, so
+    // the two scales are stated rather than left for the reader to infer.
+    if (total > 0) {
+      const path = points.map((point, index) => {
+        const x = left + slot * index + slot / 2;
+        const y = base - ((base - top) * cumulative[index]) / total;
+        return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+      plot.append(svgEl("path", { class: "ec-cumulative", d: path, fill: "none" }));
+    }
+
+    // First and last day, and nothing between: a label per bar is unreadable at
+    // a month's width and the meta line already carries the period.
+    const dayLabel = (date) => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+    const firstLabel = svgEl("text", { class: "ec-label", x: left, y: labels, "text-anchor": "start" });
+    firstLabel.textContent = dayLabel(points[0].day);
+    plot.append(firstLabel);
+    if (points.length > 1) {
+      const lastLabel = svgEl("text", { class: "ec-label", x: right, y: labels, "text-anchor": "end" });
+      lastLabel.textContent = dayLabel(points[points.length - 1].day);
+      plot.append(lastLabel);
+    }
+
+    ui.economicsDailyChart.hidden = false;
+    ui.economicsDailyChart.replaceChildren(plot);
+    ui.economicsDailyPanel.hidden = false;
+    if (ui.economicsDailyLegend) ui.economicsDailyLegend.hidden = false;
+    if (ui.economicsDailyMeta) {
+      // UTC is stated because the contract pins the buckets to UTC midnight and
+      // forbids relabelling them into a local calendar without saying so.
+      ui.economicsDailyMeta.textContent = `${points.length} ${points.length === 1 ? "day" : "days"} · busiest ${formatCreditMicros(String(peak))} · ${formatCreditMicros(String(total))} total · days are UTC`;
     }
   }
 

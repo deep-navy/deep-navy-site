@@ -735,3 +735,30 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
      three segments in a 358px bar truncate to initials, which name nothing. */
   .cs-topbar .dn-crumbs > :not(.dn-crumbs__current) { display: none; }
 }
+
+/* ---- spend over time ----
+   The design system's chart chrome (.dn-chart__frame/head/body/legend) around a
+   plot drawn as SVG. Chart.js was never vendored and this page's style-src
+   forbids both a CDN and element.style, so geometry rides on SVG attributes and
+   every colour is a class resolved here — which also means the plot follows the
+   theme like the rest of the console instead of being painted once at draw time. */
+.economics-spend { margin-top: var(--space-4); }
+.economics-spend-plot { min-height: 0; }
+.ec-plot { display: block; width: 100%; height: auto; overflow: visible; }
+.ec-axis { stroke: var(--viz-grid); stroke-width: 1; }
+.ec-bar { fill: var(--viz-2); }
+/* A day the server reported as ZERO, which is a measurement and not an absence.
+   It keeps the bar's colour and width so it reads as a counted day; only its
+   height says nothing happened. A day the server did not return is not drawn at
+   all — the contract forbids inferring one from the other, so they must not
+   look alike. */
+.ec-bar--zero { fill: var(--viz-grid); }
+.ec-cumulative { stroke: var(--viz-3); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.ec-label {
+  fill: var(--text-tertiary);
+  font: var(--fw-regular) var(--fs-micro)/1 var(--font-mono);
+}
+/* The legend swatches. .dn-chart__swatch paints from --dn-key, which is normally
+   set inline; style-src forbids that here, so each key names its own. */
+.dn-chart__swatch--spend { --dn-key: var(--viz-2); }
+.dn-chart__swatch--cumulative { --dn-key: var(--viz-3); }

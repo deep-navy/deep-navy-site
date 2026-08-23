@@ -862,6 +862,33 @@
             <div><dt>Credits remaining</dt><dd data-economics-credits-remaining></dd></div>
           </dl>
           <p class="measured-note" data-economics-measured hidden></p>
+
+          <!-- Spend over time. ListEconomicsDaily returns one bucket per UTC day
+               for the current subscription period, and says in the contract that
+               it "includes days with no usage as explicit zero buckets" and that
+               a client "must never infer a gap as zero or a zero as a gap". So
+               the series is plotted exactly as given: a day the server called
+               zero is drawn as a measured zero, and a period the server did not
+               return at all is an absence with a reason, never a flat line.
+
+               Drawn as SVG rather than Chart.js: the design system's chart chrome
+               was written against a library we never vendored, and this page's
+               style-src forbids both a CDN and element.style. Geometry goes in
+               SVG attributes; every colour is a class resolved in console.css,
+               so the plot follows the theme like everything else. -->
+          <section class="dn-chart__frame economics-spend" data-economics-daily-panel hidden aria-labelledby="economics-daily-title">
+            <div class="dn-chart__head">
+              <strong class="dn-chart__title" id="economics-daily-title">Spend over time</strong>
+              <span class="dn-chart__meta" data-economics-daily-meta></span>
+            </div>
+            <div class="dn-chart__body">
+              <div class="dn-chart economics-spend-plot" data-economics-daily-chart></div>
+            </div>
+            <div class="dn-chart__legend" data-economics-daily-legend hidden>
+              <span class="dn-chart__key"><i class="dn-chart__swatch dn-chart__swatch--spend"></i>Credits used that day</span>
+              <span class="dn-chart__key"><i class="dn-chart__swatch dn-chart__swatch--cumulative"></i>Running total for the period</span>
+            </div>
+          </section>
           <section class="economics-breakdown" data-economics-breakdown hidden aria-labelledby="economics-breakdown-title">
             <div class="credit-pack-heading">
               <div><span class="eyebrow">Measured allocation</span><strong id="economics-breakdown-title">Cost and credit breakdown</strong></div>
