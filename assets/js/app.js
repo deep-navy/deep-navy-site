@@ -105,6 +105,16 @@
     agentsState: document.querySelector("[data-agents-state]"),
     agentsEmpty: document.querySelector("[data-agents-empty]"),
     agentList: document.querySelector("[data-agent-list]"),
+    statStrip: document.querySelector("[data-stat-strip]"),
+    statObjectives: document.querySelector("[data-stat-objectives]"),
+    statObjectivesNote: document.querySelector("[data-stat-objectives-note]"),
+    statCredits: document.querySelector("[data-stat-credits]"),
+    statCreditsFill: document.querySelector("[data-stat-credits-fill]"),
+    statCreditsNote: document.querySelector("[data-stat-credits-note]"),
+    statDelivery: document.querySelector("[data-stat-delivery]"),
+    statDeliveryNote: document.querySelector("[data-stat-delivery-note]"),
+    statAgents: document.querySelector("[data-stat-agents]"),
+    statAgentsNote: document.querySelector("[data-stat-agents-note]"),
     conversationState: document.querySelector("[data-conversation-state]"),
     conversationEmpty: document.querySelector("[data-conversation-empty]"),
     consoleTitle: document.querySelector("[data-console-title]"),
@@ -335,6 +345,10 @@
     deliveryLoadGeneration: 0,
     githubIssueLastSort: null,
     githubPullRequestLastSort: null,
+    // Canonical role keys for the server-confirmed roster, in roster order.
+    // The stat strip counts presence over these with the same liveness the
+    // crew tiles read, so the number and the glow always agree.
+    agentRoster: [],
     objectivesByTeam: new Map(),
     objectiveListsByTeam: new Map(),
     objectiveDispatchTimer: null,
@@ -3101,6 +3115,9 @@
       renderGitHubPullRequestsResult(pullRequestsResult, team.id, deliveryRepository, "", false);
     }
     renderCreditPackControls();
+    // The instrument strip reads what the renders above just accepted, so it
+    // paints last, under the same generation guard they all sat behind.
+    renderStatStrip();
   }
 
   function renderPendingTeamGuidance(team) {
@@ -3125,6 +3142,8 @@
     syncProvisioningSnapshot(team);
     resetObjectiveView(deleting ? headline : "Write your objective once the team is active — the Product Manager turns it into acceptance criteria for the engineers.");
     setSourceState(ui.objectiveState, label);
+    // A pending team has no readings; the strip hides itself.
+    renderStatStrip();
   }
 
   function resetWorkspaceViews(message) {
@@ -3144,6 +3163,7 @@
     resetWorkspaceHistoryView(message, "Waiting");
     resetDeliveryHistoryView(message, "Waiting");
     resetObjectiveView(message);
+    renderStatStrip();
   }
 
   function setEmptyState(element, title, message) {
@@ -3384,11 +3404,13 @@
       session.objectiveListsByTeam.delete(stringValue(teamId));
       resetObjectiveView(apiErrorMessage(result.reason, "Durable objectives could not be loaded for this team."));
       setSourceState(ui.objectiveState, "Unavailable", "error");
+      renderStatStrip();
       return;
     }
     session.objectiveListsByTeam.set(stringValue(teamId), result.value);
     session.objectiveDispatchCheckedAt = new Date();
     renderObjectiveView(teamId, generation);
+    renderStatStrip();
   }
 
   // Delivery of an objective is a server-side state machine — queued →
@@ -4273,6 +4295,7 @@
   }
 
   function resetAgentView(message, label, tone = "") {
+    session.agentRoster = [];
     ui.agentList.replaceChildren();
     ui.agentList.hidden = true;
     ui.agentsEmpty.hidden = false;
@@ -4356,6 +4379,9 @@
       row.append(dot, copy);
       ui.agentList.append(row);
     });
+    // Role keys, not agent ids: liveness is measured per role, so the three
+    // engineers light together in the strip exactly as their tiles do.
+    session.agentRoster = resolvedRoles.map((role) => role.key);
     ui.agentsEmpty.hidden = true;
     ui.agentList.hidden = false;
     setSourceState(ui.agentsState, agents.length === 6 ? "6/6 roles" : `${agents.length}/6 provisioning`, agents.length === 6 ? "success" : "loading");
@@ -4447,6 +4473,8 @@
     // crew tiles do, so it re-evaluates whenever they do — a PM that goes
     // quiet takes the shimmer down with the tile's glow.
     renderConversationTyping();
+    // The strip's presence cell ages with the tiles for the same reason.
+    renderStatStrip();
     if (!ui.agentList || ui.agentList.hidden) return;
     ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
       const roleKey = row.dataset.roleKey;
@@ -4494,6 +4522,92 @@
     if (ui.railSpendValue) ui.railSpendValue.textContent = formatCreditMicros(consumed);
     setGaugeWidth(ui.railSpendFill, percent);
     if (ui.railSpendNote) ui.railSpendNote.textContent = `${formatCreditMicros(remaining)} remaining`;
+  }
+
+  // ── The instrument strip ──────────────────────────────────────────────
+  // Four readings over the crew - proof, money, delivery, presence - fed
+  // entirely from state the workspace refresh already fetched. It renders at
+  // the tail of the same generation-guarded fan-out its sibling renders sit
+  // behind, and again whenever one of its sources repaints, so it can never
+  // say something the panels below it do not.
+
+  // GitHub check-run conclusions arrive verbatim, never remapped. Anything
+  // terminal that is not a pass fails the objective's latest acceptance
+  // observation; neutral and skipped assert nothing either way.
+  function failingAcceptance(objective) {
+    const conclusion = stringValue(objective?.acceptance?.conclusion).toLowerCase();
+    return Boolean(conclusion) && !["success", "neutral", "skipped"].includes(conclusion);
+  }
+
+  function renderStatStrip() {
+    if (!ui.statStrip) return;
+    const team = selectedTeam();
+    if (!team || lifecycleLabel(team.state) !== "active") {
+      ui.statStrip.hidden = true;
+      return;
+    }
+    ui.statStrip.hidden = false;
+
+    // Objectives: satisfied_at is evidence, not lifecycle state - set while
+    // the latest acceptance run passes, cleared when a later run fails. A
+    // cleared proof with a failing observation is "regressed", a different
+    // fact from never-proven, and the strip refuses to fold the two.
+    const objectives = session.objectiveListsByTeam.get(session.selectedTeamId);
+    if (Array.isArray(objectives) && objectives.length) {
+      const proven = objectives.filter((objective) => Boolean(timestampDate(objective?.satisfiedAt))).length;
+      const regressed = objectives.filter((objective) => !timestampDate(objective?.satisfiedAt) && failingAcceptance(objective)).length;
+      ui.statObjectives.textContent = `${proven}/${objectives.length}`;
+      ui.statObjectivesNote.textContent = regressed ? `${regressed} regressed` : "proven by acceptance runs";
+    } else {
+      ui.statObjectives.textContent = "—";
+      ui.statObjectivesNote.textContent = Array.isArray(objectives) ? "no objectives yet" : "not loaded";
+    }
+
+    // Credits: the ledger balance is authoritative, the period spend comes
+    // from the same credit control the rail gauge reads, and the meter only
+    // moves on two real numbers - the rail's own rule about money.
+    const remaining = session.creditBalance;
+    const consumed = session.creditPeriodConsumed;
+    if (remaining !== null && remaining !== undefined) {
+      ui.statCredits.textContent = formatCreditMicros(remaining);
+      if (consumed !== null && consumed !== undefined) {
+        const total = Number(remaining) + Number(consumed);
+        ui.statCreditsNote.textContent = `${formatCreditMicros(consumed)} used this period`;
+        setGaugeWidth(ui.statCreditsFill, Number.isFinite(total) && total > 0 ? (Number(consumed) / total) * 100 : 0);
+      } else {
+        ui.statCreditsNote.textContent = "period spend not reported";
+        setGaugeWidth(ui.statCreditsFill, 0);
+      }
+    } else {
+      ui.statCredits.textContent = "—";
+      ui.statCreditsNote.textContent = "balance unavailable";
+      setGaugeWidth(ui.statCreditsFill, 0);
+    }
+
+    // Delivery: open counts from the webhook-backed snapshots, per side, so
+    // a half-loaded history shows a dash on the half it cannot vouch for.
+    const pullsLoaded = session.githubPullRequestsState === "loaded";
+    const issuesLoaded = session.githubIssuesState === "loaded";
+    if (pullsLoaded || issuesLoaded) {
+      const openPulls = session.githubPullRequests.filter((record) => githubPullRequestStateLabel(record?.state) === "open").length;
+      const openIssues = session.githubIssues.filter((record) => githubIssueStateLabel(record?.state) === "open").length;
+      ui.statDelivery.textContent = `${pullsLoaded ? openPulls.toString() : "—"} · ${issuesLoaded ? openIssues.toString() : "—"}`;
+      ui.statDeliveryNote.textContent = "open PRs · open issues";
+    } else {
+      ui.statDelivery.textContent = "—";
+      ui.statDeliveryNote.textContent = session.deliveryRepositoryId ? "delivery not loaded" : "no repository selected";
+    }
+
+    // Presence: the roster the tiles render, counted with the tiles' own
+    // liveness answer, so the number and the glow always agree.
+    if (session.agentRoster.length) {
+      const active = session.agentRoster.filter((roleKey) => ["working", "briefed"].includes(agentLiveness(roleKey).state)).length;
+      ui.statAgents.textContent = `${active}/${session.agentRoster.length}`;
+      ui.statAgentsNote.textContent = active ? "working now" : "waiting for work";
+    } else {
+      ui.statAgents.textContent = "—";
+      ui.statAgentsNote.textContent = "no roster loaded";
+    }
   }
 
   function agentRoleLabel(value) {
@@ -4661,6 +4775,7 @@
     ui.creditBalancePanel.hidden = false;
     ui.creditBalanceValue.textContent = formatCreditMicros(balance);
     renderRailSpend();
+    renderStatStrip();
     ui.creditBalanceMessage.textContent = "Signed grants minus settled usage for this team. Open reservations and the paid-period hard limit are separate execution guardrails below.";
     setSourceState(ui.creditBalanceState, "Verified", "success");
   }
@@ -4760,6 +4875,7 @@
     ui.creditPeriodConsumed.textContent = formatCreditMicros(control.periodConsumedMicros);
     session.creditPeriodConsumed = int64Value(control.periodConsumedMicros);
     renderRailSpend();
+    renderStatStrip();
     ui.creditHardLimit.textContent = formatCreditMicros(control.hardLimitMicros);
     ui.creditEffectiveAvailable.textContent = formatCreditMicros(control.effectiveAvailableMicros);
     ui.creditHardLimitInput.value = microsInputValue(control.hardLimitMicros);
@@ -5985,6 +6101,7 @@
       ui.issuesMore.title = apiErrorMessage(error, "Issue history was rejected because it was invalid.");
     }
     updateDeliveryHistoryState();
+    renderStatStrip();
   }
 
   function renderGitHubPullRequestsResult(result, teamId, repository, requestedToken, append) {
@@ -6033,6 +6150,7 @@
       ui.pullRequestsMore.title = apiErrorMessage(error, "Pull-request history was rejected because it was invalid.");
     }
     updateDeliveryHistoryState();
+    renderStatStrip();
   }
 
   async function reloadGitHubDelivery() {

@@ -270,6 +270,37 @@
           </header>
 
           <div class="wspace">
+            <!-- The instrument strip: four readings over the crew - proof,
+                 money, delivery, presence - fed entirely from responses the
+                 workspace refresh already holds, so nothing here costs a
+                 request. Proven counts satisfied_at evidence rather than
+                 lifecycle state, and a failing acceptance run after a proof
+                 reads as regressed, which is a different fact from
+                 never-proven. -->
+            <section class="statstrip" data-stat-strip hidden aria-label="Team instruments">
+              <div class="statcell">
+                <span class="statcell-label">Objectives proven</span>
+                <strong class="statcell-value" data-stat-objectives>—</strong>
+                <span class="statcell-note" data-stat-objectives-note></span>
+              </div>
+              <div class="statcell">
+                <span class="statcell-label">Credits remaining</span>
+                <strong class="statcell-value" data-stat-credits>—</strong>
+                <span class="statcell-meter" aria-hidden="true"><i data-stat-credits-fill></i></span>
+                <span class="statcell-note" data-stat-credits-note></span>
+              </div>
+              <div class="statcell">
+                <span class="statcell-label">Open PRs · issues</span>
+                <strong class="statcell-value" data-stat-delivery>—</strong>
+                <span class="statcell-note" data-stat-delivery-note></span>
+              </div>
+              <div class="statcell">
+                <span class="statcell-label">Agents active</span>
+                <strong class="statcell-value" data-stat-agents>—</strong>
+                <span class="statcell-note" data-stat-agents-note></span>
+              </div>
+            </section>
+
             <!-- The crew, full width and first. Each tile carries what that
                  agent is doing right now, taken from the activity stream, so
                  the screen answers "is anything happening" without a click. -->

@@ -1242,6 +1242,28 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    came for, and an ellipsis in a 210px tile hid the verb. */
 .app-body .crew-copy .crew-doing { white-space: normal; font-size: .66rem; line-height: 1.45; margin-top: .3rem; }
 
+/* ── The instrument strip ──────────────────────────────────────────
+   Four readings over the crew: proof, money, delivery, presence.
+   Rack-panel grammar - mono numerals in tabular figures under 11px
+   uppercase micro-labels, hairlines between cells, no boxes inside
+   boxes - the same face as the instrument layer below. The meter's
+   fill declares no width here: the CSSOM gauge rule owns it, because
+   style-src 'self' refuses style attributes. */
+.statstrip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-bottom: 1.45rem; border: 1px solid var(--line); }
+.statstrip[hidden] { display: none; }
+.statcell { display: grid; gap: .35rem; align-content: start; min-width: 0; padding: .8rem .9rem .75rem; border-right: 1px solid var(--line); }
+.statcell:last-child { border-right: 0; }
+.statcell-label { font-family: var(--font-mono); font-size: .62rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.statcell-value { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--text-bright); }
+.statcell-note { font-family: var(--font-mono); font-size: .66rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.statcell-meter { display: block; width: 100%; max-width: 120px; height: 2px; background: var(--line); overflow: hidden; }
+.statcell-meter > i { display: block; height: 100%; background: var(--accent-graphic); }
+@media (max-width: 900px) {
+  .statstrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .statcell:nth-child(2n) { border-right: 0; }
+  .statcell:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+}
+
 @media (max-width: 900px) {
   .app-body .wspace-grid { grid-template-columns: 1fr; }
   .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; }
