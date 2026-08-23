@@ -350,7 +350,7 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
    width query the system does not already own. The three stops are 1200, 900
    and 600 and no others.
 
-   The floor's grammar, top to bottom: a headline block whose h1 is the
+   The floor's grammar, top to bottom: a headline block whose title is the
    OBJECTIVE (a team's name is a label for a slot, not the work), a four-up
    instrument strip, then two columns — the work on the left, the Product
    Manager and the stream on the right. */
@@ -367,7 +367,9 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
 .cs-head-copy { min-width: 0; display: grid; gap: var(--space-15); }
 .cs-head-copy > * { margin: 0; }
 /* The objective, at display size. It wraps to a readable measure rather than
-   running the width of the column — a business objective is a sentence. */
+   running the width of the column — a business objective is a sentence. The
+   size is this class's, not the tag's: the element is an h2 like every other
+   view title, because the shell is one document holding five screens. */
 .cs-h1 {
   max-width: 26ch;
   font: var(--type-h1);
@@ -583,7 +585,12 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
 @media (max-width: 600px) {
   .cs-topbar { gap: var(--space-2); padding: 0 var(--space-3); }
   .cs-head { flex-direction: column; align-items: stretch; }
-  .cs-head-actions > .dn-btn { flex: 1; }
+  /* Grow from the label, never from zero. `flex: 1` gives every button the
+     same zero basis, so on a 390px phone "Answer the PM" was allotted 104px
+     for 116px of text and its label ran straight out through the button's own
+     border. An auto basis lets the row wrap instead, which is the one thing a
+     wrapping row is for. */
+  .cs-head-actions > .dn-btn { flex: 1 1 auto; }
   .cs-h1 { font-size: var(--fs-3xl); }
   .cs-stats { grid-template-columns: minmax(0, 1fr); padding: var(--space-4); }
   .cs-stats > .dn-stat + .dn-stat {

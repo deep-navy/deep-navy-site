@@ -477,7 +477,12 @@
           <header class="cs-head">
             <div class="cs-head-copy">
               <p class="dn-eyebrow"><span data-context-team>Team workspace</span> · <span data-objective-eyebrow>the team's objective</span></p>
-              <h1 class="cs-h1" id="workspace-overview-title" data-team-headline>Choose a team</h1>
+              <!-- h2, like every other view's title, and NOT an h1: the app
+                   shell ships all five screens in one document, so a second h1
+                   here gives the page two — which check_site.rb refuses and a
+                   screen reader reads as two documents. The display size is the
+                   class's job, not the tag's. -->
+              <h2 class="cs-h1" id="workspace-overview-title" data-team-headline>Choose a team</h2>
               <!-- The measure, in the system's mono, because it is a reading
                    and not a sentence. Absent rather than invented when the
                    objective carries no KPI the platform can read. -->
@@ -497,6 +502,13 @@
               <span class="provisioning-fill" data-provisioning-fill></span>
             </div>
             <p class="provisioning-copy" aria-live="polite"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
+            <!-- A build that stopped is an event that happened in the
+                 provisioning pipeline and is over, which is what makes it a
+                 Notice rather than a Callout: it carries a source, a time and a
+                 code, and this screen is only reporting it. Built in app.js
+                 from the NOTICE_LEVELS ladder, so the word and the glyph beside
+                 it are the same ones every other severity surface uses. -->
+            <div class="provisioning-notice" data-provisioning-notice hidden></div>
           </div>
 
           <!-- Four readings over the crew — proof, money, delivery, presence —
