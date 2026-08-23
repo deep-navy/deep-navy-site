@@ -1269,6 +1269,66 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; }
 }
 
+/* ── The agent detail view ─────────────────────────────────────────
+   One crew member, in full. The crew tile is its door - a real button
+   now, so it resets to the row it always looked like and keeps the
+   keyboard. The hero names the agent; the counters reuse the statstrip
+   grammar; both histories reuse the ledger's own list face. */
+.app-body button.crew-row { width: 100%; font: inherit; color: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.app-body button.crew-row:hover { background: var(--accent-a05); }
+.app-body button.crew-row:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: -2px; }
+
+.agent-return { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; }
+.agent-hero { display: flex; gap: 1.1rem; align-items: flex-start; padding-bottom: 1.3rem; border-bottom: 1px solid var(--line); }
+.agent-monogram.user-avatar { width: 64px; height: 64px; font-size: 1.5rem; border-radius: var(--ra-lg, 8px); }
+.agent-hero-copy { min-width: 0; display: grid; gap: .3rem; }
+.agent-eyebrow { margin: 0; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.agent-name { margin: 0; font-size: var(--t-xl, 1.6rem); line-height: 1.1; letter-spacing: -.02em; }
+.agent-role-sentence { margin: .1rem 0 0; color: var(--muted); font-size: .86rem; line-height: 1.55; max-width: 62ch; }
+.agent-chips { display: flex; flex-wrap: wrap; gap: .45rem; margin: .5rem 0 0; }
+.agent-chip { display: inline-flex; align-items: center; padding: .16rem .55rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: var(--muted-bright); }
+.agent-chip[hidden] { display: none; }
+.agent-chip.is-on { color: var(--aqua); border-color: var(--accent-a24); background: var(--accent-a08); }
+.agent-chip-mono { text-transform: none; letter-spacing: .02em; }
+
+.agent-counters { margin-top: 1.3rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) {
+  .agent-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .agent-counters .statcell:last-child { border-bottom: 0; }
+}
+
+.agent-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .85fr); gap: 0; align-items: start; margin-top: 1.4rem; }
+.agent-main { min-width: 0; display: grid; gap: 1.6rem; }
+.agent-side { min-width: 0; display: grid; gap: 1.4rem; padding-left: 1.6rem; border-left: 1px solid var(--line); }
+@media (max-width: 900px) {
+  .agent-grid { grid-template-columns: 1fr; }
+  .agent-side { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; margin-top: 1.4rem; }
+}
+.agent-panel { min-width: 0; }
+.agent-panel .log-head { margin-bottom: .6rem; }
+.agent-doing-line { margin: 0; }
+/* The doing panel widens the tile's one-line ellipsis back into prose. */
+.agent-panel .crew-doing { white-space: normal; overflow: visible; text-overflow: clip; font-size: .72rem; line-height: 1.5; color: var(--muted-bright); }
+.agent-spend { margin: 0; font-family: var(--font-mono); font-size: .72rem; line-height: 1.6; color: var(--muted-bright); font-variant-numeric: tabular-nums; }
+
+/* The doing panel's dot answers the same liveness question the tiles do. */
+[data-agent-doing-panel] .crew-dot { margin-top: 0; align-self: center; }
+[data-agent-doing-panel].is-on .crew-dot { background: var(--aqua); opacity: 1; box-shadow: 0 0 0 1px var(--accent-a24), 0 0 12px -2px var(--accent-a35); animation: crew-breathe 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  [data-agent-doing-panel].is-on .crew-dot { animation: none; }
+}
+
+/* Role colour is identity, never state: in this app it appears only on the
+   monogram that names the agent, scoped by the roster's own role key. The
+   three engineer staff roles and the repeatable engineer share one azure. */
+.user-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); background: rgb(var(--role-pm-rgb) / .13); border: 1px solid rgb(var(--role-pm-rgb) / .32); }
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); background: rgb(var(--role-em-rgb) / .13); border: 1px solid rgb(var(--role-em-rgb) / .32); }
+.user-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); background: rgb(var(--role-design-rgb) / .13); border: 1px solid rgb(var(--role-design-rgb) / .32); }
+.user-avatar[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.user-avatar[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.user-avatar[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); background: rgb(var(--role-eng-rgb) / .13); border: 1px solid rgb(var(--role-eng-rgb) / .32); }
+
 /* Team lifecycle is not work. It sits under the floor, quiet. */
 .wfoot { margin-top: 1.7rem; padding-top: 1.2rem; border-top: 1px solid var(--line); opacity: .62; transition: opacity .24s ease; }
 .wfoot:hover, .wfoot:focus-within { opacity: 1; }

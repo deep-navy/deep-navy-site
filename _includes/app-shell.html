@@ -485,6 +485,97 @@
           <p class="wctx">This team's work and log are on the main screen.</p>
         </section>
 
+        <!-- ===== AGENT ===== -->
+        <section class="wview" data-view="agent" id="workspace-agent" aria-labelledby="workspace-agent-title">
+          <!-- One crew member, in full. Opened from their tile on the floor.
+               Identity comes from the roster response the workspace already
+               holds; sessions and code changes are fetched for this agent
+               alone; the activity slice is cut client-side from the one team
+               stream — this view never opens a second stream. Spend reads the
+               per-agent row of the breakdown the economics view already
+               loaded, so nothing here invents a number. -->
+          <div class="agent-return">
+            <a class="button button-quiet button-small" data-view-link="overview" href="#workspace-overview">Back to the floor</a>
+            <span class="data-source-badge" data-agent-state>Waiting</span>
+          </div>
+
+          <!-- The stale-id state: a team update can replace agents, and a
+               remembered tile may point at someone who is no longer on the
+               roster. Calm sentence, one door back. -->
+          <div class="empty-state" data-agent-missing hidden><strong>This agent is no longer on the crew</strong><p>A team update can replace crew members; the work they shipped stays on the team record. Your current crew is on the floor.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Back to the floor</a></div>
+
+          <div class="agent-detail" data-agent-body hidden>
+            <header class="agent-hero">
+              <span class="user-avatar agent-monogram" data-agent-monogram aria-hidden="true">·</span>
+              <div class="agent-hero-copy">
+                <p class="agent-eyebrow" data-agent-eyebrow>Crew member</p>
+                <h2 class="agent-name" id="workspace-agent-title" data-agent-name>Crew member</h2>
+                <p class="agent-role-sentence" data-agent-description></p>
+                <p class="agent-chips">
+                  <span class="agent-chip" data-agent-liveness>—</span>
+                  <span class="agent-chip agent-chip-mono" data-agent-model hidden></span>
+                  <span class="agent-chip agent-chip-mono" data-agent-heartbeat hidden></span>
+                </p>
+              </div>
+            </header>
+
+            <!-- Three readings, every one from data already on this screen:
+                 counts of the two histories below, and the measured credit
+                 figure from the per-agent breakdown row. Nothing here is a
+                 number the server did not report. -->
+            <section class="statstrip agent-counters" data-agent-counters aria-label="Agent readings">
+              <div class="statcell">
+                <span class="statcell-label">Sessions</span>
+                <strong class="statcell-value" data-agent-count-sessions>—</strong>
+                <span class="statcell-note" data-agent-count-sessions-note></span>
+              </div>
+              <div class="statcell">
+                <span class="statcell-label">Code changes</span>
+                <strong class="statcell-value" data-agent-count-changes>—</strong>
+                <span class="statcell-note" data-agent-count-changes-note></span>
+              </div>
+              <div class="statcell">
+                <span class="statcell-label">Credits used</span>
+                <strong class="statcell-value" data-agent-count-spend>—</strong>
+                <span class="statcell-note" data-agent-count-spend-note></span>
+              </div>
+            </section>
+
+            <div class="agent-grid">
+              <div class="agent-main">
+                <section class="agent-panel" aria-labelledby="agent-activity-title">
+                  <div class="log-head"><h3 id="agent-activity-title">Latest activity</h3></div>
+                  <div class="empty-state" data-agent-activity-empty><strong>Quiet right now</strong><p>This is the live slice of the team stream. What this agent does appears here the moment it happens; the recorded histories below never go away.</p></div>
+                  <ol class="customer-activity-list" data-agent-activity-list hidden></ol>
+                </section>
+
+                <section class="agent-panel" aria-labelledby="agent-sessions-title">
+                  <div class="log-head"><h3 id="agent-sessions-title">Sessions</h3><span class="data-source-badge" data-agent-sessions-state>Waiting</span></div>
+                  <div class="empty-state" data-agent-sessions-empty><strong>No sessions yet</strong><p>A session is one stretch of work on one assignment, recorded from start to finish. They begin when this agent picks up work — and work starts with what you tell your Product Manager.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview">Talk to your Product Manager</a></div>
+                  <ol class="agent-record-list" data-agent-sessions-list hidden></ol>
+                </section>
+
+                <section class="agent-panel" aria-labelledby="agent-changes-title">
+                  <div class="log-head"><h3 id="agent-changes-title">Code changes</h3><span class="data-source-badge" data-agent-changes-state>Waiting</span></div>
+                  <div class="empty-state" data-agent-changes-empty><strong>No code changes yet</strong><p>Every file this agent touches is recorded here, with a server-sanitized diff and the counts of what was added and removed.</p></div>
+                  <ol class="agent-record-list" data-agent-changes-list hidden></ol>
+                </section>
+              </div>
+
+              <aside class="agent-side">
+                <section class="agent-panel" data-agent-doing-panel aria-labelledby="agent-doing-title">
+                  <div class="log-head"><h3 id="agent-doing-title">Doing now</h3><i class="crew-dot" aria-hidden="true"></i></div>
+                  <p class="crew-doing agent-doing-line" data-agent-doing>Nothing on the stream right now.</p>
+                </section>
+                <section class="agent-panel" aria-labelledby="agent-spend-title">
+                  <div class="log-head"><h3 id="agent-spend-title">Measured spend</h3></div>
+                  <p class="agent-spend" data-agent-spend>No measured breakdown loaded.</p>
+                </section>
+              </aside>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== ECONOMICS ===== -->
         <section class="wview" data-view="economics" id="workspace-economics" aria-labelledby="workspace-economics-title">
           <div class="wview-head">

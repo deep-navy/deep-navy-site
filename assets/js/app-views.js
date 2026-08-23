@@ -33,7 +33,9 @@
   const firstrunEyebrow = document.querySelector("[data-firstrun-eyebrow]");
   const teamInput = document.querySelector('[data-team-form] input[name="teamName"]');
 
-  const VIEWS = ["overview", "activity", "economics", "approvals", "settings"];
+  // "agent" has no sidebar link of its own: its doors are the crew tiles
+  // app.js stamps after every roster response, plus the in-view way back.
+  const VIEWS = ["overview", "activity", "economics", "approvals", "settings", "agent"];
   let currentView = "overview";
   let newTeamRequested = false;
   let teamCountAtRequest = 0;
@@ -93,6 +95,31 @@
       if (main) main.scrollTop = 0;
     });
   });
+
+  // The crew tiles are rendered by app.js after every roster response, so
+  // the agent door is delegated: any click landing inside a tile that carries
+  // data-agent-open switches to the agent view. app.js reads the same dataset
+  // on the same click to decide WHICH agent the view shows; this router only
+  // decides which surface is on screen - the separation both files keep.
+  const agentList = document.querySelector("[data-agent-list]");
+  if (agentList) {
+    agentList.addEventListener("click", (event) => {
+      const tile = event.target instanceof Element ? event.target.closest("[data-agent-open]") : null;
+      if (!tile) return;
+      setView("agent");
+      const main = document.querySelector(".wsmain");
+      if (main) main.scrollTop = 0;
+    });
+  }
+
+  // A different team is a different roster, so an open agent record would be
+  // another team's person. Go back to the floor; app.js clears the id.
+  const teamSelect = document.querySelector("[data-team-select]");
+  if (teamSelect) {
+    teamSelect.addEventListener("change", () => {
+      if (currentView === "agent") setView("overview");
+    });
+  }
 
   if (newTeamButton) {
     newTeamButton.addEventListener("click", () => {

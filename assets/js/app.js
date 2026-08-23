@@ -105,6 +105,33 @@
     agentsState: document.querySelector("[data-agents-state]"),
     agentsEmpty: document.querySelector("[data-agents-empty]"),
     agentList: document.querySelector("[data-agent-list]"),
+    agentDetailState: document.querySelector("[data-agent-state]"),
+    agentMissing: document.querySelector("[data-agent-missing]"),
+    agentBody: document.querySelector("[data-agent-body]"),
+    agentMonogram: document.querySelector("[data-agent-monogram]"),
+    agentEyebrow: document.querySelector("[data-agent-eyebrow]"),
+    agentName: document.querySelector("[data-agent-name]"),
+    agentDescription: document.querySelector("[data-agent-description]"),
+    agentLivenessChip: document.querySelector("[data-agent-liveness]"),
+    agentModel: document.querySelector("[data-agent-model]"),
+    agentHeartbeat: document.querySelector("[data-agent-heartbeat]"),
+    agentCountSessions: document.querySelector("[data-agent-count-sessions]"),
+    agentCountSessionsNote: document.querySelector("[data-agent-count-sessions-note]"),
+    agentCountChanges: document.querySelector("[data-agent-count-changes]"),
+    agentCountChangesNote: document.querySelector("[data-agent-count-changes-note]"),
+    agentCountSpend: document.querySelector("[data-agent-count-spend]"),
+    agentCountSpendNote: document.querySelector("[data-agent-count-spend-note]"),
+    agentActivityEmpty: document.querySelector("[data-agent-activity-empty]"),
+    agentActivityList: document.querySelector("[data-agent-activity-list]"),
+    agentSessionsState: document.querySelector("[data-agent-sessions-state]"),
+    agentSessionsEmpty: document.querySelector("[data-agent-sessions-empty]"),
+    agentSessionsList: document.querySelector("[data-agent-sessions-list]"),
+    agentChangesState: document.querySelector("[data-agent-changes-state]"),
+    agentChangesEmpty: document.querySelector("[data-agent-changes-empty]"),
+    agentChangesList: document.querySelector("[data-agent-changes-list]"),
+    agentDoingPanel: document.querySelector("[data-agent-doing-panel]"),
+    agentDoing: document.querySelector("[data-agent-doing]"),
+    agentSpend: document.querySelector("[data-agent-spend]"),
     statStrip: document.querySelector("[data-stat-strip]"),
     statObjectives: document.querySelector("[data-stat-objectives]"),
     statObjectivesNote: document.querySelector("[data-stat-objectives-note]"),
@@ -349,6 +376,18 @@
     // The stat strip counts presence over these with the same liveness the
     // crew tiles read, so the number and the glow always agree.
     agentRoster: [],
+    // The server-confirmed roster records, kept verbatim so the agent detail
+    // view renders identity without a request of its own.
+    agents: [],
+    // The open agent record. Cleared on team switch and on every workspace
+    // reset: an agent id is only meaningful inside its team.
+    selectedAgentId: "",
+    agentDetailGeneration: 0,
+    // null = not loaded (a dash, never a zero); an array is a served answer.
+    agentSessions: null,
+    agentChanges: null,
+    agentSessionsMore: false,
+    agentChangesMore: false,
     objectivesByTeam: new Map(),
     objectiveListsByTeam: new Map(),
     objectiveDispatchTimer: null,
@@ -3141,6 +3180,10 @@
     resetDeliveryHistoryView(headline, label);
     syncProvisioningSnapshot(team);
     resetObjectiveView(deleting ? headline : "Write your objective once the team is active — the Product Manager turns it into acceptance criteria for the engineers.");
+    // A team without an active roster has no agent record to keep open - a
+    // re-provision can replace every agent id.
+    session.selectedAgentId = "";
+    resetAgentDetailView(headline, label);
     setSourceState(ui.objectiveState, label);
     // A pending team has no readings; the strip hides itself.
     renderStatStrip();
@@ -3163,6 +3206,9 @@
     resetWorkspaceHistoryView(message, "Waiting");
     resetDeliveryHistoryView(message, "Waiting");
     resetObjectiveView(message);
+    // An agent id is only meaningful inside its team's workspace.
+    session.selectedAgentId = "";
+    resetAgentDetailView(message);
     renderStatStrip();
   }
 
@@ -4296,6 +4342,7 @@
 
   function resetAgentView(message, label, tone = "") {
     session.agentRoster = [];
+    session.agents = [];
     ui.agentList.replaceChildren();
     ui.agentList.hidden = true;
     ui.agentsEmpty.hidden = false;
@@ -4343,9 +4390,16 @@
       // over JSON; stringValue() turned that into "2" and neither branch matched,
       // so every agent read as not-active and no dot ever lit.
       const active = lifecycleLabel(agent.state) === "active";
-      const row = document.createElement("div");
+      // The tile is a real door now, not a readout: a button that opens the
+      // agent's own view. The id used to be discarded here; it rides the
+      // tile's dataset so the click handler and the view router read the
+      // same click without either trusting render order.
+      const row = document.createElement("button");
+      row.type = "button";
       row.className = active ? "crew-row is-on" : "crew-row";
       row.dataset.roleKey = canonicalRole.key;
+      row.dataset.agentId = stringValue(agent.id);
+      row.dataset.agentOpen = "true";
       const dot = document.createElement("i");
       dot.className = "crew-dot";
       dot.setAttribute("aria-hidden", "true");
@@ -4382,9 +4436,14 @@
     // Role keys, not agent ids: liveness is measured per role, so the three
     // engineers light together in the strip exactly as their tiles do.
     session.agentRoster = resolvedRoles.map((role) => role.key);
+    session.agents = agents;
     ui.agentsEmpty.hidden = true;
     ui.agentList.hidden = false;
     setSourceState(ui.agentsState, agents.length === 6 ? "6/6 roles" : `${agents.length}/6 provisioning`, agents.length === 6 ? "success" : "loading");
+    // A fresh roster can rename, replace, or drop the agent whose record is
+    // open. Repaint the identity from what the server just confirmed - a
+    // synchronous re-read of held state, never a request.
+    if (session.selectedAgentId) renderAgentIdentity();
   }
 
   // The newest customer-visible event for one role, phrased as an activity
@@ -4475,6 +4534,9 @@
     renderConversationTyping();
     // The strip's presence cell ages with the tiles for the same reason.
     renderStatStrip();
+    // So do the agent view's liveness chip, "doing now" line and activity
+    // slice - same sources, same beat, and a no-op while the view is empty.
+    renderAgentDetailLive();
     if (!ui.agentList || ui.agentList.hidden) return;
     ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
       const roleKey = row.dataset.roleKey;
@@ -4708,6 +4770,8 @@
       ui.economicsGroup.disabled = true;
       setSourceState(ui.economicsBreakdownState, "Unavailable", "error");
       renderSelectedEconomicsGroup();
+      renderAgentSpend();
+      renderAgentCounters();
       return;
     }
     session.economicsBreakdowns = result.value;
@@ -4725,6 +4789,10 @@
     const loaded = [...result.value.values()].filter((group) => group.status === "fulfilled").length;
     setSourceState(ui.economicsBreakdownState, loaded === economicsGroupDefinitions.length ? "Measured" : `${loaded}/${economicsGroupDefinitions.length} measured`, loaded ? "success" : "error");
     renderSelectedEconomicsGroup();
+    // The agent view's spend figure reads the same map; repaint it with the
+    // measurement it quotes.
+    renderAgentSpend();
+    renderAgentCounters();
   }
 
   function selectEconomicsGroup() {
@@ -5797,6 +5865,321 @@
     }
   }
 
+  // ── The agent detail view ─────────────────────────────────────────────
+  // One crew member, in full. Identity comes from the roster response the
+  // workspace refresh already confirmed; sessions and code changes are the
+  // same snapshot services the team log projects, asked for this agent
+  // alone; the activity slice is cut client-side from the one team stream;
+  // and spend is the per-agent row of the breakdown the economics view
+  // already loaded. The view therefore costs exactly two requests, and
+  // never a second stream.
+
+  // The crew, described the way the floor's own copy describes them: third
+  // person, present tense, GitHub's verbs. One sentence per role.
+  const engineerRoleSentence = "Picks up issues the Engineering Manager assigns, writes the code, and opens a pull request. Reviews teammates' pull requests - every merge needs two engineer approvals.";
+  const agentRoleSentences = Object.freeze({
+    AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER: "Turns what you say matters into the plan: interviews you, writes the PRD for your sign-off, and files the issues the engineers pick up.",
+    AGENT_ROLE_ENGINEERING_MANAGER: "Breaks the plan into assignments, routes each issue to an engineer, and reviews every pull request before it can merge.",
+    AGENT_ROLE_PRODUCT_DESIGNER: "Answers interface questions before they become rework and publishes the designs the issues link to.",
+    AGENT_ROLE_STAFF_CLIENT: engineerRoleSentence,
+    AGENT_ROLE_STAFF_BACKEND: engineerRoleSentence,
+    AGENT_ROLE_STAFF_PLATFORM: engineerRoleSentence,
+    AGENT_ROLE_ENGINEER: engineerRoleSentence
+  });
+
+  // The whole tile is the door, and the id travels on the tile's own
+  // dataset - the handler reads the click's nearest tile rather than
+  // trusting render order or a captured index.
+  function crewTileAgentId(target) {
+    const tile = target && typeof target.closest === "function" ? target.closest("[data-agent-open]") : null;
+    return tile && tile.dataset ? stringValue(tile.dataset.agentId) : "";
+  }
+
+  function openAgentFromCrew(event) {
+    const agentId = crewTileAgentId(event.target);
+    if (!agentId) return;
+    session.selectedAgentId = agentId;
+    refreshSelectedAgent();
+  }
+
+  function resetAgentDetailView(message, label = "Waiting", tone = "") {
+    session.agentDetailGeneration += 1;
+    session.agentSessions = null;
+    session.agentChanges = null;
+    session.agentSessionsMore = false;
+    session.agentChangesMore = false;
+    if (ui.agentBody) ui.agentBody.hidden = true;
+    if (ui.agentMissing) {
+      ui.agentMissing.hidden = false;
+      setEmptyState(ui.agentMissing, "No agent open", message);
+    }
+    setSourceState(ui.agentDetailState, label, tone);
+    if (ui.agentActivityList) { ui.agentActivityList.replaceChildren(); ui.agentActivityList.hidden = true; }
+    if (ui.agentActivityEmpty) ui.agentActivityEmpty.hidden = false;
+    if (ui.agentSessionsList) { ui.agentSessionsList.replaceChildren(); ui.agentSessionsList.hidden = true; }
+    if (ui.agentSessionsEmpty) ui.agentSessionsEmpty.hidden = false;
+    setSourceState(ui.agentSessionsState, label, tone);
+    if (ui.agentChangesList) { ui.agentChangesList.replaceChildren(); ui.agentChangesList.hidden = true; }
+    if (ui.agentChangesEmpty) ui.agentChangesEmpty.hidden = false;
+    setSourceState(ui.agentChangesState, label, tone);
+    renderAgentCounters();
+  }
+
+  // Identity, synchronously, from the roster the workspace already holds.
+  // Returns the confirmed record, or null - which is the stale-id state: a
+  // team update can replace agents, and a remembered tile may point at
+  // someone who is no longer on the roster.
+  function renderAgentIdentity() {
+    if (!ui.agentBody || !ui.agentMissing) return null;
+    const agentId = session.selectedAgentId;
+    if (!agentId) return null;
+    const agent = session.agents.find((candidate) => stringValue(candidate?.id) === agentId) || null;
+    if (!agent) {
+      ui.agentBody.hidden = true;
+      ui.agentMissing.hidden = false;
+      setEmptyState(ui.agentMissing, "This agent is no longer on the crew", "A team update can replace crew members; the work they shipped stays on the team record. Your current crew is on the floor.");
+      setSourceState(ui.agentDetailState, "Not on the roster");
+      return null;
+    }
+    const role = agentRoleContract?.canonicalAgentRole?.(agent.role) || null;
+    const roleLabel = role?.label || "Crew member";
+    const rawName = stringValue(agent.name);
+    const name = rawName && rawName.length <= 80 && !/[\u0000-\u001f\u007f]/.test(rawName) ? rawName : roleLabel;
+    if (ui.agentMonogram) {
+      ui.agentMonogram.textContent = (name.slice(0, 1) || "·").toUpperCase();
+      if (role) ui.agentMonogram.dataset.roleKey = role.key;
+      else delete ui.agentMonogram.dataset.roleKey;
+    }
+    const team = selectedTeam();
+    if (ui.agentEyebrow) ui.agentEyebrow.textContent = team && stringValue(team.name) ? `${roleLabel} · ${stringValue(team.name)}` : roleLabel;
+    if (ui.agentName) ui.agentName.textContent = name;
+    if (ui.agentDescription) ui.agentDescription.textContent = agentRoleSentences[role?.key] || "Works on your team.";
+    if (ui.agentModel) {
+      const model = stringValue(agent.modelAlias).slice(0, 64);
+      ui.agentModel.hidden = !model;
+      ui.agentModel.textContent = model;
+    }
+    if (ui.agentHeartbeat) {
+      const heard = timestampDate(agent.lastHeartbeatAt);
+      ui.agentHeartbeat.hidden = !heard;
+      ui.agentHeartbeat.textContent = heard ? `checked in ${relativeTime(heard)}` : "";
+    }
+    ui.agentMissing.hidden = true;
+    ui.agentBody.hidden = false;
+    renderAgentDetailLive();
+    return agent;
+  }
+
+  // The live half of the view: the liveness chip, the "doing now" line and
+  // the activity slice all age with the crew tiles, from the same sources.
+  // Liveness is measured per role, exactly as the tiles measure it, so
+  // engineers who share a role light together here as they do on the floor.
+  function renderAgentDetailLive() {
+    if (!ui.agentBody || ui.agentBody.hidden) return;
+    const roleKey = ui.agentMonogram?.dataset.roleKey || "";
+    const agent = session.agents.find((candidate) => stringValue(candidate?.id) === session.selectedAgentId) || null;
+    const live = roleKey ? agentLiveness(roleKey) : { state: "quiet", since: "" };
+    const idleLine = agent && lifecycleLabel(agent.state) === "active" ? "waiting for work" : (lifecycleLabel(agent?.state) || "state not reported").toLowerCase();
+    const on = ["working", "briefed"].includes(live.state);
+    if (ui.agentLivenessChip) {
+      ui.agentLivenessChip.textContent = crewStatusLine(live, idleLine);
+      ui.agentLivenessChip.classList.toggle("is-on", on);
+    }
+    if (ui.agentDoingPanel) ui.agentDoingPanel.classList.toggle("is-on", on);
+    if (ui.agentDoing) ui.agentDoing.textContent = (roleKey && latestActivityForRole(roleKey)) || "Nothing on the stream right now.";
+    renderAgentActivity();
+  }
+
+  // This agent's slice of the team stream, cut client-side from the same
+  // buffer the team log renders and built by the same row builder - never a
+  // second stream, never a different phrasing of the same event.
+  function renderAgentActivity() {
+    if (!ui.agentActivityList || !ui.agentActivityEmpty) return;
+    const agentId = session.selectedAgentId;
+    const slice = [];
+    for (let index = session.activityEvents.length - 1; index >= 0 && slice.length < 40; index -= 1) {
+      const entry = session.activityEvents[index];
+      if (agentId && stringValue(entry.agentId) === agentId) slice.push(entry);
+    }
+    const turns = groupActivityTurns(slice);
+    const shown = turns.map((turn) => {
+      const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
+      return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
+    });
+    ui.agentActivityList.replaceChildren();
+    shown.forEach(({ entry, evidence }) => ui.agentActivityList.append(activityLedgerItem(entry, evidence)));
+    ui.agentActivityEmpty.hidden = shown.length > 0;
+    ui.agentActivityList.hidden = shown.length === 0;
+  }
+
+  function renderAgentSessionsResult(result, teamId, agentId) {
+    if (!ui.agentSessionsList || !ui.agentSessionsEmpty) return;
+    session.agentSessions = null;
+    session.agentSessionsMore = false;
+    ui.agentSessionsList.replaceChildren();
+    ui.agentSessionsList.hidden = true;
+    ui.agentSessionsEmpty.hidden = false;
+    if (result.status === "rejected") {
+      setEmptyState(ui.agentSessionsEmpty, "Sessions unavailable", apiErrorMessage(result.reason, "Session history could not be loaded for this agent."));
+      setSourceState(ui.agentSessionsState, "Unavailable", "error");
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.sessions) ? result.value.sessions : [];
+      if (records.length > 50) throw new ApiError("SessionService returned an oversized page", 0, "invalid_response", "");
+      const seen = new Set();
+      const entries = records.map((record) => {
+        // The filter travelled on the request; a record for anyone else is
+        // the service ignoring it, and the view fails closed rather than
+        // captioning another agent's work with this one's name.
+        if (safeOpaqueId(record?.agentId) !== agentId) throw new ApiError("SessionService returned a session outside the requested agent scope", 0, "invalid_response", "");
+        const entry = sessionHistoryEntry(record, teamId);
+        if (seen.has(entry.id)) throw new ApiError("SessionService returned a duplicate session", 0, "invalid_response", "");
+        seen.add(entry.id);
+        return entry;
+      });
+      entries.sort((left, right) => activityEntryTime(right) - activityEntryTime(left));
+      session.agentSessions = entries;
+      session.agentSessionsMore = Boolean(opaquePageToken(result.value?.page?.nextPageToken));
+      entries.forEach((entry) => ui.agentSessionsList.append(activityLedgerItem(entry, "")));
+      ui.agentSessionsEmpty.hidden = entries.length > 0;
+      ui.agentSessionsList.hidden = entries.length === 0;
+      setSourceState(ui.agentSessionsState, entries.length ? `${entries.length} loaded` : "No sessions", entries.length ? "success" : "");
+    } catch (error) {
+      session.agentSessions = null;
+      session.agentSessionsMore = false;
+      ui.agentSessionsList.replaceChildren();
+      ui.agentSessionsList.hidden = true;
+      ui.agentSessionsEmpty.hidden = false;
+      setEmptyState(ui.agentSessionsEmpty, "Sessions rejected", apiErrorMessage(error, "Session history was rejected because it was invalid."));
+      setSourceState(ui.agentSessionsState, "Invalid response", "error");
+    }
+  }
+
+  function renderAgentChangesResult(result, teamId, agentId) {
+    if (!ui.agentChangesList || !ui.agentChangesEmpty) return;
+    session.agentChanges = null;
+    session.agentChangesMore = false;
+    ui.agentChangesList.replaceChildren();
+    ui.agentChangesList.hidden = true;
+    ui.agentChangesEmpty.hidden = false;
+    if (result.status === "rejected") {
+      setEmptyState(ui.agentChangesEmpty, "Code changes unavailable", apiErrorMessage(result.reason, "Workspace changes could not be loaded for this agent."));
+      setSourceState(ui.agentChangesState, "Unavailable", "error");
+      return;
+    }
+    try {
+      const records = Array.isArray(result.value?.changes) ? result.value.changes : [];
+      if (records.length > 50) throw new ApiError("WorkspaceService returned an oversized page", 0, "invalid_response", "");
+      const seen = new Set();
+      let previousSequence = 0n;
+      const entries = records.map((record) => {
+        if (safeOpaqueId(record?.agentId) !== agentId) throw new ApiError("WorkspaceService returned a change outside the requested agent scope", 0, "invalid_response", "");
+        const entry = workspaceHistoryEntry(record, teamId, previousSequence);
+        if (seen.has(entry.id)) throw new ApiError("WorkspaceService returned a duplicate change", 0, "invalid_response", "");
+        seen.add(entry.id);
+        previousSequence = entry.sequence;
+        return entry;
+      });
+      const ordered = entries.slice().sort((left, right) => activityEntryTime(right) - activityEntryTime(left));
+      session.agentChanges = ordered;
+      session.agentChangesMore = Boolean(opaquePageToken(result.value?.page?.nextPageToken));
+      ordered.forEach((entry) => ui.agentChangesList.append(activityLedgerItem(entry, "")));
+      ui.agentChangesEmpty.hidden = ordered.length > 0;
+      ui.agentChangesList.hidden = ordered.length === 0;
+      setSourceState(ui.agentChangesState, ordered.length ? `${ordered.length} loaded` : "No changes", ordered.length ? "success" : "");
+    } catch (error) {
+      session.agentChanges = null;
+      session.agentChangesMore = false;
+      ui.agentChangesList.replaceChildren();
+      ui.agentChangesList.hidden = true;
+      ui.agentChangesEmpty.hidden = false;
+      setEmptyState(ui.agentChangesEmpty, "Code changes rejected", apiErrorMessage(error, "Workspace changes were rejected because they were invalid."));
+      setSourceState(ui.agentChangesState, "Invalid response", "error");
+    }
+  }
+
+  // Spend is the per-agent row of the server-calculated breakdown the team
+  // refresh already loaded (groupBy agent - each row carries the agent's own
+  // id in scope.id). No request, and no invented number: an absent grouping
+  // says "not measured", never zero.
+  function agentSpendRecord() {
+    const result = session.economicsBreakdowns.get("agent");
+    if (!result || result.status !== "fulfilled") return null;
+    return result.value.records.find((record) => stringValue(record?.scope?.id) === session.selectedAgentId) || null;
+  }
+
+  function renderAgentSpend() {
+    if (!ui.agentSpend || !session.selectedAgentId) return;
+    const result = session.economicsBreakdowns.get("agent");
+    if (!result || result.status !== "fulfilled") {
+      ui.agentSpend.textContent = result ? "The measured per-agent breakdown is unavailable right now." : "No measured breakdown loaded yet.";
+      return;
+    }
+    const record = agentSpendRecord();
+    if (!record) {
+      ui.agentSpend.textContent = "No usage has been attributed to this agent in the current paid period.";
+      return;
+    }
+    ui.agentSpend.textContent = `${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatCanonicalMoney(record.directCost)} measured cost · ${formatIntegerCount(record.usageEventCount)} usage events · measured ${relativeTime(result.value.measuredAt)}`;
+  }
+
+  // Three readings, every one from data already on this screen. A count the
+  // service has not answered yet is a dash and a sentence, never a zero, and
+  // a first page that has more behind it says so with a plus.
+  function renderAgentCounters() {
+    if (ui.agentCountSessions) {
+      const loaded = Array.isArray(session.agentSessions);
+      ui.agentCountSessions.textContent = loaded ? `${session.agentSessions.length}${session.agentSessionsMore ? "+" : ""}` : "—";
+      if (ui.agentCountSessionsNote) ui.agentCountSessionsNote.textContent = loaded ? (session.agentSessionsMore ? "more on the record" : "on the record") : "not loaded";
+    }
+    if (ui.agentCountChanges) {
+      const loaded = Array.isArray(session.agentChanges);
+      ui.agentCountChanges.textContent = loaded ? `${session.agentChanges.length}${session.agentChangesMore ? "+" : ""}` : "—";
+      if (ui.agentCountChangesNote) ui.agentCountChangesNote.textContent = loaded ? (session.agentChangesMore ? "more on the record" : "on the record") : "not loaded";
+    }
+    if (ui.agentCountSpend) {
+      const record = agentSpendRecord();
+      ui.agentCountSpend.textContent = record ? formatCreditMicros(record.creditsUsedMicros) : "—";
+      if (ui.agentCountSpendNote) ui.agentCountSpendNote.textContent = record ? "this paid period" : "not measured";
+    }
+  }
+
+  // The agent fan-out, under the same generation-guard discipline as
+  // refreshSelectedTeam: bump the generation first, render identity from
+  // held state, then let the two history requests settle - and accept their
+  // answers only if this is still the same agent, team and generation.
+  async function refreshSelectedAgent() {
+    const team = selectedTeam();
+    const agentId = session.selectedAgentId;
+    const generation = ++session.agentDetailGeneration;
+    session.agentSessions = null;
+    session.agentChanges = null;
+    session.agentSessionsMore = false;
+    session.agentChangesMore = false;
+    if (!team || !agentId) {
+      resetAgentDetailView("Choose a crew member on the floor to open their record.");
+      return;
+    }
+    const agent = renderAgentIdentity();
+    renderAgentSpend();
+    renderAgentCounters();
+    if (!agent) return;
+    setSourceState(ui.agentDetailState, "Loading", "loading");
+    setSourceState(ui.agentSessionsState, "Loading", "loading");
+    setSourceState(ui.agentChangesState, "Loading", "loading");
+    const [sessionsResult, changesResult] = await Promise.allSettled([
+      apiRequest("sessions", { teamId: team.id, agentId, page: { pageSize: 50 } }),
+      apiRequest("workspace_changes", { teamId: team.id, agentId, afterSequence: "0", page: { pageSize: 50 } })
+    ]);
+    if (generation !== session.agentDetailGeneration || agentId !== session.selectedAgentId || team.id !== session.selectedTeamId) return;
+    renderAgentSessionsResult(sessionsResult, team.id, agentId);
+    renderAgentChangesResult(changesResult, team.id, agentId);
+    renderAgentCounters();
+    const settled = [sessionsResult, changesResult].filter((result) => result.status === "fulfilled").length;
+    setSourceState(ui.agentDetailState, settled === 2 ? "Loaded" : settled ? "Partially loaded" : "Unavailable", settled === 2 ? "success" : "error");
+  }
+
   function resetDeliveryRecords(message, label, tone = "") {
     session.githubIssues = [];
     session.githubIssueIds = new Set();
@@ -6625,6 +7008,9 @@
       sequenceLabel: `Activity event ${sequence.toString()}`,
       occurredAt: event.occurredAt,
       agentRole: event.agentRole,
+      // The stream names the actor by id as well as by role; the agent view
+      // slices this same buffer by that id rather than opening a second stream.
+      agentId: stringValue(event.agentId),
       sessionId: stringValue(event.sessionId),
       objectiveId: stringValue(event.objectiveId),
       initiativeId: stringValue(event.initiativeId),
@@ -6897,6 +7283,95 @@
     return state === "building" ? "in progress" : "unassigned";
   }
 
+  // One ledger row, built the same way wherever it appears. The team log and
+  // the agent view's activity slice share this builder, so the two surfaces
+  // can never phrase the same event differently.
+  function activityLedgerItem(entry, evidence) {
+    const item = document.createElement("li");
+    item.className = "customer-activity-item";
+    const copy = document.createElement("div");
+    const title = document.createElement("strong");
+    const summary = document.createElement("p");
+    const meta = document.createElement("div");
+    meta.className = "customer-activity-meta";
+    // Lead with who is speaking and what they said. The old title was built
+    // from metadata - "A2A propose initiative", "Tool · deep navy assign
+    // work" - which described our event taxonomy rather than the work. The
+    // agent's own customer-safe sentence was already on the event and was
+    // being shown underneath that; now it is the entry.
+    const speaker = agentDisplayName(entry);
+    const roleLabel = entry.source === "runtime" ? agentRoleLabel(entry.agentRole) : "";
+    title.textContent = speaker ? `${speaker} · ${roleLabel}` : (stringValue(entry.title) || "Update");
+    summary.textContent = stringValue(entry.safeSummary) || stringValue(entry.title) || "No detail was reported.";
+    // Human context only. The raw resource UUIDs the sources attach read as
+    // machine telemetry in a customer timeline; anyone debugging still has
+    // them in the underlying responses. GitHub numbers stay - a customer
+    // recognizes "Issue #1" - and the marker glyph rides in the meta line
+    // now that the timeline spine replaced the marker column.
+    // Never our machinery. entry.source ("economics") and
+    // entry.sequenceLabel ("Activity event 13") were printed straight into
+    // the customer's timeline, along with a single-letter marker glyph. A
+    // customer's model is issues, pull requests and money.
+    const metaValues = [stringValue(entry.status)];
+    if (entry.githubIssueId) metaValues.push(`Issue ${entry.githubIssueId}`);
+    if (entry.pullRequestId) metaValues.push(`PR ${entry.pullRequestId}`);
+    metaValues.filter(Boolean).forEach((value) => {
+      const span = document.createElement("span");
+      span.textContent = value;
+      meta.append(span);
+    });
+    copy.append(title, summary);
+    if (entry.detail) {
+      const detail = document.createElement("p");
+      detail.className = "customer-activity-details";
+      detail.textContent = stringValue(entry.detail);
+      if (entry.artifactUrl) {
+        detail.append(document.createTextNode(" · "));
+        const link = document.createElement("a");
+        link.href = entry.artifactUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.referrerPolicy = "no-referrer";
+        link.textContent = "Open verified GitHub artifact";
+        detail.append(link);
+      }
+      copy.append(detail);
+    }
+    if (evidence) {
+      const line = document.createElement("p");
+      line.className = "customer-activity-evidence";
+      line.textContent = `↳ ${evidence}`;
+      copy.append(line);
+    }
+    if (entry.diffAvailability) {
+      const diff = document.createElement("details");
+      diff.className = "safe-diff";
+      const diffSummary = document.createElement("summary");
+      diffSummary.textContent = entry.diffAvailability === "available" ? "Review server-sanitized diff" : `Diff unavailable · ${entry.diffAvailability}`;
+      diff.append(diffSummary);
+      const diffNote = document.createElement("p");
+      diffNote.textContent = entry.diffAvailability === "available"
+        ? ["WorkspaceService returned customer-safe text only.", entry.diffRedacted ? "Sensitive-looking values were redacted." : "", entry.diffTruncated ? "The diff was truncated at the service boundary." : ""].filter(Boolean).join(" ")
+        : "WorkspaceService withheld the diff and returned this typed availability state.";
+      diff.append(diffNote);
+      if (entry.diffAvailability === "available" && entry.safeDiff) {
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = entry.safeDiff;
+        pre.append(code);
+        diff.append(pre);
+      }
+      copy.append(diff);
+    }
+    copy.append(meta);
+    const time = document.createElement("time");
+    const date = timestampDate(entry.occurredAt);
+    time.textContent = date ? relativeTime(date) : "Time not reported";
+    if (date) time.dateTime = date.toISOString();
+    item.append(copy, time);
+    return item;
+  }
+
   function renderActivityLedger() {
     renderActivityFilters();
     refreshCrewActivity();
@@ -6912,91 +7387,7 @@
       const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
       return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
     });
-    shown.forEach(({ entry, evidence }) => {
-    const item = document.createElement("li");
-    item.className = "customer-activity-item";
-    const copy = document.createElement("div");
-    const title = document.createElement("strong");
-    const summary = document.createElement("p");
-    const meta = document.createElement("div");
-    meta.className = "customer-activity-meta";
-      // Lead with who is speaking and what they said. The old title was built
-      // from metadata - "A2A propose initiative", "Tool · deep navy assign
-      // work" - which described our event taxonomy rather than the work. The
-      // agent's own customer-safe sentence was already on the event and was
-      // being shown underneath that; now it is the entry.
-      const speaker = agentDisplayName(entry);
-      const roleLabel = entry.source === "runtime" ? agentRoleLabel(entry.agentRole) : "";
-      title.textContent = speaker ? `${speaker} · ${roleLabel}` : (stringValue(entry.title) || "Update");
-      summary.textContent = stringValue(entry.safeSummary) || stringValue(entry.title) || "No detail was reported.";
-      // Human context only. The raw resource UUIDs the sources attach read as
-      // machine telemetry in a customer timeline; anyone debugging still has
-      // them in the underlying responses. GitHub numbers stay - a customer
-      // recognizes "Issue #1" - and the marker glyph rides in the meta line
-      // now that the timeline spine replaced the marker column.
-      // Never our machinery. entry.source ("economics") and
-      // entry.sequenceLabel ("Activity event 13") were printed straight into
-      // the customer's timeline, along with a single-letter marker glyph. A
-      // customer's model is issues, pull requests and money.
-      const metaValues = [stringValue(entry.status)];
-      if (entry.githubIssueId) metaValues.push(`Issue ${entry.githubIssueId}`);
-      if (entry.pullRequestId) metaValues.push(`PR ${entry.pullRequestId}`);
-      metaValues.filter(Boolean).forEach((value) => {
-      const span = document.createElement("span");
-      span.textContent = value;
-      meta.append(span);
-    });
-      copy.append(title, summary);
-      if (entry.detail) {
-        const detail = document.createElement("p");
-        detail.className = "customer-activity-details";
-        detail.textContent = stringValue(entry.detail);
-        if (entry.artifactUrl) {
-          detail.append(document.createTextNode(" · "));
-          const link = document.createElement("a");
-          link.href = entry.artifactUrl;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.referrerPolicy = "no-referrer";
-          link.textContent = "Open verified GitHub artifact";
-          detail.append(link);
-        }
-        copy.append(detail);
-      }
-      if (evidence) {
-        const line = document.createElement("p");
-        line.className = "customer-activity-evidence";
-        line.textContent = `↳ ${evidence}`;
-        copy.append(line);
-      }
-      if (entry.diffAvailability) {
-        const diff = document.createElement("details");
-        diff.className = "safe-diff";
-        const diffSummary = document.createElement("summary");
-        diffSummary.textContent = entry.diffAvailability === "available" ? "Review server-sanitized diff" : `Diff unavailable · ${entry.diffAvailability}`;
-        diff.append(diffSummary);
-        const diffNote = document.createElement("p");
-        diffNote.textContent = entry.diffAvailability === "available"
-          ? ["WorkspaceService returned customer-safe text only.", entry.diffRedacted ? "Sensitive-looking values were redacted." : "", entry.diffTruncated ? "The diff was truncated at the service boundary." : ""].filter(Boolean).join(" ")
-          : "WorkspaceService withheld the diff and returned this typed availability state.";
-        diff.append(diffNote);
-        if (entry.diffAvailability === "available" && entry.safeDiff) {
-          const pre = document.createElement("pre");
-          const code = document.createElement("code");
-          code.textContent = entry.safeDiff;
-          pre.append(code);
-          diff.append(pre);
-        }
-        copy.append(diff);
-      }
-      copy.append(meta);
-    const time = document.createElement("time");
-      const date = timestampDate(entry.occurredAt);
-    time.textContent = date ? relativeTime(date) : "Time not reported";
-    if (date) time.dateTime = date.toISOString();
-    item.append(copy, time);
-    ui.activityList.append(item);
-    });
+    shown.forEach(({ entry, evidence }) => ui.activityList.append(activityLedgerItem(entry, evidence)));
     ui.activityEmpty.hidden = entries.length > 0;
     ui.activityList.hidden = entries.length === 0;
     if (!entries.length && allEntries.length) {
@@ -8168,6 +8559,10 @@
   });
   if (ui.settingsRepositoriesApply) ui.settingsRepositoriesApply.addEventListener("click", applyTeamRepositories);
   ui.teamList.addEventListener("click", handleTeamLifecycleClick);
+  // Crew tiles are stamped per roster render; the door is delegated so it
+  // survives every repaint. app-views.js switches the surface on this same
+  // click; this handler decides WHICH agent the view shows.
+  ui.agentList.addEventListener("click", openAgentFromCrew);
   // The objective form left the shell when the console became the only ask.
   // Its pipeline remains for programmatic flows, so the listeners are guarded
   // rather than deleted - and the guard is not optional: an unguarded
@@ -8209,6 +8604,10 @@
   ui.refresh.addEventListener("click", refreshOnboarding);
   ui.teamSelect.addEventListener("change", () => {
     session.selectedTeamId = stringValue(ui.teamSelect.value);
+    // A different team is a different roster; the open agent record cannot
+    // survive the switch (app-views.js walks the view back to the floor).
+    session.selectedAgentId = "";
+    resetAgentDetailView("Choose a crew member on the floor to open their record.");
     refreshSelectedTeam();
   });
   ui.activityFilters.addEventListener("click", changeActivityFilter);

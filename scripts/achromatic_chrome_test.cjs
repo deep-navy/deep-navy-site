@@ -176,9 +176,12 @@ test("role and status hues exist, and never style base chrome", () => {
   assert.match(tokens, /--signal-crit-rgb:\s*var\(--coral-rgb\)/);
 
   // Any rule that paints with a hue token must be scoped to a state or a
-  // role. Base chrome — nav, buttons, cards, body — never qualifies.
+  // role. Base chrome — nav, buttons, cards, body — never qualifies. Role
+  // scoping is the roster's own key attribute: a selector pinned to
+  // [data-role-key=…] paints the monogram that names an agent, which is the
+  // second legitimate meaning this file's header describes.
   const HUE_REF = /var\(--(?:role-|signal-|lumen|kelp|brass|coral|amber|warning|warn-a|crit-a)/;
-  const STATE_SCOPED = /(data-tone|data-status|data-state|\.is-(?:blocked|live|on)\b|danger|voided|error|warn|wait|crit|status|\.del\b|\.add\b|\.pr-ok\b)/;
+  const STATE_SCOPED = /(data-tone|data-status|data-state|\[data-role-key=|\.is-(?:blocked|live|on)\b|danger|voided|error|warn|wait|crit|status|\.del\b|\.add\b|\.pr-ok\b)/;
   for (const [file, css] of [["main.css", main], ["home.css", home]]) {
     for (const { selector, body } of rules(css)) {
       for (const { prop, value } of declsOf(body)) {
