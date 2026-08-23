@@ -275,22 +275,22 @@ test("chrome labels are set in the machine's face, prose is not", () => {
 test("the homepage reads as a ledger, section by section", () => {
   const labels = [...index.matchAll(/<p class="lp-label">([^<]+)<\/p>/g)].map((m) => m[1]);
   assert.deepEqual(labels, [
-    "Unit of work", "The brief", "The roster", "The merge gate",
+    "Unit of work", "The brief", "The roster", "The merge gate", "Built to converge",
     "Your GitHub", "Metered spend", "Price", "Not on the ledger",
   ], "the refusals are the last word before the ask, and money stays contiguous");
-  assert.equal((index.match(/class="lp-facts[^"]*"/g) || []).length, 7);
-  assert.equal((index.match(/class="lp-verify"/g) || []).length, 6);
+  assert.equal((index.match(/class="lp-facts[^"]*"/g) || []).length, 8);
+  assert.equal((index.match(/class="lp-verify"/g) || []).length, 7);
   assert.doesNotMatch(
     index.slice(index.indexOf('<p class="lp-label">Not on the ledger</p>')),
     /class="lp-verify"/,
     "the refusals section must not claim a receipt it cannot produce");
   const figures = index.match(/<figure class="instrument-figure"[^>]*>/g) || [];
-  assert.equal(figures.length, 6);
+  assert.equal(figures.length, 7);
   for (const figure of figures) {
     assert.match(figure, /role="img"/);
     assert.match(figure, /aria-label="[^"]{50,}"/, "every drawing needs a real description, not a stub");
   }
-  assert.equal((index.match(/<pre aria-hidden="true">/g) || []).length, 6);
+  assert.equal((index.match(/<pre aria-hidden="true">/g) || []).length, 7);
   assert.equal((index.match(/<li><strong>/g) || []).length, 4);
 });
 

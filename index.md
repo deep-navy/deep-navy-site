@@ -1,10 +1,10 @@
 ---
 title: deep navy
 image: /assets/images/og/home.png
-description: An engineering team that reads your repository, writes the issues, builds them, and reviews its own pull requests before you merge.
+description: An engineering team that interviews you, writes the PRD you sign, then builds, reviews and merges under gates GitHub enforces — until every objective is proven by a passing run.
 body_class: home lp
 schema_type: Organization
-updated: 2026-08-17
+updated: 2026-08-22
 hide_cta: true
 extra_css: /assets/css/home.css
 ---
@@ -13,8 +13,8 @@ extra_css: /assets/css/home.css
   <div class="lp-shell lp-hero-grid">
     <div>
       <p class="lp-eyebrow"><span class="lp-live" aria-hidden="true"></span> Early access · founding teams</p>
-      <h1 class="lp-h1">Six specialists. <em>You're the one who merges</em>.</h1>
-      <p class="lp-lede">A product manager, an engineering manager, a product designer and three engineers, working in your own GitHub under your account. They agree the plan with you in writing, file the issues, build them, and review each other's pull requests. Nothing merges without two engineer approvals, the manager's, and yours.</p>
+      <h1 class="lp-h1">Six specialists. <em>You define done. They prove it</em>.</h1>
+      <p class="lp-lede">The product manager interviews you about the business objective and writes a PRD; nothing is filed until you sign it off. From there the team works on its own — engineers build, and GitHub's own ruleset refuses any merge without approvals from two engineers who did not write the change and the engineering manager, on the same commit. It keeps going until every objective is proven by a passing acceptance run.</p>
       <div class="lp-cta">
         <a class="lp-btn lp-btn-github" href="{{ '/app/?signin=1' | relative_url }}"><svg class="github-mark" width="20" height="20" viewBox="0 0 16 16" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>Continue with GitHub</a>
         <a class="lp-btn lp-btn-quiet" href="#how">See how work moves</a>
@@ -23,7 +23,7 @@ extra_css: /assets/css/home.css
     </div>
 
     <!-- The product makes pull requests, so the hero is a pull request. -->
-    <figure class="pr" aria-label="A pull request opened by a deep navy engineer">
+    <figure class="pr" aria-label="A pull request opened by a deep navy engineer, approved by two engineers who did not write it and the engineering manager, and merged">
       <div class="pr-top"><svg class="i" aria-hidden="true"><use href="#i-git-pull-request"/></svg><span>IamGoodBad/Purizumu</span><span>#284</span><span class="pr-merged"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> merged</span></div>
       <div class="pr-body">
         <h2 class="pr-title">Restore focus when a dialog closes</h2>
@@ -36,7 +36,7 @@ extra_css: /assets/css/home.css
         <div class="pr-reviews">
           <p class="pr-review"><b>Engineering Manager</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span></p>
           <p class="pr-review"><b>Engineer 1</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span> <span>— added a test for the escape key path.</span></p>
-          <p class="pr-review"><b>Product Designer</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span></p>
+          <p class="pr-review"><b>Engineer 3</b> <span class="pr-ok"><svg class="i" aria-hidden="true"><use href="#i-check-circle"/></svg> approved</span></p>
         </div>
       </div>
     </figure>
@@ -48,13 +48,13 @@ extra_css: /assets/css/home.css
     <p class="lp-label">Unit of work</p>
     <h2 class="lp-h2">What one pull request costs, and who signed it.</h2>
     <p class="lp-sub">A unit of work here is one pull request, and it leaves four facts behind. Nothing is rolled up into a score, a grade or a productivity number — the record stays at the size of the thing that happened.</p>
-      <figure class="instrument-figure" role="img" aria-label="An objective from you becomes an issue written by the product manager, then a branch and a pull request from an engineer, then reviews from two engineers and the manager, then a merge by you.">
-<pre aria-hidden="true">objective ──▶ issue ──▶ branch ──▶ pull request ──▶ review ──▶ <b>merge</b>
-<i>    you          PM         eng           eng          eng·eng·em      you</i></pre>
+      <figure class="instrument-figure" role="img" aria-label="An objective from the PRD you signed becomes an issue written by the product manager, then a branch and a pull request from an engineer. The review gate collects approvals from two engineers who did not write it and the manager, GitHub's ruleset merges it, the acceptance run executes on the merge, and a passing run marks the objective proven — a later failing run re-opens it.">
+<pre aria-hidden="true">objective ──▶ issue ──▶ branch ──▶ pull request ──▶ review gate ──▶ <b>merge</b> ──▶ acceptance run ──▶ <b>proven</b>
+<i>    you          PM         eng           eng         eng·eng·em       ruleset      every merge        revocable</i></pre>
       </figure>
     <ul class="lp-facts">
       <li><span class="lp-term">Produced</span> An issue, a branch and a pull request in your repository, with the diff attached. Not a summary of a change: the change.</li>
-      <li><span class="lp-term">Approved</span> Two engineer reviews plus the engineering manager, filed on the pull request and readable in your normal review view.</li>
+      <li><span class="lp-term">Approved</span> Two engineer reviews plus the engineering manager's, on the same commit, filed on the pull request and readable in your normal review view.</li>
       <li><span class="lp-term">Consumed</span> Model, compute, storage and service usage, reconciled into credits. <code>1 credit = $0.01</code>.</li>
       <li><span class="lp-term">Recorded</span> A ledger entry naming the team, the role that did the work, and the issue or pull request it belongs to, with the time it was measured.</li>
     </ul>
@@ -93,7 +93,7 @@ extra_css: /assets/css/home.css
       <li><span class="lp-term">You open</span> One sentence, in your own words. Nothing has been filed anywhere yet.</li>
       <li><span class="lp-term">It asks back</span> Who it is for, what is out of scope, what done looks like. You can tell it to leave something alone.</li>
       <li><span class="lp-term">A PRD returns</span> A written document with acceptance criteria, specific enough to argue with. Change it, or send it back.</li>
-      <li><span class="lp-term">You sign it off</span> Only then does it become a GitHub Project and a set of issues that read like tickets, because they are tickets.</li>
+      <li><span class="lp-term">You sign it off</span> The PRD locks as a GitHub discussion with its content hash certified; an edit before signing voids the sign-off automatically. Only then does it become a GitHub Project and a set of issues that read like tickets, because they are tickets.</li>
     </ul>
       <p class="lp-verify"><span>Where you check this</span><code>github.com/&lt;your-org&gt;/&lt;repo&gt;/issues</code></p>
   </div>
@@ -126,19 +126,41 @@ ENG3  ░░░░░░░<b>█████████</b>  reviewing #284</p
   <div class="lp-shell">
     <p class="lp-label">The merge gate</p>
     <h2 class="lp-h2">Nothing merges on one opinion.</h2>
-    <p class="lp-sub">Every pull request needs two engineer approvals and the engineering manager's before it can go anywhere. Then it needs yours. Four sign-offs on a change written by a machine, and the last one is a person's.</p>
-      <figure class="instrument-figure" role="img" aria-label="A pull request needs three approvals before it can merge: two engineers who did not write it, plus the engineering manager. The merge itself is yours.">
+    <p class="lp-sub">Every pull request needs approvals from two engineers who did not write it, plus the engineering manager's, on the same commit. That is not a promise we make — it is a repository ruleset in your GitHub, and GitHub itself refuses any merge without all three. When the gate is green, it merges, and the work moves on.</p>
+      <figure class="instrument-figure" role="img" aria-label="A pull request merges only when two engineers who did not write it and the engineering manager have approved the same commit. The quorum is a GitHub repository ruleset: GitHub itself refuses the merge without all three.">
 <pre aria-hidden="true">                   ┌─ engineer ─── <b>approved</b> ─┐
-  pull request ────┼─ engineer ─── <b>approved</b> ─┼──▶ <b>you merge</b>
+  pull request ────┼─ engineer ─── <b>approved</b> ─┼──▶ ┤ <b>ruleset</b> ├──▶ merge
                    └─ manager  ─── <b>approved</b> ─┘
-<i>                        three of three required</i></pre>
+<i>       three of three on the same commit — GitHub refuses the merge without them</i></pre>
       </figure>
     <ul class="lp-facts">
       <li><span class="lp-term">Two engineers</span> Peers who did not write it. A pull request that does not get both of them does not move.</li>
       <li><span class="lp-term">The manager</span> Checked against the acceptance criteria you signed off, not against a vibe.</li>
-      <li><span class="lp-term">No merge rights</span> The team opens, reviews and approves. Merging is not something it can do, and there is no setting that grants it.</li>
+      <li><span class="lp-term">No bypass</span> Merge rights are governed by the gate, not by trust. There is no setting that waives the quorum — not for the team, and not for us.</li>
     </ul>
-      <p class="lp-verify"><span>Where you check this</span><code>github.com/&lt;your-org&gt;/&lt;repo&gt;/pulls?q=review:approved</code></p>
+      <p class="lp-verify"><span>Where you check this</span><code>github.com/&lt;your-org&gt;/&lt;repo&gt;/settings/rules</code></p>
+  </div>
+</section>
+
+<section class="lp-section">
+  <div class="lp-shell">
+    <p class="lp-label">Built to converge</p>
+    <h2 class="lp-h2">No loop is open-ended.</h2>
+    <p class="lp-sub">The failure mode of agent tooling is drift: open-ended loops, a "done" nothing can verify, output nobody reviews. Here state advances when something real happens in your repositories — a check run lands, a review posts — never on an agent's belief that it is finished. Every stretch of autonomous work ends at a gate that either proves the work or refuses it, and gates do not have opinions.</p>
+      <figure class="instrument-figure" role="img" aria-label="Every stretch of autonomous work ends at a gate that either proves the work or refuses it. A proven objective hands off to the next; a refusal sends the work back. State advances on events from your repositories, never on an agent's belief.">
+<pre aria-hidden="true">autonomous work ──▶ ┤ <b>gate</b> ├──▶ <b>proven</b> ──▶ next objective
+        ▲               │
+        └── refused ◀───┘
+<i>   state advances on events from your repositories · never on belief</i></pre>
+      </figure>
+    <ul class="lp-facts">
+      <li><span class="lp-term">The merge gate</span> A repository ruleset requiring two non-author engineer approvals plus the manager's on the same commit. <code>deep-navy/review-gate</code> goes green or the merge is refused — by GitHub, not by a policy of ours.</li>
+      <li><span class="lp-term">The proof gate</span> Every business objective carries tagged acceptance scenarios that run on every merge to the default branch and publish <code>deep-navy/objective-&lt;id&gt;</code> as a check. Done is a passing run — and a later failing run un-proves it, which is exactly why proven means something.</li>
+      <li><span class="lp-term">The scope gate</span> The PRD you sign is locked as a GitHub discussion with a certified content hash. Edited before signing, the sign-off voids itself; the scope you agreed is the scope that runs.</li>
+      <li><span class="lp-term">The spend gate</span> Every request is attributed in a ledger down to agent, objective and pull request, and a hard budget stops new work cleanly at the ceiling while in-flight work completes.</li>
+      <li><span class="lp-term">On the record</span> The PRD, the issues, the reviews and the designs live in your GitHub, not in a chat history. Knowledge cannot leave when nothing lives in anyone's head.</li>
+    </ul>
+      <p class="lp-verify"><span>Where you check this</span><code>github.com/&lt;your-org&gt;/&lt;repo&gt;/pull/&lt;n&gt;/checks · deep-navy/review-gate</code></p>
   </div>
 </section>
 
@@ -156,7 +178,7 @@ members         ░░░░  <i>not requested</i></pre>
     <ul class="lp-facts">
       <li><span class="lp-term">Named, not bundled</span> An organization owner reviews the App's permissions and repository access on GitHub's own page. You then choose which repositories the team may work in.</li>
       <li><span class="lp-term">Readable history</span> Every commit, review and merge is in your git history with an author on it, readable with tools we have never heard of.</li>
-      <li><span class="lp-term">Cancelling stops the team</span> It does not take the issues, the branches or the history. Those were never anywhere else.</li>
+      <li><span class="lp-term">Cancelling stops the team</span> It does not take the PRD, the issues, the reviews or the designs. Delete a team and your repositories keep everything it ever wrote — the record stays because it never lived anywhere else, or in anyone's head.</li>
     </ul>
       <p class="lp-verify"><span>Where you check this</span><code>github.com/settings/installations</code></p>
   </div>
@@ -166,7 +188,7 @@ members         ░░░░  <i>not requested</i></pre>
   <div class="lp-shell">
     <p class="lp-label">Metered spend</p>
     <h2 class="lp-h2">A receipt for everything above this line.</h2>
-    <p class="lp-sub">A credit is one cent of billable model, compute, storage and service usage, and every credit is attributed to the work it bought. There is no overage: the team reserves credits before work starts, and when the balance runs out it stops and asks.</p>
+    <p class="lp-sub">A credit is one cent of billable model, compute, storage and service usage, and every credit is attributed to the agent, the objective and the pull request that spent it — "what did this pull request cost" is one query. There is no overage: the team reserves credits before work starts, and at the ceiling it stops new work and asks while in-flight work completes.</p>
       <figure class="instrument-figure" role="img" aria-label="Credit usage across one paid period, showing 18,750 credits used and 31,250 remaining of the 50,000 included.">
 <pre aria-hidden="true">     ┌──┐         ┌─┐             ┌────
 ─────┘  └─────────┘ └───┐  ┌───┐  ┌┘

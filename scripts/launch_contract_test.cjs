@@ -306,18 +306,22 @@ test("deleting a team reports its own progress instead of going silent", () => {
   assert.match(provisioningProgress({ operationType: 1, provisioningState: 4 }).message, /live/i);
 });
 
-test("the example run states the real pipeline and keeps the merge with the customer", () => {
+test("the example run states the real pipeline: you define done, the gates prove it", () => {
   const { objective, stages } = exampleRun();
   assert.ok(objective.length > 20, "the example objective must be a real sentence");
-  assert.equal(stages.length, 6);
-  assert.deepEqual(stages.map((stage) => stage.code), ["YOU", "PM", "EM", "ENG", "REV", "YOU"]);
-  // The product's core promise: agents never merge; the first and last word are
-  // the customer's. If the pipeline ever changes, this proof must change with it.
+  assert.equal(stages.length, 7);
+  assert.deepEqual(stages.map((stage) => stage.code), ["YOU", "PM", "YOU", "EM", "ENG", "REV", "RUN"]);
+  // The product's core promise: nothing is filed before the customer signs the
+  // PRD, the ruleset merges (never an agent's own say-so, never a bypass), and
+  // the last word is a passing acceptance run — revocable, so proven means
+  // something. If the pipeline ever changes, this proof must change with it.
   assert.equal(stages[0].actor, "You");
-  assert.equal(stages[stages.length - 1].actor, "You");
-  assert.match(stages[stages.length - 1].detail, /never merge/i);
+  assert.equal(stages[2].actor, "You");
+  assert.match(stages[2].detail, /voids the sign-off/i);
+  assert.match(stages[stages.length - 2].detail, /nothing merges without all three/i);
+  assert.match(stages[stages.length - 1].detail, /passing run proves/i);
   // Two peer reviews are what the three-engineer floor buys.
-  assert.match(stages[4].detail, /two independent reviews/i);
+  assert.match(stages[5].detail, /two independent reviews/i);
   for (const stage of stages) {
     for (const field of ["id", "actor", "code", "title", "detail", "artifact"]) {
       assert.equal(typeof stage[field], "string");
@@ -330,7 +334,7 @@ test("the example run script cannot be mutated by a caller", () => {
   const first = exampleRun();
   assert.throws(() => { "use strict"; first.stages.push({ id: "injected" }); });
   assert.throws(() => { "use strict"; first.stages[0].title = "tampered"; });
-  assert.equal(exampleRun().stages.length, 6);
+  assert.equal(exampleRun().stages.length, 7);
   assert.equal(exampleRun().stages[0].actor, "You");
 });
 
