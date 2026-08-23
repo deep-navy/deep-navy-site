@@ -26,7 +26,7 @@
 .lp-live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); animation: lp-breathe 2.6s ease-in-out infinite; }
 @keyframes lp-breathe { 0%, 100% { opacity: .5; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
 
-.lp-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.4rem, 5.4vw, 3.9rem); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 1.1rem; max-width: 16ch; text-wrap: balance; }
+.lp-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.4rem, 5.4vw, 3.9rem); line-height: 1.06; letter-spacing: -.028em; margin: 0 0 1.1rem; max-width: 16ch; text-wrap: balance; }
 .lp-h1 em { font-style: normal; color: var(--accent-text); }
 .lp-lede { font-size: var(--t-md); line-height: 1.6; color: var(--text-muted); max-width: 52ch; margin: 0 0 1.9rem; }
 
