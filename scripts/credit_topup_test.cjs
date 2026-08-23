@@ -335,9 +335,19 @@ test("a top-up funds the pool and is never sold as a fix for a team's own limit"
 
 test("the balance says where it came from, and guesses at nothing", () => {
   const credits = fn("renderBillingCredits");
-  assert.match(credits, /of which, included with your plan/);
-  assert.match(credits, /of which, bought automatically/);
-  assert.match(credits, /of which, bought by you/);
+  assert.match(credits, /Came from · your plan/);
+  assert.match(credits, /Came from · automatic top-ups/);
+  assert.match(credits, /Came from · packs you bought/);
+  // Adjacency is the point: rendered after "Used this period" these read as a
+  // decomposition of what was SPENT, not of the balance. The order is pinned.
+  // The array entries, not the prose above them — the comment explaining this
+  // rule names the same label and would otherwise match first.
+  const balanceAt = credits.indexOf('["Balance now",');
+  const cameFrom = credits.indexOf('["Came from · your plan",');
+  const usedAt = credits.indexOf('["Used this period",');
+  assert.ok(balanceAt !== -1 && cameFrom !== -1 && usedAt !== -1);
+  assert.ok(balanceAt < cameFrom && cameFrom < usedAt,
+    "the sources of the balance must sit between the balance and the spend, or they read as a breakdown of the spend");
   // Only counted from records actually read; an unavailable record is said to
   // be unavailable rather than counted as none.
   assert.match(credits, /session\.creditTopUpsState !== "loaded"/);

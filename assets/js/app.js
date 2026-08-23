@@ -8282,18 +8282,25 @@
     const granted = (Array.isArray(session.creditTopUps) ? session.creditTopUps : [])
       .filter((record) => creditTopUpStateShape(record?.state)?.word === "Granted");
     const toppedUpMicros = granted.reduce((total, record) => total + (int64Value(record?.creditMicros) ?? 0n), 0n);
+    // The provenance rows sit DIRECTLY under the balance and are labelled "Came
+    // from", not "of which". Rendered after "Used this period" and prefixed with
+    // an em dash they read as a decomposition of what was SPENT — so a customer
+    // saw "18,883 used" followed by "included with your plan: 10,000" and could
+    // reasonably conclude that ten thousand of the credits they had spent were
+    // free ones. They are sources of the BALANCE. Adjacency is the whole of what
+    // makes that legible, so the order is load-bearing rather than cosmetic.
     [
       ["Balance now", `${formatCreditMicros(remaining)} credits · ${formatCreditValue(remaining)}`],
-      ["Used this period", `${formatCreditMicros(used)} credits · ${formatCreditValue(used)}`],
-      ["— of which, included with your plan", included !== null && included > 0n
+      ["Came from · your plan", included !== null && included > 0n
         ? `${formatCreditMicros(included)} credits each billing period, granted once the period's invoice is paid`
         : "The plan did not report an included grant, so none is stated here."],
-      ["— of which, bought automatically", session.creditTopUpsState !== "loaded"
+      ["Came from · automatic top-ups", session.creditTopUpsState !== "loaded"
         ? "The automatic top-up record is unavailable, so none is counted."
         : granted.length
           ? `${formatCreditMicros(toppedUpMicros)} credits across ${granted.length} automatic top-up${granted.length === 1 ? "" : "s"} — listed under Automatic credit top-up`
           : "None. No automatic top-up has been granted."],
-      ["— of which, bought by you", "Any prepaid pack you buy yourself lands in the same shared pool. Each one is on an invoice below."],
+      ["Came from · packs you bought", "Any prepaid pack you buy yourself lands in the same shared pool. Each one is on an invoice below."],
+      ["Used this period", `${formatCreditMicros(used)} credits · ${formatCreditValue(used)}`],
       ["Measured", measured ? relativeTime(measured) : "Not reported"]
     ].forEach(([key, value]) => {
       const term = document.createElement("dt");
