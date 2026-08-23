@@ -244,10 +244,16 @@ test("an arriving row uses the system's own overshoot, not a second opinion", ()
 
 test("the last frame and the balance panel are one number, not two readings", () => {
   const append = between(app, "function appendCreditMovement(movement)", "function stopCreditMovementStream()");
-  // team_balance_after_micros is written THROUGH the panel above rather than
-  // beside it, so the two cannot drift apart: there is only one of them.
+  // organization_balance_after_micros is written THROUGH the panel above rather
+  // than beside it, so the two cannot drift apart: there is only one of them.
+  //
+  // This used to pin team_balance_after_micros, which was the same field
+  // confusion the panel itself had: the team-filtered sum is not what a team
+  // can spend, and writing it here dragged the balance to a routinely negative
+  // quantity the instant the first frame landed. scripts/credit_pool_scope_test.cjs
+  // holds the whole rule; this holds the stream's end of it.
   assert.match(append, /rollOdometer\(ui\.creditBalanceValue,/);
-  assert.match(append, /session\.creditBalance = teamAfter;/);
+  assert.match(append, /session\.creditBalance = organizationAfter;/);
 
   // And a read taken before a movement must never overwrite it, or the balance
   // visibly runs backwards a second after it moved.

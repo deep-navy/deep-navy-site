@@ -139,12 +139,24 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.GetTeamCreditControlResponse`](#deepnavy-v1-getteamcreditcontrolresponse)
   - [Message `deepnavy.v1.UpdateTeamCreditControlRequest`](#deepnavy-v1-updateteamcreditcontrolrequest)
   - [Message `deepnavy.v1.UpdateTeamCreditControlResponse`](#deepnavy-v1-updateteamcreditcontrolresponse)
+  - [Message `deepnavy.v1.CreditTopUpConsentTerms`](#deepnavy-v1-credittopupconsentterms)
+  - [Message `deepnavy.v1.CreditTopUpConsent`](#deepnavy-v1-credittopupconsent)
+  - [Message `deepnavy.v1.CreditTopUp`](#deepnavy-v1-credittopup)
+  - [Message `deepnavy.v1.CreditTopUpSettings`](#deepnavy-v1-credittopupsettings)
+  - [Message `deepnavy.v1.GetCreditTopUpSettingsRequest`](#deepnavy-v1-getcredittopupsettingsrequest)
+  - [Message `deepnavy.v1.GetCreditTopUpSettingsResponse`](#deepnavy-v1-getcredittopupsettingsresponse)
+  - [Message `deepnavy.v1.UpdateCreditTopUpSettingsRequest`](#deepnavy-v1-updatecredittopupsettingsrequest)
+  - [Message `deepnavy.v1.UpdateCreditTopUpSettingsResponse`](#deepnavy-v1-updatecredittopupsettingsresponse)
+  - [Message `deepnavy.v1.ListCreditTopUpsRequest`](#deepnavy-v1-listcredittopupsrequest)
+  - [Message `deepnavy.v1.ListCreditTopUpsResponse`](#deepnavy-v1-listcredittopupsresponse)
   - [Enum `deepnavy.v1.SubscriptionStatus`](#deepnavy-v1-subscriptionstatus)
   - [Enum `deepnavy.v1.BillingPlanState`](#deepnavy-v1-billingplanstate)
   - [Enum `deepnavy.v1.BillingInterval`](#deepnavy-v1-billinginterval)
   - [Enum `deepnavy.v1.BillingErrorReason`](#deepnavy-v1-billingerrorreason)
   - [Enum `deepnavy.v1.InvoiceStatus`](#deepnavy-v1-invoicestatus)
   - [Enum `deepnavy.v1.TeamCreditPauseReason`](#deepnavy-v1-teamcreditpausereason)
+  - [Enum `deepnavy.v1.CreditTopUpState`](#deepnavy-v1-credittopupstate)
+  - [Enum `deepnavy.v1.CreditTopUpBlockReason`](#deepnavy-v1-credittopupblockreason)
   - [Service `deepnavy.v1.BillingService`](#deepnavy-v1-billingservice)
 - [deepnavy/v1/common.proto](#deepnavy-v1-common-proto)
   - [Message `deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest)
@@ -1796,6 +1808,9 @@ Invoice is a provider-independent, organization-scoped projection populated
 <a id="deepnavy-v1-creditpack"></a>
 ### Message `deepnavy.v1.CreditPack`
 
+CreditPack is one purchasable block of prepaid credits. Buying it adds to the
+ ORGANIZATION's shared pool; there is no per-team wallet to buy into.
+
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `id` | 1 | `string` | singular | id is deep navy's stable public identifier, never a Stripe Price ID. |
@@ -1826,7 +1841,7 @@ Invoice is a provider-independent, organization-scoped projection populated
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or billing membership in<br> organization_id, and team_id must belong to that organization. |
-| `team_id` | 2 | `string` | singular | — |
+| `team_id` | 2 | `string` | singular | team_id RAISES THIS TEAM'S CEILING; it does not fence the credits. The<br> purchased credits land in the organization's shared pool and are spendable<br> by every team in it the moment they are granted, exactly like the included<br> credits. What team_id changes is that team's hard_limit_micros — the cap<br> INSIDE the pool — so the effect of naming a team is "let this team draw more<br> of the pool", never "keep these credits for this team". A client must not<br> tell a customer that a purchase is confined to one team. |
 | `credit_pack_id` | 3 | `string` | singular | A deep navy public catalog ID; clients never send Stripe identifiers. |
 | `quantity` | 4 | `int64` | singular | — |
 | `return_url` | 5 | `string` | singular | Exact allowlisted Embedded Checkout return URL containing Stripe's literal<br> {CHECKOUT_SESSION_ID} template. |
@@ -1867,14 +1882,15 @@ Invoice is a provider-independent, organization-scoped projection populated
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `organization_id` | 1 | `string` | singular | — |
-| `team_id` | 2 | `string` | singular | Required. The team must belong to organization_id; balances are never<br> pooled across an organization. |
+| `team_id` | 2 | `string` | singular | Required, and used only to scope and authorize the read. It does NOT select<br> a separate balance: credits are one pool per organization and every team<br> draws from it. See GetCreditBalanceResponse. |
 
 <a id="deepnavy-v1-getcreditbalanceresponse"></a>
 ### Message `deepnavy.v1.GetCreditBalanceResponse`
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `balance_micros` | 1 | `int64` | singular | — |
+| `balance_micros` | 1 | `int64` | singular | balance_micros is the signed sum of the ledger entries that NAME team_id.<br> It is an attribution diagnostic — "how much has been booked against this<br> team" — and it is NOT what the team can spend. It is routinely negative for<br> a fully funded team, because an organization grant carries no team while<br> every charge names one. Nothing may gate work on it or present it to a<br> customer as their remaining credit. |
+| `organization_balance_micros` | 2 | `int64` | singular | organization_balance_micros is the shared prepaid pool: the balance the team<br> can actually spend, and the number the spend gate reserves against. This is<br> the figure a console shows a customer as "credits remaining", and it is the<br> same number StreamCreditMovements publishes as<br> organization_balance_after_micros. |
 
 <a id="deepnavy-v1-teamcreditcontrol"></a>
 ### Message `deepnavy.v1.TeamCreditControl`
@@ -1928,6 +1944,136 @@ Invoice is a provider-independent, organization-scoped projection populated
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `control` | 1 | [`deepnavy.v1.TeamCreditControl`](#deepnavy-v1-teamcreditcontrol) | singular | — |
+
+<a id="deepnavy-v1-credittopupconsentterms"></a>
+### Message `deepnavy.v1.CreditTopUpConsentTerms`
+
+CreditTopUpConsentTerms is the exact agreement the customer must accept before
+ automatic top-up may be enabled, published by the server so a console renders
+ what the server will record rather than its own wording. The version string is
+ what UpdateCreditTopUpSettings echoes back; an unrecognized version is refused.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `version` | 1 | `string` | singular | — |
+| `text` | 2 | `string` | singular | text is the full agreement, already interpolated with this organization's<br> configured threshold, amount, ceiling and cooldown, so what the customer<br> reads is what the server enforces. Rendered as plain text. |
+
+<a id="deepnavy-v1-credittopupconsent"></a>
+### Message `deepnavy.v1.CreditTopUpConsent`
+
+CreditTopUpConsent is the record of that acceptance. It exists because a card
+ network requires a business to keep a record of the customer's agreement to
+ off-session terms; it is not audit decoration.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `terms_version` | 1 | `string` | singular | — |
+| `recorded_at` | 2 | `google.protobuf.Timestamp` | singular | recorded_at is the server's clock at the moment consent was accepted. A<br> client-supplied time is never recorded. |
+| `agreed_by_user_id` | 3 | `string` | singular | agreed_by_user_id is the deep navy user who accepted, never an email or any<br> other direct identifier. |
+
+<a id="deepnavy-v1-credittopup"></a>
+### Message `deepnavy.v1.CreditTopUp`
+
+CreditTopUp is one automatic top-up, recorded whether or not money moved, so a
+ customer can see that it happened, why it fired, and what it cost. It is
+ deliberately a separate record from a manual credit-pack purchase: the two are
+ distinguishable everywhere, including in the credit ledger, where an automatic
+ grant carries its own reason.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `organization_id` | 2 | `string` | singular | — |
+| `state` | 3 | [`deepnavy.v1.CreditTopUpState`](#deepnavy-v1-credittopupstate) | singular | — |
+| `threshold_micros` | 4 | `int64` | singular | WHY IT FIRED, captured at the moment of the decision and never recomputed:<br> the threshold in force and the pool balance actually observed beneath it. |
+| `observed_balance_micros` | 5 | `int64` | singular | — |
+| `credit_pack_id` | 6 | `string` | singular | WHAT IT BOUGHT. |
+| `pack_quantity` | 7 | `int64` | singular | — |
+| `credit_micros` | 8 | `int64` | singular | — |
+| `amount` | 9 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | WHAT IT COST. Present from the decision onward, because the price is fixed<br> when the top-up is decided, not when it settles. |
+| `decline_code` | 10 | `string` | singular | decline_code is the provider's classification of a refusal, present only in<br> DECLINED and AUTHENTICATION_REQUIRED. It is a stable, non-secret code such<br> as "insufficient_funds"; it is never a provider payload. |
+| `safe_message` | 11 | `string` | singular | safe_message may be shown to a customer. It says what happened, what it<br> means, and what happens next, and carries no provider identifiers. |
+| `created_at` | 12 | `google.protobuf.Timestamp` | singular | — |
+| `settled_at` | 13 | `google.protobuf.Timestamp` | singular | — |
+
+<a id="deepnavy-v1-credittopupsettings"></a>
+### Message `deepnavy.v1.CreditTopUpSettings`
+
+CreditTopUpSettings is one organization's automatic top-up policy plus enough
+ live state for a console to explain what will happen next without a second
+ call.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `organization_id` | 1 | `string` | singular | — |
+| `enabled` | 2 | `bool` | singular | — |
+| `threshold_micros` | 3 | `int64` | singular | threshold_micros is the organization pool balance at or beneath which a<br> top-up fires. It is headroom, not a floor: detection is periodic, so it must<br> cover what the organization can burn inside one detection interval. |
+| `credit_pack_id` | 4 | `string` | singular | What one top-up buys. |
+| `pack_quantity` | 5 | `int64` | singular | — |
+| `period_cap` | 6 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | period_cap is the most automatic top-up may spend in one billing period,<br> and period_spent is what it has already committed in the current one.<br> Together they are the hard ceiling: no top-up is decided that would carry<br> period_spent past period_cap. |
+| `period_spent` | 7 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | — |
+| `cooldown_seconds` | 8 | `int64` | singular | cooldown_seconds is the minimum interval between one top-up settling and the<br> next being decided. It is server-owned and not client-settable: a customer<br> able to set it to zero could re-create the charge loop it prevents. |
+| `block_reason` | 9 | [`deepnavy.v1.CreditTopUpBlockReason`](#deepnavy-v1-credittopupblockreason) | singular | block_reason is why nothing will fire right now, and is<br> CREDIT_TOP_UP_BLOCK_REASON_NONE when nothing is in the way. When it is a<br> stored disarm, last_top_up explains it and re_arm_required is true. |
+| `re_arm_required` | 10 | `bool` | singular | — |
+| `next_eligible_at` | 11 | `google.protobuf.Timestamp` | singular | next_eligible_at is when a cooldown expires. Absent when nothing is cooling. |
+| `consent` | 12 | [`deepnavy.v1.CreditTopUpConsent`](#deepnavy-v1-credittopupconsent) | singular | consent is absent until the customer has accepted the terms. enabled is<br> never true without it. |
+| `required_consent` | 13 | [`deepnavy.v1.CreditTopUpConsentTerms`](#deepnavy-v1-credittopupconsentterms) | singular | required_consent is the agreement a caller must accept to enable automatic<br> top-up, or to re-accept when the published version has moved on. |
+| `last_top_up` | 14 | [`deepnavy.v1.CreditTopUp`](#deepnavy-v1-credittopup) | singular | last_top_up is the most recent attempt in any state, so a console can render<br> a decline without a second call. Absent when none has ever run. |
+| `version` | 15 | `int64` | singular | — |
+| `updated_at` | 16 | `google.protobuf.Timestamp` | singular | — |
+
+<a id="deepnavy-v1-getcredittopupsettingsrequest"></a>
+### Message `deepnavy.v1.GetCreditTopUpSettingsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `organization_id` | 1 | `string` | singular | The authenticated principal must be a current organization member. |
+
+<a id="deepnavy-v1-getcredittopupsettingsresponse"></a>
+### Message `deepnavy.v1.GetCreditTopUpSettingsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `settings` | 1 | [`deepnavy.v1.CreditTopUpSettings`](#deepnavy-v1-credittopupsettings) | singular | settings is always present. An organization that has never configured<br> automatic top-up gets the server's defaults with enabled false and no<br> consent — which is a configuration, not an absence. |
+
+<a id="deepnavy-v1-updatecredittopupsettingsrequest"></a>
+### Message `deepnavy.v1.UpdateCreditTopUpSettingsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `organization_id` | 1 | `string` | singular | The authenticated principal must hold an owner or billing membership. |
+| `enabled` | 2 | `bool` | singular | — |
+| `threshold_micros` | 3 | `int64` | singular | — |
+| `credit_pack_id` | 4 | `string` | singular | — |
+| `pack_quantity` | 5 | `int64` | singular | — |
+| `period_cap_minor` | 6 | `int64` | singular | period_cap_minor is the ceiling in the pack currency's minor units (cents<br> for USD). It is sent as an exact integer rather than a Money so a ceiling on<br> a real card can never be set by a rounded decimal. |
+| `consent_terms_version` | 7 | `string` | singular | consent_terms_version must equal the version in required_consent whenever<br> this request enables automatic top-up, or re-arms it after a decline. The<br> server records its own clock and the calling user; a client cannot supply<br> either. Omitting it while enabling is refused, not defaulted. |
+| `re_arm` | 8 | `bool` | singular | re_arm clears a stored disarm (a decline, or an authentication demand) and<br> is refused unless the caller also presents consent. Disabling never needs<br> it; a customer can always turn automatic top-up off. |
+| `expected_version` | 9 | `int64` | singular | expected_version is the optimistic guard against two people editing the<br> policy at once. Zero is accepted only for an organization that has no<br> settings row yet. |
+| `idempotency_key` | 10 | `string` | singular | — |
+
+<a id="deepnavy-v1-updatecredittopupsettingsresponse"></a>
+### Message `deepnavy.v1.UpdateCreditTopUpSettingsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `settings` | 1 | [`deepnavy.v1.CreditTopUpSettings`](#deepnavy-v1-credittopupsettings) | singular | — |
+
+<a id="deepnavy-v1-listcredittopupsrequest"></a>
+### Message `deepnavy.v1.ListCreditTopUpsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `organization_id` | 1 | `string` | singular | The authenticated principal must be a current organization member. |
+| `page` | 2 | [`deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest) | singular | Pages are ordered by decision time descending and then stable ID descending. |
+
+<a id="deepnavy-v1-listcredittopupsresponse"></a>
+### Message `deepnavy.v1.ListCreditTopUpsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `top_ups` | 1 | [`deepnavy.v1.CreditTopUp`](#deepnavy-v1-credittopup) | repeated | — |
+| `page` | 2 | [`deepnavy.v1.PageResponse`](#deepnavy-v1-pageresponse) | singular | — |
 
 <a id="deepnavy-v1-subscriptionstatus"></a>
 ### Enum `deepnavy.v1.SubscriptionStatus`
@@ -1986,6 +2132,9 @@ Invoice is a provider-independent, organization-scoped projection populated
 | `BILLING_ERROR_REASON_INVOICE_NOT_AVAILABLE` | 16 | The invoice is unknown or inaccessible to the authenticated principal.<br> Returned with NOT_FOUND without revealing whether it exists globally. |
 | `BILLING_ERROR_REASON_INVOICE_PAGE_INVALID` | 17 | The invoice page request or opaque page token is invalid. Returned with<br> INVALID_ARGUMENT without echoing token contents. |
 | `BILLING_ERROR_REASON_INVOICE_HISTORY_UNAVAILABLE` | 18 | The signed-webhook-backed local invoice projection cannot be read.<br> Returned with UNAVAILABLE; clients must not fall back to browser Stripe<br> reads or infer invoice state from Checkout completion. |
+| `BILLING_ERROR_REASON_TOP_UP_CONSENT_REQUIRED` | 19 | Automatic top-up cannot be enabled because the caller did not present the<br> recorded consent the card networks require for an unscheduled off-session<br> charge, or presented a terms version this server does not publish.<br> Returned with FAILED_PRECONDITION. |
+| `BILLING_ERROR_REASON_TOP_UP_SETTINGS_INVALID` | 20 | A top-up setting is outside the server-owned bounds: a non-positive<br> threshold or ceiling, a quantity beyond the pack's maximum, a pack that is<br> not in the catalog, or a single top-up that alone exceeds the period<br> ceiling. Returned with INVALID_ARGUMENT. |
+| `BILLING_ERROR_REASON_TOP_UP_SETTINGS_CONFLICT` | 21 | The optimistic version no longer matches the stored settings row.<br> Returned with ABORTED. |
 
 <a id="deepnavy-v1-invoicestatus"></a>
 ### Enum `deepnavy.v1.InvoiceStatus`
@@ -2011,6 +2160,74 @@ Invoice is a provider-independent, organization-scoped projection populated
 | `TEAM_CREDIT_PAUSE_REASON_CREDITS_EXHAUSTED` | 4 | — |
 | `TEAM_CREDIT_PAUSE_REASON_BUDGET_EXHAUSTED` | 5 | — |
 
+<a id="deepnavy-v1-credittopupstate"></a>
+### Enum `deepnavy.v1.CreditTopUpState`
+
+---------------------------------------------------------------------------
+ Automatic credit top-up
+
+ Engineering Credits are one shared pool per ORGANIZATION. When that pool runs
+ out every team in the organization stops mid-objective, which is the failure
+ automatic top-up exists to prevent: below a threshold the customer chooses,
+ deep navy charges the card already on file for a credit pack, without the
+ customer present.
+
+ Two things follow from "without the customer present" and are load-bearing
+ rather than decoration.
+
+   * The card networks require RECORDED CONSENT for an unscheduled off-session
+     charge. A boolean toggle is not consent. Enabling automatic top-up
+     therefore requires the caller to present the exact terms version the
+     server publishes, and the server records who agreed and when. There is no
+     path that enables it without one; the database refuses the row.
+
+   * Off session, Strong Customer Authentication does NOT arrive as a
+     `requires_action` state a server can hold open. Stripe transitions the
+     payment to `requires_payment_method` and reports decline code
+     `authentication_required`. It is therefore a DECLINE that only the
+     customer can clear, on session — not something the platform retries.
+
+ A top-up funds the ORGANIZATION POOL and never moves any team's ceiling. A
+ team stopped by its own hard limit (BUDGET_EXHAUSTED) is stopped by a cap its
+ customer set deliberately, and silently raising it with a card charge would be
+ the runaway this design exists to prevent. Only CREDITS_EXHAUSTED — the empty
+ shared pool — is what a top-up fixes.
+ ---------------------------------------------------------------------------
+
+CreditTopUpState is the lifecycle of one automatic top-up. PENDING and
+ CHARGING are in flight; the rest are terminal. CHARGING specifically means
+ "a charge was issued and its outcome is not yet recorded" — never "charge it
+ again": recovery re-reads the provider rather than re-charging.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `CREDIT_TOP_UP_STATE_UNSPECIFIED` | 0 | — |
+| `CREDIT_TOP_UP_STATE_PENDING` | 1 | Decided and durably recorded; no charge has been issued yet. |
+| `CREDIT_TOP_UP_STATE_CHARGING` | 2 | A charge has been issued and its outcome is not yet known. |
+| `CREDIT_TOP_UP_STATE_GRANTED` | 3 | Paid, and the credits are in the organization's pool. |
+| `CREDIT_TOP_UP_STATE_DECLINED` | 4 | The card was declined. Customer-actionable, never retried. |
+| `CREDIT_TOP_UP_STATE_AUTHENTICATION_REQUIRED` | 5 | The issuer demanded authentication, which cannot be completed off session.<br> A designed state, not an error: the customer must come on session. |
+| `CREDIT_TOP_UP_STATE_ABANDONED` | 6 | Abandoned before any money moved — a precondition stopped holding, or a<br> charge's outcome could not be established and was proven not to exist. |
+
+<a id="deepnavy-v1-credittopupblockreason"></a>
+### Enum `deepnavy.v1.CreditTopUpBlockReason`
+
+CreditTopUpBlockReason is why automatic top-up will not fire right now for an
+ organization that has it enabled. Two of these are STORED disarms that persist
+ until the customer acts (CARD_DECLINED, AUTHENTICATION_REQUIRED); the rest are
+ computed from current state at read time and clear by themselves.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `CREDIT_TOP_UP_BLOCK_REASON_UNSPECIFIED` | 0 | — |
+| `CREDIT_TOP_UP_BLOCK_REASON_NONE` | 1 | Nothing is blocking it. |
+| `CREDIT_TOP_UP_BLOCK_REASON_CARD_DECLINED` | 2 | Stored. The last top-up was declined; automatic top-up is disarmed until the<br> customer fixes the card and re-arms it. |
+| `CREDIT_TOP_UP_BLOCK_REASON_AUTHENTICATION_REQUIRED` | 3 | Stored. The last top-up needed authentication the customer must complete on<br> session. Disarmed until they do and re-arm it. |
+| `CREDIT_TOP_UP_BLOCK_REASON_PERIOD_CAP_REACHED` | 4 | Computed. This billing period's ceiling is spent; it resets with the period. |
+| `CREDIT_TOP_UP_BLOCK_REASON_SUBSCRIPTION_INACTIVE` | 5 | Computed. The organization has no active subscription, or no open billing<br> period. A top-up never runs against an inactive subscription. |
+| `CREDIT_TOP_UP_BLOCK_REASON_NO_PAYMENT_METHOD` | 6 | Computed. No saved card is on file to charge. |
+| `CREDIT_TOP_UP_BLOCK_REASON_COOLING_DOWN` | 7 | Computed. A top-up settled recently and the cooldown has not elapsed. This<br> is what stops a pool that is drained as fast as it is filled from becoming a<br> charge loop. |
+
 <a id="deepnavy-v1-billingservice"></a>
 ### Service `deepnavy.v1.BillingService`
 
@@ -2022,11 +2239,14 @@ Invoice is a provider-independent, organization-scoped projection populated
 | `GetInvoice` | [`deepnavy.v1.GetInvoiceRequest`](#deepnavy-v1-getinvoicerequest) | [`deepnavy.v1.GetInvoiceResponse`](#deepnavy-v1-getinvoiceresponse) | unary | — |
 | `CreateCheckoutSession` | [`deepnavy.v1.CreateCheckoutSessionRequest`](#deepnavy-v1-createcheckoutsessionrequest) | [`deepnavy.v1.CreateCheckoutSessionResponse`](#deepnavy-v1-createcheckoutsessionresponse) | unary | CreateCheckoutSession is idempotent by authenticated principal and<br> idempotency_key and requires an owner or billing membership. |
 | `ListCreditPacks` | [`deepnavy.v1.ListCreditPacksRequest`](#deepnavy-v1-listcreditpacksrequest) | [`deepnavy.v1.ListCreditPacksResponse`](#deepnavy-v1-listcreditpacksresponse) | unary | ListCreditPacks returns only the server-owned public catalog. |
-| `CreateCreditPackCheckoutSession` | [`deepnavy.v1.CreateCreditPackCheckoutSessionRequest`](#deepnavy-v1-createcreditpackcheckoutsessionrequest) | [`deepnavy.v1.CreateCreditPackCheckoutSessionResponse`](#deepnavy-v1-createcreditpackcheckoutsessionresponse) | unary | CreateCreditPackCheckoutSession creates a team-scoped Embedded Checkout<br> payment. Credits are granted only after a signed paid Stripe webhook. |
+| `CreateCreditPackCheckoutSession` | [`deepnavy.v1.CreateCreditPackCheckoutSessionRequest`](#deepnavy-v1-createcreditpackcheckoutsessionrequest) | [`deepnavy.v1.CreateCreditPackCheckoutSessionResponse`](#deepnavy-v1-createcreditpackcheckoutsessionresponse) | unary | CreateCreditPackCheckoutSession opens an Embedded Checkout payment for a<br> prepaid pack. Credits are granted only after a signed paid Stripe webhook,<br> and they are granted TO THE ORGANIZATION POOL: team_id raises the named<br> team's ceiling within that pool rather than reserving the credits for it. |
 | `CreateBillingPortalSession` | [`deepnavy.v1.CreateBillingPortalSessionRequest`](#deepnavy-v1-createbillingportalsessionrequest) | [`deepnavy.v1.CreateBillingPortalSessionResponse`](#deepnavy-v1-createbillingportalsessionresponse) | unary | CreateBillingPortalSession requires an owner or billing membership and is<br> idempotent by authenticated principal and idempotency_key. |
 | `GetCreditBalance` | [`deepnavy.v1.GetCreditBalanceRequest`](#deepnavy-v1-getcreditbalancerequest) | [`deepnavy.v1.GetCreditBalanceResponse`](#deepnavy-v1-getcreditbalanceresponse) | unary | — |
 | `GetTeamCreditControl` | [`deepnavy.v1.GetTeamCreditControlRequest`](#deepnavy-v1-getteamcreditcontrolrequest) | [`deepnavy.v1.GetTeamCreditControlResponse`](#deepnavy-v1-getteamcreditcontrolresponse) | unary | GetTeamCreditControl returns the current paid-period, team-scoped budget<br> and effective execution capacity for an authenticated organization member. |
 | `UpdateTeamCreditControl` | [`deepnavy.v1.UpdateTeamCreditControlRequest`](#deepnavy-v1-updateteamcreditcontrolrequest) | [`deepnavy.v1.UpdateTeamCreditControlResponse`](#deepnavy-v1-updateteamcreditcontrolresponse) | unary | UpdateTeamCreditControl requires an owner or billing membership and uses<br> optimistic versioning plus an idempotency key. |
+| `GetCreditTopUpSettings` | [`deepnavy.v1.GetCreditTopUpSettingsRequest`](#deepnavy-v1-getcredittopupsettingsrequest) | [`deepnavy.v1.GetCreditTopUpSettingsResponse`](#deepnavy-v1-getcredittopupsettingsresponse) | unary | GetCreditTopUpSettings returns the organization's automatic top-up policy,<br> what is blocking it, and the consent terms a caller must accept to enable<br> it. Available to any organization member. |
+| `UpdateCreditTopUpSettings` | [`deepnavy.v1.UpdateCreditTopUpSettingsRequest`](#deepnavy-v1-updatecredittopupsettingsrequest) | [`deepnavy.v1.UpdateCreditTopUpSettingsResponse`](#deepnavy-v1-updatecredittopupsettingsresponse) | unary | UpdateCreditTopUpSettings requires an owner or billing membership. Enabling<br> automatic top-up, or re-arming it after a decline, additionally requires the<br> published consent terms version: the server records the agreement rather<br> than inferring it from a toggle. |
+| `ListCreditTopUps` | [`deepnavy.v1.ListCreditTopUpsRequest`](#deepnavy-v1-listcredittopupsrequest) | [`deepnavy.v1.ListCreditTopUpsResponse`](#deepnavy-v1-listcredittopupsresponse) | unary | ListCreditTopUps is the audit trail: every automatic top-up, in every state,<br> with the threshold and balance that provoked it and what it cost. |
 
 
 <a id="deepnavy-v1-common-proto"></a>

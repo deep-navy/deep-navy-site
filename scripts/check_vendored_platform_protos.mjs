@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const expectedRevision = "31a489d8f0b073fd499207ab86bdea0f2faea0b7";
+const expectedRevision = "43051f3f56c6c2d35ef82eb2a94ade15590b4870";
 const expectedRuntimeVersions = Object.freeze({
   "@bufbuild/protobuf": "2.13.0",
   "@connectrpc/connect": "2.1.2",

@@ -723,7 +723,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "31a489d8f0b073fd499207ab86bdea0f2faea0b7" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "43051f3f56c6c2d35ef82eb2a94ade15590b4870" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -7901,18 +7901,31 @@
 
   function renderCreditBalanceResult(result) {
     if (result.status === "rejected") {
-      resetCreditBalanceView(apiErrorMessage(result.reason, "The team credit ledger balance is unavailable. No balance was assumed."), "Unavailable", "error");
+      resetCreditBalanceView(apiErrorMessage(result.reason, "The organization credit ledger balance is unavailable. No balance was assumed."), "Unavailable", "error");
       return;
     }
-    const balance = int64Value(result.value?.balanceMicros);
+    // THE ORGANIZATION POOL — deliberately not balance_micros.
+    //
+    // balance_micros is the signed sum of the ledger entries that NAME this
+    // team. It is an attribution diagnostic ("how much has been booked against
+    // this team"), and for a FULLY FUNDED team it is routinely NEGATIVE: an
+    // organization grant carries no team_id and so never enters the filtered
+    // sum, while every charge names one. Presenting it as remaining credit told
+    // a solvent customer they were overdrawn — and because int64Value refuses a
+    // negative outright, what they actually got was a blanked panel.
+    //
+    // organization_balance_micros is the shared prepaid pool: what this team can
+    // really spend, what the spend gate reserves against, and the same number
+    // StreamCreditMovements publishes as organization_balance_after_micros.
+    const balance = signedInt64Value(result.value?.organizationBalanceMicros);
     if (balance === null) {
-      resetCreditBalanceView("BillingService returned an invalid team credit balance. No balance was displayed.", "Invalid response", "error");
+      resetCreditBalanceView("BillingService returned an invalid organization credit balance. No balance was displayed.", "Invalid response", "error");
       return;
     }
     ui.creditBalancePanel.hidden = false;
     // A movement that has already arrived supersedes this read.
     //
-    // team_balance_after_micros is a window over the same ledger sum this RPC
+    // organization_balance_after_micros is a window over the same pool this RPC
     // returns, so the two can only ever disagree by being taken at different
     // moments — and when they do, the movement is the later one: the read was
     // issued when the workspace loaded and the frame was published after it.
@@ -7932,12 +7945,18 @@
     }
     renderRailSpend();
     renderStatStrip();
-    ui.creditBalanceMessage.textContent = "Signed grants minus settled usage for this team. Open reservations and the paid-period hard limit are separate execution guardrails below.";
+    ui.creditBalanceMessage.textContent = "The organization's shared prepaid pool: signed grants minus settled usage, across every team. Open reservations and this team's hard limit are separate execution guardrails below.";
     setSourceState(ui.creditBalanceState, "Verified", "success");
   }
 
   function renderTeamCreditResults(balanceResult, controlResult, teamId) {
-    const balance = balanceResult.status === "fulfilled" ? int64Value(balanceResult.value?.balanceMicros) : null;
+    // BOTH OPERANDS ARE THE ORGANIZATION POOL. ledger_available_micros is the
+    // shared pool, so cross-checking it against balance_micros — a team-filtered
+    // sum — compared two different quantities and fired the moment any team
+    // spent anything. On healthy data this blanked the whole credit panel.
+    // organization_balance_micros is the same figure ledger_available_micros
+    // reports, which is what makes disagreement between them a real inconsistency.
+    const balance = balanceResult.status === "fulfilled" ? signedInt64Value(balanceResult.value?.organizationBalanceMicros) : null;
     const control = controlResult.status === "fulfilled" ? controlResult.value?.control : null;
     if (balance !== null && validCreditControl(control, teamId) && balance !== int64Value(control.ledgerAvailableMicros)) {
       const message = "BillingService returned inconsistent ledger and budget projections. No credit state was displayed; billable work remains fail-closed.";
@@ -10238,21 +10257,24 @@
     // list it is counting.
     renderCreditMovementsLive();
 
-    // team_balance_after_micros is a window over the same ledger sum a balance
+    // organization_balance_after_micros is a window over the same pool a balance
     // read returns, so the last frame and the panel above are one number seen
     // twice. It is written THROUGH the panel rather than beside it — that way
     // they cannot drift apart, because there is only one of them.
-    const teamAfter = signedInt64Value(movement?.teamBalanceAfterMicros);
-    if (teamAfter !== null) {
-      const previous = session.creditBalanceShownMicros ?? session.creditBalance;
-      session.creditBalance = teamAfter;
-      session.creditBalanceShownMicros = teamAfter;
-      rollOdometer(ui.creditBalanceValue, typeof previous === "bigint" ? previous : null, teamAfter);
-      renderRailSpend();
-      renderStatStrip();
-    }
+    //
+    // It has to be the ORGANIZATION figure and not team_balance_after_micros:
+    // the panel now shows the pool, so a frame carrying the team-filtered sum
+    // would drag it to a different — routinely negative — quantity the instant
+    // the first movement landed, undoing the read's correctness a second after
+    // the workspace loaded.
     const organizationAfter = signedInt64Value(movement?.organizationBalanceAfterMicros);
     if (organizationAfter !== null) {
+      const previous = session.creditBalanceShownMicros ?? session.creditBalance;
+      session.creditBalance = organizationAfter;
+      session.creditBalanceShownMicros = organizationAfter;
+      rollOdometer(ui.creditBalanceValue, typeof previous === "bigint" ? previous : null, organizationAfter);
+      renderRailSpend();
+      renderStatStrip();
       rollOdometer(ui.creditMovementsOrg, session.creditOrgBalanceShownMicros, organizationAfter);
       session.creditOrgBalanceShownMicros = organizationAfter;
     }
@@ -12115,7 +12137,7 @@
         mutationName: "creditPackCheckout",
         teamId: team.id,
         title: "Add prepaid engineering credits",
-        subtitle: `Apply purchased credits only to ${stringValue(team.name) || "the selected team"}.`,
+        subtitle: `Raise ${stringValue(team.name) || "the selected team"}'s spending ceiling. The credits go to the organization's shared pool and any team can spend them.`,
         summary: `${quantity.toString()} × ${stringValue(pack.name) || formatCredits(pack.creditMicros)} · ${formatCanonicalMoney(pack.price)} each`
       });
     } catch (error) {

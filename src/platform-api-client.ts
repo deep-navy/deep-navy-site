@@ -28,7 +28,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "31a489d8f0b073fd499207ab86bdea0f2faea0b7";
+export const PLATFORM_PROTOS_REVISION = "43051f3f56c6c2d35ef82eb2a94ade15590b4870";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
