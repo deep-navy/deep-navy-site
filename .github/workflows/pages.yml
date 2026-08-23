@@ -43,6 +43,7 @@ jobs:
           node --check assets/js/platform-api-client.js
           node --check assets/js/organization-onboarding.js
           node --check assets/js/launch-contract.js
+          node --check assets/js/notice-levels.js
           node --check assets/js/app-state.js
           node --check assets/js/agent-roles.js
           node --check assets/js/app.js

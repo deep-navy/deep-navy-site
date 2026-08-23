@@ -295,6 +295,7 @@
     provisioningFill: document.querySelector("[data-provisioning-fill]"),
     provisioningMessage: document.querySelector("[data-provisioning-message]"),
     provisioningEta: document.querySelector("[data-provisioning-eta]"),
+    provisioningNotice: document.querySelector("[data-provisioning-notice]"),
     checkoutForm: document.querySelector("[data-checkout-form]"),
     checkoutSubmit: document.querySelector("[data-checkout-submit]"),
     checkoutError: document.querySelector("[data-checkout-error]"),
@@ -474,6 +475,10 @@
   const apiBaseUrl = normalizeServiceUrl(config.api_base_url);
   const organizationContract = window.deepNavyOrganizationOnboarding || null;
   const launchContract = window.deepNavyLaunchContract || null;
+  // The severity ladder, ported verbatim from the design system. Severity is
+  // never decided in this file: a level name goes in, and the word, the glyph
+  // and the tone class come back out.
+  const noticeLevels = window.deepNavyNoticeLevels || null;
   const appState = window.deepNavyAppState || null;
   const agentRoleContract = window.DeepNavyAgentRoles || null;
   const generatedClient = window.deepNavyGeneratedClient || null;
@@ -3315,6 +3320,97 @@
     return svg;
   }
 
+  // ── Notices ─────────────────────────────────────────────────────────────
+  // A Notice reports an event that happened somewhere else and is over, which
+  // is why it carries a source, a time and a code; a Callout explains the state
+  // of the thing you are looking at, and carries none of those. A failed build
+  // is squarely the first: it happened in the provisioning pipeline, at a time,
+  // with a code, and the screen is only reporting it.
+  //
+  // The DOM below is Notice.jsx element for element and class for class,
+  // against the same vendored notify.css — because the severity is not the
+  // site's to restate, and neither is the shape it arrives in.
+  // The ladder is a hard dependency, not an optional enhancement. A local
+  // fallback row here would be a second table with its own opinion about what a
+  // severity looks like, which is the single thing the ladder exists to
+  // prevent — so its absence yields nothing rather than an invention. Nothing
+  // that reports a FACT depends on it: the stopped progress bar states its own
+  // case in words either way, and only the severity dressing needs the table.
+  function noticeShape(levelName) {
+    return noticeLevels?.level?.(levelName) || null;
+  }
+
+  function buildNotice({ level: levelName = "info", title, body, code, source, time, actions }) {
+    const shape = noticeShape(levelName);
+    if (!shape) return null;
+    const notice = document.createElement("div");
+    notice.className = `dn-notice ${noticeLevels.levelClass("dn-notice", levelName)}`;
+    // Danger interrupts a screen reader; everything quieter waits its turn.
+    notice.setAttribute("role", shape.tone === "danger" ? "alert" : "status");
+    const glyph = document.createElement("span");
+    glyph.className = "dn-notice__glyph";
+    glyph.append(spriteIcon(shape.glyph, 17));
+    const main = document.createElement("div");
+    main.className = "dn-notice__main";
+
+    // The flag row is where "never colour alone" is paid for: the level's own
+    // WORD sits here in every notice, so the surface survives grayscale(1) and
+    // survives a reader who never sees the border at all.
+    const flag = document.createElement("div");
+    flag.className = "dn-notice__flag";
+    const word = document.createElement("span");
+    word.textContent = shape.word;
+    flag.append(word);
+    [stringValue(source), stringValue(time)].filter(Boolean).forEach((value) => {
+      const meta = document.createElement("span");
+      meta.className = "dn-notice__meta";
+      const separator = document.createElement("span");
+      separator.className = "dn-notice__sep";
+      separator.textContent = "/";
+      meta.append(separator, document.createTextNode(value));
+      flag.append(meta);
+    });
+    main.append(flag);
+
+    if (stringValue(title)) {
+      const heading = document.createElement("div");
+      heading.className = "dn-notice__title";
+      heading.textContent = stringValue(title);
+      main.append(heading);
+    }
+    if (stringValue(body)) {
+      const copy = document.createElement("div");
+      copy.className = "dn-notice__body";
+      copy.textContent = stringValue(body);
+      main.append(copy);
+    }
+    if (stringValue(code)) {
+      const machine = document.createElement("code");
+      machine.className = "dn-notice__code";
+      machine.textContent = stringValue(code);
+      main.append(machine);
+    }
+    const buttons = (actions || []).filter(Boolean);
+    if (buttons.length) {
+      const row = document.createElement("div");
+      row.className = "dn-notice__actions";
+      buttons.forEach((button) => row.append(button));
+      main.append(row);
+    }
+    notice.append(glyph, main);
+    return notice;
+  }
+
+  // A team whose last provisioning command died. A failed DELETE is excluded on
+  // purpose: the team is still there, its remedy is "retry deletion" rather
+  // than "retry setup", and the deletion surfaces already own that sentence.
+  function teamProvisioningFailed(team) {
+    const status = team?.provisioning;
+    if (!status) return false;
+    if (launchContract?.provisioningOperation?.(status) === launchContract?.PROVISIONING_OPERATION?.DELETE) return false;
+    return launchContract?.provisioningPresentation?.(status)?.failed === true;
+  }
+
   // The objective the floor is about: the one the record card has selected, or
   // the first the team owns. Never invented — a team with none returns null
   // and the interviewing phase takes over.
@@ -3324,11 +3420,22 @@
     return objectives.find((candidate) => stringValue(candidate.id) === stringValue(remembered?.id)) || objectives[0] || null;
   }
 
-  // Four phases, every one derived from a fact the server confirmed. Nothing
+  // Five phases, every one derived from a fact the server confirmed. Nothing
   // here is a mode the console chose for itself.
   function teamPhase(team) {
     const lifecycle = lifecycleLabel(team?.state);
-    if (["suspended", "suspending", "pending", "deleting"].includes(lifecycle)) return "halted";
+    // A removal in flight owns the row, including one that failed partway
+    // through: its remedy is "retry deletion", not "retry setup".
+    if (lifecycle === "deleting") return "halted";
+    // A team whose setup died is not running, and there was no branch here that
+    // said so. Terminal failure parks the team in `pending` with a dead
+    // command, and `pending` is not in the halted list ahead of the objective
+    // check — so a dead team fell all the way through to `running` and wore the
+    // pulsing live badge. A team that is not running must never render as live,
+    // and "failed" is not the same fact as "stopped": stopped is a state
+    // somebody chose, and this one nobody did.
+    if (lifecycle === "failed" || teamProvisioningFailed(team)) return "failed";
+    if (["suspended", "suspending", "pending"].includes(lifecycle)) return "halted";
     // Out of credits stops work as surely as a suspension does, and the
     // customer experiences it the same way: the crew is not running.
     const spendable = signedInt64Value(session.creditControl?.effectiveAvailableMicros);
@@ -3371,7 +3478,13 @@
     running: { label: "Running", className: "dn-badge dn-badge--live", live: true },
     interviewing: { label: "Interviewing", className: "dn-badge dn-badge--attention", live: false },
     met: { label: "Met · idle", className: "dn-badge dn-badge--success", live: false },
-    halted: { label: "Stopped", className: "dn-badge dn-badge--danger", live: false }
+    halted: { label: "Stopped", className: "dn-badge dn-badge--danger", live: false },
+    // The one phase that is a reported failure rather than a state of the work,
+    // so it names a LEVEL and takes its glyph and its tone from the ladder
+    // instead of restating either here. Word plus glyph: "Setup failed" beside
+    // the ladder's own error mark survives filter: grayscale(1), and survives a
+    // reader who never sees the badge's fill at all.
+    failed: { label: "Setup failed", live: false, level: "error" }
   });
 
   function renderTeamHeadline() {
@@ -3442,13 +3555,16 @@
     // because only one of them is a claim about right now.
     if (ui.teamPhase) {
       const badge = TEAM_PHASE_BADGE[phase];
-      ui.teamPhase.className = badge.className;
+      const shape = badge.level ? noticeShape(badge.level) : null;
+      ui.teamPhase.className = badge.className || `dn-badge ${noticeLevels?.levelClass?.("dn-badge", badge.level) || ""}`.trim();
       ui.teamPhase.replaceChildren();
       if (badge.live) {
         const dot = document.createElement("span");
         dot.className = "dn-dot dn-dot--sm dn-dot--live dn-dot--pulse";
         dot.setAttribute("aria-hidden", "true");
         ui.teamPhase.append(dot);
+      } else if (shape) {
+        ui.teamPhase.append(spriteIcon(shape.glyph, 13));
       }
       ui.teamPhase.append(document.createTextNode(badge.label));
       ui.teamPhase.hidden = false;
@@ -3615,25 +3731,40 @@
 
   function renderPendingTeamGuidance(team) {
     const deleting = lifecycleLabel(team.state) === "deleting";
+    // Terminal provisioning failure parks a team in `pending`, which is the
+    // same lifecycle a team sits in while its payment is still being confirmed
+    // — so this screen read one and said the other. It told a customer whose
+    // build had died that the team "is awaiting payment confirmation", and then
+    // told them to delete it and create it again. That advice is wrong twice
+    // over: it is not what happened, and acting on it makes the customer pay a
+    // second time for a fault that was ours. `resume` re-drives the same build
+    // on the team they already have, so that is the remedy named here.
+    const stopped = !deleting && teamProvisioningFailed(team);
+    const name = stringValue(team.name) || "This team";
     const headline = deleting
       ? "This team is being removed. Its workspace data is no longer available."
-      : "Available after payment completes and your team is provisioned.";
-    const label = deleting ? "Removing" : "Pending";
+      : stopped
+        ? "Not available: this team's setup stopped before it finished."
+        : "Available after payment completes and your team is provisioned.";
+    const label = deleting ? "Removing" : stopped ? "Setup failed" : "Pending";
+    // What happened, what it means, what happens next — in that order.
     ui.dashboardState.textContent = deleting
-      ? `${stringValue(team.name) || "This team"} is being removed.`
-      : `${stringValue(team.name) || "This team"} is awaiting payment confirmation. If you closed checkout before paying, delete this team and create it again — the roster, objective, and economics unlock the moment payment settles.`;
-    resetAgentView(deleting ? headline : "Your Product Manager, Engineering Manager, Designer, and engineers appear here once the team is provisioned.", label);
+      ? `${name} is being removed.`
+      : stopped
+        ? `${name}'s setup stopped before it finished, so the team never started running. Retry setup below to run the same build again — you do not need to delete it or create another one.`
+        : `${name} is awaiting payment confirmation. If you closed checkout before paying, delete this team and create it again — the roster, objective, and economics unlock the moment payment settles.`;
+    resetAgentView(deleting ? headline : stopped ? "No agents were ever started for this team, because its setup did not finish." : "Your Product Manager, Engineering Manager, Designer, and engineers appear here once the team is provisioned.", label);
     resetEconomicsView(headline, label);
     resetCreditBalanceView(headline, label);
     resetCreditControlView(headline, label);
     resetApprovalView(headline, label);
-    resetActivityView(deleting ? headline : "The live activity stream starts when your agents do.", label);
-    resetConversationView(deleting ? headline : "Your Product Manager opens the conversation the moment the team finishes setting up.", label, "", deleting ? "No conversation" : "Your Product Manager is getting set up");
+    resetActivityView(deleting || stopped ? headline : "The live activity stream starts when your agents do.", label);
+    resetConversationView(deleting || stopped ? headline : "Your Product Manager opens the conversation the moment the team finishes setting up.", label, "", deleting ? "No conversation" : stopped ? "No conversation" : "Your Product Manager is getting set up");
     resetSessionHistoryView(headline, label);
     resetWorkspaceHistoryView(headline, label);
     resetDeliveryHistoryView(headline, label);
     syncProvisioningSnapshot(team);
-    resetObjectiveView(deleting ? headline : "Write your objective once the team is active — the Product Manager turns it into acceptance criteria for the engineers.");
+    resetObjectiveView(deleting || stopped ? headline : "Write your objective once the team is active — the Product Manager turns it into acceptance criteria for the engineers.");
     // A team without an active roster has no agent record to keep open - a
     // re-provision can replace every agent id.
     session.selectedAgentId = "";
@@ -9337,10 +9468,27 @@
     const progress = pending ? launchContract?.provisioningProgress?.(team.provisioning || {}) : null;
 
     if (!progress) {
-      // A failed build is not a completion. The error surfaces own that
-      // message, and a triumphant 100% over a failure would be a lie.
-      const failed = launchContract?.provisioningPresentation?.(team?.provisioning || {})?.failed === true;
-      if (provisioningProgressVisible && !failed && state === "active") {
+      // provisioningProgress answers null for FAILED and CANCELED, and this
+      // read that null as "hide the bar". So a build that died at 92% took the
+      // entire progress surface off screen with it, mid-sentence, under
+      // "waiting for your team's gateway to come online" — and the floor then
+      // said nothing at all about the team. A bar that disappears mid-sentence
+      // reads as a build that gave up quietly, which is precisely what this one
+      // had done, except that nobody had been told.
+      //
+      // A stopped build is a fact and it gets a surface: the bar freezes where
+      // it stopped, in the danger tone, over a Notice that says what happened,
+      // what it means and what to do about it. A triumphant 100% is still never
+      // shown over a failure — only leaving the pending states cleanly does
+      // that.
+      const stopped = ["pending", "deleting", "failed"].includes(state)
+        ? launchContract?.provisioningStopped?.(team?.provisioning || {})
+        : null;
+      if (stopped) {
+        renderStoppedProvisioning(team, stopped);
+        return;
+      }
+      if (provisioningProgressVisible && state === "active") {
         finishProvisioningProgress();
         return;
       }
@@ -9353,6 +9501,7 @@
       ui.provisioningProgress.classList.add("dn-in");
       provisioningProgressVisible = true;
     }
+    clearProvisioningNotice();
     ui.provisioningProgress.hidden = false;
     ui.provisioningProgress.dataset.tone = "working";
     // The DS travelling hairline is the "actively streaming" signal, and it is
@@ -9375,6 +9524,7 @@
   function finishProvisioningProgress() {
     if (!ui.provisioningProgress) return;
     window.clearTimeout(provisioningCompletionTimer);
+    clearProvisioningNotice();
     ui.provisioningProgress.hidden = false;
     ui.provisioningProgress.dataset.tone = "done";
     ui.provisioningTrack.classList.remove("dn-livebar");
@@ -9393,12 +9543,118 @@
   function hideProvisioningProgress() {
     if (!ui.provisioningProgress) return;
     window.clearTimeout(provisioningCompletionTimer);
+    clearProvisioningNotice();
     ui.provisioningProgress.hidden = true;
     ui.provisioningProgress.classList.remove("dn-in");
     ui.provisioningTrack?.classList.remove("dn-livebar");
     delete ui.provisioningProgress.dataset.tone;
     provisioningProgressVisible = false;
     provisioningLastMessage = "";
+  }
+
+  // ── A build that stopped ────────────────────────────────────────────────
+  // The bar stays, frozen at the milestone it reached, and says so in words:
+  // "stopped before it finished" is the cue, the danger tone is only the
+  // corroboration. Under it goes the Notice — an event that happened in the
+  // provisioning pipeline, at a time, with a code — carrying the remedies the
+  // API can actually perform.
+  function renderStoppedProvisioning(team, stopped) {
+    window.clearTimeout(provisioningCompletionTimer);
+    provisioningProgressVisible = false;
+    provisioningLastMessage = "";
+    ui.provisioningProgress.hidden = false;
+    ui.provisioningProgress.classList.add("dn-in");
+    ui.provisioningProgress.dataset.tone = "stopped";
+    // The travelling hairline means "this is streaming right now". Nothing is.
+    ui.provisioningTrack.classList.remove("dn-livebar");
+    setGaugeWidth(ui.provisioningFill, stopped.percent);
+    ui.provisioningTrack.setAttribute("aria-valuenow", String(stopped.percent));
+    const verb = stopped.canceled ? "was canceled" : "stopped";
+    ui.provisioningMessage.textContent = stopped.deleting
+      ? `Removing this team ${verb} before it finished`
+      : `Setup ${verb} before it finished`;
+    // The step it died on, in the words the bar was using a moment earlier, so
+    // the last thing the customer read is the thing the failure names.
+    ui.provisioningEta.textContent = stopped.message ? `Stopped at: ${stopped.message.toLowerCase()}` : "";
+    renderProvisioningStoppedNotice(team, stopped);
+  }
+
+  function clearProvisioningNotice() {
+    if (!ui.provisioningNotice) return;
+    ui.provisioningNotice.replaceChildren();
+    ui.provisioningNotice.hidden = true;
+  }
+
+  // Three clauses, in order: what happened, what it means, what happens next.
+  function renderProvisioningStoppedNotice(team, stopped) {
+    if (!ui.provisioningNotice) return;
+    const presentation = launchContract?.provisioningPresentation?.(team?.provisioning || {}) || {};
+    const rawStep = stringValue(presentation.step);
+    const step = SETUP_STEP[rawStep] || rawStep;
+    const failedAt = timestampDate(team?.provisioning?.occurredAt || team?.provisioning?.updatedAt);
+    const controls = teamLifecycleControls(team);
+
+    // What happened. The server's own customer-safe sentence when it sent one,
+    // because it knows more than the step name does; the step otherwise.
+    const happened = stringValue(stopped.safeError)
+      || (step && step !== "waiting for status"
+        ? `${stopped.deleting ? "Removing this team" : "Setup"} ${stopped.canceled ? "was canceled" : "failed"} while ${step}.`
+        : `${stopped.deleting ? "Removing this team" : "Setup"} ${stopped.canceled ? "was canceled" : "failed"} before it reported a step.`);
+
+    // What it means, then what happens next. Deletion is still a door; it is no
+    // longer the only one, and it is no longer the first.
+    const means = stopped.deleting
+      ? "The team is still here, and part of its workspace may already be torn down."
+      : "The team never started running, and its workspace was never finished.";
+    const canRetry = stopped.deleting ? controls.includes("delete") : controls.includes("resume");
+    const next = stopped.deleting
+      ? (canRetry ? "Retry deletion to finish removing it." : "Nothing else is needed from you; support can finish the removal.")
+      : (canRetry
+        ? "Retry setup to run the same build again — it reuses this team rather than creating another one."
+        : "Nothing here can restart it; contact support with the code below.");
+
+    const actions = [];
+    if (canRetry && !stopped.deleting) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "dn-btn dn-btn--primary dn-btn--sm";
+      retry.textContent = "Retry setup";
+      retry.addEventListener("click", () => resumeTeamLifecycle(team));
+      actions.push(retry);
+    }
+    // Deletion stays available and stays destructive, so it stays a ghost
+    // button behind the non-destructive one — and it opens the confirmation on
+    // the team list rather than deleting from here.
+    if (controls.includes("delete")) {
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "dn-btn dn-btn--ghost dn-btn--sm";
+      remove.dataset.viewLink = "dashboard";
+      remove.textContent = stopped.deleting ? "Retry deletion" : "Delete this team";
+      remove.addEventListener("click", () => requestTeamDeletion(team));
+      actions.push(remove);
+    }
+
+    const notice = buildNotice({
+      // The ladder decides how loud this is; this file only names the level.
+      level: "error",
+      title: happened,
+      body: `${means} ${next}`,
+      code: [stringValue(presentation.state) || "PROVISIONING_STATE_FAILED", rawStep].filter(Boolean).join(" · "),
+      // A Notice names where the event came from, in the customer's own model —
+      // "team setup", not the service that runs it. check_runtime_language.cjs
+      // fails the build on the latter, and it is right to: the customer's model
+      // is issues, pull requests, reviews and money.
+      source: stopped.deleting ? "Team removal" : "Team setup",
+      time: failedAt ? relativeTime(failedAt) : "",
+      actions
+    });
+    if (!notice) {
+      clearProvisioningNotice();
+      return;
+    }
+    ui.provisioningNotice.replaceChildren(notice);
+    ui.provisioningNotice.hidden = false;
   }
 
   // Replaying a CSS animation needs the class removed, layout flushed, and the
@@ -10286,7 +10542,12 @@
         return;
       }
       if (failed) {
-        target._pollingMessage = "Provisioning failed. Delete this team and try again, or contact support.";
+        // Deletion was the only remedy this line ever named, and it is the
+        // expensive one: the customer has paid, and `resume` re-drives the same
+        // build on the team they already have. The row's own controls already
+        // offer "Retry setup" for exactly this state, so the sentence now
+        // points at the door that is there rather than at the one that costs.
+        target._pollingMessage = "Setup stopped before it finished. This team is not running. Retry setup to run it again — deleting it is not required.";
         renderTeamList();
         return;
       }
@@ -10315,11 +10576,30 @@
     }
   }
 
-  function toast(message, tone) {
-    ui.toast.textContent = message;
-    ui.toast.dataset.tone = tone || "info";
+  // Every caller here already names a NOTICE_LEVELS level - "error", "success",
+  // "info" - so the toast reads its tone out of the ladder instead of putting
+  // the level name straight into an attribute and letting the stylesheet keep a
+  // second, private opinion about which names are loud. Sticky comes from the
+  // same row: a danger toast never expires, because a toast that vanishes
+  // before it is read is worse than no toast at all.
+  function toast(message, level) {
+    const shape = noticeShape(level) || noticeShape("info");
+    const copy = document.createElement("span");
+    copy.className = "toast-message";
+    copy.textContent = stringValue(message);
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.className = "toast-dismiss";
+    dismiss.textContent = "Dismiss";
+    dismiss.addEventListener("click", () => { window.clearTimeout(toast.timer); ui.toast.hidden = true; });
+    ui.toast.replaceChildren(copy, dismiss);
+    ui.toast.dataset.tone = shape?.tone || "idle";
     ui.toast.hidden = false;
     window.clearTimeout(toast.timer);
+    // A sticky level waits to be read, which only works because the toast now
+    // carries its own way out; a sticky toast with no exit is a permanent
+    // overlay, which is a different bug from the one being fixed.
+    if (shape?.sticky) return;
     toast.timer = window.setTimeout(() => { ui.toast.hidden = true; }, 9000);
   }
 

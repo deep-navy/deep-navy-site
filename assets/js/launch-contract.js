@@ -209,6 +209,26 @@
     };
   }
 
+  // The step the command last reported, by name. Three readers needed the same
+  // enum map and each carried its own copy; a fourth would have been the third
+  // chance for them to drift apart.
+  const PROVISIONING_STEPS_BY_NUMBER = Object.freeze({
+    1: "PROVISIONING_STEP_QUEUED",
+    2: "PROVISIONING_STEP_VALIDATING_PREREQUISITES",
+    3: "PROVISIONING_STEP_CREATING_NAMESPACE",
+    4: "PROVISIONING_STEP_CONFIGURING_RUNTIME",
+    5: "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE",
+    6: "PROVISIONING_STEP_WAITING_FOR_GATEWAY",
+    7: "PROVISIONING_STEP_READY",
+    8: "PROVISIONING_STEP_SUSPENDING",
+    9: "PROVISIONING_STEP_BACKING_UP",
+    10: "PROVISIONING_STEP_DELETING"
+  });
+
+  function provisioningStepName(status) {
+    return enumValue(status?.provisioningStep, PROVISIONING_STEPS_BY_NUMBER);
+  }
+
   function provisioningState(status) {
     const typed = enumValue(status?.provisioningState, provisioningStatesByNumber);
     return typed;
@@ -220,18 +240,7 @@
 
   function provisioningPresentation(status) {
     const state = provisioningState(status);
-    const step = enumValue(status?.provisioningStep, {
-      1: "PROVISIONING_STEP_QUEUED",
-      2: "PROVISIONING_STEP_VALIDATING_PREREQUISITES",
-      3: "PROVISIONING_STEP_CREATING_NAMESPACE",
-      4: "PROVISIONING_STEP_CONFIGURING_RUNTIME",
-      5: "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE",
-      6: "PROVISIONING_STEP_WAITING_FOR_GATEWAY",
-      7: "PROVISIONING_STEP_READY",
-      8: "PROVISIONING_STEP_SUSPENDING",
-      9: "PROVISIONING_STEP_BACKING_UP",
-      10: "PROVISIONING_STEP_DELETING"
-    }) || stringValue(status?.step);
+    const step = provisioningStepName(status) || stringValue(status?.step);
     const clean = (value) => stringValue(value).replace(/^PROVISIONING_(?:STATE|STEP)_/, "").replaceAll("_", " ").toLowerCase();
     return {
       state,
@@ -322,18 +331,7 @@
         ? { percent: 100, message: "Team removed", eta: "" }
         : { percent: 100, message: "Your team is live", eta: "" };
     }
-    const step = enumValue(status?.provisioningStep, {
-      1: "PROVISIONING_STEP_QUEUED",
-      2: "PROVISIONING_STEP_VALIDATING_PREREQUISITES",
-      3: "PROVISIONING_STEP_CREATING_NAMESPACE",
-      4: "PROVISIONING_STEP_CONFIGURING_RUNTIME",
-      5: "PROVISIONING_STEP_CREATING_OPENCLAW_INSTANCE",
-      6: "PROVISIONING_STEP_WAITING_FOR_GATEWAY",
-      7: "PROVISIONING_STEP_READY",
-      8: "PROVISIONING_STEP_SUSPENDING",
-      9: "PROVISIONING_STEP_BACKING_UP",
-      10: "PROVISIONING_STEP_DELETING"
-    });
+    const step = provisioningStepName(status);
     if (deleting) {
       const removing = step ? DELETION_PROGRESS_BY_STEP[step] : null;
       return removing
@@ -345,6 +343,41 @@
     // No provisioning command yet: the capture exists but payment has not been
     // confirmed by the signed webhook. Bank a visible first step immediately.
     return { percent: 6, message: "Confirming payment with Stripe", eta: PAYMENT_CONFIRMATION_ETA };
+  }
+
+  // Where the bar stops when the command stopped.
+  //
+  // provisioningProgress answers null for FAILED and CANCELED, and the console
+  // read that null as "hide the bar" - so a build that died at 92% took the
+  // whole progress surface off screen with it, mid-sentence, and the floor then
+  // said nothing at all about the team. A stopped build is a fact and it needs
+  // a surface, so this answers the same question for a terminal command that
+  // provisioningProgress answers for a live one.
+  //
+  // It reads the SAME milestone map the live bar climbs, so the frozen bar sits
+  // exactly where the wait stopped rather than restarting at zero: "it failed"
+  // and "it failed HERE" are different amounts of information, and only the
+  // second one tells a customer whether their repositories were ever touched.
+  // A command that died before reporting any step really did get nowhere worth
+  // drawing, and zero is the honest width for that.
+  function provisioningStopped(status) {
+    const state = provisioningState(status);
+    if (state !== PROVISIONING_STATE.FAILED && state !== PROVISIONING_STATE.CANCELED) return null;
+    const deleting = provisioningOperation(status) === PROVISIONING_OPERATION.DELETE;
+    const step = provisioningStepName(status);
+    const milestone = step ? (deleting ? DELETION_PROGRESS_BY_STEP : PROVISIONING_PROGRESS_BY_STEP)[step] : null;
+    return {
+      state,
+      canceled: state === PROVISIONING_STATE.CANCELED,
+      deleting,
+      step,
+      percent: milestone ? milestone.percent : 0,
+      // The step it stopped ON, in the same customer words the bar used while
+      // it was still climbing - so the sentence the customer last read is the
+      // sentence the failure names.
+      message: milestone ? milestone.message : "",
+      safeError: stringValue(status?.safeError).slice(0, 300)
+    };
   }
 
   // The example run: the proof-of-work moment shown BEFORE the paywall.
@@ -549,6 +582,8 @@
     provisioningOperation,
     provisioningPresentation,
     provisioningProgress,
+    provisioningStepName,
+    provisioningStopped,
     provisioningState,
     provisioningTerminal,
     repositorySelectionMode,

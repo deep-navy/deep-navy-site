@@ -422,6 +422,13 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .provisioning-progress[data-tone="working"] .provisioning-fill { background: var(--status-live-dot); }
 .provisioning-progress[data-tone="done"] .provisioning-fill { background: var(--status-success-dot); }
 .provisioning-progress[data-tone="done"] .provisioning-copy { color: var(--status-success-fg); }
+/* A build that stopped. The bar does not vanish and does not lie about how far
+   it got: it freezes on the milestone it reached, in coral. The copy under it
+   says "stopped before it finished" in words, so the hue is corroboration
+   rather than the message - grayscale(1) loses nothing here. */
+.provisioning-progress[data-tone="stopped"] .provisioning-fill { background: var(--status-danger-dot); }
+.provisioning-progress[data-tone="stopped"] .provisioning-copy { color: var(--status-danger-fg); }
+.provisioning-notice { margin-top: .7rem; }
 /* The step name is the labour illusion doing its work, so it carries the
    reading weight; the ETA is a caveat and stays quiet. */
 .provisioning-copy { margin: .4rem 0 0; font-size: .82rem; color: var(--muted-bright); }
@@ -436,7 +443,14 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    the instrument voice - mono uppercase label, tokens only. */
 .approval-reference { margin: 0; font-size: .7rem; }.approval-reference a { color: var(--aqua); }
 .approval-voided { display: grid; gap: .3rem; margin: 0; padding-left: .65rem; border-left: 2px solid var(--coral); }.approval-voided-label { color: var(--coral); font-family: var(--font-mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; }.approval-voided-reason { color: var(--muted-bright); font-size: .72rem; line-height: 1.45; }
-.toast { position: fixed; z-index: 200; right: 20px; bottom: 20px; max-width: 420px; padding: .85rem 1rem; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; background: var(--navy-800); font-size: .8rem; }.toast[data-tone="error"] { border-color: var(--muted-bright); border-style: dashed; }.toast[data-tone="success"] { border-color: var(--accent-a35); }
+.toast { position: fixed; z-index: 200; right: 20px; bottom: 20px; max-width: 420px; padding: .85rem 1rem; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; background: var(--navy-800); font-size: .8rem; }.toast[data-tone="danger"] { border-color: var(--muted-bright); border-style: dashed; }.toast[data-tone="success"] { border-color: var(--accent-a35); }
+/* The toast carries its own exit, because the danger levels on the ladder are
+   sticky: a toast that waits to be read has to be dismissible, or it is not a
+   toast. */
+.toast { display: flex; align-items: baseline; gap: .8rem; }
+.toast-message { flex: 1; min-width: 0; }
+.toast-dismiss { flex: none; padding: 0; color: var(--muted); border: 0; background: none; font: inherit; font-size: .7rem; text-decoration: underline; cursor: pointer; }
+.toast-dismiss:hover { color: var(--ink); }
 .status-label.failed::before { border: 1px solid var(--ink); background: transparent; }
 
 /* Editorial records */
