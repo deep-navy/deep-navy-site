@@ -178,6 +178,9 @@
     objectiveKpiList: document.querySelector("[data-objective-kpi-list]"),
     initiativeState: document.querySelector("[data-initiative-state]"),
     initiativeList: document.querySelector("[data-initiative-list]"),
+    objectivesViewState: document.querySelector("[data-objectives-view-state]"),
+    objectivesViewEmpty: document.querySelector("[data-objectives-view-empty]"),
+    objectivesViewList: document.querySelector("[data-objectives-view-list]"),
     activityState: document.querySelector("[data-activity-state]"),
     activityFilters: document.querySelector("[data-activity-filters]"),
     activityFilterButtons: [...document.querySelectorAll("[data-activity-filter]")],
@@ -392,6 +395,10 @@
     objectiveListsByTeam: new Map(),
     objectiveDispatchTimer: null,
     objectiveDispatchCheckedAt: null,
+    // Initiatives already loaded, keyed by objective id: the "On now" card's
+    // own load fills it for the selected objective, and the objectives view's
+    // fan-out fills the rest — neither ever refetches what the other holds.
+    initiativesByObjective: new Map(),
     approvals: [],
     approvalNextPageToken: "",
     approvalPageTokens: new Set(),
@@ -441,6 +448,15 @@
   // Pending teams from RequestTeam are polled with GetTeam until they leave
   // LIFECYCLE_STATE_PENDING (a verified Stripe webhook provisions them).
   const pendingTeamTimers = new Map();
+  // The objectives view's element handles for in-place updates, rebuilt with
+  // every full render: the dispatch poll rewrites each record's handoff line
+  // and the initiative loads fill each record's proposal list WITHOUT
+  // rebuilding cards — a rebuild would collapse any drill-in the customer
+  // has open. The load key arms the view's one proposal fan-out per team and
+  // generation.
+  const objectiveCardDispatch = new Map();
+  const objectiveCardInitiatives = new Map();
+  let objectivesViewLoadKey = "";
   const mutationKeys = launchContract?.createMutationKeys(() => window.crypto.randomUUID ? window.crypto.randomUUID() : randomBase64Url(18));
   const organizationCoordinator = organizationContract?.createCoordinator({
     request: apiRequest,
@@ -3255,6 +3271,7 @@
     setSourceState(ui.objectiveKpiState, "Waiting");
     setFieldError(ui.objectiveError, "");
     setSourceState(ui.objectiveState, "Waiting");
+    resetObjectivesView(message);
   }
 
   function objectiveDispatchStateLabel(value) {
@@ -3293,15 +3310,16 @@
     return true;
   }
 
-  function renderObjectiveDispatch(dispatch) {
+  // One vocabulary for every surface that shows a handoff. The "On now"
+  // card and each record in the objectives view render this exact
+  // presentation, so two screens can never describe one dispatch row with
+  // two different sentences.
+  function objectiveDispatchPresentation(dispatch) {
     if (!validObjectiveDispatch(dispatch)) {
-      setSourceState(ui.objectiveDispatchState, "Unavailable", "error");
-      ui.objectiveDispatchDetail.textContent = "We could not read the handoff state for this objective, so nothing is assumed about it.";
-      return;
+      return { label: "Unavailable", tone: "error", sentence: "We could not read the handoff state for this objective, so nothing is assumed about it." };
     }
     const stateLabel = objectiveDispatchStateLabel(dispatch.state);
     const tone = stateLabel === "delivered" ? "success" : stateLabel === "failed" ? "error" : "loading";
-    setSourceState(ui.objectiveDispatchState, capitalize(stateLabel), tone);
     // Speak to the customer, not the operator. "Attempt 1 · Durable TPM
     // handoff" is dispatcher telemetry; what a customer needs to know is
     // whether their Product Manager has the objective, and if not, why.
@@ -3323,7 +3341,17 @@
       const checkedLabel = checked ? ` — last checked ${new Intl.DateTimeFormat(undefined, { timeStyle: "medium" }).format(checked)}` : "";
       sentence = `On its way to your Product Manager${checkedLabel}.${safeError ? " " + safeError : ""}`;
     }
-    ui.objectiveDispatchDetail.textContent = sentence;
+    return { label: capitalize(stateLabel), tone, sentence };
+  }
+
+  function applyObjectiveDispatch(stateNode, detailNode, dispatch) {
+    const presentation = objectiveDispatchPresentation(dispatch);
+    setSourceState(stateNode, presentation.label, presentation.tone);
+    if (detailNode) detailNode.textContent = presentation.sentence;
+  }
+
+  function renderObjectiveDispatch(dispatch) {
+    applyObjectiveDispatch(ui.objectiveDispatchState, ui.objectiveDispatchDetail, dispatch);
   }
 
   function validObjectiveKpis(kpis) {
@@ -3343,6 +3371,20 @@
     });
   }
 
+  // One builder for a measure wherever it renders — the "On now" plan detail
+  // and the objectives view records use this same item, the way the activity
+  // surfaces share activityLedgerItem.
+  function objectiveKpiItem(kpi) {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    const detail = document.createElement("span");
+    const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 7 });
+    name.textContent = stringValue(kpi.name);
+    detail.textContent = `${number.format(Number(kpi.baseline))} → ${number.format(Number(kpi.target))} ${stringValue(kpi.unit)} · ${stringValue(kpi.direction).toLowerCase()} · ${kpi.guardrail ? "guardrail" : "outcome KPI"}`;
+    item.append(name, detail);
+    return item;
+  }
+
   function renderObjectiveKpis(kpis) {
     ui.objectiveKpiList.replaceChildren();
     if (!validObjectiveKpis(kpis)) {
@@ -3352,16 +3394,7 @@
       setSourceState(ui.objectiveKpiState, "Invalid response", "error");
       return;
     }
-    kpis.forEach((kpi) => {
-      const item = document.createElement("li");
-      const name = document.createElement("strong");
-      const detail = document.createElement("span");
-      const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 7 });
-      name.textContent = stringValue(kpi.name);
-      detail.textContent = `${number.format(Number(kpi.baseline))} → ${number.format(Number(kpi.target))} ${stringValue(kpi.unit)} · ${stringValue(kpi.direction).toLowerCase()} · ${kpi.guardrail ? "guardrail" : "outcome KPI"}`;
-      item.append(name, detail);
-      ui.objectiveKpiList.append(item);
-    });
+    kpis.forEach((kpi) => ui.objectiveKpiList.append(objectiveKpiItem(kpi)));
     ui.objectiveKpiEmpty.hidden = kpis.length > 0;
     ui.objectiveKpiList.hidden = kpis.length === 0;
     if (!kpis.length) setEmptyState(ui.objectiveKpiEmpty, "No measures yet", "Your Product Manager adds success measures as it breaks this objective down.");
@@ -3456,6 +3489,7 @@
     session.objectiveListsByTeam.set(stringValue(teamId), result.value);
     session.objectiveDispatchCheckedAt = new Date();
     renderObjectiveView(teamId, generation);
+    renderObjectivesView(teamId, generation);
     renderStatStrip();
   }
 
@@ -3507,6 +3541,10 @@
         session.objectivesByTeam.set(teamKey, objective);
         renderObjectiveDispatch(objective.dispatch);
       }
+      // The objectives view shows every handoff, not only the selected one:
+      // update each record's dispatch line in place rather than rebuilding
+      // the cards, which would collapse any drill-in the customer has open.
+      refreshObjectiveCardDispatch(objectives);
       refreshCrewActivity();
     } catch (error) {
       if (generation !== session.workspaceGeneration || stringValue(teamId) !== session.selectedTeamId) return;
@@ -3565,6 +3603,21 @@
     throw new ApiError("Initiative list exceeded the supported launch page limit", 0, "resource_exhausted", "");
   }
 
+  // One builder for a proposal wherever it renders — the "On now" plan
+  // detail and the objectives view records share it, the way the activity
+  // surfaces share activityLedgerItem.
+  function initiativeItem(initiative) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    const description = document.createElement("p");
+    const detail = document.createElement("span");
+    title.textContent = stringValue(initiative.title) || "Untitled initiative";
+    description.textContent = stringValue(initiative.description);
+    detail.textContent = [`Priority ${Number(initiative.priority)}`, stringValue(initiative.status).replaceAll("_", " "), stringValue(initiative.hypothesis) ? `Hypothesis: ${stringValue(initiative.hypothesis)}` : "No hypothesis supplied"].join(" · ");
+    item.append(title, description, detail);
+    return item;
+  }
+
   async function loadInitiatives(objective, generation = session.workspaceGeneration) {
     const objectiveId = stringValue(objective?.id);
     const teamId = stringValue(objective?.teamId);
@@ -3576,18 +3629,11 @@
       if (initiatives.some((initiative) => stringValue(initiative?.objectiveId) !== objectiveId)) {
         throw new ApiError("Initiative service returned a record outside the current objective", 0, "invalid_response", "");
       }
+      // The objectives view reads this same answer instead of asking again.
+      session.initiativesByObjective.set(objectiveId, initiatives);
+      renderObjectiveCardInitiatives(objectiveId);
       ui.initiativeList.replaceChildren();
-      initiatives.forEach((initiative) => {
-        const item = document.createElement("li");
-        const title = document.createElement("strong");
-        const description = document.createElement("p");
-        const detail = document.createElement("span");
-        title.textContent = stringValue(initiative.title) || "Untitled initiative";
-        description.textContent = stringValue(initiative.description);
-        detail.textContent = [`Priority ${Number(initiative.priority)}`, stringValue(initiative.status).replaceAll("_", " "), stringValue(initiative.hypothesis) ? `Hypothesis: ${stringValue(initiative.hypothesis)}` : "No hypothesis supplied"].join(" · ");
-        item.append(title, description, detail);
-        ui.initiativeList.append(item);
-      });
+      initiatives.forEach((initiative) => ui.initiativeList.append(initiativeItem(initiative)));
       setSourceState(ui.initiativeState, initiatives.length ? `${initiatives.length} ${initiatives.length === 1 ? "initiative" : "initiatives"}` : "No initiatives yet", initiatives.length ? "success" : "");
     } catch (error) {
       if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
@@ -3685,6 +3731,424 @@
     }
     session.objectivesByTeam.set(stringValue(team.id), objective);
     renderObjectiveView(team.id, session.workspaceGeneration);
+  }
+
+  // ── The objectives view ─────────────────────────────────────────────────
+  // One record per business objective, rendered from the list the workspace
+  // refresh already holds. Each card carries the plan (dispatch state,
+  // measures, initiatives) and the proof: the acceptance evidence line,
+  // classified through the same objectiveAcceptanceState the instrument
+  // strip counts with, so the two surfaces can never disagree. Proven,
+  // regressed and never-run are three different facts and render as three
+  // different states — regressed is never folded back into unproven.
+
+  const acceptanceTimeFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+  function evidenceTimeNode(date) {
+    const time = document.createElement("time");
+    time.dateTime = date.toISOString();
+    time.textContent = acceptanceTimeFormat.format(date);
+    return time;
+  }
+
+  // A check-run URL earns a link the same way the PRD reference does: https,
+  // github.com, no credentials, no port, no query, no fragment, and a plain
+  // multi-segment path. Anything else renders as text only — never a
+  // nearly-right link on the word "proof".
+  function acceptanceRunUrl(value) {
+    const raw = stringValue(value);
+    if (!raw || raw.length > 512) return "";
+    let url;
+    try {
+      url = new URL(raw);
+    } catch {
+      return "";
+    }
+    if (url.protocol !== "https:" || url.hostname !== "github.com" || url.username || url.password || url.port || url.search || url.hash) return "";
+    if (!/^\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+$/.test(url.pathname)) return "";
+    return url.toString();
+  }
+
+  // The acceptance observation renders its detail line only when every field
+  // verifies: the deterministic check-run name, a full 40-hex head SHA, a
+  // conclusion in GitHub's own vocabulary, and a real observation time. A
+  // record that does not verify keeps its classification — the conclusion
+  // alone carries that — and loses the detail line: fail closed, never
+  // almost-right evidence.
+  function acceptanceEvidence(objective) {
+    const acceptance = objective?.acceptance;
+    if (!acceptance) return null;
+    const nameMatch = /^deep-navy\/objective-([0-9a-f]{8})[0-9a-f-]{0,64}$/.exec(stringValue(acceptance.checkRunName).toLowerCase());
+    const headSha = stringValue(acceptance.headSha).toLowerCase();
+    const conclusion = stringValue(acceptance.conclusion).toLowerCase();
+    const observedAt = timestampDate(acceptance.observedAt);
+    if (!nameMatch || !/^[0-9a-f]{40}$/.test(headSha) || !/^[a-z_]{1,40}$/.test(conclusion) || !observedAt) return null;
+    return {
+      checkLabel: `deep-navy/objective-${nameMatch[1]}`,
+      sha: headSha.slice(0, 7),
+      conclusion,
+      observedAt,
+      url: acceptanceRunUrl(acceptance.checkRunUrl)
+    };
+  }
+
+  function objectiveEvidenceSection(objective, acceptanceState) {
+    const section = document.createElement("div");
+    section.className = "objective-evidence";
+    section.dataset.state = acceptanceState;
+    if (acceptanceState === "unproven") {
+      // The three-part empty state: what belongs here, why it is empty — and
+      // no button, because running the scenarios is the crew's work, not a
+      // control to hand the customer.
+      const copy = document.createElement("p");
+      copy.className = "objective-evidence-copy";
+      copy.textContent = "Every objective is proven by tagged acceptance scenarios running on the default branch. No acceptance run has reported for this objective yet — the crew wires the scenarios up as the work ships, and the first run fills this line in.";
+      section.append(copy);
+      return section;
+    }
+    const evidence = acceptanceEvidence(objective);
+    const line = document.createElement("p");
+    line.className = "objective-evidence-line";
+    if (!evidence) {
+      line.textContent = acceptanceState === "proven"
+        ? "The passing acceptance observation could not be read, so its details are not shown."
+        : "was proven · the failing acceptance observation could not be read, so its details are not shown.";
+      section.append(line);
+      return section;
+    }
+    if (acceptanceState === "proven") {
+      line.append(`${evidence.checkLabel} · ${evidence.conclusion} on the default branch @ ${evidence.sha} · `, evidenceTimeNode(evidence.observedAt));
+    } else {
+      line.append(`was proven · regressed @ ${evidence.sha} · `, evidenceTimeNode(evidence.observedAt));
+    }
+    section.append(line);
+    if (evidence.url) {
+      const open = document.createElement("p");
+      open.className = "objective-evidence-open";
+      const link = document.createElement("a");
+      link.href = evidence.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.referrerPolicy = "no-referrer";
+      link.textContent = "Open the acceptance run";
+      open.append(link);
+      section.append(open);
+    }
+    return section;
+  }
+
+  function objectiveCardKpis(objective) {
+    const block = document.createElement("div");
+    block.className = "objective-card-block";
+    const label = document.createElement("span");
+    label.className = "lbl";
+    label.textContent = "Measures";
+    block.append(label);
+    if (!validObjectiveKpis(objective.kpis)) {
+      const note = document.createElement("p");
+      note.textContent = "The success measures for this objective could not be read, so none are shown.";
+      block.append(note);
+      return block;
+    }
+    if (!objective.kpis.length) {
+      const note = document.createElement("p");
+      note.textContent = "No measures yet — your Product Manager adds them as it breaks this objective down.";
+      block.append(note);
+      return block;
+    }
+    const list = document.createElement("ol");
+    objective.kpis.forEach((kpi) => list.append(objectiveKpiItem(kpi)));
+    block.append(list);
+    return block;
+  }
+
+  function objectiveCardInitiativesSection(objective) {
+    const objectiveId = stringValue(objective.id);
+    const block = document.createElement("div");
+    block.className = "objective-card-block";
+    const label = document.createElement("span");
+    label.className = "lbl";
+    label.textContent = "Initiatives";
+    const state = document.createElement("span");
+    state.className = "data-source-badge";
+    const note = document.createElement("p");
+    note.hidden = true;
+    const list = document.createElement("ol");
+    list.hidden = true;
+    block.append(label, state, note, list);
+    objectiveCardInitiatives.set(objectiveId, { state, note, list });
+    renderObjectiveCardInitiatives(objectiveId);
+    return block;
+  }
+
+  function renderObjectiveCardInitiatives(objectiveId, failed = false) {
+    const nodes = objectiveCardInitiatives.get(stringValue(objectiveId));
+    if (!nodes) return;
+    const cached = session.initiativesByObjective.get(stringValue(objectiveId));
+    nodes.list.replaceChildren();
+    if (!Array.isArray(cached)) {
+      nodes.list.hidden = true;
+      nodes.note.hidden = false;
+      nodes.note.textContent = failed
+        ? "Initiatives could not be loaded for this objective. Reopen this screen to retry."
+        : "Initiatives load when this screen opens.";
+      setSourceState(nodes.state, failed ? "Unavailable" : "Waiting", failed ? "error" : "");
+      return;
+    }
+    cached.forEach((initiative) => nodes.list.append(initiativeItem(initiative)));
+    nodes.list.hidden = cached.length === 0;
+    nodes.note.hidden = cached.length > 0;
+    if (!cached.length) nodes.note.textContent = "No initiatives yet — proposals appear as your Product Manager breaks the objective down.";
+    setSourceState(nodes.state, cached.length ? `${cached.length} ${cached.length === 1 ? "initiative" : "initiatives"}` : "None yet", cached.length ? "success" : "");
+  }
+
+  function refreshObjectiveCardDispatch(objectives) {
+    (Array.isArray(objectives) ? objectives : []).forEach((objective) => {
+      const nodes = objectiveCardDispatch.get(stringValue(objective?.id));
+      if (nodes) applyObjectiveDispatch(nodes.state, nodes.detail, objective?.dispatch);
+    });
+  }
+
+  // ── Per-objective drill-in ──────────────────────────────────────────────
+  // The histories accept an objective filter, so each record can open the
+  // sessions and code changes attributed to it — fetched on first open only,
+  // rendered by the same ledger builder every other history uses, and failed
+  // closed when the service answers outside the requested scope.
+
+  function objectiveSessionEntries(result, teamId, objectiveId) {
+    const records = Array.isArray(result?.sessions) ? result.sessions : [];
+    if (records.length > 50) throw new ApiError("SessionService returned an oversized page", 0, "invalid_response", "");
+    const seen = new Set();
+    const entries = records.map((record) => {
+      const entry = sessionHistoryEntry(record, teamId);
+      // The filter travelled on the request; a record for another objective
+      // is the service ignoring it, and the list fails closed rather than
+      // captioning unrelated work with this objective's title.
+      if (entry.objectiveId !== objectiveId) throw new ApiError("SessionService returned a session outside the requested objective scope", 0, "invalid_response", "");
+      if (seen.has(entry.id)) throw new ApiError("SessionService returned a duplicate session", 0, "invalid_response", "");
+      seen.add(entry.id);
+      return entry;
+    });
+    entries.sort((left, right) => activityEntryTime(right) - activityEntryTime(left));
+    return entries;
+  }
+
+  function objectiveChangeEntries(result, teamId, objectiveId) {
+    const records = Array.isArray(result?.changes) ? result.changes : [];
+    if (records.length > 50) throw new ApiError("WorkspaceService returned an oversized page", 0, "invalid_response", "");
+    const seen = new Set();
+    let previousSequence = 0n;
+    const entries = records.map((record) => {
+      const entry = workspaceHistoryEntry(record, teamId, previousSequence);
+      if (entry.objectiveId !== objectiveId) throw new ApiError("WorkspaceService returned a change outside the requested objective scope", 0, "invalid_response", "");
+      if (seen.has(entry.id)) throw new ApiError("WorkspaceService returned a duplicate change", 0, "invalid_response", "");
+      seen.add(entry.id);
+      previousSequence = entry.sequence;
+      return entry;
+    });
+    return entries.slice().sort((left, right) => activityEntryTime(right) - activityEntryTime(left));
+  }
+
+  function renderObjectiveWorkList(nodes, result, toEntries, emptyMessage, failureMessage) {
+    nodes.list.replaceChildren();
+    nodes.list.hidden = true;
+    nodes.note.hidden = false;
+    if (result.status === "rejected") {
+      nodes.note.textContent = apiErrorMessage(result.reason, failureMessage);
+      return false;
+    }
+    try {
+      const entries = toEntries(result.value);
+      if (!entries.length) {
+        nodes.note.textContent = emptyMessage;
+        return true;
+      }
+      entries.forEach((entry) => nodes.list.append(activityLedgerItem(entry, "")));
+      nodes.list.hidden = false;
+      const more = Boolean(opaquePageToken(result.value?.page?.nextPageToken));
+      nodes.note.hidden = !more;
+      nodes.note.textContent = more ? "The newest records are shown; the full history stays on the record." : "";
+      return true;
+    } catch (error) {
+      nodes.list.replaceChildren();
+      nodes.list.hidden = true;
+      nodes.note.hidden = false;
+      nodes.note.textContent = apiErrorMessage(error, failureMessage);
+      return false;
+    }
+  }
+
+  async function loadObjectiveWork(objective, nodes, generation) {
+    const teamId = stringValue(objective.teamId);
+    const objectiveId = stringValue(objective.id);
+    setSourceState(nodes.state, "Loading", "loading");
+    const [sessionsResult, changesResult] = await Promise.allSettled([
+      apiRequest("sessions", { teamId, objectiveId, page: { pageSize: 50 } }),
+      apiRequest("workspace_changes", { teamId, objectiveId, afterSequence: "0", page: { pageSize: 50 } })
+    ]);
+    if (generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return false;
+    const sessionsOk = renderObjectiveWorkList(nodes.sessions, sessionsResult, (value) => objectiveSessionEntries(value, teamId, objectiveId), "No sessions are attributed to this objective yet.", "Session history could not be loaded for this objective.");
+    const changesOk = renderObjectiveWorkList(nodes.changes, changesResult, (value) => objectiveChangeEntries(value, teamId, objectiveId), "No code changes are attributed to this objective yet.", "Code changes could not be loaded for this objective.");
+    setSourceState(nodes.state, sessionsOk && changesOk ? "Loaded" : "Unavailable", sessionsOk && changesOk ? "success" : "error");
+    return sessionsOk && changesOk;
+  }
+
+  function objectiveWorkSection(objective) {
+    const details = document.createElement("details");
+    details.className = "objective-work";
+    const summary = document.createElement("summary");
+    const summaryLabel = document.createElement("span");
+    summaryLabel.textContent = "Work on this objective";
+    const state = document.createElement("span");
+    state.className = "data-source-badge";
+    state.textContent = "Loads on open";
+    summary.append(summaryLabel, state);
+    const buildList = (heading) => {
+      const block = document.createElement("div");
+      const title = document.createElement("h4");
+      title.textContent = heading;
+      const note = document.createElement("p");
+      note.className = "objective-work-note";
+      const list = document.createElement("ol");
+      list.className = "customer-activity-list";
+      list.hidden = true;
+      block.append(title, note, list);
+      return { block, nodes: { note, list } };
+    };
+    const sessions = buildList("Sessions");
+    const changes = buildList("Code changes");
+    const body = document.createElement("div");
+    body.className = "objective-work-body";
+    body.append(sessions.block, changes.block);
+    details.append(summary, body);
+    // Fetched on first open only — and a failed load re-arms, so closing and
+    // reopening retries instead of freezing on the first error.
+    let loading = false;
+    let loaded = false;
+    details.addEventListener("toggle", async () => {
+      if (!details.open || loading || loaded) return;
+      loading = true;
+      loaded = await loadObjectiveWork(objective, { state, sessions: sessions.nodes, changes: changes.nodes }, session.workspaceGeneration);
+      loading = false;
+    });
+    return details;
+  }
+
+  function objectiveCard(objective) {
+    const objectiveId = stringValue(objective.id);
+    const acceptanceState = objectiveAcceptanceState(objective);
+    const item = document.createElement("li");
+    item.className = "objective-card";
+    const head = document.createElement("div");
+    head.className = "objective-card-head";
+    const title = document.createElement("strong");
+    title.className = "objective-card-title";
+    title.textContent = stringValue(objective.title) || "Untitled objective";
+    const proof = document.createElement("span");
+    proof.className = "objective-proof";
+    proof.dataset.state = acceptanceState;
+    proof.textContent = acceptanceState === "proven" ? "Proven" : acceptanceState === "regressed" ? "Regressed" : "Not proven yet";
+    head.append(title, proof);
+    const satisfiedAt = timestampDate(objective.satisfiedAt);
+    if (satisfiedAt) {
+      const since = document.createElement("span");
+      since.className = "objective-proof-since";
+      since.append("since ", evidenceTimeNode(satisfiedAt));
+      head.append(since);
+    }
+    const description = document.createElement("p");
+    description.className = "objective-card-desc";
+    description.textContent = stringValue(objective.description) || "No description returned.";
+    const dispatchLine = document.createElement("p");
+    dispatchLine.className = "onnow-state objective-card-dispatch";
+    const dispatchState = document.createElement("span");
+    const dispatchDetail = document.createElement("span");
+    dispatchLine.append(dispatchState, " ", dispatchDetail);
+    objectiveCardDispatch.set(objectiveId, { state: dispatchState, detail: dispatchDetail });
+    applyObjectiveDispatch(dispatchState, dispatchDetail, objective.dispatch);
+    item.append(head, description, dispatchLine, objectiveEvidenceSection(objective, acceptanceState), objectiveCardKpis(objective), objectiveCardInitiativesSection(objective), objectiveWorkSection(objective));
+    return item;
+  }
+
+  function renderObjectivesView(teamId, generation = session.workspaceGeneration) {
+    if (!ui.objectivesViewList || !ui.objectivesViewEmpty) return;
+    if (generation !== session.workspaceGeneration) return;
+    objectiveCardDispatch.clear();
+    objectiveCardInitiatives.clear();
+    const normalizedTeamId = stringValue(teamId);
+    const objectives = session.objectiveListsByTeam.get(normalizedTeamId);
+    ui.objectivesViewList.replaceChildren();
+    if (!Array.isArray(objectives) || !objectives.length) {
+      ui.objectivesViewList.hidden = true;
+      ui.objectivesViewEmpty.hidden = false;
+      if (Array.isArray(objectives)) {
+        setEmptyState(ui.objectivesViewEmpty, "No objectives yet", "Each objective appears here with its measures, its initiatives, and the acceptance evidence that proves it on the default branch. Yours are set in conversation: tell your Product Manager what matters, and it becomes a record on this screen.");
+        setSourceState(ui.objectivesViewState, "None yet");
+      } else {
+        setEmptyState(ui.objectivesViewEmpty, "No objectives loaded", "Objectives load with the rest of the workspace once an active team is selected.");
+        setSourceState(ui.objectivesViewState, "Waiting");
+      }
+      return;
+    }
+    objectives.forEach((objective) => ui.objectivesViewList.append(objectiveCard(objective)));
+    ui.objectivesViewEmpty.hidden = true;
+    ui.objectivesViewList.hidden = false;
+    // The header reading counts through the same classifier as the strip.
+    const proven = objectives.filter((objective) => objectiveAcceptanceState(objective) === "proven").length;
+    const regressed = objectives.filter((objective) => objectiveAcceptanceState(objective) === "regressed").length;
+    setSourceState(ui.objectivesViewState, `${proven}/${objectives.length} proven${regressed ? ` · ${regressed} regressed` : ""}`, regressed ? "error" : proven ? "success" : "");
+  }
+
+  function resetObjectivesView(message) {
+    session.initiativesByObjective.clear();
+    objectiveCardDispatch.clear();
+    objectiveCardInitiatives.clear();
+    objectivesViewLoadKey = "";
+    if (ui.objectivesViewList) {
+      ui.objectivesViewList.replaceChildren();
+      ui.objectivesViewList.hidden = true;
+    }
+    if (ui.objectivesViewEmpty) {
+      ui.objectivesViewEmpty.hidden = false;
+      setEmptyState(ui.objectivesViewEmpty, "No objectives loaded", message);
+    }
+    setSourceState(ui.objectivesViewState, "Waiting");
+  }
+
+  // The per-objective proposal lists are the one thing the workspace refresh
+  // does not already hold, so they load on the click that opens this screen
+  // — once per team and generation, capped, and never for an objective the
+  // "On now" card's own load has already cached.
+  async function ensureObjectivesViewWork() {
+    const team = selectedTeam();
+    if (!team || lifecycleLabel(team.state) !== "active") return;
+    const generation = session.workspaceGeneration;
+    const teamKey = stringValue(team.id);
+    const objectives = session.objectiveListsByTeam.get(teamKey) || [];
+    const missing = objectives.filter((objective) => !session.initiativesByObjective.has(stringValue(objective.id))).slice(0, 20);
+    if (!missing.length) return;
+    const key = `${teamKey}:${generation}`;
+    if (objectivesViewLoadKey === key) return;
+    objectivesViewLoadKey = key;
+    missing.forEach((objective) => {
+      const nodes = objectiveCardInitiatives.get(stringValue(objective.id));
+      if (nodes) setSourceState(nodes.state, "Loading", "loading");
+    });
+    const results = await Promise.allSettled(missing.map((objective) => listAllInitiatives(stringValue(objective.id))));
+    if (generation !== session.workspaceGeneration || teamKey !== session.selectedTeamId) return;
+    let failures = 0;
+    results.forEach((result, index) => {
+      const objectiveId = stringValue(missing[index].id);
+      if (result.status === "fulfilled") {
+        session.initiativesByObjective.set(objectiveId, result.value);
+        renderObjectiveCardInitiatives(objectiveId);
+      } else {
+        failures += 1;
+        renderObjectiveCardInitiatives(objectiveId, true);
+      }
+    });
+    // A failed or clipped fan-out re-arms, so the next entry retries the rest.
+    if (failures || objectives.some((objective) => !session.initiativesByObjective.has(stringValue(objective.id)))) objectivesViewLoadKey = "";
   }
 
   // ── The console ─────────────────────────────────────────────────────────
@@ -4613,11 +5077,14 @@
     // Objectives: satisfied_at is evidence, not lifecycle state - set while
     // the latest acceptance run passes, cleared when a later run fails. A
     // cleared proof with a failing observation is "regressed", a different
-    // fact from never-proven, and the strip refuses to fold the two.
+    // fact from never-proven, and the strip refuses to fold the two. The
+    // classification itself lives in objectiveAcceptanceState below, which
+    // the objectives view reads too — one classifier, two surfaces, no way
+    // for the counts up here to disagree with the records down there.
     const objectives = session.objectiveListsByTeam.get(session.selectedTeamId);
     if (Array.isArray(objectives) && objectives.length) {
-      const proven = objectives.filter((objective) => Boolean(timestampDate(objective?.satisfiedAt))).length;
-      const regressed = objectives.filter((objective) => !timestampDate(objective?.satisfiedAt) && failingAcceptance(objective)).length;
+      const proven = objectives.filter((objective) => objectiveAcceptanceState(objective) === "proven").length;
+      const regressed = objectives.filter((objective) => objectiveAcceptanceState(objective) === "regressed").length;
       ui.statObjectives.textContent = `${proven}/${objectives.length}`;
       ui.statObjectivesNote.textContent = regressed ? `${regressed} regressed` : "proven by acceptance runs";
     } else {
@@ -4670,6 +5137,19 @@
       ui.statAgents.textContent = "—";
       ui.statAgentsNote.textContent = "no roster loaded";
     }
+  }
+
+  // The one classifier for an objective's proof, shared by the instrument
+  // strip's counts and the objectives view's records so the two surfaces can
+  // never disagree. satisfied_at set means the latest acceptance run passes
+  // — that is "proven" whatever else the observation says. With no proof, a
+  // failing observation is "regressed" (it WAS proven once and stopped
+  // holding — a different fact from never-proven), and anything else —
+  // no observation at all, or a neutral/skipped conclusion that asserts
+  // nothing — is "unproven".
+  function objectiveAcceptanceState(objective) {
+    if (timestampDate(objective?.satisfiedAt)) return "proven";
+    return failingAcceptance(objective) ? "regressed" : "unproven";
   }
 
   function agentRoleLabel(value) {
@@ -8563,6 +9043,10 @@
   // survives every repaint. app-views.js switches the surface on this same
   // click; this handler decides WHICH agent the view shows.
   ui.agentList.addEventListener("click", openAgentFromCrew);
+  // The objectives view's doors follow the same split: app-views.js switches
+  // the surface on the click, and this handler fans out the per-objective
+  // proposal loads the view shows — once per team and generation.
+  document.querySelectorAll('[data-view-link="objectives"]').forEach((link) => link.addEventListener("click", () => { ensureObjectivesViewWork(); }));
   // The objective form left the shell when the console became the only ask.
   // Its pipeline remains for programmatic flows, so the listeners are guarded
   // rather than deleted - and the guard is not optional: an unguarded

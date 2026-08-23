@@ -234,6 +234,10 @@
           <summary aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></summary>
           <div class="wsmenu-panel">
             <a data-view-link="overview" href="#workspace-overview">The floor</a>
+            <!-- Objectives got their own screen when acceptance evidence
+                 arrived: proof per objective is a record to inspect, not a
+                 line to squeeze into the floor's at-a-glance card. -->
+            <a data-view-link="objectives" href="#workspace-objectives">Objectives</a>
             <!-- The approvals view was reachable only through one inline link
                  buried in the plan detail. It is a real destination - the full
                  queue and its history live there - so it gets a real door, and
@@ -404,6 +408,10 @@
                 <strong data-objective-title></strong>
                 <p data-objective-description></p>
                 <p class="onnow-state"><span data-objective-dispatch-state>Not started</span> <span data-objective-dispatch-detail>Your Product Manager picks this up and turns it into issues.</span></p>
+                <!-- The floor keeps the at-a-glance card; the record itself -
+                     acceptance evidence, measures, initiatives, one card per
+                     objective - lives on its own screen behind this door. -->
+                <p class="onnow-note onnow-open"><a data-view-link="objectives" href="#workspace-objectives">Review every objective</a> — acceptance evidence, measures and initiatives, one record per objective.</p>
                 <details class="onnow-more">
                   <summary>Plan detail</summary>
                   <div class="onnow-plan">
@@ -483,6 +491,27 @@
           </div>
 
           <p class="wctx">This team's work and log are on the main screen.</p>
+        </section>
+
+        <!-- ===== OBJECTIVES ===== -->
+        <section class="wview" data-view="objectives" id="workspace-objectives" aria-labelledby="workspace-objectives-title">
+          <!-- Business objectives, each with its proof. One record per
+               objective from the list the workspace refresh already holds:
+               the plan state, the measures, the proposals under it, and the
+               acceptance evidence line — proven, regressed and never-run are
+               three different facts and render as three different states.
+               Nothing here asks for anything: objectives are set in
+               conversation with the Product Manager on the floor, and this
+               screen is where their delivery is inspected. -->
+          <div class="agent-return">
+            <a class="button button-quiet button-small" data-view-link="overview" href="#workspace-overview">Back to the floor</a>
+            <span class="data-source-badge" data-objectives-view-state>Waiting</span>
+          </div>
+          <div class="wview-head">
+            <div><h2 id="workspace-objectives-title">Objectives</h2><p>What you asked for, and the evidence it is delivered. Every objective is proven by tagged acceptance scenarios running on the default branch, and a proof that stops holding is shown as regressed — not folded back into unproven.</p></div>
+          </div>
+          <div class="empty-state" data-objectives-view-empty><strong>No objectives yet</strong><p>Each objective appears here with its measures, its initiatives, and the acceptance evidence that proves it on the default branch. Yours are set in conversation: tell your Product Manager what matters, and it becomes a record on this screen.</p></div>
+          <ol class="objectives-list" data-objectives-view-list hidden></ol>
         </section>
 
         <!-- ===== AGENT ===== -->

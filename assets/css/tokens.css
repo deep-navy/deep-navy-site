@@ -162,6 +162,7 @@
   --panel-3:      var(--ink-100);
   --panel-deep:   var(--ink-150);
   --text-dim:     var(--ink-600);
+  --signal-ok:    #1d7a4c;
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
   --scrim:        rgb(0 0 0 / .5);
@@ -201,6 +202,7 @@
     --panel-3:      var(--ink-800);
     --panel-deep:   var(--ink-1000);
     --text-dim:     var(--ink-300);
+    --signal-ok:    #34c77b;
     --signal-warn:  #f5c97b;
     --signal-crit:  #f58e7e;
     --scrim:        rgb(0 0 0 / .88);
@@ -240,6 +242,7 @@
   --panel-3:      var(--ink-800);
   --panel-deep:   var(--ink-1000);
   --text-dim:     var(--ink-300);
+  --signal-ok:    #34c77b;
   --signal-warn:  #f5c97b;
   --signal-crit:  #f58e7e;
   --scrim:        rgb(0 0 0 / .88);
@@ -278,6 +281,7 @@
   --panel-3:      var(--ink-100);
   --panel-deep:   var(--ink-150);
   --text-dim:     var(--ink-600);
+  --signal-ok:    #1d7a4c;
   --signal-warn:  #8a6414;
   --signal-crit:  #a33a28;
   --scrim:        rgb(0 0 0 / .5);
@@ -304,6 +308,7 @@
   --accent-a48:  rgb(var(--accent-rgb) / .48);
   --accent-a50:  rgb(var(--accent-rgb) / .5);
 
+  --ok-a12:      rgb(var(--signal-ok-rgb) / .12);
   --warn-a12:    rgb(var(--signal-warn-rgb) / .12);
   --crit-a08:    rgb(var(--signal-crit-rgb) / .08);
   --crit-a28:    rgb(var(--signal-crit-rgb) / .28);

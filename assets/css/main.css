@@ -1024,6 +1024,42 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .onnow-more summary:hover { color: var(--ink); }
 .onnow-plan { display: grid; gap: 1.2rem; padding-top: .9rem; }
 .onnow-note { font-size: var(--t-xs); color: var(--muted); }
+.onnow-open { margin-top: .7rem; }
+
+/* ── The objectives view ──────────────────────────────────────────────
+   One record per objective, ruled like a spec sheet. The proof chip is the
+   only place this screen carries a hue, and it is always beside its word:
+   kelp for a proof that holds, coral for one that stopped holding. The
+   evidence line is mono because every part of it is a machine fact — a
+   check run name, a conclusion, a commit, a clock time. */
+.objectives-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8rem; }
+.objective-card { display: grid; gap: .7rem; border-top: 1px solid var(--line); padding-top: 1.3rem; }
+.objective-card-head { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; }
+.objective-card-title { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; }
+.objective-card-desc { margin: 0; color: var(--text-muted); max-width: 70ch; }
+.objective-card-dispatch { margin: 0; }
+.objective-proof { display: inline-flex; align-items: center; padding: .12rem .45rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--muted); }
+.objective-proof[data-state="proven"] { color: var(--signal-ok); border-color: var(--ok-a12); background: var(--ok-a12); }
+.objective-proof[data-state="regressed"] { color: var(--signal-crit); border-color: var(--crit-a08); background: var(--crit-a08); }
+.objective-proof-since { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }
+.objective-proof-since time, .objective-evidence time { font-variant-numeric: tabular-nums; }
+.objective-evidence { display: grid; gap: .35rem; }
+.objective-evidence-line { margin: 0; font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); overflow-wrap: anywhere; }
+.objective-evidence-copy { margin: 0; font-size: var(--t-xs); color: var(--text-muted); max-width: 70ch; }
+.objective-evidence-open { margin: 0; font-size: var(--t-xs); }
+.objective-card-block { display: grid; gap: .45rem; }
+.objective-card-block > p { margin: 0; font-size: var(--t-xs); color: var(--muted); max-width: 70ch; }
+.objective-card-block .data-source-badge { justify-self: start; }
+.objective-card-block ol { margin: 0; padding: 0 0 0 1.1rem; display: grid; gap: .5rem; }
+.objective-card-block ol li { font-size: var(--t-xs); color: var(--text-muted); }
+.objective-card-block ol li strong { display: block; color: var(--ink); font-size: var(--t-sm); }
+.objective-card-block ol li span { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }
+.objective-card-block ol li p { margin: .15rem 0; }
+.objective-work { border-top: 1px solid var(--line); padding-top: .8rem; }
+.objective-work > summary { cursor: pointer; display: flex; align-items: center; gap: .8rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.objective-work > summary:hover { color: var(--ink); }
+.objective-work-body { display: grid; gap: 1.1rem; padding-top: .9rem; }
+.objective-work-body h4 { margin: 0 0 .4rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 
 .rail-quiet { opacity: .72; }
 .rail-quiet:hover, .rail-quiet:focus-within { opacity: 1; }

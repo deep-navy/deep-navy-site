@@ -35,7 +35,10 @@
 
   // "agent" has no sidebar link of its own: its doors are the crew tiles
   // app.js stamps after every roster response, plus the in-view way back.
-  const VIEWS = ["overview", "activity", "economics", "approvals", "settings", "agent"];
+  // "objectives" has two ordinary doors - the overflow menu and the "On now"
+  // card's own link - and app.js loads that view's proposals on the same
+  // click this router switches the surface on.
+  const VIEWS = ["overview", "activity", "economics", "approvals", "settings", "agent", "objectives"];
   let currentView = "overview";
   let newTeamRequested = false;
   let teamCountAtRequest = 0;
