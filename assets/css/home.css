@@ -46,9 +46,13 @@
 .pr-title { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .2rem; }
 .pr-by { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); margin: 0 0 .9rem; }
 .pr-diff { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 1.75; border: 1px solid var(--line); background: var(--abyss-0); padding: .6rem .7rem; overflow-x: auto; }
-.pr-diff .add { color: var(--accent-text); }
-.pr-diff .del { color: var(--coral); }
-.pr-diff .ctx { color: var(--muted); }
+/* The diff sits on the always-black code surface, so its lines take the
+   status families directly (readable in both themes) rather than the themed
+   text tokens, which darken with the light theme: added work is kelp,
+   removed work is coral, context is the code surface's own quiet grey. */
+.pr-diff .add { color: rgb(var(--kelp-rgb)); }
+.pr-diff .del { color: rgb(var(--coral-rgb)); }
+.pr-diff .ctx { color: var(--code-muted); }
 .pr-reviews { display: grid; gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
 .pr-review { display: flex; gap: .55rem; align-items: baseline; font-size: var(--t-xs); }
 .pr-review b { font-weight: 600; }

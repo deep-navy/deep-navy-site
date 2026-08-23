@@ -606,7 +606,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   --panel:var(--panel-1);
   --line-soft:var(--border); --line-mid:var(--border-strong);
   --amber:var(--signal-warn); --coral:var(--signal-crit); --ink-dim:var(--text-dim);
-  --ra-sm:2px; --ra:2px; --ra-lg:3px;   /* near-square: instrument, not app icon */
+  --ra-sm:3px; --ra:5px; --ra-lg:8px;   /* chips 3, controls 5, panels 8 — crisp, never blobby */
   /* Flat. Two radial washes used to sit here, which put a blue-grey haze
      across the top of every screen and made the ground look smudged rather
      than deep. Depth in this product comes from hairlines and alignment. */
