@@ -225,6 +225,7 @@
   roleBarsEmpty: document.querySelector("[data-role-bars-empty]"),
   roleBarsWindow: document.querySelector("[data-role-bars-window]"),
   roleBarsLegend: document.querySelector("[data-role-bars-legend]"),
+  firstrunCount: document.querySelector("[data-firstrun-count]"),
   railSpend: document.querySelector("[data-rail-spend]"),
   railSpendValue: document.querySelector("[data-rail-spend-value]"),
   railSpendFill: document.querySelector("[data-rail-spend-fill]"),
@@ -1529,9 +1530,17 @@
       name.textContent = `${stringValue(repository.owner)}/${stringValue(repository.name)}`;
       branch.textContent = `Default branch: ${stringValue(repository.defaultBranch) || "not reported"}`;
       copy.append(name, branch);
-      label.append(checkbox, copy);
+      // The kit's access column, told truthfully: every repository here is
+      // one the customer already granted, so the state is whether THIS team
+      // works in it — not an access level the checkbox does not control.
+      const state = document.createElement("span");
+      state.className = "repo-state";
+      state.dataset.repoState = checkbox.checked ? "on" : "off";
+      state.textContent = checkbox.checked ? "Included" : "Not included";
+      label.append(checkbox, copy, state);
       ui.repositoryList.append(label);
     });
+    renderFirstrunRepositoryCount();
 
     const count = session.repositories.length;
     if (count > 0) {
@@ -1555,6 +1564,22 @@
 
   function selectedRepositoryIdsFromForm() {
     return [...ui.repositoryList.querySelectorAll('input[name="githubRepositoryId"]:checked')].map((input) => input.value);
+  }
+
+  // The closing note under the create button: how many repositories are
+  // ticked, out of how many the installation reaches, and what the
+  // Engineering Manager does with them. Hidden while there is nothing real
+  // to count.
+  function renderFirstrunRepositoryCount() {
+    if (!ui.firstrunCount) return;
+    const total = session.repositories.length;
+    if (!session.repositoryServiceAvailable || !total) {
+      ui.firstrunCount.hidden = true;
+      return;
+    }
+    const checked = selectedRepositoryIdsFromForm().length;
+    ui.firstrunCount.hidden = false;
+    ui.firstrunCount.textContent = `${checked.toString()} of ${total.toString()} repositories · your Engineering Manager starts reading them the moment the team is live`;
   }
 
   function renderBillingPlanResult(result) {
@@ -9682,6 +9707,22 @@
   // Touching the picker clears its "needs at least one" error the moment the
   // customer acts on it.
   ui.repositoryList.addEventListener("change", () => setFieldError(ui.teamRepositoriesError, ""));
+  // The kit-grammar row state and the "N of M repositories" note follow the
+  // checkboxes; a form reset (after a successful create) resyncs both by
+  // re-rendering the picker from the held session state once the browser has
+  // restored the defaults.
+  ui.repositoryList.addEventListener("change", (event) => {
+    const row = event.target instanceof Element ? event.target.closest(".repository-option") : null;
+    const state = row?.querySelector("[data-repo-state]");
+    if (state && event.target instanceof HTMLInputElement) {
+      state.dataset.repoState = event.target.checked ? "on" : "off";
+      state.textContent = event.target.checked ? "Included" : "Not included";
+    }
+    renderFirstrunRepositoryCount();
+  });
+  if (ui.teamForm) ui.teamForm.addEventListener("reset", () => {
+    window.setTimeout(() => { if (session.repositoryServiceAvailable) renderRepositoryAccess(); }, 0);
+  });
   ui.settingsBillingManage.addEventListener("click", manageBilling);
   ui.invoiceMore.addEventListener("click", loadMoreInvoices);
   ui.creditPackForm.addEventListener("submit", startCreditPackCheckout);

@@ -573,7 +573,9 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body [data-shell][data-shell-mode="workspace"] .workspace{ display:grid; }
 
 /* ---- first run: one question ---- */
-.app-body .firstrun-inner{ max-width:600px; margin:0 auto; display:grid; gap:20px; padding:clamp(6px,3vw,32px) 0 40px; }
+/* Widened for the setup grid: the form column keeps its measure, the aside
+   rides beside it; the head and every blocking card cap themselves below. */
+.app-body .firstrun-inner{ max-width:1040px; margin:0 auto; display:grid; gap:20px; padding:clamp(6px,3vw,32px) 0 40px; }
 .app-body .firstrun-head .eyebrow{ display:block; margin-bottom:12px; }
 .app-body .firstrun-head h1{ font-size:clamp(2rem,4.4vw,2.75rem); font-weight:680; margin-bottom:12px; }
 .app-body .firstrun-head p{ color:var(--ink-dim); font-size:1.02rem; max-width:48ch; }
@@ -1758,3 +1760,40 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .role-bar-legend span[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"]::before { background: var(--role-em); }
 .role-bar-legend span[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"]::before { background: var(--role-design); }
 .role-bar-legend span[data-role-key="AGENT_ROLE_ENGINEER"]::before { background: var(--role-eng); }
+
+/* ── First-run: the kit's setup grid ── */
+.app-body .firstrun-head { max-width: 640px; }
+.app-body .firstrun .blocking-card { max-width: 640px; }
+.setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 26px; align-items: start; }
+@media (max-width: 900px) { .setup-grid { grid-template-columns: 1fr; } }
+.setup-main { min-width: 0; }
+.firstrun-aside { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.firstrun-aside-card { overflow: hidden; border: 1px solid var(--line-mid); border-radius: var(--ra-lg); background: var(--panel); }
+.firstrun-aside-head { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; padding: .75rem .95rem; border-bottom: 1px solid var(--line); }
+.firstrun-aside-head strong { font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.firstrun-aside-head span { font-family: var(--font-mono); font-size: .6rem; color: var(--muted); }
+/* The six who arrive: monogram plates in their identity hues (the colour is
+   scoped by the roster's own role key, exactly as it is on the floor). */
+.crew-preview { display: grid; gap: 0; padding: .4rem .5rem .5rem; }
+.crew-preview-row { display: flex; align-items: flex-start; gap: .6rem; padding: .45rem; }
+.crew-preview-row .crew-monogram-xs { flex: none; width: 24px; height: 24px; font-size: .52rem; }
+.crew-preview-name { display: block; font-size: .8rem; font-weight: 600; letter-spacing: -.01em; }
+.crew-preview-note { display: block; margin-top: 1px; color: var(--muted); font-size: .68rem; line-height: 1.45; }
+.next-list { margin: 0; padding: .85rem .95rem 1rem; list-style: none; display: grid; gap: .7rem; }
+.next-list li { display: flex; gap: .6rem; font-size: .78rem; line-height: 1.5; color: var(--muted-bright); }
+.next-list li b { color: var(--ink); font-weight: 600; }
+.next-list-n { display: grid; place-items: center; flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; border: 1px solid var(--line-mid); font-family: var(--font-mono); font-size: .56rem; color: var(--muted); }
+/* The aside follows the form: when a blocking card replaces the name form
+   (the pinned team-card rule above), the preview and the promises stand
+   down with it — never two asks, never a promise beside an error. */
+.app-body .firstrun-inner:has([data-step="organization"][data-state="action"], [data-step="organization"][data-state="error"], [data-step="github"][data-state="action"], [data-step="github"][data-state="error"], [data-step="repositories"][data-state="blocked"], [data-step="repositories"][data-state="error"]) .firstrun-aside{ display:none; }
+/* The name label rides above its hero input, kit Field style. */
+.team-name-label { display: block; color: var(--muted-bright); font-size: .72rem; font-weight: 700; }
+/* The create picker in the kit's repo grammar: mono name, meta line, and a
+   per-team inclusion state on the right. Selection stays achromatic —
+   choosing a repository is not a status. */
+.app-body .team-repos .repository-option { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+.app-body .team-repos .repository-option strong { font-family: var(--font-mono); font-size: .74rem; font-weight: 500; }
+.repo-state { font-family: var(--font-mono); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.repo-state[data-repo-state="on"] { color: var(--text-bright); }
+.setup-note { margin: .55rem 0 0; text-align: center; font-family: var(--font-mono); font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; }
