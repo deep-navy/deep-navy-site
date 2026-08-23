@@ -41,10 +41,15 @@
   // There is no "activity" view: the log and its filters render on the
   // overview, beside the work they narrate, so a separate screen would only
   // hold a sentence pointing back here.
-  const VIEWS = ["overview", "economics", "approvals", "settings", "agent", "objectives"];
+  // "dashboard" is the teams surface — the layer above the floor. It is the
+  // landing view when the workspace opens with more than one team; a single
+  // team still lands on its own floor, because a dashboard of one tile would
+  // only be a door standing in front of the room.
+  const VIEWS = ["overview", "economics", "approvals", "settings", "agent", "objectives", "dashboard"];
   let currentView = "overview";
   let newTeamRequested = false;
   let teamCountAtRequest = 0;
+  let landedInWorkspace = false;
 
   const isAuthenticated = () => authenticated && authenticated.hidden === false;
   const teamsExist = () => Boolean(teamsEmpty && teamsEmpty.hidden === true);
@@ -75,6 +80,13 @@
       if (firstrunTitle) firstrunTitle.textContent = another ? "Name your new team" : "Name your team";
       if (cancelButton) cancelButton.hidden = !another;
     } else if (mode === "workspace") {
+      // The landing decision, made once per session: several teams land on
+      // the teams surface, one team lands on its floor. Latched so a later
+      // roster change never yanks the customer off whatever they are reading.
+      if (!landedInWorkspace) {
+        landedInWorkspace = true;
+        if (teamCount() > 1) currentView = "dashboard";
+      }
       setView(currentView);
     }
   }
@@ -113,6 +125,23 @@
       const tile = event.target instanceof Element ? event.target.closest("[data-agent-open]") : null;
       if (!tile) return;
       setView("agent");
+      const main = document.querySelector(".wsmain");
+      if (main) main.scrollTop = 0;
+    });
+  }
+
+  // The team tiles are rendered by app.js from the server-confirmed roster,
+  // so their doors are delegated the same way the crew tiles' are: a click
+  // landing inside a tile that carries data-team-open walks to that team's
+  // floor. app.js reads the same dataset on the same click to decide WHICH
+  // team the workspace selects; this router only decides which surface is on
+  // screen — the separation both files keep.
+  const teamTiles = document.querySelector("[data-team-tiles]");
+  if (teamTiles) {
+    teamTiles.addEventListener("click", (event) => {
+      const tile = event.target instanceof Element ? event.target.closest("[data-team-open]") : null;
+      if (!tile) return;
+      setView("overview");
       const main = document.querySelector(".wsmain");
       if (main) main.scrollTop = 0;
     });

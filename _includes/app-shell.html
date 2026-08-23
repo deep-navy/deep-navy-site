@@ -233,6 +233,10 @@
         <details class="wsmenu">
           <summary aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></summary>
           <div class="wsmenu-panel">
+            <!-- The teams surface is the workspace's landing layer when more
+                 than one team exists: every team as a door. The floor stays
+                 the single-team deep view underneath it. -->
+            <a data-view-link="dashboard" href="#workspace-dashboard">Your teams</a>
             <a data-view-link="overview" href="#workspace-overview">The floor</a>
             <!-- Objectives got their own screen when acceptance evidence
                  arrived: proof per objective is a record to inspect, not a
@@ -255,6 +259,68 @@
       </div>
 
       <div class="wsmain">
+        <!-- ===== DASHBOARD ===== -->
+        <section class="wview" data-view="dashboard" id="workspace-dashboard" aria-labelledby="workspace-dashboard-title">
+          <!-- The multi-team layer above the floor: every team as a door,
+               with the readings a glance needs — state, objectives proven,
+               repositories, delivery counts. Tiles render from the same
+               server-confirmed roster the selector reads; per-team counts
+               come from one capped, generation-guarded fan-out that runs
+               only while this surface is on screen. The side column is the
+               SELECTED team's stream, and says so — this page never claims
+               a reading nobody fetched. -->
+          <div class="wview-head">
+            <div><h2 id="workspace-dashboard-title">Your teams</h2><p>Every team in this workspace, and what each one is delivering. A tile is a door: open a team to reach its floor — the conversation, the crew, the work.</p></div>
+            <span class="data-source-badge" data-team-tiles-state>Waiting</span>
+          </div>
+          <div class="dash-grid">
+            <div class="dash-main">
+              <div class="empty-state" data-team-tiles-empty><strong>No teams yet</strong><p>Create a team and it appears here with its objectives, repositories, and delivery counts.</p></div>
+              <div class="team-tiles" data-team-tiles aria-label="Teams" hidden></div>
+              <p class="team-tiles-note" data-team-tiles-note hidden></p>
+
+              <!-- Team lifecycle folded under the tiles: the same
+                   server-confirmed rows, suspend/resume/delete and the
+                   typed-name confirm untouched. It lives on this surface now
+                   because this is the screen about teams as a set. -->
+              <section class="wfoot" aria-labelledby="teams-title">
+                <h3 id="teams-title">Manage teams</h3>
+                <div class="empty-state" data-teams-empty><strong>No team yet</strong><p>Create one to get started.</p></div>
+                <div class="status-list" data-team-list aria-live="polite" hidden></div>
+              </section>
+            </div>
+            <aside class="dash-side" aria-label="Selected team instruments">
+              <!-- Who worked when: one lane per crew member, spans derived
+                   from the selected team's live activity buffer — a span is
+                   contiguous activity within a gap threshold, never an
+                   invention. DOM-built; no chart library ships here. -->
+              <section aria-labelledby="lanes-title">
+                <div class="log-head"><h3 id="lanes-title">Who worked when</h3><span class="lane-window" data-lanes-window hidden></span></div>
+                <div class="empty-state" data-lanes-empty><strong>Nothing on the stream yet</strong><p>Each crew member gets a lane; a bar is a stretch of real activity from the selected team's live stream.</p></div>
+                <div class="lane-chart" data-lane-chart hidden></div>
+              </section>
+              <!-- Crew activity by role. The buffer holds recent events, not
+                   days, so the honest series is the recent window it can
+                   actually vouch for — the label carries the real span. -->
+              <section aria-labelledby="role-bars-title">
+                <div class="log-head"><h3 id="role-bars-title">Crew activity</h3><span class="lane-window" data-role-bars-window hidden></span></div>
+                <div class="empty-state" data-role-bars-empty><strong>No recent actions</strong><p>Counted from the selected team's activity stream, stacked by role. It fills as the crew works.</p></div>
+                <div class="role-bar-chart" data-role-bars hidden></div>
+                <div class="role-bar-legend" data-role-bars-legend hidden>
+                  <span data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER">Product Manager</span>
+                  <span data-role-key="AGENT_ROLE_ENGINEERING_MANAGER">Engineering Manager</span>
+                  <span data-role-key="AGENT_ROLE_PRODUCT_DESIGNER">Designer</span>
+                  <span data-role-key="AGENT_ROLE_ENGINEER">Engineers</span>
+                </div>
+              </section>
+              <!-- The live feed itself stays on the floor, beside the work it
+                   narrates; arrival motion is consume-once and cannot play on
+                   two surfaces at once. -->
+              <p class="dash-side-note">The full log runs on the floor, beside the work it narrates.</p>
+            </aside>
+          </div>
+        </section>
+
         <!-- ===== OVERVIEW ===== -->
         <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
           <!-- One question per screen. Everything here answers "what is my team
@@ -477,12 +543,9 @@
               </div>
             </aside>
             </div>
-
-            <section class="wfoot" aria-labelledby="teams-title">
-              <h3 id="teams-title">Team</h3>
-              <div class="empty-state" data-teams-empty><strong>No team yet</strong><p>Create one to get started.</p></div>
-              <div class="status-list" data-team-list aria-live="polite" hidden></div>
-            </section>
+            <!-- Team lifecycle moved to the teams surface above: this screen
+                 answers "what is my team doing", the teams surface answers
+                 "what teams do I have". -->
           </div>
         </section>
 

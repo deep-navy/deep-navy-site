@@ -214,6 +214,17 @@
     creditBalanceValue: document.querySelector("[data-credit-balance-value]"),
   descent: document.querySelector("[data-descent]"),
   descentList: document.querySelector("[data-descent-list]"),
+  teamTiles: document.querySelector("[data-team-tiles]"),
+  teamTilesEmpty: document.querySelector("[data-team-tiles-empty]"),
+  teamTilesState: document.querySelector("[data-team-tiles-state]"),
+  teamTilesNote: document.querySelector("[data-team-tiles-note]"),
+  laneChart: document.querySelector("[data-lane-chart]"),
+  lanesEmpty: document.querySelector("[data-lanes-empty]"),
+  lanesWindow: document.querySelector("[data-lanes-window]"),
+  roleBars: document.querySelector("[data-role-bars]"),
+  roleBarsEmpty: document.querySelector("[data-role-bars-empty]"),
+  roleBarsWindow: document.querySelector("[data-role-bars-window]"),
+  roleBarsLegend: document.querySelector("[data-role-bars-legend]"),
   railSpend: document.querySelector("[data-rail-spend]"),
   railSpendValue: document.querySelector("[data-rail-spend-value]"),
   railSpendFill: document.querySelector("[data-rail-spend-fill]"),
@@ -323,6 +334,12 @@
     teamRepositoryIds: new Map(),
     teamLifecycleBusy: new Set(),
     teamLifecyclePendingDelete: "",
+    // The teams surface's per-team readings (pending decisions, open delivery
+    // counts), keyed by team id — filled by its one capped fan-out, read by
+    // the tiles, never invented. A missing entry renders as an honest dash.
+    dashboardStats: new Map(),
+    dashboardGeneration: 0,
+    dashboardOverflow: 0,
     completingGitHub: false,
     authPhase: "signed_out",
     selectedTeamId: "",
@@ -2690,6 +2707,9 @@
       row.append(copy, side);
       ui.teamList.append(row);
     });
+    // The team tiles are the same roster as doors: they repaint with every
+    // list render, so a lifecycle change and its tile can never disagree.
+    renderTeamTiles();
   }
 
   // The policy itself lives in the launch contract, where it is under test; an
@@ -5176,6 +5196,540 @@
     return agentRoleContract?.canonicalAgentRole?.(value)?.label || "Unspecified agent role";
   }
 
+  // ── The teams surface ─────────────────────────────────────────────────
+  // Every team as a door. Tiles render from session.teams — the same
+  // server-confirmed roster the selector reads — and their objective meters
+  // go through objectiveAcceptanceState, the one classifier the instrument
+  // strip and the objectives view already share, so a tile can never call
+  // proven what the records below call regressed. Per-team delivery and
+  // decision counts come from ensureDashboardStats' capped fan-out; a team
+  // the fan-out did not reach shows an em dash, never a zero.
+
+  // Which teams the fan-out serves: active ones only (a pending or deleting
+  // team correctly answers "team not found" on every versioned service),
+  // capped at six so a workspace of many teams costs a bounded burst.
+  function dashboardFanoutTeams(teams) {
+    const active = (Array.isArray(teams) ? teams : [])
+      .filter((team) => stringValue(team?.id) && lifecycleLabel(team?.state) === "active");
+    return { chosen: active.slice(0, 6), overflow: Math.max(0, active.length - 6) };
+  }
+
+  function repositoryLabelIndex() {
+    return new Map(session.repositories.map((repository) => [String(repository.githubRepositoryId), `${stringValue(repository.owner)}/${stringValue(repository.name)}`]));
+  }
+
+  // When this team came into existence — accepts the same two transport
+  // shapes the descent's own created-at read accepts.
+  function teamCreatedAtMs(team) {
+    const value = team?.createdAt;
+    if (!value) return 0;
+    if (typeof value === "string") return Date.parse(value) || 0;
+    if (typeof value.seconds !== "undefined") return Number(value.seconds) * 1000;
+    return 0;
+  }
+
+  // One team's readings, fetched with the validated helpers the deep view
+  // already trusts: listAllObjectives (whose result lands in
+  // session.objectiveListsByTeam, the very record the strip reads), the
+  // approval queue's own validator for the pending count, and the
+  // webhook-backed delivery snapshots for open counts. Delivery is counted
+  // for the team's first known repository; when the team runs several, the
+  // footer names the one that was counted rather than implying a total.
+  async function loadDashboardTeamStats(team) {
+    const teamId = stringValue(team.id);
+    const labels = repositoryLabelIndex();
+    const repositoryIds = knownTeamRepositoryIds(teamId);
+    const deliveryRepositoryId = repositoryIds.find((candidate) => labels.has(candidate)) || "";
+    const requests = [
+      listAllObjectives(teamId),
+      apiRequest("approvals", { teamId, page: { pageSize: 100 } })
+    ];
+    if (deliveryRepositoryId) {
+      requests.push(
+        apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: deliveryRepositoryId, page: { pageSize: 100 } }),
+        apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: deliveryRepositoryId, page: { pageSize: 100 } })
+      );
+    }
+    const [objectivesResult, approvalsResult, issuesResult, pullsResult] = await Promise.allSettled(requests);
+    const stats = { approvalsLoaded: false, pendingApprovals: 0, deliveryLoaded: false, openIssues: 0, openPullRequests: 0, deliveryScope: "" };
+    if (objectivesResult.status === "fulfilled") session.objectiveListsByTeam.set(teamId, objectivesResult.value);
+    if (approvalsResult.status === "fulfilled") {
+      const approvals = Array.isArray(approvalsResult.value?.approvals) ? approvalsResult.value.approvals : [];
+      if (approvals.length <= 100 && approvals.every((approval) => validPendingApproval(approval, teamId))) {
+        stats.approvalsLoaded = true;
+        stats.pendingApprovals = approvals.filter((approval) => pendingApprovalStatus(approval)).length;
+      }
+    }
+    if (issuesResult?.status === "fulfilled" && pullsResult?.status === "fulfilled") {
+      const issues = Array.isArray(issuesResult.value?.issues) ? issuesResult.value.issues : [];
+      const pulls = Array.isArray(pullsResult.value?.pullRequests) ? pullsResult.value.pullRequests : [];
+      stats.deliveryLoaded = true;
+      stats.openIssues = issues.filter((record) => githubIssueStateLabel(record?.state) === "open").length;
+      stats.openPullRequests = pulls.filter((record) => githubPullRequestStateLabel(record?.state) === "open").length;
+      if (repositoryIds.length > 1) stats.deliveryScope = stringValue(labels.get(deliveryRepositoryId)).split("/")[1] || "";
+    }
+    return stats;
+  }
+
+  // The surface's one fan-out: capped, generation-guarded like every
+  // workspace fan-out, armed only while the teams surface is actually on
+  // screen (the class observer at the bottom of this file is its trigger).
+  // The load key stops one entry from firing twice for the same team set; a
+  // failure clears both the key and the failed team's stale entry, so the
+  // next entry retries and the tile keeps its honest dash meanwhile.
+  let dashboardLoadKey = "";
+  async function ensureDashboardStats() {
+    if (!ui.teamTiles || !session.accessToken || !session.organizationId) return;
+    const { chosen, overflow } = dashboardFanoutTeams(session.teams);
+    session.dashboardOverflow = overflow;
+    if (!chosen.length) {
+      setSourceState(ui.teamTilesState, session.teams.length ? "No active teams" : "Waiting");
+      renderTeamTiles();
+      return;
+    }
+    const key = `${session.organizationId}:${chosen.map((team) => stringValue(team.id)).join(",")}`;
+    if (dashboardLoadKey === key) return;
+    dashboardLoadKey = key;
+    const generation = ++session.dashboardGeneration;
+    setSourceState(ui.teamTilesState, "Loading", "loading");
+    const results = await Promise.allSettled(chosen.map((team) => loadDashboardTeamStats(team)));
+    if (generation !== session.dashboardGeneration) return;
+    let failures = 0;
+    results.forEach((result, index) => {
+      const teamId = stringValue(chosen[index].id);
+      if (result.status === "fulfilled") {
+        session.dashboardStats.set(teamId, result.value);
+      } else {
+        failures += 1;
+        session.dashboardStats.delete(teamId);
+      }
+    });
+    if (failures) dashboardLoadKey = "";
+    setSourceState(
+      ui.teamTilesState,
+      failures ? `${(chosen.length - failures).toString()}/${chosen.length.toString()} loaded` : "Loaded",
+      failures ? "error" : "success"
+    );
+    renderTeamTiles();
+  }
+
+  // The tile's one word about the team. Lifecycle speaks first (a team that
+  // is not running has no other headline); then the human queue ("Needs
+  // you" — a pending decision is the one state that outranks everything);
+  // then proof (regressed before complete, because a proof that stopped
+  // holding is never folded away); and only then "Working", which for an
+  // active team is the lifecycle fact, not a liveness claim.
+  function teamTileChip(team, objectives, stats) {
+    const lifecycle = lifecycleLabel(team?.state) || "created";
+    if (lifecycle !== "active") {
+      const provisioning = launchContract?.provisioningPresentation?.(team?.provisioning || {}) || {};
+      if (provisioning.failed) return { tone: "error", word: "Needs attention" };
+      if (lifecycle === "deleting") return { tone: "idle", word: "Removing" };
+      if (lifecycle === "suspended") return { tone: "idle", word: "Paused" };
+      if (lifecycle === "pending") return { tone: "attention", word: "Awaiting payment" };
+      return { tone: "idle", word: "Setting up" };
+    }
+    if (stats?.approvalsLoaded && stats.pendingApprovals > 0) return { tone: "attention", word: "Needs you" };
+    if (Array.isArray(objectives) && objectives.length) {
+      const regressed = objectives.filter((objective) => objectiveAcceptanceState(objective) === "regressed").length;
+      const proven = objectives.filter((objective) => objectiveAcceptanceState(objective) === "proven").length;
+      if (regressed > 0) return { tone: "error", word: "Regressed" };
+      if (proven === objectives.length) return { tone: "success", word: "Complete" };
+    }
+    return { tone: "live", word: "Working" };
+  }
+
+  // The line under the name: the leading objective when the list is loaded
+  // (the objective IS the project here), the setup state while there is no
+  // workspace yet, and an honest "not loaded" for a team beyond the cap.
+  function teamTileLine(team, objectives) {
+    const lifecycle = lifecycleLabel(team?.state) || "created";
+    if (lifecycle !== "active") {
+      if (lifecycle === "pending") return "Awaiting payment confirmation.";
+      const provisioning = launchContract?.provisioningPresentation?.(team?.provisioning || {}) || {};
+      if (provisioning.state) return `${capitalize(provisioning.label)} · ${provisioning.step}`;
+      return capitalize(lifecycle);
+    }
+    if (!Array.isArray(objectives)) return "Objectives not loaded yet.";
+    if (!objectives.length) return "No objectives yet — set them in conversation.";
+    const title = stringValue(objectives[0]?.title) || "Untitled objective";
+    const clipped = title.length > 88 ? `${title.slice(0, 87).trimEnd()}…` : title;
+    return objectives.length > 1 ? `${clipped} · +${(objectives.length - 1).toString()} more` : clipped;
+  }
+
+  // The segmented meter: one segment per objective, each classified by the
+  // shared objectiveAcceptanceState — proven kelp, regressed coral, unproven
+  // ink. Past two dozen objectives the segments would be slivers, so the
+  // meter falls back to a continuous proven-share fill through the same
+  // CSSOM geometry the credit gauge uses; either way the fraction is exact.
+  function teamTileMeter(objectives) {
+    const proven = objectives.filter((objective) => objectiveAcceptanceState(objective) === "proven").length;
+    const regressed = objectives.filter((objective) => objectiveAcceptanceState(objective) === "regressed").length;
+    const wrap = document.createElement("div");
+    wrap.className = "team-tile-meter";
+    const head = document.createElement("div");
+    head.className = "team-tile-meter-head";
+    const label = document.createElement("span");
+    label.textContent = "Objectives proven";
+    const fraction = document.createElement("span");
+    fraction.className = "team-tile-frac";
+    fraction.textContent = `${proven.toString()}/${objectives.length.toString()}`;
+    head.append(label, fraction);
+    const track = document.createElement("div");
+    track.className = "team-tile-segments";
+    if (objectives.length <= 24) {
+      objectives.forEach((objective) => {
+        const segment = document.createElement("i");
+        segment.dataset.state = objectiveAcceptanceState(objective);
+        track.append(segment);
+      });
+    } else {
+      track.classList.add("team-tile-segments-continuous");
+      const fill = document.createElement("i");
+      fill.dataset.state = "proven";
+      setChartGeometry(fill, { width: (proven / objectives.length) * 100 }, "t");
+      track.append(fill);
+    }
+    wrap.append(head, track);
+    if (regressed) {
+      const note = document.createElement("span");
+      note.className = "team-tile-regressed";
+      note.dataset.state = "regressed";
+      note.textContent = `${regressed.toString()} regressed`;
+      wrap.append(note);
+    }
+    return wrap;
+  }
+
+  function renderTeamTiles() {
+    if (!ui.teamTiles || !ui.teamTilesEmpty) return;
+    purgeChartGeometry("t");
+    ui.teamTiles.replaceChildren();
+    const teams = session.teams;
+    ui.teamTilesEmpty.hidden = teams.length > 0;
+    ui.teamTiles.hidden = teams.length === 0;
+    if (ui.teamTilesNote) {
+      ui.teamTilesNote.hidden = session.dashboardOverflow <= 0;
+      if (session.dashboardOverflow > 0) {
+        ui.teamTilesNote.textContent = `Delivery and decision counts load for the first six active teams — ${session.dashboardOverflow.toString()} more keep an em dash until opened.`;
+      }
+    }
+    const labels = repositoryLabelIndex();
+    teams.forEach((team) => {
+      const id = stringValue(team.id);
+      const objectives = session.objectiveListsByTeam.get(id);
+      const stats = session.dashboardStats.get(id);
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "team-tile";
+      tile.dataset.teamOpen = "true";
+      tile.dataset.teamId = id;
+      const head = document.createElement("div");
+      head.className = "team-tile-head";
+      const name = document.createElement("strong");
+      name.className = "team-tile-name";
+      name.textContent = stringValue(team.name) || "Unnamed team";
+      const chipState = teamTileChip(team, objectives, stats);
+      const chip = document.createElement("span");
+      chip.className = "team-tile-chip";
+      chip.dataset.tone = chipState.tone;
+      chip.textContent = chipState.word;
+      head.append(name, chip);
+      const line = document.createElement("p");
+      line.className = "team-tile-line";
+      line.textContent = teamTileLine(team, objectives);
+      tile.append(head, line);
+      if (Array.isArray(objectives) && objectives.length) tile.append(teamTileMeter(objectives));
+      // Repository tags: the team's own known set, first two named, the
+      // rest counted. No set known yet means no row — never a guess.
+      const repositoryNames = knownTeamRepositoryIds(id).map((repositoryId) => labels.get(repositoryId)).filter(Boolean);
+      if (repositoryNames.length) {
+        const tags = document.createElement("div");
+        tags.className = "team-tile-tags";
+        repositoryNames.slice(0, 2).forEach((full) => {
+          const tag = document.createElement("span");
+          tag.textContent = full.split("/")[1] || full;
+          tags.append(tag);
+        });
+        if (repositoryNames.length > 2) {
+          const more = document.createElement("span");
+          more.textContent = `+${(repositoryNames.length - 2).toString()}`;
+          tags.append(more);
+        }
+        tile.append(tags);
+      }
+      const foot = document.createElement("div");
+      foot.className = "team-tile-foot";
+      const delivery = document.createElement("span");
+      if (stats?.deliveryLoaded) {
+        delivery.textContent = `${stats.openPullRequests.toString()} open PRs · ${stats.openIssues.toString()} issues${stats.deliveryScope ? ` in ${stats.deliveryScope}` : ""}`;
+      } else {
+        // Not loaded is a dash, never a zero: zero is a served answer.
+        delivery.textContent = "—";
+        delivery.title = "Delivery counts load for the first six active teams when this screen opens.";
+      }
+      foot.append(delivery);
+      if (stats?.approvalsLoaded && stats.pendingApprovals > 0) {
+        const waiting = document.createElement("span");
+        waiting.dataset.tone = "attention";
+        waiting.textContent = `${stats.pendingApprovals.toString()} waiting on you`;
+        foot.append(waiting);
+      }
+      const createdMs = teamCreatedAtMs(team);
+      if (createdMs) {
+        const assembled = document.createElement("span");
+        assembled.textContent = `assembled ${new Date(createdMs).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
+        foot.append(assembled);
+      }
+      tile.append(foot);
+      ui.teamTiles.append(tile);
+    });
+  }
+
+  // A tile is a door: the same team switch the selector performs. The router
+  // owns which surface is on screen and walks to the floor on this same
+  // click; this handler only decides WHICH team the workspace selects.
+  function openTeamFromTiles(event) {
+    const tile = event.target instanceof Element ? event.target.closest("[data-team-open]") : null;
+    if (!tile || !ui.teamTiles || !ui.teamTiles.contains(tile)) return;
+    const teamId = stringValue(tile.dataset.teamId);
+    if (!teamId || !session.teams.some((team) => stringValue(team.id) === teamId)) return;
+    if (ui.teamSelect) ui.teamSelect.value = teamId;
+    if (session.selectedTeamId === teamId) return;
+    session.selectedTeamId = teamId;
+    session.selectedAgentId = "";
+    resetAgentDetailView("Choose a crew member on the floor to open their record.");
+    refreshSelectedTeam();
+  }
+
+  // ── Who worked when: the swimlanes ────────────────────────────────────
+  // A span is contiguous activity: events from one agent that sit within a
+  // gap threshold of each other merge into one bar; a longer silence starts
+  // a new bar. Everything is derived from the buffer's real timestamps —
+  // the one liberty is a minimum visual length so a single event does not
+  // vanish at this scale, and it only ever extends a span's end.
+  function deriveAgentSpans(entries, options) {
+    const opts = options || {};
+    const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+    const windowMs = opts.windowMs > 0 ? opts.windowMs : 40 * 60 * 1000;
+    const gapMs = opts.gapMs > 0 ? opts.gapMs : 3 * 60 * 1000;
+    const minSpanMs = opts.minSpanMs >= 0 ? opts.minSpanMs : 45 * 1000;
+    const timeOf = typeof opts.timeOf === "function" ? opts.timeOf : (entry) => entry?.at;
+    const start = now - windowMs;
+    const byAgent = new Map();
+    for (const entry of Array.isArray(entries) ? entries : []) {
+      const agentId = entry && typeof entry.agentId === "string" ? entry.agentId : "";
+      const at = timeOf(entry);
+      if (!agentId || !Number.isFinite(at) || at < start || at > now) continue;
+      if (!byAgent.has(agentId)) byAgent.set(agentId, []);
+      byAgent.get(agentId).push(at);
+    }
+    const lanes = new Map();
+    for (const [agentId, times] of byAgent) {
+      times.sort((left, right) => left - right);
+      const spans = [];
+      for (const at of times) {
+        const last = spans[spans.length - 1];
+        if (last && at - last.end <= gapMs) last.end = at;
+        else spans.push({ start: at, end: at });
+      }
+      lanes.set(agentId, spans.map((span) => ({
+        start: Math.max(start, span.start),
+        end: Math.min(now, Math.max(span.end, span.start + minSpanMs))
+      })));
+    }
+    return lanes;
+  }
+
+  // The same role resolution the roster render walks, so the lanes name the
+  // engineers exactly as their tiles do (E4, E5… when the team grew).
+  function laneRoster() {
+    const resolved = [];
+    let engineerOrdinal = 3;
+    for (const agent of Array.isArray(session.agents) ? session.agents : []) {
+      let role = agentRoleContract?.canonicalAgentRole?.(agent.role);
+      if (!role) continue;
+      if (role.repeatable) {
+        engineerOrdinal += 1;
+        role = { ...role, code: `E${engineerOrdinal.toString()}` };
+      }
+      const id = stringValue(agent.id);
+      if (id) resolved.push({ id, role });
+    }
+    return resolved;
+  }
+
+  // How far back the charts may honestly reach. The buffer keeps the last 80
+  // events; once it has shed history, time before its oldest retained event
+  // is unmeasured — a lane painted empty there would claim an idleness
+  // nobody observed. So a full buffer shrinks the window to its own reach,
+  // and the label carries the real number of minutes.
+  function dashboardChartWindow(defaultMs) {
+    const now = Date.now();
+    let ms = defaultMs;
+    if (session.activityEvents.length >= 80) {
+      let oldest = Infinity;
+      for (const entry of session.activityEvents) {
+        const at = timestampDate(entry.occurredAt)?.getTime();
+        if (Number.isFinite(at) && at < oldest) oldest = at;
+      }
+      if (Number.isFinite(oldest)) ms = Math.max(60 * 1000, Math.min(ms, now - oldest));
+    }
+    return { now, ms, minutes: Math.max(1, Math.round(ms / 60000)) };
+  }
+
+  function renderDashboardLanes() {
+    if (!ui.laneChart || !ui.lanesEmpty) return;
+    ui.laneChart.replaceChildren();
+    const team = selectedTeam();
+    const roster = laneRoster();
+    const standDown = (title, message) => {
+      ui.laneChart.hidden = true;
+      if (ui.lanesWindow) ui.lanesWindow.hidden = true;
+      ui.lanesEmpty.hidden = false;
+      setEmptyState(ui.lanesEmpty, title, message);
+    };
+    if (!team) {
+      standDown("No team selected", "Choose a team to see who worked when.");
+      return;
+    }
+    if (!roster.length) {
+      standDown("No crew roster loaded", "Lanes appear when the server-confirmed roster arrives.");
+      return;
+    }
+    const window = dashboardChartWindow(40 * 60 * 1000);
+    const lanes = deriveAgentSpans(session.activityEvents, {
+      now: window.now,
+      windowMs: window.ms,
+      timeOf: (entry) => {
+        const at = timestampDate(entry.occurredAt)?.getTime();
+        return Number.isFinite(at) ? at : NaN;
+      }
+    });
+    if (!roster.some((member) => (lanes.get(member.id) || []).length)) {
+      standDown("Quiet on the stream", `No agent activity in the last ${window.minutes.toString()} minutes. Lanes fill the moment the crew works.`);
+      return;
+    }
+    ui.lanesEmpty.hidden = true;
+    ui.laneChart.hidden = false;
+    if (ui.lanesWindow) {
+      ui.lanesWindow.hidden = false;
+      ui.lanesWindow.textContent = `last ${window.minutes.toString()}m · ${stringValue(team.name) || "selected team"}`;
+    }
+    const windowStart = window.now - window.ms;
+    roster.forEach((member) => {
+      const lane = document.createElement("div");
+      lane.className = "lane";
+      const plate = document.createElement("span");
+      plate.className = "user-avatar crew-monogram-xs";
+      plate.dataset.roleKey = member.role.key;
+      plate.setAttribute("aria-hidden", "true");
+      plate.textContent = member.role.code;
+      plate.title = member.role.label;
+      const track = document.createElement("div");
+      track.className = "lane-track";
+      (lanes.get(member.id) || []).forEach((span) => {
+        const bar = document.createElement("i");
+        bar.className = "lane-span";
+        bar.dataset.roleKey = member.role.key;
+        setChartGeometry(bar, {
+          left: ((span.start - windowStart) / window.ms) * 100,
+          width: Math.max(0.5, ((span.end - span.start) / window.ms) * 100)
+        });
+        track.append(bar);
+      });
+      lane.append(plate, track);
+      ui.laneChart.append(lane);
+    });
+    const axis = document.createElement("div");
+    axis.className = "lane-axis";
+    const from = document.createElement("span");
+    from.textContent = `${window.minutes.toString()}m ago`;
+    const to = document.createElement("span");
+    to.textContent = "now";
+    axis.append(from, to);
+    ui.laneChart.append(axis);
+  }
+
+  // ── Crew activity, stacked by role ────────────────────────────────────
+  // The kit draws actions per day for a week; this buffer holds the recent
+  // stream, not days, so the honest series is the recent window it can
+  // vouch for — five-minute buckets over the last hour (or the buffer's
+  // reach), each stacked by the acting role. Nothing is interpolated: a
+  // bucket is a count of real events.
+  const roleBarFamilies = Object.freeze([
+    { key: "AGENT_ROLE_ENGINEER", match: (role) => ["AGENT_ROLE_STAFF_CLIENT", "AGENT_ROLE_STAFF_BACKEND", "AGENT_ROLE_STAFF_PLATFORM", "AGENT_ROLE_ENGINEER"].includes(role) },
+    { key: "AGENT_ROLE_ENGINEERING_MANAGER", match: (role) => role === "AGENT_ROLE_ENGINEERING_MANAGER" },
+    { key: "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER", match: (role) => role === "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" },
+    { key: "AGENT_ROLE_PRODUCT_DESIGNER", match: (role) => role === "AGENT_ROLE_PRODUCT_DESIGNER" }
+  ]);
+
+  function renderRoleBars() {
+    if (!ui.roleBars || !ui.roleBarsEmpty) return;
+    ui.roleBars.replaceChildren();
+    const team = selectedTeam();
+    const standDown = (title, message) => {
+      ui.roleBars.hidden = true;
+      if (ui.roleBarsLegend) ui.roleBarsLegend.hidden = true;
+      if (ui.roleBarsWindow) ui.roleBarsWindow.hidden = true;
+      ui.roleBarsEmpty.hidden = false;
+      setEmptyState(ui.roleBarsEmpty, title, message);
+    };
+    if (!team) {
+      standDown("No team selected", "Choose a team to count its crew's recent actions.");
+      return;
+    }
+    const window = dashboardChartWindow(60 * 60 * 1000);
+    const bucketCount = 12;
+    const bucketMs = window.ms / bucketCount;
+    const start = window.now - window.ms;
+    const buckets = Array.from({ length: bucketCount }, () => new Map());
+    let counted = 0;
+    for (const entry of session.activityEvents) {
+      const role = agentRoleContract?.canonicalAgentRole?.(entry.agentRole);
+      if (!role) continue;
+      const at = timestampDate(entry.occurredAt)?.getTime();
+      if (!Number.isFinite(at) || at < start || at > window.now) continue;
+      const family = roleBarFamilies.find((candidate) => candidate.match(role.key));
+      if (!family) continue;
+      const index = Math.min(bucketCount - 1, Math.floor((at - start) / bucketMs));
+      buckets[index].set(family.key, (buckets[index].get(family.key) || 0) + 1);
+      counted += 1;
+    }
+    if (!counted) {
+      standDown("No recent actions", `Nothing from the crew in the last ${window.minutes.toString()} minutes. Bars fill as they work.`);
+      return;
+    }
+    const maxTotal = Math.max(...buckets.map((bucket) => [...bucket.values()].reduce((sum, value) => sum + value, 0)));
+    ui.roleBarsEmpty.hidden = true;
+    ui.roleBars.hidden = false;
+    if (ui.roleBarsLegend) ui.roleBarsLegend.hidden = false;
+    if (ui.roleBarsWindow) {
+      ui.roleBarsWindow.hidden = false;
+      ui.roleBarsWindow.textContent = `${counted.toString()} actions · last ${window.minutes.toString()}m by role`;
+    }
+    buckets.forEach((bucket) => {
+      const column = document.createElement("div");
+      column.className = "role-bar";
+      roleBarFamilies.forEach((family) => {
+        const count = bucket.get(family.key) || 0;
+        if (!count) return;
+        const segment = document.createElement("i");
+        segment.dataset.roleKey = family.key;
+        segment.title = `${count.toString()} actions`;
+        setChartGeometry(segment, { height: (count / maxTotal) * 100 });
+        column.append(segment);
+      });
+      ui.roleBars.append(column);
+    });
+  }
+
+  function renderDashboardCharts() {
+    purgeChartGeometry("c");
+    renderDashboardLanes();
+    renderRoleBars();
+  }
+
   const economicsGroupDefinitions = Object.freeze([
     { key: "initiative", label: "Initiative", scopeType: 7 },
     { key: "agent", label: "Agent", scopeType: 4 },
@@ -6009,6 +6563,9 @@
     setSourceState(ui.activityState, label, tone);
     ui.activityRetry.hidden = true;
     renderActivityFilters();
+    // An emptied buffer empties the lanes and bars with it — the honest
+    // empty, not yesterday's spans over a team that just changed.
+    renderDashboardCharts();
   }
 
   function resetSessionHistoryView(message, label, tone = "") {
@@ -7711,16 +8268,53 @@
     gaugeSheet.insertRule(`${selector}{width:${value.toFixed(1)}%}`, gaugeSheet.cssRules.length);
   }
 
+  // The teams surface's charts need left/width/height, not just width — the
+  // same CSSOM discipline as setGaugeWidth on the same adopted sheet. Chart
+  // elements are rebuilt on every paint, so their rules are prefixed ("c"
+  // for the lanes and bars, "t" for the tile meters) and purged by their own
+  // renderer before each rebuild; the gauges' stable rules are never touched.
+  function purgeChartGeometry(prefix) {
+    if (!gaugeSheet) return;
+    const marker = `[data-gauge="${prefix}`;
+    for (let index = gaugeSheet.cssRules.length - 1; index >= 0; index -= 1) {
+      if (gaugeSheet.cssRules[index].selectorText?.startsWith(marker)) gaugeSheet.deleteRule(index);
+    }
+  }
+
+  function setChartGeometry(element, geometry, prefix = "c") {
+    if (!element) return;
+    if (!gaugeSheet) {
+      if (!("adoptedStyleSheets" in document) || typeof CSSStyleSheet !== "function") return;
+      try {
+        gaugeSheet = new CSSStyleSheet();
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, gaugeSheet];
+      } catch { return; }
+    }
+    let id = element.getAttribute("data-gauge");
+    if (!id) {
+      gaugeSequence += 1;
+      id = `${prefix}${gaugeSequence.toString()}`;
+      element.setAttribute("data-gauge", id);
+    }
+    const clamp = (value) => Math.max(0, Math.min(100, Number(value) || 0)).toFixed(2);
+    const declarations = [];
+    if (Number.isFinite(geometry?.left)) declarations.push(`left:${clamp(geometry.left)}%`);
+    if (Number.isFinite(geometry?.width)) declarations.push(`width:${clamp(geometry.width)}%`);
+    if (Number.isFinite(geometry?.height)) declarations.push(`height:${clamp(geometry.height)}%`);
+    if (!declarations.length) return;
+    const selector = `[data-gauge="${id}"]`;
+    for (let index = gaugeSheet.cssRules.length - 1; index >= 0; index -= 1) {
+      if (gaugeSheet.cssRules[index].selectorText === selector) gaugeSheet.deleteRule(index);
+    }
+    gaugeSheet.insertRule(`${selector}{${declarations.join(";")}}`, gaugeSheet.cssRules.length);
+  }
+
   // When this team came into existence, for separating its own work from the
   // repository's history. The generated client surfaces created_at either as
-  // an ISO string or a {seconds} timestamp depending on transport; accept both.
+  // an ISO string or a {seconds} timestamp depending on transport; the
+  // parse itself lives in teamCreatedAtMs, which the team tiles share.
   function selectedTeamCreatedAtMs() {
-    const team = selectedTeam();
-    const value = team?.createdAt;
-    if (!value) return 0;
-    if (typeof value === "string") return Date.parse(value) || 0;
-    if (typeof value.seconds !== "undefined") return Number(value.seconds) * 1000;
-    return 0;
+    return teamCreatedAtMs(selectedTeam());
   }
 
   function renderDescent() {
@@ -7929,6 +8523,9 @@
     renderActivityFilters();
     refreshCrewActivity();
     renderDescent();
+    // The teams surface's lanes and role bars read this same buffer, so they
+    // repaint on the same beat the ledger does.
+    renderDashboardCharts();
     const allEntries = allActivityEntries();
     const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
     ui.activityList.replaceChildren();
@@ -9130,6 +9727,21 @@
   // the surface on the click, and this handler fans out the per-objective
   // proposal loads the view shows — once per team and generation.
   document.querySelectorAll('[data-view-link="objectives"]').forEach((link) => link.addEventListener("click", () => { ensureObjectivesViewWork(); }));
+  if (ui.teamTiles) ui.teamTiles.addEventListener("click", openTeamFromTiles);
+  // The teams surface loads its capped fan-out only while it is actually on
+  // screen. The router stamps .is-active on the section; this observer is
+  // the app's only read of that signal — the same one-way, DOM-mediated
+  // coupling the router keeps with the roster's own signals.
+  const dashboardSection = document.querySelector('.wview[data-view="dashboard"]');
+  if (dashboardSection) {
+    const armDashboard = () => {
+      if (!dashboardSection.classList.contains("is-active")) return;
+      ensureDashboardStats();
+      renderDashboardCharts();
+    };
+    new MutationObserver(armDashboard).observe(dashboardSection, { attributes: true, attributeFilter: ["class"] });
+    armDashboard();
+  }
   // The objective form left the shell when the console became the only ask.
   // Its pipeline remains for programmatic flows, so the listeners are guarded
   // rather than deleted - and the guard is not optional: an unguarded

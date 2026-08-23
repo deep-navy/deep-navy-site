@@ -1670,3 +1670,91 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 @media (hover: hover) {
   .button-primary:hover::after { animation: dn-sweep var(--dur-slow) var(--ease-out) both; }
 }
+
+/* ===========================================================================
+   DASHBOARD KIT LAYER — the teams surface and the first-run setup grid
+   ===========================================================================
+   Ported from the design system's factory_app kit (Dashboard.jsx +
+   CrewSetup.jsx), spoken in this console's grammar: tokens only, achromatic
+   chrome, hue strictly under role/status scopes, hovers gated, charts drawn
+   as DOM on real data with no animation and no library. */
+
+/* ── The teams surface: layout ── */
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, .85fr); align-items: start; }
+.dash-main { min-width: 0; }
+.dash-side { min-width: 0; display: grid; gap: 1.5rem; align-content: start; padding-left: 1.6rem; border-left: 1px solid var(--line); }
+.dash-side-note { margin: 0; color: var(--muted); font-size: .67rem; line-height: 1.5; }
+@media (max-width: 1200px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-side { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.3rem; margin-top: 1.5rem; }
+}
+
+/* ── The team tiles: doors, in the kit's crew-tile shape ── */
+.team-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .8rem; }
+.team-tile { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: .7rem; padding: .95rem 1rem 1rem; text-align: left; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-1); transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-standard); }
+/* The kit's top hairline, traced on hover — ink, so it says "door", not state. */
+.team-tile::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
+.team-tile:focus-visible { outline: 2px solid var(--accent-graphic); outline-offset: -2px; }
+@media (hover: hover) {
+  .team-tile:hover { border-color: var(--border-strong); box-shadow: var(--shadow-panel); transform: translateY(-2px); }
+  .team-tile:hover::after { transform: scaleX(1); }
+}
+.team-tile-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.team-tile-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; }
+.team-tile-chip { flex: none; display: inline-flex; align-items: center; padding: .12rem .45rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--muted); }
+.team-tile-chip[data-tone="live"] { color: var(--status-live-fg); border-color: var(--status-live-border); background: var(--status-live-bg); }
+.team-tile-chip[data-tone="success"] { color: var(--status-success-fg); border-color: var(--status-success-border); background: var(--status-success-bg); }
+.team-tile-chip[data-tone="attention"] { color: var(--status-attention-fg); border-color: var(--status-attention-border); background: var(--status-attention-bg); }
+.team-tile-chip[data-tone="error"] { color: var(--status-danger-fg); border-color: var(--status-danger-border); background: var(--status-danger-bg); }
+.team-tile-chip[data-tone="idle"] { color: var(--status-idle-fg); border-color: var(--status-idle-border); background: var(--status-idle-bg); }
+.team-tile-line { margin: 0; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+.team-tile-meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; margin-bottom: .35rem; }
+.team-tile-meter-head span:first-child { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.team-tile-frac { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-bright); }
+/* One segment per objective, classified by the shared acceptance state. */
+.team-tile-segments { display: flex; gap: 2px; }
+.team-tile-segments i { flex: 1; height: 4px; border-radius: 1px; background: var(--line); }
+.team-tile-segments i[data-state="proven"] { background: var(--status-success-dot); }
+.team-tile-segments i[data-state="regressed"] { background: var(--status-danger-dot); }
+.team-tile-segments-continuous { position: relative; height: 4px; overflow: hidden; }
+.team-tile-segments-continuous i { position: absolute; left: 0; top: 0; bottom: 0; height: auto; border-radius: 0; }
+.team-tile-regressed[data-state="regressed"] { display: block; margin-top: .3rem; font-family: var(--font-mono); font-size: .6rem; color: var(--status-danger-fg); }
+.team-tile-tags { display: flex; flex-wrap: wrap; gap: .3rem; }
+.team-tile-tags span { display: inline-flex; padding: .1rem .4rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .6rem; color: var(--muted-bright); }
+.team-tile-foot { display: flex; flex-wrap: wrap; gap: .35rem .9rem; margin-top: auto; padding-top: .6rem; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: .6rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.team-tile-foot [data-tone="attention"] { color: var(--status-attention-fg); }
+.team-tiles-note { margin: .6rem 0 0; color: var(--muted); font-size: .67rem; }
+
+/* ── Who worked when: DOM-built swimlanes, no chart library ──
+   The grid is achromatic (quarter-window hairlines); the only colour is the
+   span, and the span is identity — the agent whose monogram names the lane. */
+.lane-window { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lane-chart { display: grid; gap: .35rem; }
+.lane { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: .55rem; }
+.crew-monogram-xs { width: 22px; height: 22px; border-radius: var(--radius-sm); font-size: .5rem; font-weight: 650; letter-spacing: .03em; }
+.lane-track { position: relative; height: 14px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); background: repeating-linear-gradient(90deg, var(--line) 0, var(--line) 1px, transparent 1px, transparent 25%); }
+.lane-span { position: absolute; top: 3px; bottom: 3px; min-width: 2px; border-radius: 1px; }
+.lane-span[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { background: var(--role-pm); }
+.lane-span[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { background: var(--role-em); }
+.lane-span[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { background: var(--role-design); }
+.lane-span[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.lane-span[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.lane-span[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
+.lane-span[data-role-key="AGENT_ROLE_ENGINEER"] { background: var(--role-eng); }
+.lane-axis { display: flex; justify-content: space-between; padding-left: calc(24px + .55rem); font-family: var(--font-mono); font-size: .56rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ── Crew activity: five-minute buckets, stacked by role ── */
+.role-bar-chart { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; align-items: end; height: 92px; border-bottom: 1px solid var(--line); }
+.role-bar { display: flex; flex-direction: column-reverse; gap: 1px; height: 100%; }
+.role-bar i { width: 100%; flex: none; border-radius: 1px 1px 0 0; }
+.role-bar i[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { background: var(--role-pm); }
+.role-bar i[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { background: var(--role-em); }
+.role-bar i[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { background: var(--role-design); }
+.role-bar i[data-role-key="AGENT_ROLE_ENGINEER"] { background: var(--role-eng); }
+.role-bar-legend { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-top: .55rem; }
+.role-bar-legend span { display: inline-flex; align-items: center; gap: .35rem; font-family: var(--font-mono); font-size: .58rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.role-bar-legend span::before { content: ""; width: 9px; height: 9px; border-radius: 1px; background: var(--line); }
+.role-bar-legend span[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"]::before { background: var(--role-pm); }
+.role-bar-legend span[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"]::before { background: var(--role-em); }
+.role-bar-legend span[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"]::before { background: var(--role-design); }
+.role-bar-legend span[data-role-key="AGENT_ROLE_ENGINEER"]::before { background: var(--role-eng); }
