@@ -2721,6 +2721,13 @@
     session.creditPacks = [];
     if (!session.subscriptionActive || !session.organizationId) {
       renderCreditPackControls();
+      // Top-up settings are still read. GetCreditTopUpSettings needs only
+      // organization membership, and an inactive subscription is one of the
+      // things it REPORTS — as CREDIT_TOP_UP_BLOCK_REASON_SUBSCRIPTION_INACTIVE.
+      // Skipping the call here left the panel saying the settings were
+      // unavailable when the truth was that nobody had asked for them, which is
+      // the difference between "we could not read it" and "we did not look".
+      refreshCreditTopUp();
       return;
     }
     try {
@@ -7689,9 +7696,16 @@
     ui.topUpPanel.hidden = !session.organizationId;
     if (!session.organizationId) return;
 
-    if (session.creditTopUpState === "loading") {
-      setSourceState(ui.topUpState, "Loading", "loading");
-      setDataState(ui.topUpSummary, "loading", "Reading whether this organization refills itself.");
+    // Four empties, and these are two of them. "Loading" is a claim about right
+    // now; "waiting" is that nothing has asked yet. Neither is "unavailable",
+    // which is a claim that the read was attempted and failed.
+    if (session.creditTopUpState === "loading" || session.creditTopUpState === "waiting") {
+      const loading = session.creditTopUpState === "loading";
+      setSourceState(ui.topUpState, loading ? "Loading" : "Waiting", loading ? "loading" : "");
+      setDataState(ui.topUpSummary, loading ? "loading" : "pending",
+        loading
+          ? "Reading whether this organization refills itself."
+          : "Automatic top-up has not been read for this organization yet.");
       ui.topUpForm.hidden = true;
       if (ui.topUpNotice) ui.topUpNotice.replaceChildren();
       return;

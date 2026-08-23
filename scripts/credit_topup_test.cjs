@@ -316,6 +316,25 @@ test("an automatic charge is distinguishable from one the customer made", () => 
   assert.match(row, /ladderBadge\(shape\.word, shape\.level\)/);
 });
 
+test("the settings are read even with no active subscription, and never assumed", () => {
+  // GetCreditTopUpSettings needs only organization membership, and an inactive
+  // subscription is one of the things it REPORTS. Skipping the read on that
+  // path left the panel claiming the settings were unavailable when the truth
+  // was that nobody had asked — "we could not read it" and "we did not look"
+  // are different facts and the four-empties rule says so.
+  const packs = fn("refreshCreditPacks");
+  const early = packs.slice(0, packs.indexOf("try {"));
+  assert.match(early, /refreshCreditTopUp\(\)/,
+    "an organization without an active subscription never loads its top-up settings");
+
+  const render = fn("renderCreditTopUp");
+  assert.match(render, /session\.creditTopUpState === "loading" \|\| session\.creditTopUpState === "waiting"/);
+  assert.match(render, /has not been read for this organization yet/);
+  // Neither of those may present as unavailable, which is a claim the read was
+  // attempted and failed.
+  assert.match(render, /setDataState\(ui\.topUpSummary, loading \? "loading" : "pending"/);
+});
+
 test("an empty record and an unreadable one are different facts", () => {
   const history = fn("renderCreditTopUpHistory");
   assert.match(history, /setDataState\(empty, "unavailable"/);
