@@ -800,55 +800,84 @@
           <div class="wview-head">
             <div><h2 id="workspace-settings-title">Settings</h2><p>Your GitHub account, organization, and the card Stripe keeps on file. deep navy never stores card details — Stripe does.</p></div>
           </div>
+          <!-- Four decision cards in the kit's grammar: a hairline-first
+               surface, a mono eyebrow naming the card's scope, fact rows for
+               what is known (evidence in mono, money in tabular figures with
+               its unit), and at most ONE primary action where a decision
+               commits. Account and Billing are organization-scoped; Capacity
+               and Repositories act on the selected team and say so. Nothing
+               here is destructive — the coral-weighted actions (delete,
+               confirm delete) live with the team roster on Your teams. -->
           <div class="settings-grid">
-            <article class="app-dashboard settings-card" aria-labelledby="settings-account-title">
-              <div class="app-dashboard-header"><h3 id="settings-account-title">Account</h3><span class="data-source-badge">GitHub identity</span></div>
-              <dl class="settings-list">
-                <div><dt>Signed in as</dt><dd data-settings-account-name>—</dd></div>
-                <div><dt>GitHub login</dt><dd data-settings-account-login>—</dd></div>
-                <div><dt>Organization</dt><dd data-settings-account-org>Not selected</dd></div>
-              </dl>
-              <div class="settings-members">
-                <div class="credit-pack-heading"><div><span class="eyebrow">Members</span><strong>Organization members</strong></div><span class="data-source-badge" data-settings-members-count>—</span></div>
-                <ul class="settings-member-list" data-settings-members aria-live="polite"></ul>
-                <p class="form-help form-help-neutral" data-settings-members-empty>Select an organization to list its members.</p>
-              </div>
-            </article>
-            <article class="app-dashboard settings-card" aria-labelledby="settings-billing-title">
-              <div class="app-dashboard-header"><h3 id="settings-billing-title">Billing</h3><span class="data-source-badge" data-settings-billing-state>Waiting</span></div>
-              <dl class="settings-list">
-                <div><dt>Active teams</dt><dd data-settings-team-count>0</dd></div>
-                <div><dt>Monthly total</dt><dd class="settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
-                <div><dt>Price per team</dt><dd data-settings-billing-unit>$599.00/month</dd></div>
-                <div><dt>Payment method</dt><dd data-settings-payment-method>No card on file</dd></div>
-              </dl>
-              <dl class="plan-summary" data-plan-summary hidden>
-                <div><dt>Plan</dt><dd data-plan-name></dd></div>
-                <div><dt>Price</dt><dd data-plan-price></dd></div>
-                <div><dt>Included</dt><dd data-plan-credits></dd></div>
-                <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
-              </dl>
-              <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
-              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing in Stripe</button></div>
-            </article>
-            <article class="app-dashboard settings-card" data-engineer-settings aria-labelledby="settings-engineers-title">
-              <div class="app-dashboard-header"><h3 id="settings-engineers-title">Engineering capacity</h3><span class="data-source-badge" data-engineer-settings-state>Waiting</span></div>
-              <p class="form-help form-help-neutral" data-engineer-settings-team>Select a team to change how many engineers it runs.</p>
-              <div class="team-engineers" data-engineer-settings-field hidden>
-                <div class="team-engineers-head">
-                  <label id="settings-engineer-label" for="settings-engineer-count">Engineers</label>
-                  <p class="form-help form-help-neutral">Minimum three — a shipped ticket always keeps two peer reviewers.</p>
-                </div>
-                <div class="stepper" role="group" aria-labelledby="settings-engineer-label">
-                  <button class="stepper-btn" type="button" data-settings-engineer-decrement aria-label="Remove an engineer">&minus;</button>
-                  <input class="stepper-value" id="settings-engineer-count" type="number" inputmode="numeric" min="3" max="50" step="1" value="3" data-settings-engineer-input>
-                  <button class="stepper-btn" type="button" data-settings-engineer-increment aria-label="Add an engineer">+</button>
+            <article class="settings-card" aria-labelledby="settings-account-title">
+              <header class="settings-card-head">
+                <div><span class="eyebrow">GitHub identity</span><h3 id="settings-account-title">Account</h3></div>
+              </header>
+              <div class="settings-card-body">
+                <dl class="settings-list">
+                  <div><dt>Signed in as</dt><dd data-settings-account-name>—</dd></div>
+                  <div><dt>GitHub login</dt><dd class="settings-fact" data-settings-account-login>—</dd></div>
+                  <div><dt>Organization</dt><dd class="settings-fact" data-settings-account-org>Not selected</dd></div>
+                </dl>
+                <!-- Humans, not crew: each member renders as an ink monogram
+                     plate — the crew's shape, never its hues. Role colour is
+                     the agents' identity and stops at the roster. -->
+                <div class="settings-members">
+                  <div class="settings-card-sub"><span class="eyebrow">Organization members</span><span class="data-source-badge" data-settings-members-count>—</span></div>
+                  <ul class="settings-member-list" data-settings-members aria-live="polite"></ul>
+                  <div class="empty-state settings-empty" data-settings-members-empty><strong>No members listed yet</strong><p>Choose an organization in the header and everyone in it appears here, with their role.</p></div>
                 </div>
               </div>
-              <p class="team-price-breakdown" data-settings-engineer-price hidden></p>
-              <p class="form-help form-help-neutral" data-settings-engineer-note hidden>Increasing charges the prorated remainder now; decreasing credits your next invoice.</p>
-              <p class="form-error" data-settings-engineer-error role="alert" hidden></p>
-              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-engineer-apply disabled>Update engineering capacity</button></div>
+            </article>
+            <article class="settings-card" aria-labelledby="settings-billing-title">
+              <header class="settings-card-head">
+                <div><span class="eyebrow">Stripe subscription</span><h3 id="settings-billing-title">Billing</h3></div>
+                <span class="data-source-badge" data-settings-billing-state>Waiting</span>
+              </header>
+              <div class="settings-card-body">
+                <dl class="settings-list">
+                  <div><dt>Active teams</dt><dd class="settings-fig" data-settings-team-count>0</dd></div>
+                  <div><dt>Monthly total</dt><dd class="settings-fig settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
+                  <div><dt>Price per team</dt><dd class="settings-fig" data-settings-billing-unit>$599.00/month</dd></div>
+                  <div><dt>Payment method</dt><dd class="settings-fact" data-settings-payment-method>No card on file</dd></div>
+                </dl>
+                <dl class="settings-list plan-summary" data-plan-summary hidden>
+                  <div><dt>Plan</dt><dd class="settings-fact" data-plan-name></dd></div>
+                  <div><dt>Price</dt><dd class="settings-fig" data-plan-price></dd></div>
+                  <div><dt>Included</dt><dd class="settings-fig" data-plan-credits></dd></div>
+                  <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
+                </dl>
+                <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
+                <!-- The one action here is a door to Stripe's portal — a
+                     departure, not a commit — so it keeps the quiet weight.
+                     The decisions themselves happen inside Stripe. -->
+                <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-billing-manage disabled>Manage billing in Stripe</button></div>
+              </div>
+            </article>
+            <article class="settings-card" data-engineer-settings aria-labelledby="settings-engineers-title">
+              <header class="settings-card-head">
+                <div><span class="eyebrow">Selected team</span><h3 id="settings-engineers-title">Engineering capacity</h3></div>
+                <span class="data-source-badge" data-engineer-settings-state>Waiting</span>
+              </header>
+              <div class="settings-card-body">
+                <p class="form-help form-help-neutral" data-engineer-settings-team>Select a team to change how many engineers it runs.</p>
+                <div class="team-engineers" data-engineer-settings-field hidden>
+                  <div class="team-engineers-head">
+                    <label id="settings-engineer-label" for="settings-engineer-count">Engineers</label>
+                    <p class="form-help form-help-neutral">Minimum three — a shipped ticket always keeps two peer reviewers.</p>
+                  </div>
+                  <div class="stepper" role="group" aria-labelledby="settings-engineer-label">
+                    <button class="stepper-btn" type="button" data-settings-engineer-decrement aria-label="Remove an engineer">&minus;</button>
+                    <input class="stepper-value" id="settings-engineer-count" type="number" inputmode="numeric" min="3" max="50" step="1" value="3" data-settings-engineer-input>
+                    <button class="stepper-btn" type="button" data-settings-engineer-increment aria-label="Add an engineer">+</button>
+                  </div>
+                </div>
+                <p class="team-price-breakdown" data-settings-engineer-price hidden></p>
+                <p class="form-help form-help-neutral" data-settings-engineer-note hidden>Increasing charges the prorated remainder now; decreasing credits your next invoice.</p>
+                <p class="form-error" data-settings-engineer-error role="alert" hidden></p>
+                <!-- The card's one primary: the stepper proposes, this commits. -->
+                <div class="settings-actions"><button class="button button-primary" type="button" data-settings-engineer-apply disabled>Update engineering capacity</button></div>
+              </div>
             </article>
             <!-- Repositories: the same multi-select the create flow uses -
                  every repository the installation reaches, this TEAM's current
@@ -857,25 +886,31 @@
                  token scope, webhook fencing, and merge gates all follow), so
                  the button says exactly that and one honest line under it says
                  what survives and what is interrupted. -->
-            <article class="app-dashboard settings-card" data-repo-settings aria-labelledby="settings-repos-title">
-              <div class="app-dashboard-header"><h3 id="settings-repos-title">Repositories</h3><span class="data-source-badge" data-repo-settings-state>Waiting</span></div>
-              <p class="form-help form-help-neutral" data-repo-settings-team>Select a team to change which repositories it works in.</p>
-              <fieldset class="team-repos settings-repos" data-repo-settings-field hidden>
-                <legend class="visually-hidden">Which repositories should this team work in?</legend>
-                <p class="form-help form-help-neutral" id="settings-repositories-help" data-settings-repository-note>Every repository the deep navy GitHub App can reach. This team's current selection is checked — keep at least one.</p>
-                <div class="repository-list" data-settings-repository-list role="group" aria-label="Accessible repositories" aria-describedby="settings-repositories-help settings-repositories-error"></div>
-                <p class="form-error" id="settings-repositories-error" data-settings-repositories-error role="alert" hidden></p>
-              </fieldset>
-              <!-- The same door as the create picker, and deliberately OUTSIDE
-                   the fieldset: when the accessible list has not loaded the
-                   fieldset is hidden, and that is exactly when the customer
-                   needs the way to GitHub and the way to retry. -->
-              <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
-                <a class="button-link" data-settings-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
-                — if you are not an owner of that account, GitHub will ask an owner to approve your choice.
-                This list updates when you come back, or <button class="button-link" type="button" data-settings-repository-refresh>refresh it now</button>.</p>
-              <div class="settings-actions"><button class="button button-secondary" type="button" data-settings-repositories-apply disabled>Update repositories</button></div>
-              <p class="form-help form-help-neutral settings-repos-note" data-settings-repositories-note hidden>Saving re-provisions the team. Agents keep their memory; work in progress is interrupted.</p>
+            <article class="settings-card" data-repo-settings aria-labelledby="settings-repos-title">
+              <header class="settings-card-head">
+                <div><span class="eyebrow">Selected team</span><h3 id="settings-repos-title">Repositories</h3></div>
+                <span class="data-source-badge" data-repo-settings-state>Waiting</span>
+              </header>
+              <div class="settings-card-body">
+                <p class="form-help form-help-neutral" data-repo-settings-team>Select a team to change which repositories it works in.</p>
+                <fieldset class="team-repos settings-repos" data-repo-settings-field hidden>
+                  <legend class="visually-hidden">Which repositories should this team work in?</legend>
+                  <p class="form-help form-help-neutral" id="settings-repositories-help" data-settings-repository-note>Every repository the deep navy GitHub App can reach. This team's current selection is checked — keep at least one.</p>
+                  <div class="repository-list" data-settings-repository-list role="group" aria-label="Accessible repositories" aria-describedby="settings-repositories-help settings-repositories-error"></div>
+                  <p class="form-error" id="settings-repositories-error" data-settings-repositories-error role="alert" hidden></p>
+                </fieldset>
+                <!-- The same door as the create picker, and deliberately OUTSIDE
+                     the fieldset: when the accessible list has not loaded the
+                     fieldset is hidden, and that is exactly when the customer
+                     needs the way to GitHub and the way to retry. -->
+                <p class="form-help form-help-neutral repo-access-line">You choose which repositories deep navy can reach.
+                  <a class="button-link" data-settings-repository-manage-access href="https://github.com/settings/installations" target="_blank" rel="noopener noreferrer">Choose repositories on GitHub</a>
+                  — if you are not an owner of that account, GitHub will ask an owner to approve your choice.
+                  This list updates when you come back, or <button class="button-link" type="button" data-settings-repository-refresh>refresh it now</button>.</p>
+                <!-- The card's one primary: checking boxes proposes, this commits. -->
+                <div class="settings-actions"><button class="button button-primary" type="button" data-settings-repositories-apply disabled>Update repositories</button></div>
+                <p class="form-help form-help-neutral settings-repos-note" data-settings-repositories-note hidden>Saving re-provisions the team. Agents keep their memory; work in progress is interrupted.</p>
+              </div>
             </article>
           </div>
         </section>

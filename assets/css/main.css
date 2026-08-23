@@ -322,12 +322,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .repository-option strong { color: var(--ink); font-size: .78rem; }
 .repository-option small { color: var(--muted); font-size: .66rem; }
 .form-help { margin: 0; color: var(--muted-bright); font-size: .72rem !important; }.form-help-neutral { color: var(--muted); }.form-error { margin: 0; padding-left: .65rem; color: var(--ink) !important; border-left: 2px solid var(--muted-bright); font-size: .72rem !important; }
-.plan-summary { display: grid; margin: .2rem 0 1rem; padding: .75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--navy-900); gap: .45rem; }
-.plan-summary > div { display: grid; grid-template-columns: 70px 1fr; gap: .75rem; }
-.plan-summary dt { color: var(--muted); font-family: var(--font-mono); font-size: .61rem; text-transform: uppercase; }
-.plan-summary dd { margin: 0; color: var(--muted-bright); font-size: .72rem; text-align: right; }
 .user-summary { display: flex; align-items: center; gap: .8rem; }.user-avatar { display: grid; width: 44px; height: 44px; color: var(--navy-950); border-radius: 8px; background: var(--aqua); font-family: var(--font-mono); font-weight: 650; place-items: center; }.user-summary strong { display: block; font-size: .85rem; }.user-summary span { color: var(--muted); font-size: .7rem; }
-.app-dashboard { min-width: 0; padding: 1.2rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }.app-dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }.app-dashboard-header h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.02em; }.empty-state { padding: 2.5rem 0; text-align: left; }.empty-state strong { display: block; font-family: var(--font-mono); }.empty-state p { max-width: 500px; margin: .45rem 0 0; font-size: .8rem; }
+.empty-state { padding: 2.5rem 0; text-align: left; }.empty-state strong { display: block; font-family: var(--font-mono); }.empty-state p { max-width: 500px; margin: .45rem 0 0; font-size: .8rem; }
 .data-source-badge, .stream-state { display: inline-flex; min-height: 0; align-items: center; padding: 0; color: var(--muted); font-family: var(--font-mono); font-size: .57rem; line-height: 1.2; text-transform: uppercase; }.data-source-badge[data-tone="success"], .stream-state[data-tone="success"] { color: var(--status-success-fg); }.data-source-badge[data-tone="error"], .stream-state[data-tone="error"] { color: var(--status-danger-fg); }.data-source-badge[data-tone="loading"], .stream-state[data-tone="loading"] { color: var(--muted-bright); }
 /* Crew rail — the roster as people, from the approved workspace design.
    A breathing accent dot says "present and ready"; anything else is stated in
@@ -389,27 +385,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .invoice-receipt { color: var(--aqua); font-family: var(--font-mono); font-size: .6rem; text-decoration: none; }
 .invoice-receipt:hover, .invoice-receipt:focus-visible { text-decoration: underline; text-underline-offset: .24em; }
 .invoice-more { width: 100%; }
-
-.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(22px, 3vw, 42px); }
-.settings-card { display: flex; flex-direction: column; }
-.settings-list { display: grid; margin: 0 0 .35rem; border-top: 1px solid var(--line); }
-.settings-list > div { display: grid; grid-template-columns: minmax(96px, auto) 1fr; align-items: baseline; gap: 1rem; padding: .72rem 0; border-bottom: 1px solid var(--line); }
-.settings-list dt { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .05em; text-transform: uppercase; }
-.settings-list dd { margin: 0; overflow: hidden; color: var(--muted-bright); font-size: .8rem; text-align: right; text-overflow: ellipsis; }
-.settings-list dd.settings-emphasis { color: var(--ink); font-family: var(--font-mono); font-size: .92rem; font-variant-numeric: tabular-nums; }
-.settings-members { margin-top: 1.5rem; }
-.settings-members .credit-pack-heading { margin-bottom: .35rem; }
-.settings-member-list { display: grid; margin: 0; padding: 0; list-style: none; gap: 0; }
-.settings-member-list:empty { display: none; }
-.settings-member-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .7rem 0; border-top: 1px solid var(--line); }
-.settings-member-list .user-avatar { width: 34px; height: 34px; font-size: .82rem; }
-.settings-member-list strong { display: block; overflow: hidden; font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
-.settings-member-list small { display: block; overflow: hidden; color: var(--muted); font-family: var(--font-mono); font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
-.settings-member-role { color: var(--aqua); font-family: var(--font-mono); font-size: .56rem; letter-spacing: .06em; text-transform: uppercase; }
-.settings-billing-note { margin: .9rem 0 0; color: var(--muted); font-size: .72rem; line-height: 1.55; }
-.settings-actions { margin-top: auto; padding-top: 1.2rem; }
-.settings-actions .button { width: fit-content; }
-@media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
 
 .checkout-dialog { width: min(1080px, calc(100vw - 34px)); max-width: none; max-height: calc(100vh - 34px); padding: 0; overflow: auto; color: var(--ink); border: 1px solid var(--accent-a48); border-radius: 0; background: var(--navy-950); box-shadow: var(--shadow-lg); }
 .checkout-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(8px); }
@@ -642,9 +617,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* roster the chosen count implies */
 .app-body .team-price > div:first-child{ min-width:220px; }
 
-/* settings engineering-capacity card */
-[data-engineer-settings] .team-engineers{ border-top:0; padding-top:.2rem; }
-
 /* ---- workspace: sidebar + one view ---- */
 .app-body .workspace{ grid-template-columns:238px minmax(0,1fr); gap:clamp(18px,2.4vw,34px); align-items:start; }
 .app-body .wsnav-team{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-bottom:1.1rem;
@@ -664,10 +636,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .wview-head p{ color:var(--muted); font-size:.86rem; margin:.4rem 0 0; max-width:62ch; }
 
 
-/* softer panels for reused dashboards */
-.app-body .app-dashboard{ border:1px solid var(--line-soft); border-radius:var(--ra-lg); background:var(--panel);
-  padding:16px 18px; border-block:1px solid var(--line-soft); }
-.app-body .app-dashboard-header{ margin-bottom:1rem; }
 .app-body .empty-state{ padding:2rem 0; }
 .app-body .empty-state strong{ font-family:var(--font-sans); font-size:.98rem; font-weight:600; }
 .app-body .empty-state p{ color:var(--muted); }
@@ -685,9 +653,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .signed-out-card .eyebrow{ justify-content:center; }
 .app-body .signed-out-card h2{ font-size:clamp(1.9rem,3.6vw,2.5rem); }
 .app-body .signed-out-card .button-github{ margin-inline:auto; }
-
-/* settings, economics inherit prior styles but sit inside a view now */
-.app-body .settings-grid{ margin-top:.4rem; }
 
 @media (max-width:900px){
   .app-body .workspace{ grid-template-columns:1fr; }
@@ -1339,16 +1304,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .button-link { background: none; border: 0; padding: 0; font: inherit; color: var(--accent-text); text-decoration: underline; cursor: pointer; }
 .button-link:hover { color: var(--accent); }
 .repo-access-line { margin-top: .5rem; }
-/* In the settings card the line separates the checklist from the save
-   action, and stays put when the checklist itself is hidden. */
-.settings-card .repo-access-line { margin-top: .75rem; }
-
-/* Settings → Repositories: the create-flow picker restyled for a settings
-   card (the card header already says "Repositories", so no top rule), and
-   the honest re-provision line sits directly under the save button. */
-.settings-card .settings-repos { margin: 0; padding: 0; border: 0; }
-.settings-repos-note { margin-top: .55rem; }
-
 /* The organization sits in the identity chip: part of who you are here, and
    changeable from the one screen a customer without a team can reach. */
 .user-org { margin-left: auto; }
@@ -1797,3 +1752,92 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .repo-state { font-family: var(--font-mono); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .repo-state[data-repo-state="on"] { color: var(--text-bright); }
 .setup-note { margin: .55rem 0 0; text-align: center; font-family: var(--font-mono); font-size: .62rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ===========================================================================
+   SETTINGS KIT LAYER — the last screen out of its old bones
+   ===========================================================================
+   The settings view in the kit's card grammar: hairline-first cards, a mono
+   eyebrow naming each card's scope, MetaList fact rows (label in mono micro,
+   value right-aligned; evidence in mono, money in tabular figures with its
+   unit), and at most one primary action per decision card. Tokens only, the
+   chrome stays achromatic, hovers gated, and the grid folds on the system's
+   three stops. */
+
+/* ── The grid: two decision columns, one below 900 ── */
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; margin-top: .4rem; }
+@media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
+
+/* ── The card: a 1px hairline first, a surface second ── */
+.settings-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line-mid); border-radius: var(--ra-lg); background: var(--panel); }
+.settings-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: .85rem 1.1rem .7rem; border-bottom: 1px solid var(--line); }
+.settings-card-head .eyebrow { display: block; margin: 0 0 .3rem; color: var(--muted); font-size: .55rem; letter-spacing: .16em; }
+.settings-card-head h3 { margin: 0; font-size: 1.02rem; letter-spacing: -.02em; }
+.settings-card-head .data-source-badge { margin-top: .15rem; }
+.settings-card-body { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: .5rem 1.1rem 1.05rem; }
+
+/* ── Fact rows: the kit's MetaList ── */
+.settings-list { display: grid; margin: 0; }
+.settings-list > div { display: grid; grid-template-columns: minmax(104px, auto) 1fr; align-items: baseline; gap: 1rem; padding: .62rem 0; border-bottom: 1px solid var(--line); }
+.settings-list > div:last-child { border-bottom: 0; }
+.settings-list dt { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.settings-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--muted-bright); font-size: .8rem; text-align: right; }
+/* Evidence is a typeface: machine facts (logins, org slugs, card summaries)
+   read in mono; money stacks in tabular figures and always carries its unit
+   in the same string ($599.00/month — the renderer never splits them). */
+.settings-list dd.settings-fact { overflow: hidden; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.settings-list dd.settings-fig { font-family: var(--font-mono); font-size: .78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.settings-list dd.settings-emphasis { color: var(--ink); font-size: .95rem; font-weight: 600; }
+/* The plan summary is the same fact-row grammar, opened by a hairline when
+   the signed plan arrives. */
+.settings-list.plan-summary { margin-top: .2rem; border-top: 1px solid var(--line); }
+
+/* ── Members: humans in the monogram grammar, ink only ──
+   The plate keeps the crew monogram's shape and none of its hue: role colour
+   is agent identity and never paints a person. Greyscale-safe by
+   construction — there is nothing here to lose. */
+.settings-members { margin-top: 1.05rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.settings-card-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .15rem; }
+.settings-card-sub .eyebrow { margin: 0; color: var(--muted); font-size: .55rem; letter-spacing: .16em; }
+.settings-member-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.settings-member-list:empty { display: none; }
+.settings-member-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: .65rem; padding: .55rem 0; border-top: 1px solid var(--line); }
+.settings-member-list li:first-child { border-top: 0; }
+.settings-member-list .user-avatar { width: 28px; height: 28px; color: var(--text-bright); border: 1px solid var(--line-mid); border-radius: var(--ra-sm); background: var(--accent-a08); font-size: .62rem; font-weight: 650; }
+.settings-member-list strong { display: block; overflow: hidden; font-size: .78rem; font-weight: 600; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
+.settings-member-list small { display: block; overflow: hidden; color: var(--muted); font-family: var(--font-mono); font-size: .6rem; text-overflow: ellipsis; white-space: nowrap; }
+.settings-member-role { padding: .12rem .4rem; color: var(--muted); border: 1px solid var(--line); border-radius: var(--ra-sm); font-family: var(--font-mono); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+
+/* ── Empty states inside a card: the three-part formula, card-sized ── */
+.app-body .settings-card .empty-state { padding: .9rem 0 .3rem; }
+.app-body .settings-card .empty-state strong { font-size: .8rem; }
+.app-body .settings-card .empty-state p { max-width: 44ch; font-size: .72rem; }
+
+/* ── Notes and actions ── */
+.settings-billing-note { margin: .8rem 0 0; color: var(--muted); font-size: .72rem; line-height: 1.55; }
+.settings-actions { margin-top: auto; padding-top: 1rem; }
+.settings-actions .button { width: fit-content; }
+.settings-card .form-help { margin-top: .55rem; }
+.settings-card .form-error { margin-top: .55rem; }
+.settings-card [data-engineer-settings-team],
+.settings-card [data-repo-settings-team] { margin-top: .55rem; }
+
+/* The stepper rides the card's own rhythm: the head already draws the rule. */
+[data-engineer-settings] .team-engineers { padding-top: .45rem; border-top: 0; }
+
+/* The create-flow picker restyled for a settings card (the card header
+   already says "Repositories", so the fieldset draws no rule of its own),
+   and the honest re-provision line sits directly under the save button. */
+.settings-card .settings-repos { margin: .55rem 0 0; padding: 0; border: 0; }
+.settings-repos-note { margin-top: .55rem; }
+/* The GitHub door separates the checklist from the save action, and stays
+   put when the checklist itself is hidden. */
+.settings-card .repo-access-line { margin-top: .75rem; }
+
+/* ── One column everywhere below 600: labels stack over their values ── */
+@media (max-width: 600px) {
+  .settings-card-head { padding: .75rem .85rem .6rem; }
+  .settings-card-body { padding: .45rem .85rem .9rem; }
+  .settings-list > div { grid-template-columns: 1fr; gap: .18rem; }
+  .settings-list dd { text-align: left; }
+  .settings-actions .button { width: 100%; }
+}

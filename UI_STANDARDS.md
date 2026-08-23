@@ -35,8 +35,12 @@ is whether the check runs.
   the shadowed legacy dashed rule is deleted from the stylesheet, not just
   overridden)*
 - **One primary button per decision point.** Two primaries means the hierarchy
-  was never decided. *(audited: six `button-primary` in the shell, none of
-  which can meet on one decision. The four first-run primaries are mutually
+  was never decided. *(audited: eight `button-primary` in the shell, none of
+  which can meet on one decision. The two settings commits — Update
+  engineering capacity, Update repositories — sit on separate decision cards
+  and are each their card's only primary; the Stripe portal door stays
+  secondary because it is a departure, not a commit
+  (`settings_structure_test.cjs` pins all of this). The four first-run primaries are mutually
   exclusive — the organization card shows one form at a time, and a blocking
   card replaces the name form while it shows; the floor keeps Send as its one
   ask; Start subscription lives alone in the checkout dialog. Approve is the
