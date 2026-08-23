@@ -221,6 +221,7 @@ This reference is generated from the repository's local protobuf descriptors, in
 - [deepnavy/v1/objectives.proto](#deepnavy-v1-objectives-proto)
   - [Message `deepnavy.v1.BusinessObjective`](#deepnavy-v1-businessobjective)
   - [Message `deepnavy.v1.KpiDefinition`](#deepnavy-v1-kpidefinition)
+  - [Message `deepnavy.v1.ObjectiveAcceptance`](#deepnavy-v1-objectiveacceptance)
   - [Message `deepnavy.v1.CreateBusinessObjectiveRequest`](#deepnavy-v1-createbusinessobjectiverequest)
   - [Message `deepnavy.v1.CreateBusinessObjectiveResponse`](#deepnavy-v1-createbusinessobjectiveresponse)
   - [Message `deepnavy.v1.ListBusinessObjectivesRequest`](#deepnavy-v1-listbusinessobjectivesrequest)
@@ -2838,6 +2839,8 @@ Imports: `deepnavy/v1/common.proto`, `deepnavy/v1/work.proto`, `google/protobuf/
 | `kpis` | 6 | [`deepnavy.v1.KpiDefinition`](#deepnavy-v1-kpidefinition) | repeated | — |
 | `created_at` | 7 | `google.protobuf.Timestamp` | singular | — |
 | `dispatch` | 8 | [`deepnavy.v1.ObjectiveDispatchStatus`](#deepnavy-v1-objectivedispatchstatus) | singular | — |
+| `satisfied_at` | 9 | `google.protobuf.Timestamp` | singular | satisfied_at is evidence, not a lifecycle state: it is set while the<br> objective's latest acceptance check run passes and cleared when a later<br> run fails. Because satisfaction is revocable, LifecycleState deliberately<br> does not grow a value for it. |
+| `acceptance` | 10 | [`deepnavy.v1.ObjectiveAcceptance`](#deepnavy-v1-objectiveacceptance) | singular | acceptance is the latest acceptance check observation, whether passing or<br> failing. A failing acceptance with satisfied_at absent means the objective<br> was proven and has regressed; consoles must render that distinctly from<br> never-run, where acceptance is absent entirely. |
 
 <a id="deepnavy-v1-kpidefinition"></a>
 ### Message `deepnavy.v1.KpiDefinition`
@@ -2851,6 +2854,24 @@ Imports: `deepnavy/v1/common.proto`, `deepnavy/v1/work.proto`, `google/protobuf/
 | `baseline` | 5 | `double` | singular | — |
 | `target` | 6 | `double` | singular | — |
 | `guardrail` | 7 | `bool` | singular | — |
+
+<a id="deepnavy-v1-objectiveacceptance"></a>
+### Message `deepnavy.v1.ObjectiveAcceptance`
+
+ObjectiveAcceptance is the most recent acceptance check run recorded for an
+ objective, passing or failing alike. check_run_name is the deterministic
+ GitHub check run name, head_sha the 40-hex commit the run evaluated, and
+ conclusion GitHub's check run conclusion carried verbatim - the server never
+ remaps it into a platform enum.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `check_run_name` | 1 | `string` | singular | — |
+| `head_sha` | 2 | `string` | singular | — |
+| `conclusion` | 3 | `string` | singular | — |
+| `check_run_url` | 4 | `string` | singular | — |
+| `observed_at` | 5 | `google.protobuf.Timestamp` | singular | — |
+| `repository_id` | 6 | `int64` | singular | — |
 
 <a id="deepnavy-v1-createbusinessobjectiverequest"></a>
 ### Message `deepnavy.v1.CreateBusinessObjectiveRequest`
