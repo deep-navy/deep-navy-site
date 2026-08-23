@@ -393,7 +393,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .settings-billing-note { margin: .9rem 0 0; color: var(--muted); font-size: .72rem; line-height: 1.55; }
 .settings-actions { margin-top: auto; padding-top: 1.2rem; }
 .settings-actions .button { width: fit-content; }
-@media (max-width: 720px) { .settings-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
 
 .checkout-dialog { width: min(1080px, calc(100vw - 34px)); max-width: none; max-height: calc(100vh - 34px); padding: 0; overflow: auto; color: var(--ink); border: 1px solid var(--accent-a48); border-radius: 0; background: var(--navy-950); box-shadow: var(--shadow-lg); }
 .checkout-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(8px); }
@@ -425,11 +425,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .workspace-context { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; margin-top: 4rem; padding: 1.4rem 0 0; border-top: 1px solid var(--line); }
 .workspace-context h2 { margin-bottom: .5rem; font-size: 1.65rem; }
 .workspace-context p { margin: 0; font-size: .78rem; }
-.context-ledger { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.context-ledger div { min-width: 0; padding: .75rem 1rem .8rem 0; }
-.context-ledger div + div { padding-left: 1rem; border-left: 1px solid var(--line); }
-.context-ledger dt { color: var(--muted); font-family: var(--font-mono); font-size: .56rem; letter-spacing: .05em; text-transform: uppercase; }
-.context-ledger dd { overflow: hidden; margin: .2rem 0 0; color: var(--muted-bright); font-family: var(--font-mono); font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
 .product-workspace { display: grid; grid-template-columns: minmax(190px, 2.6fr) minmax(0, 6fr) minmax(230px, 3.1fr); align-items: start; gap: clamp(22px, 3vw, 42px); margin-top: 3.5rem; }
 .workspace-rail, .workspace-side { display: grid; align-content: start; gap: 2.6rem; }
 .product-workspace .workspace-section { margin: 0; padding-top: 1.25rem; }
@@ -510,7 +505,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .customer-activity-list li:last-child { border-bottom: 1px solid var(--line); }
 
 /* Responsive */
-@media (max-width: 1040px) {
+@media (max-width: 1200px) {
   .desktop-nav { gap: 1rem; }.desktop-nav a { font-size: .8rem; }
   .hero-inner { grid-template-columns: 1fr; }.hero-copy { max-width: 800px; }
   .workflow-steps { grid-template-columns: repeat(2, 1fr); row-gap: 2rem; }
@@ -525,7 +520,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .hero-inner { align-items: start; }
   .operating-brief { width: min(720px, 100%); }
 }
-@media (max-width: 840px) {
+@media (max-width: 900px) {
   .desktop-nav, .desktop-action { display: none; }.mobile-menu { display: block; }
   .section { padding-block: 80px; }.home-hero { padding-top: 80px; }
   .split-heading, .content-grid { grid-template-columns: 1fr; gap: 2rem; }.content-grid > header { position: static; }
@@ -541,9 +536,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .cta-card { grid-template-columns: 1fr; gap: 2rem; }
   .workspace-context { grid-template-columns: 1fr; align-items: start; }
   .dashboard-controls { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .context-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .context-ledger div:nth-child(3) { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
-  .context-ledger div:nth-child(4) { border-top: 1px solid var(--line); }
   .product-workspace { grid-template-columns: 1fr; }
   .workspace-rail, .workspace-side { grid-column: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .workspace-center { grid-row: 1; }
@@ -553,7 +545,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .checkout-status { grid-row: auto; }
   .checkout-mount { grid-row: auto; min-height: 520px; }
 }
-@media (max-width: 620px) {
+@media (max-width: 600px) {
   .shell, .app-shell { width: min(calc(100% - 28px), var(--shell)); }
   .header-inner { min-height: 66px; }.home-hero { min-height: auto; padding: 65px 0 70px; }
   .hero-copy h1 { font-size: clamp(2.8rem, 15vw, 4.1rem); }.hero-lead { font-size: 1rem; }.hero-actions .button { width: 100%; }
@@ -581,9 +573,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .pilot-register a { grid-template-columns: 1fr; gap: .35rem; }
   .article-card { grid-template-columns: 1fr; gap: .55rem; }
   .workspace-section { padding: 1.5rem 0 0; border-radius: 0; }
-  .context-ledger { grid-template-columns: 1fr; }
-  .context-ledger div, .context-ledger div + div, .context-ledger div:nth-child(3), .context-ledger div:nth-child(4) { padding: .65rem 0; border-left: 0; border-top: 1px solid var(--line); }
-  .context-ledger div:first-child { border-top: 0; }
   .workspace-rail, .workspace-side { grid-template-columns: 1fr; }
   .checkout-dialog { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
   .checkout-frame { min-height: calc(100vh - 18px); }
@@ -694,34 +683,11 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* ---- workspace: sidebar + one view ---- */
 .app-body .workspace{ grid-template-columns:238px minmax(0,1fr); gap:clamp(18px,2.4vw,34px); align-items:start; }
-/* Workspace navigation.
-
-   Was a rounded panel of pill-shaped links with a filled active state - the
-   default admin-template sidebar, and the single most generic thing on the
-   screen. It is now a plain column against the page: sections separated by a
-   rule, the current view marked by a seafoam edge and a brighter label rather
-   than a filled box. Nothing here is a card, because nothing here is an
-   object; it is a list of places. */
-.app-body .wsnav{ position:sticky; top:80px; display:flex; flex-direction:column; gap:2px;
-  padding:0 1.35rem 0 0; border:0; border-right:1px solid var(--line); border-radius:0; background:none; }
 .app-body .wsnav-team{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-bottom:1.1rem;
   padding-bottom:1.1rem; border-bottom:1px solid var(--line); }
 .app-body .wsnav-team select{ min-width:0; height:38px; padding:0 28px 0 10px; color:var(--ink); border:1px solid var(--line-mid);
   border-radius:var(--ra); background:transparent; font-family:var(--font-mono); font-size:12.5px; letter-spacing:.02em; }
 .app-body .wsnav-refresh{ width:38px; padding:0; }
-.app-body .wsnav-links{ display:flex; flex-direction:column; gap:0; }
-.app-body .wsnav-link{ display:flex; align-items:center; gap:.7rem; padding:.55rem 0 .55rem .85rem; border-radius:0;
-  color:var(--muted); font-size:13.5px; font-weight:500; position:relative; text-decoration:none;
-  border-left:2px solid transparent; transition:color 140ms cubic-bezier(.2,.7,.3,1), border-color 140ms cubic-bezier(.2,.7,.3,1); }
-.app-body .wsnav-link svg{ width:16px; height:16px; color:var(--muted); flex:0 0 auto; transition:color 140ms cubic-bezier(.2,.7,.3,1); }
-.app-body .wsnav-link:hover{ background:none; color:var(--ink); border-left-color:var(--line-mid); }
-.app-body .wsnav-link:hover svg{ color:var(--ink); }
-/* The current view is stated by an edge and a brighter label. A filled pill
-   says "button"; this is a location. */
-.app-body .wsnav-link[aria-current="true"]{ background:none; color:var(--ink); border-left-color:var(--accent-graphic); }
-.app-body .wsnav-link[aria-current="true"] svg{ color:var(--accent-text); }
-.app-body .wsnav-count{ margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--amber);
-  background:none; border-radius:0; padding:0; }
 .app-body .wsnav-new{ margin-top:1.1rem; padding-top:1.1rem; border-top:1px solid var(--line); justify-content:flex-start; }
 .app-body .wsmain{ min-width:0; }
 
@@ -733,11 +699,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .app-body .wview-head h2{ font-size:clamp(1.5rem,2.6vw,1.9rem); font-weight:640; margin:0; }
 .app-body .wview-head p{ color:var(--muted); font-size:.86rem; margin:.4rem 0 0; max-width:62ch; }
 
-/* overview grid */
-.app-body .overview-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:1.4rem; align-items:start; }
-.app-body .overview-grid .overview-objective{ grid-column:1 / -1; }
-.app-body .context-ledger{ grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line-soft); border-radius:var(--ra-lg); overflow:hidden; }
-.app-body .context-ledger div{ padding:.85rem 1rem; }
 
 /* softer panels for reused dashboards */
 .app-body .app-dashboard{ border:1px solid var(--line-soft); border-radius:var(--ra-lg); background:var(--panel);
@@ -764,17 +725,12 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* settings, economics inherit prior styles but sit inside a view now */
 .app-body .settings-grid{ margin-top:.4rem; }
 
-@media (max-width:980px){
+@media (max-width:900px){
   .app-body .workspace{ grid-template-columns:1fr; }
-  .app-body .wsnav{ position:static; flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px; }
   .app-body .wsnav-team{ flex:1 1 200px; margin-bottom:0; }
-  .app-body .wsnav-links{ flex-direction:row; flex-wrap:wrap; gap:4px; }
-  .app-body .wsnav-link[aria-current="true"]::before{ display:none; }
   .app-body .wsnav-new{ margin-top:0; }
-  .app-body .overview-grid{ grid-template-columns:1fr; }
-  .app-body .context-ledger{ grid-template-columns:1fr; }
 }
-@media (max-width:620px){
+@media (max-width:600px){
   .app-body .team-price{ flex-direction:column; align-items:flex-start; }
   .app-body .team-price .form-help{ text-align:left; }
   .app-body .wview-head{ flex-direction:column; gap:.6rem; }
@@ -868,11 +824,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .wspace { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 0; align-items: start; }
 @media (max-width: 900px) {
   .wspace { grid-template-columns: 1fr; }
-  .wspace-rail { position: static; border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
 }
-.wspace-rail { position: sticky; top: 4.2rem; align-self: start; padding: 0 1.35rem 1.5rem 0; border-right: 1px solid var(--line); }
-.wspace-rail h3 { margin: 0 0 .8rem; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.wspace-rail .rail-group + .rail-group { margin-top: 1.6rem; }
 .wspace-main { padding: 0 0 3rem 1.6rem; min-width: 0; }
 @media (max-width: 900px) { .wspace-main { padding-left: 0; padding-top: 1.4rem; } }
 
@@ -890,10 +842,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .crew-copy .crew-doing { display: block; font-family: var(--font-mono); font-size: .65rem; color: var(--text-muted); margin-top: .1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .crew-row.is-on .crew-doing { color: var(--ink); }
 
-/* Spend against budget: a number the customer can act on, not a ledger. */
-.rail-gauge { display: grid; gap: .3rem; }
-.rail-gauge .rail-row { display: flex; justify-content: space-between; align-items: baseline; font-size: .7rem; color: var(--muted); }
-.rail-gauge .rail-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: .82rem; color: var(--ink); font-weight: 600; }
 .rail-track { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .rail-track > i { display: block; height: 100%; background: var(--aqua); }
 
@@ -960,9 +908,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 .lbl { display: block; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 
-/* The ask: the one primary action on the screen, so it gets the space. */
-.ask { padding: 0 0 1.5rem; border-bottom: 1px solid var(--line); }
-.ask-head h3 { margin: 0 0 .7rem; font-size: var(--t-lg); }
 
 /* ── The console ──────────────────────────────────────────────────
    The conversation with the Product Manager is the floor's primary
@@ -1050,8 +995,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .onnow-plan { display: grid; gap: 1.2rem; padding-top: .9rem; }
 .onnow-note { font-size: var(--t-xs); color: var(--muted); }
 
-/* Rail sections separate by rule, not by box. */
-.wspace-rail .rail-group + .rail-group { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
 .rail-quiet { opacity: .72; }
 .rail-quiet:hover, .rail-quiet:focus-within { opacity: 1; }
 
@@ -1169,10 +1112,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 @media (prefers-reduced-motion: reduce) { .descent-item.is-live::before { animation: none; } }
 
-/* Once work exists the ask stops being the headline: it keeps its place so it
-   is never hunted for, but the work above it leads. */
-.ask.is-secondary { order: 2; padding-top: 1.4rem; border-top: 1px solid var(--line); border-bottom: 0; }
-.ask.is-secondary .ask-head h3 { font-size: var(--t-sm); color: var(--muted); font-family: var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
 .wspace-main { display: flex; flex-direction: column; }
 .descent { order: 1; }
 .onnow { order: 0; }
@@ -1211,7 +1150,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    reading why it moved were two different screens. They are now level with
    each other, which is the entire reason the tab is gone. */
 .app-body .wspace { grid-template-columns: 210px minmax(0, 1.35fr) minmax(0, .9fr); }
-@media (max-width: 1180px) { .app-body .wspace { grid-template-columns: 200px minmax(0, 1fr); } .wspace-log { grid-column: 1 / -1; } }
+@media (max-width: 1200px) { .app-body .wspace { grid-template-columns: 200px minmax(0, 1fr); } .wspace-log { grid-column: 1 / -1; } }
 @media (max-width: 900px) { .app-body .wspace { grid-template-columns: 1fr; } }
 .wspace-log { padding-left: 1.6rem; border-left: 1px solid var(--line); min-width: 0; }
 .log-head { display: flex; align-items: baseline; gap: .7rem; margin-bottom: 1rem; }
@@ -1273,7 +1212,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    came for, and an ellipsis in a 210px tile hid the verb. */
 .app-body .crew-copy .crew-doing { white-space: normal; font-size: .66rem; line-height: 1.45; margin-top: .3rem; }
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
   .app-body .wspace-grid { grid-template-columns: 1fr; }
   .wspace-log { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 1.2rem; }
 }

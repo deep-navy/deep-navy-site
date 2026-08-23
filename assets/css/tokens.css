@@ -123,7 +123,7 @@
   --settle: 260ms;
   --arrive: 420ms;
 
-  --shell:     1180px;
+  --shell:     1200px;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas, monospace;
 }

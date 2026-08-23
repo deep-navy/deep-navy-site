@@ -20,7 +20,7 @@
 /* ---- hero -------------------------------------------------------------- */
 .lp-hero { padding: clamp(3rem, 8vw, 6.5rem) 0 clamp(2.5rem, 6vw, 4.5rem); border-bottom: 1px solid var(--line); }
 .lp-hero-grid { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: start; grid-template-columns: 1fr; }
-@media (min-width: 960px) { .lp-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+@media (min-width: 900px) { .lp-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
 
 .lp-eyebrow { display: inline-flex; align-items: center; gap: .55rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.1rem; }
 .lp-live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); animation: lp-breathe 2.6s ease-in-out infinite; }
@@ -80,11 +80,11 @@
 .lp-crew li:last-child { border-bottom: 1px solid var(--line); }
 .lp-crew strong { font-size: var(--t-sm); font-weight: 600; }
 .lp-crew span { color: var(--text-muted); font-size: var(--t-sm); }
-@media (max-width: 620px) { .lp-crew li { grid-template-columns: 1fr; gap: .2rem; } }
+@media (max-width: 600px) { .lp-crew li { grid-template-columns: 1fr; gap: .2rem; } }
 
 /* ---- price ------------------------------------------------------------- */
 .lp-price { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: start; }
-@media (min-width: 800px) { .lp-price { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 900px) { .lp-price { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .lp-amount { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: clamp(2.2rem, 5vw, 3rem); letter-spacing: -.03em; line-height: 1; }
 .lp-amount small { font-family: var(--font-sans); font-size: var(--t-sm); color: var(--muted); letter-spacing: 0; }
 .lp-includes { margin: 1.2rem 0 0; padding: 0; list-style: none; display: grid; gap: .45rem; }
@@ -279,7 +279,7 @@
 }
 .console-shot-meta { margin-left: auto; color: var(--muted); }
 .console-shot-body { display: grid; }
-@media (min-width: 860px) {
+@media (min-width: 900px) {
   .console-shot-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
   .console-stream { border-right: 1px solid var(--line); }
 }
