@@ -115,9 +115,12 @@ const contrast = (a, b) => {
 };
 
 // The tokens allowed to carry a hue, each because it MEANS something: the
-// four statuses, the four roles, the brand navy on the logo tile, and
-// GitHub's own brand button. Everything else in tokens.css must be ink.
-const HUE_BEARING = /^--(?:abyss-1|brand-navy|brand-github-[a-z-]+|role-[a-z-]+|lumen(?:-[a-z0-9-]+)?|kelp(?:-[a-z0-9-]+)?|brass(?:-[a-z0-9-]+)?|coral(?:-[a-z0-9-]+)?|seafoam(?:-[a-z0-9-]+)?|signal-[a-z-]+)$/;
+// four statuses (raw families, --signal-* names and the --status-*-fg/bg/
+// border/dot alias sets), the four identity families and the --role-*
+// aliases that ride them, the diff evidence pair, the brand navy on the
+// logo tile, and GitHub's own brand button. Everything else in tokens.css
+// must be ink.
+const HUE_BEARING = /^--(?:abyss-1|brand-navy|brand-github-[a-z-]+|role-[a-z-]+|lumen(?:-[a-z0-9-]+)?|kelp(?:-[a-z0-9-]+)?|brass(?:-[a-z0-9-]+)?|coral(?:-[a-z0-9-]+)?|seafoam(?:-[a-z0-9-]+)?|signal-[a-z-]+|status-[a-z-]+|diff-(?:add|del)-[a-z-]+|rose-\d+|iris-\d+|anemone-\d+|current-\d+)$/;
 
 /* ---- (a) the surface/text ramp is achromatic ---------------------------- */
 test("every greyscale token is a true grey: |r-g| <= 2 and |g-b| <= 2", () => {

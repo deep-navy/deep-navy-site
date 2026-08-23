@@ -62,33 +62,43 @@
   --abyss-1:  #000f1a;
 
   /* Status hues — the four meanings, as raw triplets so one family can back
-     text, dots, fills and borders through rgb(var(--x-rgb) / a).
+     text, dots, fills and borders through rgb(var(--x-rgb) / a). The values
+     are the design system's own -400 steps — the step its dark-theme dots
+     and every alpha recipe are built on — so the washes below and the alias
+     sets in tier 2 come from one palette.
        lumen  running right now (live dots, streams, progress)
        kelp   met, merged, passing
        brass  waiting on a human
        coral  failed, blocked, destructive */
-  --lumen-rgb: 45 212 191;
-  --kelp-rgb:  52 199 123;
-  --brass-rgb: 245 201 123;
-  --coral-rgb: 245 142 126;
+  --lumen-rgb: 23 191 173;
+  --kelp-rgb:  60 193 122;
+  --brass-rgb: 224 166 58;
+  --coral-rgb: 228 112 111;
 
   /* The semantic status names main.css consumes ride those families. */
   --signal-ok-rgb:   var(--kelp-rgb);
   --signal-warn-rgb: var(--brass-rgb);
   --signal-crit-rgb: var(--coral-rgb);
 
-  /* Role hues — who did it. Identity, never state: they sit on the opposite
-     arc of the wheel from the status hues, and a role tint never appears
-     without the agent's monogram beside it. The three engineers share one
-     azure and are told apart as E1/E2/E3. */
-  --role-pm:         #d6409f;   /* rose — Technical Product Manager */
-  --role-pm-rgb:     214 64 159;
-  --role-em:         #6e56cf;   /* iris — Engineering Manager */
-  --role-em-rgb:     110 86 207;
-  --role-design:     #b658d9;   /* orchid — Designer */
-  --role-design-rgb: 182 88 217;
-  --role-eng:        #3b82f6;   /* azure — Engineers 1–3 */
-  --role-eng-rgb:    59 130 246;
+  /* Identity families — who did it. Four hue ramps from the design system,
+     deliberately outside the status arc so a role tint can never be
+     mistaken for a state, and never shown without the agent's monogram
+     beside it. Only the steps the role aliases in tier 2 consume ship:
+     600 (light fg), 400 (dark fg), 500 (the alpha recipes), 200/50 (light
+     border/soft). The three engineers share one azure and are told apart
+     as E1/E2/E3. */
+  --rose-600: #bc2a61; --rose-500: #d93e77; --rose-400: #ee6e9b; --rose-200: #fbc7d9; --rose-50: #fef3f7;
+  --iris-600: #5941c6; --iris-500: #6e56e0; --iris-400: #8e7bec; --iris-200: #cfc7f9; --iris-50: #f4f2fe;
+  --anemone-600: #962ba3; --anemone-500: #af3cbc; --anemone-400: #c769d2; --anemone-200: #edc6f1; --anemone-50: #fcf4fd;
+  --current-600: #1d63c9; --current-500: #2a78e0; --current-400: #5c9aec; --current-200: #bdd6f9; --current-50: #f1f6fe;
+
+  /* The raw triplets back the alpha monogram washes; they ride the -500
+     step, the same step the design system's dark rgba() recipes use. The
+     theme-dependent --role-* aliases (fg/-soft/-border) live in tier 2. */
+  --role-pm-rgb:     217 62 119;
+  --role-em-rgb:     110 86 224;
+  --role-design-rgb: 175 60 188;
+  --role-eng-rgb:    42 120 224;
 
   /* GitHub's brand colors. Fixed by GitHub, not by us — they do not theme. */
   --brand-github-fg:       #ffffff;
@@ -122,6 +132,36 @@
   --quick:  140ms;
   --settle: 260ms;
   --arrive: 420ms;
+
+  /* The design system's full motion vocabulary. Rules, in order of
+     authority: every animation answers "what just changed?"; micro-feedback
+     90–140ms, state transitions 200–320ms, nothing functional over 500ms;
+     entrances ease-out, exits ease-in, on-screen changes ease-in-out;
+     transform, opacity and box-shadow only — never a colour property,
+     because a colour transition resolves against the OUTGOING theme and
+     strands mid-swap; groups arrive one --stagger-step apart. The ambient
+     loops are harmonically related (2:3:4) so several running at once read
+     as one system. --quick/--settle/--arrive above stay for the rules
+     already written against them; new work speaks these. */
+  --dur-instant: 90ms;
+  --dur-micro:   110ms;
+  --dur-fast:    140ms;
+  --dur-base:    200ms;
+  --dur-slow:    320ms;
+  --dur-slower:  480ms;
+  --dur-loop-fast: 1200ms;
+  --dur-loop:      1800ms;
+  --dur-ambient:   2400ms;
+  --dur-drift:     4800ms;
+  --stagger-step: 38ms;
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-out:      cubic-bezier(.16, 1, .3, 1);
+  --ease-in:       cubic-bezier(.5, 0, .9, .2);
+  --ease-in-out:   cubic-bezier(.65, 0, .35, 1);
+  --ease-arrive:   cubic-bezier(.34, 1.28, .64, 1);
+  --ease-spring:   linear(0, .42 8%, .83 17%, 1.03 24%, 1.09 30%, 1.05 40%, .99 52%, .99 66%, 1);
+  --press-scale: .975;
+  --transition-control: transform var(--dur-micro) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 
   --shell:     1200px;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -162,12 +202,61 @@
   --panel-3:      var(--ink-100);
   --panel-deep:   var(--ink-150);
   --text-dim:     var(--ink-600);
-  --signal-ok:    #1d7a4c;
-  --signal-warn:  #8a6414;
-  --signal-crit:  #a33a28;
+  --signal-ok:    #116538;
+  --signal-warn:  #87590b;
+  --signal-crit:  #a32c2c;
   --scrim:        rgb(0 0 0 / .5);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .16);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .3);
+
+  /* Role aliases — identity, never state. Light rides the solid 600 step
+     for the tint and the 50/200 steps for the soft plate and its border. */
+  --role-pm:         var(--rose-600);
+  --role-pm-soft:    var(--rose-50);
+  --role-pm-border:  var(--rose-200);
+  --role-em:         var(--iris-600);
+  --role-em-soft:    var(--iris-50);
+  --role-em-border:  var(--iris-200);
+  --role-design:        var(--anemone-600);
+  --role-design-soft:   var(--anemone-50);
+  --role-design-border: var(--anemone-200);
+  --role-eng:        var(--current-600);
+  --role-eng-soft:   var(--current-50);
+  --role-eng-border: var(--current-200);
+
+  /* Status alias sets — fg/bg/border/dot per meaning, the design system's
+     full vocabulary. Always paired with a glyph and a word: colour is the
+     second cue, never the only one. */
+  --status-live-fg:      #046057;
+  --status-live-bg:      #e7fbf8;
+  --status-live-border:  #8cebde;
+  --status-live-dot:     #0b9c8d;
+  --status-success-fg:     #116538;
+  --status-success-bg:     #f0faf4;
+  --status-success-border: #a6e5c1;
+  --status-success-dot:    #1fa35d;
+  --status-attention-fg:     #87590b;
+  --status-attention-bg:     #fdf8ee;
+  --status-attention-border: #f3d8a0;
+  --status-attention-dot:    #c68a21;
+  --status-danger-fg:     #a32c2c;
+  --status-danger-bg:     #fdf4f4;
+  --status-danger-border: #f6c6c5;
+  --status-danger-dot:    #d24a4a;
+  --status-idle-fg:     var(--ink-600);
+  --status-idle-bg:     var(--ink-50);
+  --status-idle-border: var(--ink-150);
+  --status-idle-dot:    var(--ink-300);
+
+  /* Evidence surfaces: added and deleted lines in a diff. */
+  --diff-add-bg: #f0faf4;
+  --diff-add-fg: #116538;
+  --diff-del-bg: #fdf4f4;
+  --diff-del-fg: #a32c2c;
+
+  /* The one-shot arrival flash (dn-flash) fades from this and nothing
+     else uses it: an achromatic press-weight overlay in both themes. */
+  --surface-active: rgb(0 0 0 / .07);
 
   color-scheme: light;
 }
@@ -209,6 +298,50 @@
     --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
     --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
 
+    /* Role aliases — dark. The 400 step for the tint; the -soft plate and
+       its -border are alpha recipes over the void, riding the 500 step. */
+    --role-pm:         var(--rose-400);
+    --role-pm-soft:    rgba(217, 62, 119, .16);
+    --role-pm-border:  rgba(217, 62, 119, .36);
+    --role-em:         var(--iris-400);
+    --role-em-soft:    rgba(110, 86, 224, .18);
+    --role-em-border:  rgba(110, 86, 224, .40);
+    --role-design:        var(--anemone-400);
+    --role-design-soft:   rgba(175, 60, 188, .17);
+    --role-design-border: rgba(175, 60, 188, .38);
+    --role-eng:        var(--current-400);
+    --role-eng-soft:   rgba(42, 120, 224, .17);
+    --role-eng-border: rgba(42, 120, 224, .38);
+
+    /* Status alias sets — dark: -300 text, alpha fills, -400 dots. */
+    --status-live-fg:      #45d8c6;
+    --status-live-bg:      rgba(23, 191, 173, .14);
+    --status-live-border:  rgba(23, 191, 173, .32);
+    --status-live-dot:     #17bfad;
+    --status-success-fg:     #6bd69b;
+    --status-success-bg:     rgba(31, 163, 93, .14);
+    --status-success-border: rgba(31, 163, 93, .32);
+    --status-success-dot:    #3cc17a;
+    --status-attention-fg:     #eec069;
+    --status-attention-bg:     rgba(198, 138, 33, .15);
+    --status-attention-border: rgba(198, 138, 33, .34);
+    --status-attention-dot:    #e0a63a;
+    --status-danger-fg:     #ef9a99;
+    --status-danger-bg:     rgba(210, 74, 74, .15);
+    --status-danger-border: rgba(210, 74, 74, .34);
+    --status-danger-dot:    #e4706f;
+    --status-idle-fg:     var(--ink-300);
+    --status-idle-bg:     rgba(255, 255, 255, .06);
+    --status-idle-border: rgba(255, 255, 255, .14);
+    --status-idle-dot:    var(--ink-400);
+
+    --diff-add-bg: rgba(31, 163, 93, .15);
+    --diff-add-fg: #6bd69b;
+    --diff-del-bg: rgba(210, 74, 74, .15);
+    --diff-del-fg: #ef9a99;
+
+    --surface-active: rgb(255 255 255 / .10);
+
     color-scheme: dark;
   }
 }
@@ -242,12 +375,56 @@
   --panel-3:      var(--ink-800);
   --panel-deep:   var(--ink-1000);
   --text-dim:     var(--ink-300);
-  --signal-ok:    #34c77b;
-  --signal-warn:  #f5c97b;
-  --signal-crit:  #f58e7e;
+  --signal-ok:    #6bd69b;
+  --signal-warn:  #eec069;
+  --signal-crit:  #ef9a99;
   --scrim:        rgb(0 0 0 / .88);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .72);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .9);
+
+  /* Role aliases — dark. The 400 step for the tint; the -soft plate and
+     its -border are alpha recipes over the void, riding the 500 step. */
+  --role-pm:         var(--rose-400);
+  --role-pm-soft:    rgba(217, 62, 119, .16);
+  --role-pm-border:  rgba(217, 62, 119, .36);
+  --role-em:         var(--iris-400);
+  --role-em-soft:    rgba(110, 86, 224, .18);
+  --role-em-border:  rgba(110, 86, 224, .40);
+  --role-design:        var(--anemone-400);
+  --role-design-soft:   rgba(175, 60, 188, .17);
+  --role-design-border: rgba(175, 60, 188, .38);
+  --role-eng:        var(--current-400);
+  --role-eng-soft:   rgba(42, 120, 224, .17);
+  --role-eng-border: rgba(42, 120, 224, .38);
+
+  /* Status alias sets — dark: -300 text, alpha fills, -400 dots. */
+  --status-live-fg:      #45d8c6;
+  --status-live-bg:      rgba(23, 191, 173, .14);
+  --status-live-border:  rgba(23, 191, 173, .32);
+  --status-live-dot:     #17bfad;
+  --status-success-fg:     #6bd69b;
+  --status-success-bg:     rgba(31, 163, 93, .14);
+  --status-success-border: rgba(31, 163, 93, .32);
+  --status-success-dot:    #3cc17a;
+  --status-attention-fg:     #eec069;
+  --status-attention-bg:     rgba(198, 138, 33, .15);
+  --status-attention-border: rgba(198, 138, 33, .34);
+  --status-attention-dot:    #e0a63a;
+  --status-danger-fg:     #ef9a99;
+  --status-danger-bg:     rgba(210, 74, 74, .15);
+  --status-danger-border: rgba(210, 74, 74, .34);
+  --status-danger-dot:    #e4706f;
+  --status-idle-fg:     var(--ink-300);
+  --status-idle-bg:     rgba(255, 255, 255, .06);
+  --status-idle-border: rgba(255, 255, 255, .14);
+  --status-idle-dot:    var(--ink-400);
+
+  --diff-add-bg: rgba(31, 163, 93, .15);
+  --diff-add-fg: #6bd69b;
+  --diff-del-bg: rgba(210, 74, 74, .15);
+  --diff-del-fg: #ef9a99;
+
+  --surface-active: rgb(255 255 255 / .10);
 
   color-scheme: dark;
 }
@@ -281,12 +458,61 @@
   --panel-3:      var(--ink-100);
   --panel-deep:   var(--ink-150);
   --text-dim:     var(--ink-600);
-  --signal-ok:    #1d7a4c;
-  --signal-warn:  #8a6414;
-  --signal-crit:  #a33a28;
+  --signal-ok:    #116538;
+  --signal-warn:  #87590b;
+  --signal-crit:  #a32c2c;
   --scrim:        rgb(0 0 0 / .5);
   --shadow-lg:    0 36px 120px rgb(0 0 0 / .16);
   --shadow-panel: 0 18px 40px -30px rgb(0 0 0 / .3);
+
+  /* Role aliases — identity, never state. Light rides the solid 600 step
+     for the tint and the 50/200 steps for the soft plate and its border. */
+  --role-pm:         var(--rose-600);
+  --role-pm-soft:    var(--rose-50);
+  --role-pm-border:  var(--rose-200);
+  --role-em:         var(--iris-600);
+  --role-em-soft:    var(--iris-50);
+  --role-em-border:  var(--iris-200);
+  --role-design:        var(--anemone-600);
+  --role-design-soft:   var(--anemone-50);
+  --role-design-border: var(--anemone-200);
+  --role-eng:        var(--current-600);
+  --role-eng-soft:   var(--current-50);
+  --role-eng-border: var(--current-200);
+
+  /* Status alias sets — fg/bg/border/dot per meaning, the design system's
+     full vocabulary. Always paired with a glyph and a word: colour is the
+     second cue, never the only one. */
+  --status-live-fg:      #046057;
+  --status-live-bg:      #e7fbf8;
+  --status-live-border:  #8cebde;
+  --status-live-dot:     #0b9c8d;
+  --status-success-fg:     #116538;
+  --status-success-bg:     #f0faf4;
+  --status-success-border: #a6e5c1;
+  --status-success-dot:    #1fa35d;
+  --status-attention-fg:     #87590b;
+  --status-attention-bg:     #fdf8ee;
+  --status-attention-border: #f3d8a0;
+  --status-attention-dot:    #c68a21;
+  --status-danger-fg:     #a32c2c;
+  --status-danger-bg:     #fdf4f4;
+  --status-danger-border: #f6c6c5;
+  --status-danger-dot:    #d24a4a;
+  --status-idle-fg:     var(--ink-600);
+  --status-idle-bg:     var(--ink-50);
+  --status-idle-border: var(--ink-150);
+  --status-idle-dot:    var(--ink-300);
+
+  /* Evidence surfaces: added and deleted lines in a diff. */
+  --diff-add-bg: #f0faf4;
+  --diff-add-fg: #116538;
+  --diff-del-bg: #fdf4f4;
+  --diff-del-fg: #a32c2c;
+
+  /* The one-shot arrival flash (dn-flash) fades from this and nothing
+     else uses it: an achromatic press-weight overlay in both themes. */
+  --surface-active: rgb(0 0 0 / .07);
 
   color-scheme: light;
 }

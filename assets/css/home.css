@@ -31,7 +31,7 @@
 .lp-lede { font-size: var(--t-md); line-height: 1.6; color: var(--text-muted); max-width: 52ch; margin: 0 0 1.9rem; }
 
 .lp-cta { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
-.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 46px; padding: 0 1.3rem; border: 1px solid transparent; border-radius: 2px; font-family: var(--font-sans); font-size: var(--t-sm); font-weight: 600; text-decoration: none; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, color 140ms ease; }
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 46px; padding: 0 1.3rem; border: 1px solid transparent; border-radius: 2px; font-family: var(--font-sans); font-size: var(--t-sm); font-weight: 600; text-decoration: none; cursor: pointer; }
 .lp-btn-go { background: var(--accent-graphic); color: var(--abyss-0); }
 .lp-btn-go:hover { background: var(--accent-strong); color: var(--abyss-0); }
 .lp-btn-quiet { border-color: var(--line-mid); color: var(--ink); }
@@ -95,14 +95,14 @@
 :root { --ease: cubic-bezier(.2,.7,.3,1); --quick: 140ms; --settle: 260ms; --arrive: 420ms; }
 
 /* Buttons: press is acknowledged, and the arrow leads. */
-.lp-btn { transition: background var(--quick) var(--ease), border-color var(--quick) var(--ease), color var(--quick) var(--ease), transform var(--quick) var(--ease); }
+.lp-btn { transition: transform var(--quick) var(--ease); }
 .lp-btn:active { transform: translateY(1px); }
 .lp-btn .i { transition: transform var(--quick) var(--ease); }
 .lp-btn:hover .i-arrow { transform: translateX(3px); }
 
 /* The pull request is the product; hovering it lifts the border, not the box,
-   because a shadow would reintroduce the card look the palette just shed. */
-.pr { transition: border-color var(--settle) var(--ease); }
+   because a shadow would reintroduce the card look the palette just shed.
+   The border change lands instantly: colour never transitions here. */
 .pr:hover { border-color: var(--accent-a35); }
 /* Each approval lands after the one above it - the review sequence the
    product actually enforces, shown rather than described. */
