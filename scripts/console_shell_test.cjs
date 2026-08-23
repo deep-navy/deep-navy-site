@@ -27,6 +27,8 @@ const views = readFileSync("assets/js/app-views.js", "utf8");
 const console_ = readFileSync("assets/css/console.css", "utf8");
 const themeToggle = readFileSync("assets/js/theme-toggle.js", "utf8");
 const icons = readFileSync("_includes/icons.svg", "utf8");
+const app = readFileSync("assets/js/app.js", "utf8");
+const main = readFileSync("assets/css/main.css", "utf8");
 
 const ORG = ["dashboard", "people", "billing"];
 const TEAM = ["overview", "activity", "runs", "economics", "approvals", "settings"];
@@ -194,4 +196,44 @@ test("the layout header stands down in the workspace, and the sign-out went with
   assert.doesNotMatch(layout, /data-sign-out/);
   const actions = shell.slice(shell.indexOf('class="cs-topbar-actions"'), shell.indexOf("</header>", shell.indexOf('class="cs-topbar-actions"')));
   assert.match(actions, /data-sign-out/, "sign out belongs in the top bar, beside the bell");
+});
+
+// The rail ends with the people on it, and with who is reading it. Both were
+// in the mockup from the first cut and neither survived the shell rebuild:
+// under a system-grammar rail the foot was an environment pill and nothing
+// else, which said what deployment you were on and not who you were.
+test("the rail ends with the team's crew and the person reading it", () => {
+  const rail = shell.slice(shell.indexOf('class="cs-rail-nav"'), shell.indexOf("</nav>", shell.indexOf('class="cs-rail-nav"')));
+  // The roster is a fact about the SELECTED team, so it sits inside the team
+  // scope — after every door that scope opens, never above the switcher.
+  assert.ok(rail.indexOf("data-rail-team-scope") < rail.indexOf("data-rail-crew-scope"),
+    "the crew belongs under the team scope, not beside the organization's doors");
+  assert.match(rail, /data-view-link="settings"[\s\S]*data-rail-crew-scope/,
+    "the crew comes after the last door, because it is a roster and not a destination");
+  assert.match(rail, /<div class="cs-rail-crew" data-rail-crew hidden><\/div>/,
+    "the container ships empty: app.js fills it from the roster the server confirmed");
+
+  // Rows are built from the same resolved canonical roles the floor's tiles
+  // are, so a hue in the rail cannot disagree with a hue on the floor.
+  assert.match(app, /function renderRailCrew\(rows\)/);
+  assert.match(app, /plate\.dataset\.roleKey = entry\.roleKey;/);
+  assert.match(app, /plate\.className = "dn-avatar dn-avatar--xs";/);
+  assert.match(main, /\.dn-avatar\[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"\]/,
+    "the design system's plate must carry role colour through the same rule the site's does");
+
+  // A row is the agent's record, and the agent view has no rail door of its
+  // own. One handler serves both surfaces, so the two cannot drift.
+  assert.match(app, /if \(ui\.railCrew\) ui\.railCrew\.addEventListener\("click", openAgentFromCrew\);/);
+  assert.match(views, /const railCrew = document\.querySelector\("\[data-rail-crew\]"\);/);
+  assert.doesNotMatch(views, /INLINE_VIEWS = \[[^\]]*"agent"[^\]]*\][\s\S]{0,80}ORG_VIEWS\.concat\("agent"/);
+
+  // The identity block, and the one rule that keeps it true: the create
+  // screen's chip and the rail's foot are written by one call.
+  assert.match(shell, /<div class="cs-rail-user" data-rail-user hidden>/);
+  assert.equal((shell.match(/data-user-name(?![\w-])/g) || []).length, 2,
+    "two places show the signed-in person; both must be hooks, not one hook and one guess");
+  assert.match(app, /function applyIdentity\(name, login\)/);
+  assert.match(app, /document\.querySelectorAll\("\[data-user-name\]"\)\.forEach/);
+  assert.doesNotMatch(app, /ui\.userName\.textContent =/,
+    "a single-element write would leave one of the two surfaces stale");
 });

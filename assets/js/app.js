@@ -24,6 +24,10 @@
     userInitial: document.querySelector("[data-user-initial]"),
     userName: document.querySelector("[data-user-name]"),
     userLogin: document.querySelector("[data-user-login]"),
+    userRole: document.querySelector("[data-user-role]"),
+    railUser: document.querySelector("[data-rail-user]"),
+    railCrew: document.querySelector("[data-rail-crew]"),
+    railCrewScope: document.querySelector("[data-rail-crew-scope]"),
     organizationDependent: document.querySelector("[data-organization-dependent]"),
     organizationConnect: document.querySelector("[data-organization-connect]"),
     organizationBootstrapForm: document.querySelector("[data-organization-bootstrap]"),
@@ -912,9 +916,24 @@
     updateProgressStep("identity", "complete", "Authenticated");
     const name = stringValue(session.claims.displayName) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email) || "Signed-in user";
     const login = stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
-    ui.userName.textContent = name;
-    ui.userLogin.textContent = login === name ? "" : login;
-    ui.userInitial.textContent = name.charAt(0).toUpperCase();
+    applyIdentity(name, login);
+  }
+
+  // The signed-in person appears twice — the create screen's chip and the
+  // rail's foot — and both are written from one call, so the two can never
+  // drift into disagreeing about who you are. The role line is the membership
+  // the organization response confirmed; when the API did not say, it stays
+  // empty rather than guessing "Member", and CSS collapses an empty line.
+  function applyIdentity(name, login) {
+    const initial = stringValue(name).charAt(0).toUpperCase() || "\u00b7";
+    const subtitle = login === name ? "" : stringValue(login);
+    document.querySelectorAll("[data-user-name]").forEach((node) => { node.textContent = name; });
+    document.querySelectorAll("[data-user-login]").forEach((node) => { node.textContent = subtitle; });
+    document.querySelectorAll("[data-user-initial]").forEach((node) => { node.textContent = initial; });
+    const member = Array.isArray(session.members) ? session.members.find((entry) => entry.self) : null;
+    const role = stringValue(member?.role);
+    document.querySelectorAll("[data-user-role]").forEach((node) => { node.textContent = role; });
+    if (ui.railUser) ui.railUser.hidden = !stringValue(name);
   }
 
   async function initializeAuthenticatedSession() {
@@ -978,9 +997,7 @@
     session.user = user;
     const name = stringValue(user.displayName) || stringValue(session.claims.displayName) || stringValue(session.claims.email) || "Signed-in user";
     const login = stringValue(user.githubLogin) || stringValue(user.username) || stringValue(user.email) || stringValue(session.claims.githubLogin) || stringValue(session.claims.email);
-    ui.userName.textContent = name;
-    ui.userLogin.textContent = login === name ? "" : login;
-    ui.userInitial.textContent = name.charAt(0).toUpperCase();
+    applyIdentity(name, login);
     renderSettingsAccount();
   }
 
@@ -1061,6 +1078,10 @@
     const organizationName = stringValue(state.organization.name) || "your organization";
     session.organizationName = organizationName;
     session.members = buildOrganizationMembers(state);
+    // The rail's identity line carries the membership role, and the role only
+    // becomes known here — one call back so the foot says "owner" rather than
+    // staying blank until the next profile render.
+    applyIdentity(stringValue(session.members[0]?.name), stringValue(session.members[0]?.login));
     renderSettingsAccount();
     renderSettingsBilling();
     ui.contextOrganization.textContent = organizationName;
@@ -3254,6 +3275,71 @@
     if (copy) copy.textContent = message;
   }
 
+  // ---- DataState -----------------------------------------------------------
+  // Empty is four different facts, so it is four different states. A grey
+  // "nothing here" cannot tell a reading that has not started apart from one
+  // that will never exist, and the difference is the whole question a
+  // technical reader is asking. Only `pending` carries a hue and an action,
+  // because it is the only one a person can do something about; `loading` is
+  // lumen because it is a claim about right now.
+  //
+  // The system's blanket phrase for all four — the one that begins "No data"
+  // and ends "available" — is banned outright, and a test enforces the ban by
+  // searching for it, which is why this comment does not spell it.
+  const DATA_STATE_KINDS = Object.freeze({
+    pending: { flag: "Pending", modifier: "dn-dstate--attention" },
+    uninstrumented: { flag: "Uninstrumented", modifier: "" },
+    unavailable: { flag: "Unavailable", modifier: "" },
+    loading: { flag: "Loading", modifier: "dn-dstate--live" }
+  });
+
+  // Returns the design system's own DataState node. `why` says which of the
+  // four this is in the reader's own terms and what would change it; `query`
+  // is the record the reading would have come from, in mono, so a support
+  // conversation has a handle. `action` is offered on `pending` only.
+  function dataState(kind, why, options = {}) {
+    const shape = DATA_STATE_KINDS[kind] || DATA_STATE_KINDS.unavailable;
+    const host = document.createElement("div");
+    host.className = shape.modifier ? `dn-dstate ${shape.modifier}` : "dn-dstate";
+    host.dataset.dstate = kind;
+    const flag = document.createElement("span");
+    flag.className = "dn-dstate__flag";
+    flag.textContent = shape.flag;
+    const copy = document.createElement("p");
+    copy.className = "dn-dstate__why";
+    copy.textContent = stringValue(why);
+    host.append(flag, copy);
+    const query = stringValue(options.query);
+    if (query) {
+      const line = document.createElement("span");
+      line.className = "dn-dstate__query";
+      line.textContent = query;
+      host.append(line);
+    }
+    // Only the actionable kind gets a button. A button on "unavailable" is an
+    // invitation to press something that cannot change the answer.
+    if (kind === "pending" && options.action?.label && options.action?.view) {
+      const act = document.createElement("div");
+      act.className = "dn-dstate__act";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "dn-btn dn-btn--secondary dn-btn--sm";
+      button.dataset.viewLink = options.action.view;
+      button.textContent = options.action.label;
+      act.append(button);
+      host.append(act);
+    }
+    return host;
+  }
+
+  // Replace a container's contents with one DataState. The container keeps its
+  // own shape — an empty instrument still reads as an instrument.
+  function setDataState(element, kind, why, options = {}) {
+    if (!element) return;
+    element.replaceChildren(dataState(kind, why, options));
+    element.hidden = false;
+  }
+
   function setSourceState(element, label, tone = "") {
     // Null-safe like setEmptyState/setFieldError: several state chips (the
     // objective panel's among them) left the shell in the workspace redesign,
@@ -4837,11 +4923,61 @@
   function resetAgentView(message, label, tone = "") {
     session.agentRoster = [];
     session.agents = [];
+    renderRailCrew([]);
     ui.agentList.replaceChildren();
     ui.agentList.hidden = true;
     ui.agentsEmpty.hidden = false;
     setEmptyState(ui.agentsEmpty, label === "Loading" ? "Loading team roster" : "No roster loaded", message);
     setSourceState(ui.agentsState, label, tone);
+  }
+
+  // ---- the crew, in the rail ----------------------------------------------
+  // The same roster the floor renders, in the shape a rail can hold: monogram,
+  // role, and a live dot when the stream says that role is working. It is
+  // built from the resolved canonical roles rather than from the raw response,
+  // so a row can never carry a hue the floor's tile does not.
+  //
+  // A row is the agent's own record, so it opens the agent view — the surface
+  // that deliberately has no rail door. That is the same relationship the crew
+  // tiles have; the roster is a list of records, not a group of destinations.
+  function renderRailCrew(rows) {
+    if (!ui.railCrew) return;
+    const crew = Array.isArray(rows) ? rows : [];
+    ui.railCrew.replaceChildren();
+    if (ui.railCrewScope) ui.railCrewScope.hidden = crew.length === 0;
+    ui.railCrew.hidden = crew.length === 0;
+    if (!crew.length) return;
+    crew.forEach((entry) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "dn-nav dn-bare cs-rail-crew-row";
+      row.dataset.agentId = entry.agentId;
+      row.dataset.agentOpen = "true";
+      const plate = document.createElement("span");
+      plate.className = "dn-avatar dn-avatar--xs";
+      plate.dataset.roleKey = entry.roleKey;
+      plate.setAttribute("aria-hidden", "true");
+      plate.textContent = entry.code;
+      const label = document.createElement("span");
+      label.className = "dn-nav__label";
+      label.textContent = entry.label;
+      row.append(plate, label);
+      // The dot is presence and nothing else. A quiet agent gets no mark
+      // rather than a grey one, because a grey dot reads as a fifth state.
+      if (entry.live) {
+        const meta = document.createElement("span");
+        meta.className = "dn-nav__meta";
+        const dot = document.createElement("span");
+        dot.className = "dn-dot dn-dot--sm dn-dot--live dn-dot--pulse";
+        dot.setAttribute("aria-hidden", "true");
+        const word = document.createElement("span");
+        word.className = "visually-hidden";
+        word.textContent = "working";
+        meta.append(dot, word);
+        row.append(meta);
+      }
+      ui.railCrew.append(row);
+    });
   }
 
   function renderAgentsResult(result, teamId) {
@@ -4874,6 +5010,7 @@
     // UUIDs and heartbeat timestamps, which read as telemetry about machines.
     // The identifiers still exist in the API responses for anyone debugging.
     let engineerOrdinal = 3;
+    const railCrew = [];
     agents.forEach((agent, index) => {
       let canonicalRole = resolvedRoles[index];
       if (canonicalRole.repeatable) {
@@ -4937,7 +5074,15 @@
       roleLine.textContent = crewStatusLine(live, row.dataset.idleLine);
       row.append(monogram, copy);
       ui.agentList.append(row);
+      railCrew.push({
+        agentId: stringValue(agent.id),
+        roleKey: canonicalRole.key,
+        code: canonicalRole.code,
+        label: canonicalRole.label,
+        live: live.state === "working" || live.state === "briefed"
+      });
     });
+    renderRailCrew(railCrew);
     // Role keys, not agent ids: liveness is measured per role, so the three
     // engineers light together in the strip exactly as their tiles do.
     session.agentRoster = resolvedRoles.map((role) => role.key);
@@ -5042,6 +5187,31 @@
     // So do the agent view's liveness chip, "doing now" line and activity
     // slice - same sources, same beat, and a no-op while the view is empty.
     renderAgentDetailLive();
+    // The rail's dots answer the same liveness question from the same sources,
+    // so they age on the same beat rather than holding the roster response's
+    // snapshot until the next refresh.
+    if (ui.railCrew && !ui.railCrew.hidden) {
+      ui.railCrew.querySelectorAll(".cs-rail-crew-row").forEach((row) => {
+        const plate = row.querySelector(".dn-avatar");
+        const roleKey = plate?.dataset.roleKey;
+        if (!roleKey) return;
+        const live = agentLiveness(roleKey);
+        const working = live.state === "working" || live.state === "briefed";
+        const meta = row.querySelector(".dn-nav__meta");
+        if (working === Boolean(meta)) return;
+        if (!working) { meta.remove(); return; }
+        const mark = document.createElement("span");
+        mark.className = "dn-nav__meta";
+        const dot = document.createElement("span");
+        dot.className = "dn-dot dn-dot--sm dn-dot--live dn-dot--pulse";
+        dot.setAttribute("aria-hidden", "true");
+        const word = document.createElement("span");
+        word.className = "visually-hidden";
+        word.textContent = "working";
+        mark.append(dot, word);
+        row.append(mark);
+      });
+    }
     if (!ui.agentList || ui.agentList.hidden) return;
     ui.agentList.querySelectorAll(".crew-row").forEach((row) => {
       const roleKey = row.dataset.roleKey;
@@ -9764,6 +9934,9 @@
   // survives every repaint. app-views.js switches the surface on this same
   // click; this handler decides WHICH agent the view shows.
   ui.agentList.addEventListener("click", openAgentFromCrew);
+  // The rail shows the same roster, so it opens the same record through the
+  // same handler. Two surfaces, one door.
+  if (ui.railCrew) ui.railCrew.addEventListener("click", openAgentFromCrew);
   // The objectives view's doors follow the same split: app-views.js switches
   // the surface on the click, and this handler fans out the per-objective
   // proposal loads the view shows — once per team and generation.

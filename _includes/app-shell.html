@@ -308,6 +308,15 @@
         <a class="dn-nav dn-bare" data-view-link="economics" href="#workspace-economics"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-economics"></use></svg></span><span class="dn-nav__label">Economics</span></a>
         <a class="dn-nav dn-bare" data-view-link="approvals" href="#workspace-approvals"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-decisions"></use></svg></span><span class="dn-nav__label">Decisions</span><span class="dn-nav__meta" data-approvals-count hidden>0</span></a>
         <a class="dn-nav dn-bare" data-view-link="settings" href="#workspace-settings"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-settings"></use></svg></span><span class="dn-nav__label">Settings</span></a>
+
+        <!-- The rail ends with the people on it. Six monograms in their own
+             role hues, under the team's own name — the roster is a fact about
+             the selected team, so it belongs inside the team scope and below
+             every door that scope opens. A row is the agent's record, which is
+             why opening one reaches the agent view: that surface has no rail
+             entry of its own and must not grow one. -->
+        <p class="dn-eyebrow cs-rail-group" data-rail-crew-scope hidden>The crew</p>
+        <div class="cs-rail-crew" data-rail-crew hidden></div>
         </nav>
 
         <div class="cs-rail-foot">
@@ -315,6 +324,19 @@
             <span class="cs-rail-spend-head"><span class="dn-eyebrow">Credits</span><span class="cs-rail-spend-value" data-rail-spend-value>—</span></span>
             <span class="dn-progress dn-progress--sm"><i class="dn-progress__fill" data-rail-spend-fill></i></span>
             <span class="visually-hidden" data-rail-spend-note>of your prepaid balance</span>
+          </div>
+          <!-- Who is signed in, at the foot of the rail where every console
+               puts it. The hooks are the same [data-user-*] the create screen
+               carries; app.js writes both, so the two can never disagree about
+               who you are. The second line is the membership role the
+               organization response confirmed — not a guess, and absent rather
+               than invented when the API did not say. -->
+          <div class="cs-rail-user" data-rail-user hidden>
+            <span class="dn-avatar dn-avatar--sm dn-avatar--circle" data-user-initial aria-hidden="true">·</span>
+            <span class="cs-rail-user-copy">
+              <span class="cs-rail-user-name" data-user-name></span>
+              <span class="cs-rail-user-role" data-user-role></span>
+            </span>
           </div>
           <div class="cs-rail-identity">
             <span class="dn-badge environment-pill" data-environment>Local</span>

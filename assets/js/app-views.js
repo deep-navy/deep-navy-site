@@ -44,6 +44,7 @@
   const railTeamCount = document.querySelector("[data-rail-team-count]");
   const railTeamInitial = document.querySelector("[data-rail-team-initial]");
   const railTeamScope = document.querySelector("[data-rail-team-scope]");
+  const railCrewScope = document.querySelector("[data-rail-crew-scope]");
   const contextOrganization = document.querySelector("[data-context-organization]");
   const crumbOrganization = document.querySelector("[data-crumb-organization]");
   const crumbTeamWrap = document.querySelector("[data-crumb-team-wrap]");
@@ -136,6 +137,9 @@
 
     const team = selectedTeamName();
     if (railTeamScope) railTeamScope.textContent = team ? team : "This team";
+    // The roster belongs to the team the switcher has selected, so the heading
+    // names that team rather than saying "the crew" over six strangers.
+    if (railCrewScope) railCrewScope.textContent = team ? `${team}'s crew` : "The crew";
     if (railTeamInitial) railTeamInitial.textContent = team ? team.slice(0, 1).toUpperCase() : "—";
     if (crumbTeam) crumbTeam.textContent = team ? team : "This team";
     if (crumbTeamWrap) crumbTeamWrap.hidden = !IN_TEAM.includes(currentView);
@@ -222,6 +226,32 @@
       scrollPageToTop();
     });
   }
+
+  // The rail's crew rows are rendered by app.js from the same resolved roster
+  // the tiles are, and open the same surface. One door implementation, two
+  // places that show the roster — the agent view still has no rail entry.
+  const railCrew = document.querySelector("[data-rail-crew]");
+  if (railCrew) {
+    railCrew.addEventListener("click", (event) => {
+      const row = event.target instanceof Element ? event.target.closest("[data-agent-open]") : null;
+      if (!row) return;
+      setView("agent");
+      scrollPageToTop();
+    });
+  }
+
+  // Doors that did not exist at load. A DataState's one action is built when
+  // the reading comes back empty, so it cannot be in `links` — one delegated
+  // listener catches it, and skips anything already bound above so a static
+  // door never navigates twice on one click.
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-view-link]") : null;
+    if (!target || links.includes(target)) return;
+    if (!VIEWS.includes(target.dataset.viewLink)) return;
+    event.preventDefault();
+    setView(target.dataset.viewLink);
+    scrollPageToTop();
+  });
 
   // The team tiles are rendered by app.js from the server-confirmed roster,
   // so their doors are delegated the same way the crew tiles' are: a click

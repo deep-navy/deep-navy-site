@@ -1250,13 +1250,23 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Role colour is identity, never state: in this app it appears only on the
    monogram that names the agent, scoped by the roster's own role key. The
    three engineer staff roles and the repeatable engineer share one azure. */
-.user-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); background: var(--role-pm-soft); border: 1px solid var(--role-pm-border); }
-.user-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); background: var(--role-em-soft); border: 1px solid var(--role-em-border); }
-.user-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); background: var(--role-design-soft); border: 1px solid var(--role-design-border); }
+/* Two plate shapes carry a monogram now — this site's .user-avatar and the
+   design system's .dn-avatar — and they are one rule, not two, so a hue can
+   never be right on the floor and wrong in the rail. */
+.user-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"],
+.dn-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); background: var(--role-pm-soft); border: 1px solid var(--role-pm-border); }
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"],
+.dn-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); background: var(--role-em-soft); border: 1px solid var(--role-em-border); }
+.user-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"],
+.dn-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); background: var(--role-design-soft); border: 1px solid var(--role-design-border); }
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
-.user-avatar[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); background: var(--role-eng-soft); border: 1px solid var(--role-eng-border); }
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEER"],
+.dn-avatar[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.dn-avatar[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.dn-avatar[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
+.dn-avatar[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); background: var(--role-eng-soft); border: 1px solid var(--role-eng-border); }
 
 /* Team lifecycle is not work. It sits under the floor, quiet. */
 .wfoot { margin-top: 1.7rem; padding-top: 1.2rem; border-top: 1px solid var(--line); opacity: .62; transition: opacity .24s ease; }
