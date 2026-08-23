@@ -8,6 +8,8 @@ import type { LifecycleState, PageRequest, PageResponse } from "./common_pb.js";
 import { file_deepnavy_v1_common } from "./common_pb.js";
 import type { ProvisioningStatus } from "./provisioning_pb.js";
 import { file_deepnavy_v1_provisioning } from "./provisioning_pb.js";
+import type { Repository } from "./repositories_pb.js";
+import { file_deepnavy_v1_repositories } from "./repositories_pb.js";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -16,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file deepnavy/v1/teams.proto.
  */
 export const file_deepnavy_v1_teams: GenFile = /*@__PURE__*/
-  fileDesc("ChdkZWVwbmF2eS92MS90ZWFtcy5wcm90bxILZGVlcG5hdnkudjEiVQoPVGVhbUVycm9yRGV0YWlsEiwKBnJlYXNvbhgBIAEoDjIcLmRlZXBuYXZ5LnYxLlRlYW1FcnJvclJlYXNvbhIUCgxzYWZlX21lc3NhZ2UYAiABKAkikQIKBFRlYW0SCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgEIAEoCRIqCgVzdGF0ZRgFIAEoDjIbLmRlZXBuYXZ5LnYxLkxpZmVjeWNsZVN0YXRlEhEKCW5hbWVzcGFjZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1Cgxwcm92aXNpb25pbmcYCCABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMSFgoOZW5naW5lZXJfY291bnQYCSABKAUiHAoOR2V0VGVhbVJlcXVlc3QSCgoCaWQYASABKAkiMgoPR2V0VGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIlMKEExpc3RUZWFtc1JlcXVlc3QSFwoPb3JnYW5pemF0aW9uX2lkGAEgASgJEiYKBHBhZ2UYAiABKAsyGC5kZWVwbmF2eS52MS5QYWdlUmVxdWVzdCJeChFMaXN0VGVhbXNSZXNwb25zZRIgCgV0ZWFtcxgBIAMoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SJwoEcGFnZRgCIAEoCzIZLmRlZXBuYXZ5LnYxLlBhZ2VSZXNwb25zZSJrChFDcmVhdGVUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkSFgoOcmVwb3NpdG9yeV9pZHMYBCADKAMiNQoSQ3JlYXRlVGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIjAKElN1c3BlbmRUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCRIOCgZyZWFzb24YAiABKAkiNgoTU3VzcGVuZFRlYW1SZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSIfChFSZXN1bWVUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCSI1ChJSZXN1bWVUZWFtUmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0iXAodVXBkYXRlVGVhbVJlcG9zaXRvcmllc1JlcXVlc3QSCgoCaWQYASABKAkSFgoOcmVwb3NpdG9yeV9pZHMYAiADKAMSFwoPaWRlbXBvdGVuY3lfa2V5GAMgASgJIkEKHlVwZGF0ZVRlYW1SZXBvc2l0b3JpZXNSZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSIfChFEZWxldGVUZWFtUmVxdWVzdBIKCgJpZBgBIAEoCSIUChJEZWxldGVUZWFtUmVzcG9uc2UilwEKElJlcXVlc3RUZWFtUmVxdWVzdBIXCg9vcmdhbml6YXRpb25faWQYASABKAkSDAoEbmFtZRgCIAEoCRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkSFgoOZW5naW5lZXJfY291bnQYBCABKAUSEQoJb2JqZWN0aXZlGAUgASgJEhYKDnJlcG9zaXRvcnlfaWRzGAYgAygDIrIBChNSZXF1ZXN0VGVhbVJlc3BvbnNlEicKDHBlbmRpbmdfdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SNgoKc2V0dGxlbWVudBgCIAEoDjIiLmRlZXBuYXZ5LnYxLlJlcXVlc3RUZWFtU2V0dGxlbWVudBIeChZjaGVja291dF9jbGllbnRfc2VjcmV0GAMgASgJEhoKEmF1dGhlbnRpY2F0aW9uX3VybBgEIAEoCSJfChtTZXRUZWFtRW5naW5lZXJDb3VudFJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIWCg5lbmdpbmVlcl9jb3VudBgCIAEoBRIXCg9pZGVtcG90ZW5jeV9rZXkYAyABKAkikwEKHFNldFRlYW1FbmdpbmVlckNvdW50UmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0SNgoKc2V0dGxlbWVudBgCIAEoDjIiLmRlZXBuYXZ5LnYxLlJlcXVlc3RUZWFtU2V0dGxlbWVudBIaChJhdXRoZW50aWNhdGlvbl91cmwYAyABKAkqtAQKD1RlYW1FcnJvclJlYXNvbhIhCh1URUFNX0VSUk9SX1JFQVNPTl9VTlNQRUNJRklFRBAAEiQKIFRFQU1fRVJST1JfUkVBU09OX05PVF9BQ0NFU1NJQkxFEAESMgouVEVBTV9FUlJPUl9SRUFTT05fR0lUSFVCX0lOU1RBTExBVElPTl9SRVFVSVJFRBACEjMKL1RFQU1fRVJST1JfUkVBU09OX1JFUE9TSVRPUllfU0VMRUNUSU9OX1JFUVVJUkVEEAMSMgouVEVBTV9FUlJPUl9SRUFTT05fQUNUSVZFX1NVQlNDUklQVElPTl9SRVFVSVJFRBAEEi4KKlRFQU1fRVJST1JfUkVBU09OX0lERU1QT1RFTkNZX0tFWV9SRVFVSVJFRBAFEiwKKFRFQU1fRVJST1JfUkVBU09OX0lERU1QT1RFTkNZX0tFWV9SRVVTRUQQBhIkCiBURUFNX0VSUk9SX1JFQVNPTl9OT1RfQVVUSE9SSVpFRBAHEi8KK1RFQU1fRVJST1JfUkVBU09OX1BBSURfVEVBTV9TTE9UU19FWEhBVVNURUQQCBImCiJURUFNX0VSUk9SX1JFQVNPTl9QQVlNRU5UX0RFQ0xJTkVEEAkSLQopVEVBTV9FUlJPUl9SRUFTT05fUEFZTUVOVF9NRVRIT0RfUkVRVUlSRUQQChIvCitURUFNX0VSUk9SX1JFQVNPTl9SRVBPU0lUT1JZX05PVF9BQ0NFU1NJQkxFEAsq1QEKFVJlcXVlc3RUZWFtU2V0dGxlbWVudBInCiNSRVFVRVNUX1RFQU1fU0VUVExFTUVOVF9VTlNQRUNJRklFRBAAEi0KKVJFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX0NIRUNLT1VUX1JFUVVJUkVEEAESLworUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQ0hBUkdFRF9PRkZfU0VTU0lPThACEjMKL1JFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX0FVVEhFTlRJQ0FUSU9OX1JFUVVJUkVEEAMykAYKC1RlYW1TZXJ2aWNlEkQKB0dldFRlYW0SGy5kZWVwbmF2eS52MS5HZXRUZWFtUmVxdWVzdBocLmRlZXBuYXZ5LnYxLkdldFRlYW1SZXNwb25zZRJKCglMaXN0VGVhbXMSHS5kZWVwbmF2eS52MS5MaXN0VGVhbXNSZXF1ZXN0Gh4uZGVlcG5hdnkudjEuTGlzdFRlYW1zUmVzcG9uc2USTQoKQ3JlYXRlVGVhbRIeLmRlZXBuYXZ5LnYxLkNyZWF0ZVRlYW1SZXF1ZXN0Gh8uZGVlcG5hdnkudjEuQ3JlYXRlVGVhbVJlc3BvbnNlElAKC1JlcXVlc3RUZWFtEh8uZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1SZXF1ZXN0GiAuZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1SZXNwb25zZRJQCgtTdXNwZW5kVGVhbRIfLmRlZXBuYXZ5LnYxLlN1c3BlbmRUZWFtUmVxdWVzdBogLmRlZXBuYXZ5LnYxLlN1c3BlbmRUZWFtUmVzcG9uc2USTQoKUmVzdW1lVGVhbRIeLmRlZXBuYXZ5LnYxLlJlc3VtZVRlYW1SZXF1ZXN0Gh8uZGVlcG5hdnkudjEuUmVzdW1lVGVhbVJlc3BvbnNlEnEKFlVwZGF0ZVRlYW1SZXBvc2l0b3JpZXMSKi5kZWVwbmF2eS52MS5VcGRhdGVUZWFtUmVwb3NpdG9yaWVzUmVxdWVzdBorLmRlZXBuYXZ5LnYxLlVwZGF0ZVRlYW1SZXBvc2l0b3JpZXNSZXNwb25zZRJNCgpEZWxldGVUZWFtEh4uZGVlcG5hdnkudjEuRGVsZXRlVGVhbVJlcXVlc3QaHy5kZWVwbmF2eS52MS5EZWxldGVUZWFtUmVzcG9uc2USawoUU2V0VGVhbUVuZ2luZWVyQ291bnQSKC5kZWVwbmF2eS52MS5TZXRUZWFtRW5naW5lZXJDb3VudFJlcXVlc3QaKS5kZWVwbmF2eS52MS5TZXRUZWFtRW5naW5lZXJDb3VudFJlc3BvbnNlQkRaQmdpdGh1Yi5jb20vZGVlcC1uYXZ5L3BsYXRmb3JtLXByb3Rvcy9nZW4vZ28vZGVlcG5hdnkvdjE7ZGVlcG5hdnl2MWIGcHJvdG8z", [file_deepnavy_v1_common, file_deepnavy_v1_provisioning, file_google_protobuf_timestamp]);
+  fileDesc("ChdkZWVwbmF2eS92MS90ZWFtcy5wcm90bxILZGVlcG5hdnkudjEiVQoPVGVhbUVycm9yRGV0YWlsEiwKBnJlYXNvbhgBIAEoDjIcLmRlZXBuYXZ5LnYxLlRlYW1FcnJvclJlYXNvbhIUCgxzYWZlX21lc3NhZ2UYAiABKAkipAIKBFRlYW0SCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSGAoQdGVtcGxhdGVfdmVyc2lvbhgEIAEoCRIqCgVzdGF0ZRgFIAEoDjIbLmRlZXBuYXZ5LnYxLkxpZmVjeWNsZVN0YXRlEhEKCW5hbWVzcGFjZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1Cgxwcm92aXNpb25pbmcYCCABKAsyHy5kZWVwbmF2eS52MS5Qcm92aXNpb25pbmdTdGF0dXMSFgoOZW5naW5lZXJfY291bnQYCSABKAUSEQoJb2JqZWN0aXZlGAogASgJIhwKDkdldFRlYW1SZXF1ZXN0EgoKAmlkGAEgASgJIjIKD0dldFRlYW1SZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSJTChBMaXN0VGVhbXNSZXF1ZXN0EhcKD29yZ2FuaXphdGlvbl9pZBgBIAEoCRImCgRwYWdlGAIgASgLMhguZGVlcG5hdnkudjEuUGFnZVJlcXVlc3QiXgoRTGlzdFRlYW1zUmVzcG9uc2USIAoFdGVhbXMYASADKAsyES5kZWVwbmF2eS52MS5UZWFtEicKBHBhZ2UYAiABKAsyGS5kZWVwbmF2eS52MS5QYWdlUmVzcG9uc2UiawoRQ3JlYXRlVGVhbVJlcXVlc3QSFwoPb3JnYW5pemF0aW9uX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSFwoPaWRlbXBvdGVuY3lfa2V5GAMgASgJEhYKDnJlcG9zaXRvcnlfaWRzGAQgAygDIjUKEkNyZWF0ZVRlYW1SZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbSIwChJTdXNwZW5kVGVhbVJlcXVlc3QSCgoCaWQYASABKAkSDgoGcmVhc29uGAIgASgJIjYKE1N1c3BlbmRUZWFtUmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0iHwoRUmVzdW1lVGVhbVJlcXVlc3QSCgoCaWQYASABKAkiNQoSUmVzdW1lVGVhbVJlc3BvbnNlEh8KBHRlYW0YASABKAsyES5kZWVwbmF2eS52MS5UZWFtIlwKHVVwZGF0ZVRlYW1SZXBvc2l0b3JpZXNSZXF1ZXN0EgoKAmlkGAEgASgJEhYKDnJlcG9zaXRvcnlfaWRzGAIgAygDEhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCSJBCh5VcGRhdGVUZWFtUmVwb3NpdG9yaWVzUmVzcG9uc2USHwoEdGVhbRgBIAEoCzIRLmRlZXBuYXZ5LnYxLlRlYW0iHwoRRGVsZXRlVGVhbVJlcXVlc3QSCgoCaWQYASABKAkiFAoSRGVsZXRlVGVhbVJlc3BvbnNlIlYKG0xpc3RUZWFtUmVwb3NpdG9yaWVzUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEiYKBHBhZ2UYAiABKAsyGC5kZWVwbmF2eS52MS5QYWdlUmVxdWVzdCJ2ChxMaXN0VGVhbVJlcG9zaXRvcmllc1Jlc3BvbnNlEi0KDHJlcG9zaXRvcmllcxgBIAMoCzIXLmRlZXBuYXZ5LnYxLlJlcG9zaXRvcnkSJwoEcGFnZRgCIAEoCzIZLmRlZXBuYXZ5LnYxLlBhZ2VSZXNwb25zZSKXAQoSUmVxdWVzdFRlYW1SZXF1ZXN0EhcKD29yZ2FuaXphdGlvbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCRIWCg5lbmdpbmVlcl9jb3VudBgEIAEoBRIRCglvYmplY3RpdmUYBSABKAkSFgoOcmVwb3NpdG9yeV9pZHMYBiADKAMisgEKE1JlcXVlc3RUZWFtUmVzcG9uc2USJwoMcGVuZGluZ190ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbRI2CgpzZXR0bGVtZW50GAIgASgOMiIuZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1TZXR0bGVtZW50Eh4KFmNoZWNrb3V0X2NsaWVudF9zZWNyZXQYAyABKAkSGgoSYXV0aGVudGljYXRpb25fdXJsGAQgASgJIl8KG1NldFRlYW1FbmdpbmVlckNvdW50UmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEhYKDmVuZ2luZWVyX2NvdW50GAIgASgFEhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCSKTAQocU2V0VGVhbUVuZ2luZWVyQ291bnRSZXNwb25zZRIfCgR0ZWFtGAEgASgLMhEuZGVlcG5hdnkudjEuVGVhbRI2CgpzZXR0bGVtZW50GAIgASgOMiIuZGVlcG5hdnkudjEuUmVxdWVzdFRlYW1TZXR0bGVtZW50EhoKEmF1dGhlbnRpY2F0aW9uX3VybBgDIAEoCSq0BAoPVGVhbUVycm9yUmVhc29uEiEKHVRFQU1fRVJST1JfUkVBU09OX1VOU1BFQ0lGSUVEEAASJAogVEVBTV9FUlJPUl9SRUFTT05fTk9UX0FDQ0VTU0lCTEUQARIyCi5URUFNX0VSUk9SX1JFQVNPTl9HSVRIVUJfSU5TVEFMTEFUSU9OX1JFUVVJUkVEEAISMwovVEVBTV9FUlJPUl9SRUFTT05fUkVQT1NJVE9SWV9TRUxFQ1RJT05fUkVRVUlSRUQQAxIyCi5URUFNX0VSUk9SX1JFQVNPTl9BQ1RJVkVfU1VCU0NSSVBUSU9OX1JFUVVJUkVEEAQSLgoqVEVBTV9FUlJPUl9SRUFTT05fSURFTVBPVEVOQ1lfS0VZX1JFUVVJUkVEEAUSLAooVEVBTV9FUlJPUl9SRUFTT05fSURFTVBPVEVOQ1lfS0VZX1JFVVNFRBAGEiQKIFRFQU1fRVJST1JfUkVBU09OX05PVF9BVVRIT1JJWkVEEAcSLworVEVBTV9FUlJPUl9SRUFTT05fUEFJRF9URUFNX1NMT1RTX0VYSEFVU1RFRBAIEiYKIlRFQU1fRVJST1JfUkVBU09OX1BBWU1FTlRfREVDTElORUQQCRItCilURUFNX0VSUk9SX1JFQVNPTl9QQVlNRU5UX01FVEhPRF9SRVFVSVJFRBAKEi8KK1RFQU1fRVJST1JfUkVBU09OX1JFUE9TSVRPUllfTk9UX0FDQ0VTU0lCTEUQCyrVAQoVUmVxdWVzdFRlYW1TZXR0bGVtZW50EicKI1JFUVVFU1RfVEVBTV9TRVRUTEVNRU5UX1VOU1BFQ0lGSUVEEAASLQopUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQ0hFQ0tPVVRfUkVRVUlSRUQQARIvCitSRVFVRVNUX1RFQU1fU0VUVExFTUVOVF9DSEFSR0VEX09GRl9TRVNTSU9OEAISMwovUkVRVUVTVF9URUFNX1NFVFRMRU1FTlRfQVVUSEVOVElDQVRJT05fUkVRVUlSRUQQAzL9BgoLVGVhbVNlcnZpY2USRAoHR2V0VGVhbRIbLmRlZXBuYXZ5LnYxLkdldFRlYW1SZXF1ZXN0GhwuZGVlcG5hdnkudjEuR2V0VGVhbVJlc3BvbnNlEkoKCUxpc3RUZWFtcxIdLmRlZXBuYXZ5LnYxLkxpc3RUZWFtc1JlcXVlc3QaHi5kZWVwbmF2eS52MS5MaXN0VGVhbXNSZXNwb25zZRJNCgpDcmVhdGVUZWFtEh4uZGVlcG5hdnkudjEuQ3JlYXRlVGVhbVJlcXVlc3QaHy5kZWVwbmF2eS52MS5DcmVhdGVUZWFtUmVzcG9uc2USUAoLUmVxdWVzdFRlYW0SHy5kZWVwbmF2eS52MS5SZXF1ZXN0VGVhbVJlcXVlc3QaIC5kZWVwbmF2eS52MS5SZXF1ZXN0VGVhbVJlc3BvbnNlElAKC1N1c3BlbmRUZWFtEh8uZGVlcG5hdnkudjEuU3VzcGVuZFRlYW1SZXF1ZXN0GiAuZGVlcG5hdnkudjEuU3VzcGVuZFRlYW1SZXNwb25zZRJNCgpSZXN1bWVUZWFtEh4uZGVlcG5hdnkudjEuUmVzdW1lVGVhbVJlcXVlc3QaHy5kZWVwbmF2eS52MS5SZXN1bWVUZWFtUmVzcG9uc2UScQoWVXBkYXRlVGVhbVJlcG9zaXRvcmllcxIqLmRlZXBuYXZ5LnYxLlVwZGF0ZVRlYW1SZXBvc2l0b3JpZXNSZXF1ZXN0GisuZGVlcG5hdnkudjEuVXBkYXRlVGVhbVJlcG9zaXRvcmllc1Jlc3BvbnNlEk0KCkRlbGV0ZVRlYW0SHi5kZWVwbmF2eS52MS5EZWxldGVUZWFtUmVxdWVzdBofLmRlZXBuYXZ5LnYxLkRlbGV0ZVRlYW1SZXNwb25zZRJrChRMaXN0VGVhbVJlcG9zaXRvcmllcxIoLmRlZXBuYXZ5LnYxLkxpc3RUZWFtUmVwb3NpdG9yaWVzUmVxdWVzdBopLmRlZXBuYXZ5LnYxLkxpc3RUZWFtUmVwb3NpdG9yaWVzUmVzcG9uc2USawoUU2V0VGVhbUVuZ2luZWVyQ291bnQSKC5kZWVwbmF2eS52MS5TZXRUZWFtRW5naW5lZXJDb3VudFJlcXVlc3QaKS5kZWVwbmF2eS52MS5TZXRUZWFtRW5naW5lZXJDb3VudFJlc3BvbnNlQkRaQmdpdGh1Yi5jb20vZGVlcC1uYXZ5L3BsYXRmb3JtLXByb3Rvcy9nZW4vZ28vZGVlcG5hdnkvdjE7ZGVlcG5hdnl2MWIGcHJvdG8z", [file_deepnavy_v1_common, file_deepnavy_v1_provisioning, file_deepnavy_v1_repositories, file_google_protobuf_timestamp]);
 
 /**
  * TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
@@ -99,6 +101,20 @@ export type Team = Message<"deepnavy.v1.Team"> & {
    * @generated from field: int32 engineer_count = 9;
    */
   engineerCount: number;
+
+  /**
+   * objective is the team's business objective: the one outcome this team was
+   * created to pursue. A team carries exactly one — it is the team's imperative,
+   * stated when the team is requested and refinable afterwards, from which the
+   * Product Manager derives acceptance criteria and Gherkin and the Engineering
+   * Manager triages and tags work. It is customer-authored prose meant to be
+   * read by people and agents; it is never a selector, so nothing may parse it,
+   * key on it, or route or authorize by it. Empty means the customer has not
+   * stated one yet, not that the team has none.
+   *
+   * @generated from field: string objective = 10;
+   */
+  objective: string;
 };
 
 /**
@@ -440,6 +456,66 @@ export const DeleteTeamResponseSchema: GenMessage<DeleteTeamResponse> = /*@__PUR
   messageDesc(file_deepnavy_v1_teams, 15);
 
 /**
+ * @generated from message deepnavy.v1.ListTeamRepositoriesRequest
+ */
+export type ListTeamRepositoriesRequest = Message<"deepnavy.v1.ListTeamRepositoriesRequest"> & {
+  /**
+   * The team whose own repository grant is read. The authenticated principal
+   * must be a current member of the organization that owns the team — the same
+   * membership every other team-scoped read requires, and never the owner or
+   * admin role a team mutation requires. Unknown and inaccessible teams return
+   * indistinguishable results.
+   *
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: deepnavy.v1.PageRequest page = 2;
+   */
+  page?: PageRequest | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.ListTeamRepositoriesRequest.
+ * Use `create(ListTeamRepositoriesRequestSchema)` to create a new message.
+ */
+export const ListTeamRepositoriesRequestSchema: GenMessage<ListTeamRepositoriesRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_teams, 16);
+
+/**
+ * @generated from message deepnavy.v1.ListTeamRepositoriesResponse
+ */
+export type ListTeamRepositoriesResponse = Message<"deepnavy.v1.ListTeamRepositoriesResponse"> & {
+  /**
+   * repositories is the team's own durable selection resolved against the
+   * organization's repository projection: the grant CreateTeam, RequestTeam,
+   * and UpdateTeamRepositories write and every team-scoped GitHub read is
+   * already authorized against. It is the team's grant, not the organization's,
+   * and not the installation's — it must never be read as the set of
+   * repositories the GitHub App can reach, and a client must never widen a
+   * subsequent request beyond it. A repository whose access_state is no longer
+   * ACCESSIBLE still appears: the grant outlives the access, and hiding it
+   * would make a broken team look correctly configured.
+   *
+   * @generated from field: repeated deepnavy.v1.Repository repositories = 1;
+   */
+  repositories: Repository[];
+
+  /**
+   * @generated from field: deepnavy.v1.PageResponse page = 2;
+   */
+  page?: PageResponse | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.ListTeamRepositoriesResponse.
+ * Use `create(ListTeamRepositoriesResponseSchema)` to create a new message.
+ */
+export const ListTeamRepositoriesResponseSchema: GenMessage<ListTeamRepositoriesResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_teams, 17);
+
+/**
  * @generated from message deepnavy.v1.RequestTeamRequest
  */
 export type RequestTeamRequest = Message<"deepnavy.v1.RequestTeamRequest"> & {
@@ -507,7 +583,7 @@ export type RequestTeamRequest = Message<"deepnavy.v1.RequestTeamRequest"> & {
  * Use `create(RequestTeamRequestSchema)` to create a new message.
  */
 export const RequestTeamRequestSchema: GenMessage<RequestTeamRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_teams, 16);
+  messageDesc(file_deepnavy_v1_teams, 18);
 
 /**
  * @generated from message deepnavy.v1.RequestTeamResponse
@@ -548,7 +624,7 @@ export type RequestTeamResponse = Message<"deepnavy.v1.RequestTeamResponse"> & {
  * Use `create(RequestTeamResponseSchema)` to create a new message.
  */
 export const RequestTeamResponseSchema: GenMessage<RequestTeamResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_teams, 17);
+  messageDesc(file_deepnavy_v1_teams, 19);
 
 /**
  * @generated from message deepnavy.v1.SetTeamEngineerCountRequest
@@ -587,7 +663,7 @@ export type SetTeamEngineerCountRequest = Message<"deepnavy.v1.SetTeamEngineerCo
  * Use `create(SetTeamEngineerCountRequestSchema)` to create a new message.
  */
 export const SetTeamEngineerCountRequestSchema: GenMessage<SetTeamEngineerCountRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_teams, 18);
+  messageDesc(file_deepnavy_v1_teams, 20);
 
 /**
  * @generated from message deepnavy.v1.SetTeamEngineerCountResponse
@@ -626,7 +702,7 @@ export type SetTeamEngineerCountResponse = Message<"deepnavy.v1.SetTeamEngineerC
  * Use `create(SetTeamEngineerCountResponseSchema)` to create a new message.
  */
 export const SetTeamEngineerCountResponseSchema: GenMessage<SetTeamEngineerCountResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_teams, 19);
+  messageDesc(file_deepnavy_v1_teams, 21);
 
 /**
  * @generated from enum deepnavy.v1.TeamErrorReason
@@ -865,6 +941,22 @@ export const TeamService: GenService<{
     methodKind: "unary";
     input: typeof DeleteTeamRequestSchema;
     output: typeof DeleteTeamResponseSchema;
+  },
+  /**
+   * ListTeamRepositories reads back the repository grant a team already
+   * carries. The server has always written this selection and read it for
+   * authorization; this makes it legible to the console that has to render it
+   * and offer a repick. It is a read — organization membership is enough — and
+   * it is deliberately a procedure rather than a field on Team, so that
+   * ListTeams and every mutation response stay one row per team instead of
+   * fanning out a join no caller on those paths asked for.
+   *
+   * @generated from rpc deepnavy.v1.TeamService.ListTeamRepositories
+   */
+  listTeamRepositories: {
+    methodKind: "unary";
+    input: typeof ListTeamRepositoriesRequestSchema;
+    output: typeof ListTeamRepositoriesResponseSchema;
   },
   /**
    * SetTeamEngineerCount changes the number of engineering agents on an existing

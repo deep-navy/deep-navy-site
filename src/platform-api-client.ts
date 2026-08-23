@@ -28,7 +28,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "b5e762174d1a5ea6a92a50333489d994c2873042";
+export const PLATFORM_PROTOS_REVISION = "350acd91b0a15da08fd6a13282f75f36849ce4bf";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
@@ -59,6 +59,7 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "suspend_team",
   "resume_team",
   "update_team_repositories",
+  "team_repositories",
   "delete_team",
   "provisioning_status",
   "agents",
@@ -95,6 +96,8 @@ export const PLATFORM_CAPABILITIES = Object.freeze({
   objectiveSubmission: true,
   objectiveDiscovery: true,
   initiativeDiscoveryByObjective: true,
+  initiativeDiscoveryByTeam: true,
+  teamRepositoryGrant: true,
   sessionHistory: true,
   workspaceChangeHistory: true,
   githubIssueHistory: true,
@@ -487,6 +490,12 @@ export function createPlatformApi(options: PlatformApiOptions) {
             repositoryIds: int64ListField(payload.repositoryIds, "repositoryIds"),
             idempotencyKey: textField(payload, "idempotencyKey")
           }, callOptions);
+        case "team_repositories":
+          // The team's own grant, which is not the organization's projection and
+          // not the installation's reach. A repository that has lost access is
+          // still in the grant and still returned; hiding it would make a broken
+          // team look correctly configured.
+          return await teams.listTeamRepositories({ teamId: textField(payload, "teamId"), page: pageRequest(payload.page) }, callOptions);
         case "delete_team":
           return await teams.deleteTeam({ id: textField(payload, "id") }, callOptions);
         case "provisioning_status":
@@ -514,8 +523,15 @@ export function createPlatformApi(options: PlatformApiOptions) {
             description: textField(payload, "description"),
             idempotencyKey: textField(payload, "idempotencyKey")
           }, callOptions);
-        case "initiatives":
-          return await initiatives.listInitiatives({ objectiveId: textField(payload, "objectiveId"), page: pageRequest(payload.page) }, callOptions);
+        case "initiatives": {
+          // Exactly one scope. The server rejects both-or-neither rather than
+          // preferring one, so the client refuses the same shape rather than
+          // discovering it as a 400 at the far end.
+          const objectiveId = textField(payload, "objectiveId", false);
+          const teamId = textField(payload, "teamId", false);
+          if (!objectiveId === !teamId) throw new PlatformClientError("Exactly one of objectiveId and teamId is required.", "invalid_argument", 400, requestId);
+          return await initiatives.listInitiatives({ objectiveId, teamId, page: pageRequest(payload.page) }, callOptions);
+        }
         case "sessions":
           return await sessionHistory.listSessions({
             teamId: textField(payload, "teamId"),
@@ -541,14 +557,14 @@ export function createPlatformApi(options: PlatformApiOptions) {
           return await githubDelivery.listGitHubIssues({
             organizationId: textField(payload, "organizationId"),
             teamId: textField(payload, "teamId"),
-            githubRepositoryId: int64Field(payload.githubRepositoryId, "githubRepositoryId", false),
+            githubRepositoryId: int64Field(payload.githubRepositoryId ?? 0, "githubRepositoryId"),
             page: pageRequest(payload.page)
           }, callOptions);
         case "github_pull_requests":
           return await githubDelivery.listGitHubPullRequests({
             organizationId: textField(payload, "organizationId"),
             teamId: textField(payload, "teamId"),
-            githubRepositoryId: int64Field(payload.githubRepositoryId, "githubRepositoryId", false),
+            githubRepositoryId: int64Field(payload.githubRepositoryId ?? 0, "githubRepositoryId"),
             page: pageRequest(payload.page)
           }, callOptions);
         case "approvals":

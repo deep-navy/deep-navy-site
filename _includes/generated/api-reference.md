@@ -183,6 +183,12 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.EconomicsBreakdown`](#deepnavy-v1-economicsbreakdown)
   - [Message `deepnavy.v1.ListEconomicsBreakdownsRequest`](#deepnavy-v1-listeconomicsbreakdownsrequest)
   - [Message `deepnavy.v1.ListEconomicsBreakdownsResponse`](#deepnavy-v1-listeconomicsbreakdownsresponse)
+  - [Message `deepnavy.v1.EconomicsUsageEvent`](#deepnavy-v1-economicsusageevent)
+  - [Message `deepnavy.v1.ListEconomicsUsageEventsRequest`](#deepnavy-v1-listeconomicsusageeventsrequest)
+  - [Message `deepnavy.v1.ListEconomicsUsageEventsResponse`](#deepnavy-v1-listeconomicsusageeventsresponse)
+  - [Message `deepnavy.v1.EconomicsDailyBucket`](#deepnavy-v1-economicsdailybucket)
+  - [Message `deepnavy.v1.ListEconomicsDailyRequest`](#deepnavy-v1-listeconomicsdailyrequest)
+  - [Message `deepnavy.v1.ListEconomicsDailyResponse`](#deepnavy-v1-listeconomicsdailyresponse)
   - [Enum `deepnavy.v1.EconomicsScopeType`](#deepnavy-v1-economicsscopetype)
   - [Service `deepnavy.v1.EconomicsService`](#deepnavy-v1-economicsservice)
 - [deepnavy/v1/github.proto](#deepnavy-v1-github-proto)
@@ -309,6 +315,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.UpdateTeamRepositoriesResponse`](#deepnavy-v1-updateteamrepositoriesresponse)
   - [Message `deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest)
   - [Message `deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse)
+  - [Message `deepnavy.v1.ListTeamRepositoriesRequest`](#deepnavy-v1-listteamrepositoriesrequest)
+  - [Message `deepnavy.v1.ListTeamRepositoriesResponse`](#deepnavy-v1-listteamrepositoriesresponse)
   - [Message `deepnavy.v1.RequestTeamRequest`](#deepnavy-v1-requestteamrequest)
   - [Message `deepnavy.v1.RequestTeamResponse`](#deepnavy-v1-requestteamresponse)
   - [Message `deepnavy.v1.SetTeamEngineerCountRequest`](#deepnavy-v1-setteamengineercountrequest)
@@ -1281,6 +1289,7 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | `state` | 5 | [`deepnavy.v1.LifecycleState`](#deepnavy-v1-lifecyclestate) | singular | — |
 | `model_alias` | 6 | `string` | singular | — |
 | `last_heartbeat_at` | 7 | `google.protobuf.Timestamp` | singular | — |
+| `agent_key` | 8 | `string` | singular | agent_key is the stable, lowercase identifier for this agent within its<br> team — the key its workspace, its dispatches, and its metered usage are all<br> recorded under. It is unique per team and does not change when the agent is<br> renamed, so consoles and cross-service correlation should key on it rather<br> than on name. It is an identifier, never a credential: it is non-secret and<br> authorizes nothing on its own. |
 
 <a id="deepnavy-v1-listagentsrequest"></a>
 ### Message `deepnavy.v1.ListAgentsRequest`
@@ -1670,6 +1679,7 @@ Invoice is a provider-independent, organization-scoped projection populated
 | `created_at` | 13 | `google.protobuf.Timestamp` | singular | — |
 | `updated_at` | 14 | `google.protobuf.Timestamp` | singular | — |
 | `hosted_invoice_url` | 15 | `string` | singular | hosted_invoice_url is present only after the server validates an HTTPS URL<br> on Stripe's exact hosted-invoice origin. Clients must independently enforce<br> that same exact-origin rule before opening it. |
+| `team_slot_quantity` | 16 | `int64` | singular | team_slot_quantity is the licensed team quantity the provider billed on<br> this invoice's team line — how many team slots the organization actually<br> paid for over this invoice's period. It is a settled billing fact, not a<br> live entitlement: it must never be used to gate team creation, to count<br> the organization's current teams, or to decide whether a slot is free.<br> Zero means the retrieved invoice carried no team line at all. |
 
 <a id="deepnavy-v1-listinvoicesrequest"></a>
 ### Message `deepnavy.v1.ListInvoicesRequest`
@@ -2361,6 +2371,10 @@ EconomicsScope identifies a deep navy accounting scope. id is empty only
 | `scope` | 10 | [`deepnavy.v1.EconomicsScope`](#deepnavy-v1-economicsscope) | singular | — |
 | `gross_margin_ratio` | 11 | `double` | optional | gross_margin_ratio is gross_profit / revenue, where 1.0 means 100%, and<br> may be negative. Absence means revenue was zero or the source data was not<br> trustworthy enough to calculate the ratio. |
 | `reporting_period` | 12 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
+| `input_tokens` | 13 | `int64` | singular | Token counters are the raw metered volume behind direct_cost and<br> credits_used_micros over reporting_period. They exist so a customer can see<br> what the spend was made of; they are an input to cost, never a second<br> currency. Nothing may price them client-side or reconcile a bill from them<br> — direct_cost and credits_used_micros remain the only authoritative<br> amounts, and rates change without these fields changing. Cache reads and<br> cache writes are counted apart from input because they are rated<br> differently and must not be folded back into it. |
+| `output_tokens` | 14 | `int64` | singular | — |
+| `cache_read_tokens` | 15 | `int64` | singular | — |
+| `cache_write_tokens` | 16 | `int64` | singular | — |
 
 <a id="deepnavy-v1-geteconomicsrequest"></a>
 ### Message `deepnavy.v1.GetEconomicsRequest`
@@ -2392,6 +2406,10 @@ EconomicsScope identifies a deep navy accounting scope. id is empty only
 | `credits_used_micros` | 5 | `int64` | singular | — |
 | `first_occurred_at` | 6 | `google.protobuf.Timestamp` | singular | — |
 | `last_occurred_at` | 7 | `google.protobuf.Timestamp` | singular | — |
+| `input_tokens` | 8 | `int64` | singular | Raw metered token volume for this group over the request's reporting<br> period, with the same rules as EconomicsSummary: an explanation of the<br> cost, never a substitute for it, and never priced client-side. |
+| `output_tokens` | 9 | `int64` | singular | — |
+| `cache_read_tokens` | 10 | `int64` | singular | — |
+| `cache_write_tokens` | 11 | `int64` | singular | — |
 
 <a id="deepnavy-v1-listeconomicsbreakdownsrequest"></a>
 ### Message `deepnavy.v1.ListEconomicsBreakdownsRequest`
@@ -2413,6 +2431,90 @@ EconomicsScope identifies a deep navy accounting scope. id is empty only
 | `next_page_token` | 2 | `string` | singular | — |
 | `reporting_period` | 3 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
 | `measured_at` | 4 | `google.protobuf.Timestamp` | singular | — |
+
+<a id="deepnavy-v1-economicsusageevent"></a>
+### Message `deepnavy.v1.EconomicsUsageEvent`
+
+EconomicsUsageEvent is one metered model call: the leaf fact every summary
+ and breakdown in this service is aggregated from. It is exposed so a customer
+ can see exactly what a period's credits were spent on, down to the individual
+ request, instead of having to trust a total. It is an immutable accounting
+ record — an event is never edited or backfilled in place, and a correction
+ arrives as a further event — so a client may cache one forever but must never
+ treat the absence of a later correction as proof a figure is final.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `measured_at` | 1 | `google.protobuf.Timestamp` | singular | measured_at is when the call was metered, not when it was ingested.<br> Ordering and reporting_period filtering both use it, so a late-arriving<br> event lands in the period it belongs to rather than the current one. |
+| `agent_role` | 2 | `string` | singular | agent_role and operation_type are stable, non-secret platform aliases: the<br> role of the agent that made the call and the operation it was made under.<br> They are the same aliases ListEconomicsBreakdowns groups by. |
+| `operation_type` | 3 | `string` | singular | — |
+| `model` | 4 | `string` | singular | model and provider are stable, non-secret platform aliases. Either may be<br> empty when the source did not report it. Neither is ever a provider account,<br> endpoint, or key, and neither may be used to route a call. |
+| `provider` | 5 | `string` | singular | — |
+| `objective_id` | 6 | `string` | singular | objective_id and initiative_id attribute the spend to deep navy work<br> resources. Empty means the call was not attributable to that dimension,<br> which is ordinary — agents do work that belongs to no initiative — and must<br> not be rendered as missing data or an error. |
+| `initiative_id` | 7 | `string` | singular | — |
+| `github_issue_number` | 8 | `int64` | singular | GitHub issue and pull request numbers are repository-relative and set only<br> when the call was attributed to one. Zero means unattributed. They are not<br> globally unique, so they must never be used as a key on their own. |
+| `github_pull_request_number` | 9 | `int64` | singular | — |
+| `input_tokens` | 10 | `int64` | singular | Raw metered token volume for this single call, with cache reads and writes<br> counted apart from input because they are rated differently. They explain<br> the cost and never replace it: nothing may price them client-side. |
+| `output_tokens` | 11 | `int64` | singular | — |
+| `cache_read_tokens` | 12 | `int64` | singular | — |
+| `cache_write_tokens` | 13 | `int64` | singular | — |
+| `credits_used_micros` | 14 | `int64` | singular | Engineering Credits use integer microcredits: 1,000,000 equals one credit. |
+| `direct_cost` | 15 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | direct_cost is the provider cost recorded for this one call. All events in<br> a response share one currency; the server rejects mixed-currency<br> aggregation rather than converting silently, so a client may sum these<br> amounts within a response but never across responses without checking. |
+| `source` | 16 | `string` | singular | source is the ingesting system's stable name and source_event_id is that<br> system's own identifier for this event. Together they are the uniqueness<br> key that makes ingestion retry-safe, and they are the handle support uses<br> to reconcile a disputed line against the upstream ledger. They are<br> non-secret, but they are not deep navy resource IDs and no client may<br> resolve, parse, or construct them. |
+| `source_event_id` | 17 | `string` | singular | — |
+
+<a id="deepnavy-v1-listeconomicsusageeventsrequest"></a>
+### Message `deepnavy.v1.ListEconomicsUsageEventsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `scope` | 1 | [`deepnavy.v1.EconomicsScope`](#deepnavy-v1-economicsscope) | singular | scope selects what to list and is revalidated against the caller on every<br> page: an ORGANIZATION or TEAM the actor may read, or a narrower dimension<br> nested under parent_scope. The scoping rules are exactly<br> ListEconomicsBreakdowns'; a scope the actor may not read is<br> indistinguishable from one with no events. |
+| `parent_scope` | 2 | [`deepnavy.v1.EconomicsScope`](#deepnavy-v1-economicsscope) | singular | Required for alias dimensions (agent role, session, model, provider, and<br> operation) and optional for resource dimensions. Only ORGANIZATION or TEAM<br> is accepted. It prevents an alias from aggregating across tenant scopes. |
+| `reporting_period` | 3 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | Empty selects the organization's current subscription period. The response<br> always returns the exact applied reporting period. |
+| `page_size` | 4 | `int32` | singular | 1..100; zero selects the server default of 50. |
+| `page_token` | 5 | `string` | singular | Opaque cursor returned by the previous response. It is bound to the caller,<br> the scope, and the period, and must not be parsed or constructed. |
+
+<a id="deepnavy-v1-listeconomicsusageeventsresponse"></a>
+### Message `deepnavy.v1.ListEconomicsUsageEventsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `events` | 1 | [`deepnavy.v1.EconomicsUsageEvent`](#deepnavy-v1-economicsusageevent) | repeated | events are ordered by measured_at descending and then by a stable server<br> tiebreak, over a snapshot fixed when the first page is issued, so paging<br> never repeats or skips an event while new usage is still arriving. |
+| `next_page_token` | 2 | `string` | singular | — |
+| `reporting_period` | 3 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
+| `measured_at` | 4 | `google.protobuf.Timestamp` | singular | measured_at is the time through which source ledgers were reconciled. |
+
+<a id="deepnavy-v1-economicsdailybucket"></a>
+### Message `deepnavy.v1.EconomicsDailyBucket`
+
+EconomicsDailyBucket is one UTC calendar day of spend inside a reporting
+ period. Buckets exist so a console can draw a trend without paging the whole
+ event stream. They are a rollup of the very events ListEconomicsUsageEvents
+ returns, never a separate ledger, so a bucket total and the sum of that day's
+ events must agree and a discrepancy is a defect, not a rounding allowance.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `day` | 1 | `google.protobuf.Timestamp` | singular | day is the UTC midnight that starts the bucket, which covers the half-open<br> interval [day, day + 24h). Days are always UTC and never the customer's<br> local calendar, so buckets stay comparable across tenants and a client must<br> not relabel them into a local date without saying it has. |
+| `direct_cost` | 2 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | Spend metered inside this day, in the single currency the response uses. |
+| `credits_used_micros` | 3 | `int64` | singular | Engineering Credits use integer microcredits: 1,000,000 equals one credit. |
+
+<a id="deepnavy-v1-listeconomicsdailyrequest"></a>
+### Message `deepnavy.v1.ListEconomicsDailyRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `scope` | 1 | [`deepnavy.v1.EconomicsScope`](#deepnavy-v1-economicsscope) | singular | scope must be an ORGANIZATION or TEAM accessible to the actor. |
+| `reporting_period` | 2 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | Empty selects the organization's current subscription period. The response<br> always returns the exact applied period. The server bounds how long a<br> requested period may be, so the day series is never unbounded and this<br> procedure deliberately carries no cursor. |
+
+<a id="deepnavy-v1-listeconomicsdailyresponse"></a>
+### Message `deepnavy.v1.ListEconomicsDailyResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `days` | 1 | [`deepnavy.v1.EconomicsDailyBucket`](#deepnavy-v1-economicsdailybucket) | repeated | days covers the applied reporting period contiguously, in ascending order,<br> and includes days with no usage as explicit zero buckets. A client plots<br> the series as given and must never infer a gap as zero or a zero as a gap. |
+| `reporting_period` | 2 | [`deepnavy.v1.ReportingPeriod`](#deepnavy-v1-reportingperiod) | singular | — |
+| `measured_at` | 3 | `google.protobuf.Timestamp` | singular | measured_at is the time through which source ledgers were reconciled. The<br> bucket containing it is still filling and must not be read as final. |
 
 <a id="deepnavy-v1-economicsscopetype"></a>
 ### Enum `deepnavy.v1.EconomicsScopeType`
@@ -2442,6 +2544,8 @@ EconomicsScope identifies a deep navy accounting scope. id is empty only
 | --- | --- | --- | --- | --- |
 | `GetEconomics` | [`deepnavy.v1.GetEconomicsRequest`](#deepnavy-v1-geteconomicsrequest) | [`deepnavy.v1.GetEconomicsResponse`](#deepnavy-v1-geteconomicsresponse) | unary | — |
 | `ListEconomicsBreakdowns` | [`deepnavy.v1.ListEconomicsBreakdownsRequest`](#deepnavy-v1-listeconomicsbreakdownsrequest) | [`deepnavy.v1.ListEconomicsBreakdownsResponse`](#deepnavy-v1-listeconomicsbreakdownsresponse) | unary | — |
+| `ListEconomicsUsageEvents` | [`deepnavy.v1.ListEconomicsUsageEventsRequest`](#deepnavy-v1-listeconomicsusageeventsrequest) | [`deepnavy.v1.ListEconomicsUsageEventsResponse`](#deepnavy-v1-listeconomicsusageeventsresponse) | unary | ListEconomicsUsageEvents pages the individual metered calls behind the<br> summaries, scoped and authorized exactly like ListEconomicsBreakdowns. It<br> is the drill-down that answers "what was this charge for". It is not an<br> aggregation transport: a client that wants a total reads GetEconomics,<br> ListEconomicsBreakdowns, or ListEconomicsDaily rather than paging every<br> event and adding them up. |
+| `ListEconomicsDaily` | [`deepnavy.v1.ListEconomicsDailyRequest`](#deepnavy-v1-listeconomicsdailyrequest) | [`deepnavy.v1.ListEconomicsDailyResponse`](#deepnavy-v1-listeconomicsdailyresponse) | unary | ListEconomicsDaily returns the per-day rollup of those same events for one<br> scope and period, so a console can render a spend trend in a single call. |
 
 
 <a id="deepnavy-v1-github-proto"></a>
@@ -2662,9 +2766,9 @@ GitHubPullRequest is a customer-safe, webhook-authoritative projection.
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `organization_id` | 1 | `string` | singular | All three identifiers are required and revalidated together. The caller<br> must be a current organization member, the team must belong to that<br> organization, and the repository must be selected for that team and still<br> accessible through the organization's active GitHub App installation. |
+| `organization_id` | 1 | `string` | singular | organization_id and team_id are required and revalidated together: the<br> caller must be a current organization member and the team must belong to<br> that organization. The read is always bounded by the team's own repository<br> grant — the server derives that grant server-side and never widens a read<br> past it, whatever the request asks for. |
 | `team_id` | 2 | `string` | singular | — |
-| `github_repository_id` | 3 | `int64` | singular | — |
+| `github_repository_id` | 3 | `int64` | singular | github_repository_id is optional. Zero — the unset value, and what a client<br> that never chose a repository already sends — selects every repository<br> currently granted to the team, so one call covers the whole grant instead<br> of forcing the caller to fan out a request per repository. It is a sentinel<br> rather than explicit field presence on purpose: no GitHub repository has id<br> zero, so the two readings can never collide, and the field keeps implicit<br> presence so existing generated clients keep compiling unchanged. A non-zero<br> id narrows the read to that one repository, which must still be granted to<br> the team and reachable through the organization's active GitHub App<br> installation; otherwise the call fails exactly as an unknown repository<br> does, without revealing whether a repository belonging to another tenant<br> exists. Widening is never possible: an id outside the grant is refused, it<br> is not silently ignored. |
 | `state` | 4 | [`deepnavy.v1.GitHubIssueState`](#deepnavy-v1-githubissuestate) | singular | UNSPECIFIED includes open, closed, and deleted tombstones. |
 | `page` | 5 | [`deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest) | singular | — |
 
@@ -2681,7 +2785,7 @@ GitHubPullRequest is a customer-safe, webhook-authoritative projection.
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
-| `organization_id` | 1 | `string` | singular | Authorization and repository-selection semantics match ListGitHubIssues. |
+| `organization_id` | 1 | `string` | singular | Authorization and repository-scoping semantics match ListGitHubIssues,<br> including the optional zero-means-the-whole-grant repository filter and the<br> team grant that bounds it. |
 | `team_id` | 2 | `string` | singular | — |
 | `github_repository_id` | 3 | `int64` | singular | — |
 | `state` | 4 | [`deepnavy.v1.GitHubPullRequestState`](#deepnavy-v1-githubpullrequeststate) | singular | UNSPECIFIED includes open, closed, and merged pull requests. |
@@ -2763,6 +2867,7 @@ Imports: `deepnavy/v1/common.proto`, `google/protobuf/timestamp.proto`
 | --- | ---: | --- | --- | --- |
 | `objective_id` | 1 | `string` | singular | — |
 | `page` | 2 | [`deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest) | singular | — |
+| `team_id` | 3 | `string` | singular | team_id lists every initiative under every objective the team owns, in one<br> call, so a console does not have to walk the team's objectives first and<br> then fan out a request per objective to show the team's work. Exactly one<br> of objective_id and team_id may be set; setting both, or neither, is<br> rejected with INVALID_ARGUMENT rather than silently preferring one. It is<br> a filter and never an authorization input: the server independently<br> verifies the caller's membership in the organization that owns the team,<br> and an unknown or inaccessible team is indistinguishable from an empty one. |
 
 <a id="deepnavy-v1-listinitiativesresponse"></a>
 ### Message `deepnavy.v1.ListInitiativesResponse`
@@ -2854,6 +2959,7 @@ Imports: `deepnavy/v1/common.proto`, `deepnavy/v1/work.proto`, `google/protobuf/
 | `baseline` | 5 | `double` | singular | — |
 | `target` | 6 | `double` | singular | — |
 | `guardrail` | 7 | `bool` | singular | — |
+| `measurement_source` | 8 | `string` | singular | measurement_source names where this KPI's number is actually read from —<br> the dashboard, query, or instrument an agent must consult to tell whether<br> the baseline has moved toward the target. It is a human-readable pointer<br> written when the objective is defined, never a connection string: it must<br> not carry a credential, an internal hostname, or anything the server would<br> dereference on a customer's behalf, and nothing may fetch it automatically.<br> Empty means the KPI has no stated source, so its numbers are asserted<br> rather than measured — consoles should say so rather than imply a reading. |
 
 <a id="deepnavy-v1-objectiveacceptance"></a>
 ### Message `deepnavy.v1.ObjectiveAcceptance`
@@ -3665,7 +3771,7 @@ AgentSession is an assignment-bound, customer-safe lifecycle projection.
 
 Package: `deepnavy.v1`
 
-Imports: `deepnavy/v1/common.proto`, `deepnavy/v1/provisioning.proto`, `google/protobuf/timestamp.proto`
+Imports: `deepnavy/v1/common.proto`, `deepnavy/v1/provisioning.proto`, `deepnavy/v1/repositories.proto`, `google/protobuf/timestamp.proto`
 
 <a id="deepnavy-v1-teamerrordetail"></a>
 ### Message `deepnavy.v1.TeamErrorDetail`
@@ -3693,6 +3799,7 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 | `created_at` | 7 | `google.protobuf.Timestamp` | singular | — |
 | `provisioning` | 8 | [`deepnavy.v1.ProvisioningStatus`](#deepnavy-v1-provisioningstatus) | singular | provisioning reports the durable command observed for this team. A<br> pending Team is not active until provisioning_state is SUCCEEDED. |
 | `engineer_count` | 9 | `int32` | singular | engineer_count is the number of engineering agents on the team (>= 3, the<br> adversarial-review floor). The base subscription covers 3; each engineer above<br> 3 bills as a per-seat add-on. Changed via SetTeamEngineerCount. |
+| `objective` | 10 | `string` | singular | objective is the team's business objective: the one outcome this team was<br> created to pursue. A team carries exactly one — it is the team's imperative,<br> stated when the team is requested and refinable afterwards, from which the<br> Product Manager derives acceptance criteria and Gherkin and the Engineering<br> Manager triages and tags work. It is customer-authored prose meant to be<br> read by people and agents; it is never a selector, so nothing may parse it,<br> key on it, or route or authorize by it. Empty means the customer has not<br> stated one yet, not that the team has none. |
 
 <a id="deepnavy-v1-getteamrequest"></a>
 ### Message `deepnavy.v1.GetTeamRequest`
@@ -3798,6 +3905,22 @@ TeamErrorDetail is attached to a non-OK Connect/gRPC status. safe_message may
 
 This message has no fields.
 
+<a id="deepnavy-v1-listteamrepositoriesrequest"></a>
+### Message `deepnavy.v1.ListTeamRepositoriesRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team_id` | 1 | `string` | singular | The team whose own repository grant is read. The authenticated principal<br> must be a current member of the organization that owns the team — the same<br> membership every other team-scoped read requires, and never the owner or<br> admin role a team mutation requires. Unknown and inaccessible teams return<br> indistinguishable results. |
+| `page` | 2 | [`deepnavy.v1.PageRequest`](#deepnavy-v1-pagerequest) | singular | — |
+
+<a id="deepnavy-v1-listteamrepositoriesresponse"></a>
+### Message `deepnavy.v1.ListTeamRepositoriesResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `repositories` | 1 | [`deepnavy.v1.Repository`](#deepnavy-v1-repository) | repeated | repositories is the team's own durable selection resolved against the<br> organization's repository projection: the grant CreateTeam, RequestTeam,<br> and UpdateTeamRepositories write and every team-scoped GitHub read is<br> already authorized against. It is the team's grant, not the organization's,<br> and not the installation's — it must never be read as the set of<br> repositories the GitHub App can reach, and a client must never widen a<br> subsequent request beyond it. A repository whose access_state is no longer<br> ACCESSIBLE still appears: the grant outlives the access, and hiding it<br> would make a broken team look correctly configured. |
+| `page` | 2 | [`deepnavy.v1.PageResponse`](#deepnavy-v1-pageresponse) | singular | — |
+
 <a id="deepnavy-v1-requestteamrequest"></a>
 ### Message `deepnavy.v1.RequestTeamRequest`
 
@@ -3881,6 +4004,7 @@ RequestTeamSettlement describes how a RequestTeam call is paid for.
 | `ResumeTeam` | [`deepnavy.v1.ResumeTeamRequest`](#deepnavy-v1-resumeteamrequest) | [`deepnavy.v1.ResumeTeamResponse`](#deepnavy-v1-resumeteamresponse) | unary | — |
 | `UpdateTeamRepositories` | [`deepnavy.v1.UpdateTeamRepositoriesRequest`](#deepnavy-v1-updateteamrepositoriesrequest) | [`deepnavy.v1.UpdateTeamRepositoriesResponse`](#deepnavy-v1-updateteamrepositoriesresponse) | unary | UpdateTeamRepositories replaces the repository selection of an existing<br> team. It requires an owner or admin membership, like the other team<br> mutations, and is idempotent by the authenticated principal and<br> idempotency_key. The server-validated set becomes the team's own durable<br> selection and triggers a re-provision (generation bump), so everything<br> derived from the roster follows: the seeded repository roster, the<br> GitHub token scope, webhook wake fencing, and merge-gate rulesets on<br> newly added repositories. |
 | `DeleteTeam` | [`deepnavy.v1.DeleteTeamRequest`](#deepnavy-v1-deleteteamrequest) | [`deepnavy.v1.DeleteTeamResponse`](#deepnavy-v1-deleteteamresponse) | unary | — |
+| `ListTeamRepositories` | [`deepnavy.v1.ListTeamRepositoriesRequest`](#deepnavy-v1-listteamrepositoriesrequest) | [`deepnavy.v1.ListTeamRepositoriesResponse`](#deepnavy-v1-listteamrepositoriesresponse) | unary | ListTeamRepositories reads back the repository grant a team already<br> carries. The server has always written this selection and read it for<br> authorization; this makes it legible to the console that has to render it<br> and offer a repick. It is a read — organization membership is enough — and<br> it is deliberately a procedure rather than a field on Team, so that<br> ListTeams and every mutation response stay one row per team instead of<br> fanning out a join no caller on those paths asked for. |
 | `SetTeamEngineerCount` | [`deepnavy.v1.SetTeamEngineerCountRequest`](#deepnavy-v1-setteamengineercountrequest) | [`deepnavy.v1.SetTeamEngineerCountResponse`](#deepnavy-v1-setteamengineercountresponse) | unary | SetTeamEngineerCount changes the number of engineering agents on an existing<br> team and settles the difference on the org's subscription: an increase charges<br> the saved card off-session (prorated), a decrease credits the next invoice. The<br> team must already have an active subscription. Idempotent by principal + key. |
 
 

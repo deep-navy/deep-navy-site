@@ -14,7 +14,12 @@ test("the customer dashboard calls the frozen local GitHub delivery projection",
   assert.match(client, /githubDelivery\.listGitHubPullRequests/);
   assert.match(client, /organizationId: textField\(payload, "organizationId"\)/);
   assert.match(client, /teamId: textField\(payload, "teamId"\)/);
-  assert.match(client, /githubRepositoryId: int64Field\(payload\.githubRepositoryId, "githubRepositoryId", false\)/);
+  // platform-protos 350acd91 made the repository filter optional and documented
+  // zero as "the team's whole grant". Before that the server required an id of
+  // at least one while this bridge sent zero, so both delivery reads were being
+  // rejected outright — pinning the old positive-only shape was pinning a bug.
+  assert.match(client, /githubRepositoryId: int64Field\(payload\.githubRepositoryId \?\? 0, "githubRepositoryId"\)/);
+  assert.doesNotMatch(client, /githubRepositoryId: int64Field\(payload\.githubRepositoryId, "githubRepositoryId", false\)/);
   assert.doesNotMatch(app + client, /api\.github\.com/);
 });
 

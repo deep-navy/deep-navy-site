@@ -14,7 +14,7 @@ function parseRequestBody(body) {
 }
 
 test("the browser bundle exposes the pinned generated contract", () => {
-  assert.equal(generated.PLATFORM_PROTOS_REVISION, "b5e762174d1a5ea6a92a50333489d994c2873042");
+  assert.equal(generated.PLATFORM_PROTOS_REVISION, "350acd91b0a15da08fd6a13282f75f36849ce4bf");
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("github_install_complete"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("update_repository_selection"));
   assert.ok(generated.SUPPORTED_PROCEDURES.includes("request_team"));
@@ -40,6 +40,9 @@ test("the browser bundle exposes the pinned generated contract", () => {
   assert.equal(generated.PLATFORM_CAPABILITIES.objectiveSubmission, true);
   assert.equal(generated.PLATFORM_CAPABILITIES.objectiveDiscovery, true);
   assert.equal(generated.PLATFORM_CAPABILITIES.initiativeDiscoveryByObjective, true);
+  assert.equal(generated.PLATFORM_CAPABILITIES.initiativeDiscoveryByTeam, true);
+  assert.equal(generated.PLATFORM_CAPABILITIES.teamRepositoryGrant, true);
+  assert.ok(generated.SUPPORTED_PROCEDURES.includes("team_repositories"));
   assert.equal(generated.PLATFORM_CAPABILITIES.approvalDecision, true);
   assert.equal(generated.PLATFORM_CAPABILITIES.approvalDiscovery, true);
 
@@ -851,4 +854,55 @@ test("only the session-cookie procedures are credentialed", async () => {
       `${call.url} must not carry the session cookie`
     );
   }
+});
+
+// platform-protos 350acd91 / platform-api 5e9d4747. Two reads the platform has
+// always been able to answer and never exposed: a team's own repository grant,
+// and every initiative under every objective a team owns without walking the
+// objectives first.
+test("Wave 0 reads carry team scope to the RPCs that now accept it", async () => {
+  const calls = [];
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async (input, init) => {
+      calls.push({ input: String(input), body: parseRequestBody(init.body) });
+      const path = String(input);
+      const response = path.endsWith("/ListTeamRepositories")
+        ? { repositories: [{ id: "repository-1", organizationId: "org-1", owner: "acme", name: "api", selectedForTeams: true }], page: {} }
+        : { initiatives: [{ id: "initiative-1", objectiveId: "objective-1", title: "Reduce setup time" }], page: {} };
+      return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+  });
+
+  const grant = await api.request("team_repositories", { teamId: "team-1", page: { pageSize: 100 } }, {
+    accessToken: "access-token",
+    requestId: "team-repositories-request"
+  });
+  await api.request("initiatives", { teamId: "team-1", page: { pageSize: 100 } }, {
+    accessToken: "access-token",
+    requestId: "team-initiatives-request"
+  });
+
+  assert.equal(calls[0].input, "https://dev.api.deep.navy/deepnavy.v1.TeamService/ListTeamRepositories");
+  assert.deepEqual(calls[0].body, { teamId: "team-1", page: { pageSize: 100 } });
+  assert.equal(grant.repositories[0].name, "api");
+  assert.equal(calls[1].input, "https://dev.api.deep.navy/deepnavy.v1.InitiativeService/ListInitiatives");
+  assert.deepEqual(calls[1].body, { teamId: "team-1", page: { pageSize: 100 } });
+});
+
+// The server rejects both-or-neither rather than preferring one, so the client
+// refuses the same shape here instead of learning it as a 400 at the far end.
+test("an initiative read carries exactly one scope", async () => {
+  const api = generated.createPlatformApi({
+    baseUrl: "https://dev.api.deep.navy",
+    fetch: async () => { throw new Error("not called"); }
+  });
+  await assert.rejects(
+    () => api.request("initiatives", { objectiveId: "objective-1", teamId: "team-1" }, { accessToken: "access-token", requestId: "both" }),
+    /Exactly one of objectiveId and teamId is required/
+  );
+  await assert.rejects(
+    () => api.request("initiatives", {}, { accessToken: "access-token", requestId: "neither" }),
+    /Exactly one of objectiveId and teamId is required/
+  );
 });
