@@ -1,185 +1,207 @@
 /* ============================================================================
-   Landing page.
+   Marketing pages — the kit-derived stylesheet (home + pricing).
    ============================================================================
 
-   Scoped to .lp so none of it can leak into the app, and so it does not have
-   to fight the old marketing styles for specificity.
+   Scoped to .lp so none of it can leak into the app. Layout only: every
+   colour is a token from tokens.css, and a coloured pixel is always
+   information — role hues paint only under [data-role-key=…] scopes with a
+   monogram beside them, status hues only under data-state/data-status.
+   The chrome, like everywhere else on this site, is ink.
 
-   The page is built around one object: a pull request an agent opened. That is
-   what the product actually produces, so showing a real one answers "is this
-   real" faster than any amount of prose about autonomous engineering. It is
-   the hero, not an illustration beside the hero.
-
-   Flat navy throughout, hairlines for structure, seafoam used only where
-   something is live or is the next action.
+   The structure follows the design system's marketing kit: a hero with the
+   ghosted mark, the six-cell crew strip with role top edges, two ink bands
+   (data-theme="dark" in the markup — never more than two per page), the
+   objectives and merge-gate splits, the activity panel, proof cells, and
+   the closing band. Motion rides the expression layer in main.css
+   (.dn-stagger / .dn-reveal / dn-* keyframes); this file only assigns
+   stagger indices and the one PR-review choreography.
    ========================================================================= */
 
 .lp { --gutter: clamp(1.25rem, 4vw, 3rem); }
 .lp-shell { width: min(1180px, 100% - var(--gutter) * 2); margin-inline: auto; }
 
-/* ---- hero -------------------------------------------------------------- */
-.lp-hero { padding: clamp(3rem, 8vw, 6.5rem) 0 clamp(2.5rem, 6vw, 4.5rem); border-bottom: 1px solid var(--line); }
-.lp-hero-grid { display: grid; gap: clamp(2rem, 5vw, 4rem); align-items: start; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .lp-hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+/* A grid item's default min-width is auto, so a long word refuses to shrink
+   below its own width and pushes the item wider than its track — which is how
+   a 350px column ends up 404px wide and the whole page scrolls sideways. */
+.lp-shell > *,
+.lp-split > * { min-width: 0; }
+.lp-h1, .lp-h2, .lp-lede, .lp-sub { overflow-wrap: break-word; }
 
-.lp-eyebrow { display: inline-flex; align-items: center; gap: .55rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.1rem; }
-.lp-live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); animation: lp-breathe 2.6s ease-in-out infinite; }
-@keyframes lp-breathe { 0%, 100% { opacity: .5; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
+/* ---- the ghost mark -----------------------------------------------------
+   The mark painted in currentColor through a mask, so one file follows both
+   themes. Masked, not <img>: an SVG in an <img> is its own document and can
+   never inherit the page's colour, so it would paint one theme wrong. The
+   hero watermark is the only decorative use of the mark on the site. */
+.lp-mark,
+.lp-mark-badge {
+  background: currentColor;
+  -webkit-mask: url("/assets/images/deep-navy-mark-ghost.svg") center / contain no-repeat;
+  mask: url("/assets/images/deep-navy-mark-ghost.svg") center / contain no-repeat;
+}
+.lp-mark {
+  position: absolute;
+  top: 34px;
+  right: -80px;
+  width: min(540px, 58vw);
+  aspect-ratio: 1;
+  opacity: .05;
+  pointer-events: none;
+}
+:root[data-theme="dark"] .lp-mark { opacity: .06; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lp-mark { opacity: .06; }
+}
+.lp-mark-badge { display: inline-block; width: 64px; height: 64px; }
 
-.lp-h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.4rem, 5.4vw, 3.9rem); line-height: 1.06; letter-spacing: -.028em; margin: 0 0 1.1rem; max-width: 16ch; text-wrap: balance; }
-.lp-h1 em { font-style: normal; color: var(--accent-text); }
-.lp-lede { font-size: var(--t-md); line-height: 1.6; color: var(--text-muted); max-width: 52ch; margin: 0 0 1.9rem; }
+/* ---- hero ---------------------------------------------------------------- */
+.lp-hero { position: relative; padding: clamp(3.4rem, 8vw, 6.5rem) 0 clamp(1.6rem, 4vw, 2.6rem); overflow: hidden; }
+.lp-hero-sub { padding-bottom: clamp(1.2rem, 3vw, 2rem); }
+
+.lp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  margin: 0 0 1.4rem;
+  padding: .42rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.lp-live { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--accent-graphic); }
+/* The dot earns lumen only when it claims something is live — colour is the
+   second cue; the words beside it are the first. */
+.lp-live[data-status="live"] {
+  background: var(--status-live-dot);
+  box-shadow: 0 0 0 3px var(--status-live-bg);
+  animation: dn-breathe var(--dur-ambient) var(--ease-in-out) infinite;
+}
+
+.lp-h1 {
+  margin: 0 0 1.2rem;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(2.55rem, 6vw, 4.7rem);
+  line-height: 1.03;
+  letter-spacing: -.028em;
+  max-width: 17ch;
+  text-wrap: balance;
+}
+.lp-h1 em { font-style: normal; color: var(--muted); }
+.lp-h1-sub { font-size: clamp(2rem, 4.4vw, 3.1rem); max-width: 24ch; }
+.lp-lede { margin: 0 0 1.9rem; font-size: var(--t-md); line-height: 1.6; color: var(--text-muted); max-width: 58ch; text-wrap: pretty; }
 
 .lp-cta { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
-.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 46px; padding: 0 1.3rem; border: 1px solid transparent; border-radius: 2px; font-family: var(--font-sans); font-size: var(--t-sm); font-weight: 600; text-decoration: none; cursor: pointer; }
-.lp-btn-go { background: var(--accent-graphic); color: var(--abyss-0); }
-.lp-btn-go:hover { background: var(--accent-strong); color: var(--abyss-0); }
-.lp-btn-quiet { border-color: var(--line-mid); color: var(--ink); }
-.lp-btn-quiet:hover { border-color: var(--accent-graphic); color: var(--accent-text); }
-.lp-note { margin: .85rem 0 0; font-size: var(--t-xs); color: var(--muted); }
-
-/* ---- the artifact: a pull request, rendered as the object it is --------- */
-.pr { border: 1px solid var(--line); background: var(--panel-1); }
-.pr-top { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .08em; color: var(--muted); }
-.pr-merged { margin-left: auto; color: var(--accent-text); }
-.pr-body { padding: 1rem .9rem; }
-.pr-title { font-family: var(--font-display); font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .2rem; }
-.pr-by { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); margin: 0 0 .9rem; }
-.pr-diff { font-family: var(--font-mono); font-size: var(--t-xs); line-height: 1.75; border: 1px solid var(--line); background: var(--abyss-0); padding: .6rem .7rem; overflow-x: auto; }
-/* The diff sits on the always-black code surface, so its lines take the
-   status families directly (readable in both themes) rather than the themed
-   text tokens, which darken with the light theme: added work is kelp,
-   removed work is coral, context is the code surface's own quiet grey. */
-.pr-diff .add { color: rgb(var(--kelp-rgb)); }
-.pr-diff .del { color: rgb(var(--coral-rgb)); }
-.pr-diff .ctx { color: var(--code-muted); }
-.pr-reviews { display: grid; gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
-.pr-review { display: flex; gap: .55rem; align-items: baseline; font-size: var(--t-xs); }
-.pr-review b { font-weight: 600; }
-.pr-ok { color: var(--accent-text); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; }
-.pr-wait { color: var(--signal-warn); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; }
-
-/* ---- sections ---------------------------------------------------------- */
-.lp-section { padding: clamp(2.75rem, 6vw, 4.5rem) 0; border-bottom: 1px solid var(--line); }
-.lp-label { font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.4rem; }
-.lp-h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.028em; margin: 0 0 .6rem; max-width: 22ch; }
-.lp-sub { color: var(--text-muted); max-width: 58ch; margin: 0 0 2rem; }
-
-/* ---- price ------------------------------------------------------------- */
-.lp-price { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: start; }
-@media (min-width: 900px) { .lp-price { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.lp-amount { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: clamp(2.2rem, 5vw, 3rem); letter-spacing: -.03em; line-height: 1; }
-.lp-amount small { font-family: var(--font-sans); font-size: var(--t-sm); color: var(--muted); letter-spacing: 0; }
-.lp-includes { margin: 1.2rem 0 0; padding: 0; list-style: none; display: grid; gap: .45rem; }
-.lp-includes li { display: flex; gap: .6rem; font-size: var(--t-sm); color: var(--text-muted); }
-.lp-includes li::before { content: "—"; color: var(--muted); }
-
-/* ---- close ------------------------------------------------------------- */
-.lp-close { padding: clamp(3rem, 7vw, 5rem) 0; text-align: center; }
-.lp-close .lp-h2 { margin-inline: auto; max-width: 20ch; }
-.lp-close .lp-cta { justify-content: center; }
-
-@media (prefers-reduced-motion: reduce) { .lp-live { animation: none; } }
-
-/* ---- icons -------------------------------------------------------------
-   Phosphor (MIT), self-hosted as a sprite in the document. An icon that
-   arrives over the network can arrive late; a <use> against a sprite that is
-   already in the page cannot. Only the sixteen icons this product uses ship. */
-.i { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.135em; }
-.i-lg { width: 1.15em; height: 1.15em; }
-
-/* ---- motion ------------------------------------------------------------
-   Restrained on purpose. The reference points here are engineering tools, so
-   motion confirms an action or reveals structure; nothing drifts, bounces or
-   loops for decoration. One easing, three durations. */
-:root { --ease: cubic-bezier(.2,.7,.3,1); --quick: 140ms; --settle: 260ms; --arrive: 420ms; }
-
-/* Buttons: press is acknowledged, and the arrow leads. */
-.lp-btn { transition: transform var(--quick) var(--ease); }
-.lp-btn:active { transform: translateY(1px); }
-.lp-btn .i { transition: transform var(--quick) var(--ease); }
-.lp-btn:hover .i-arrow { transform: translateX(3px); }
-
-/* The pull request is the product; hovering it lifts the border, not the box,
-   because a shadow would reintroduce the card look the palette just shed.
-   The border change lands instantly: colour never transitions here. */
-.pr:hover { border-color: var(--accent-a35); }
-/* Each approval lands after the one above it - the review sequence the
-   product actually enforces, shown rather than described. */
-@keyframes lp-approve { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
-.pr-review { animation: lp-approve var(--settle) var(--ease) both; }
-.pr-review:nth-child(1) { animation-delay: 500ms; }
-.pr-review:nth-child(2) { animation-delay: 760ms; }
-.pr-review:nth-child(3) { animation-delay: 1020ms; }
-.pr-ok .i { color: var(--accent-text); }
-
-@media (prefers-reduced-motion: reduce) {
-  .pr-review { animation: none; }
-  .lp-btn:active { transform: none; }
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 46px;
+  padding: 0 1.35rem;
+  border: 1px solid transparent;
+  font-size: var(--t-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-micro) var(--ease-standard);
 }
+.lp-btn:active { transform: scale(var(--press-scale)); }
+.lp-btn .i { transition: transform var(--dur-base) var(--ease-out); }
+.lp-btn-github { position: relative; overflow: hidden; border-color: var(--accent); background: var(--accent); color: var(--surface); }
+/* The primary action's hover is one hairline of light sweeping across it,
+   drawn in the label's own colour — achromatic and theme-correct. */
+.lp-btn-github::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  opacity: .55;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.lp-btn-quiet { border-color: var(--border-strong); color: var(--ink); }
+.lp-note { margin: 1rem 0 0; font-size: var(--t-xs); line-height: 1.65; color: var(--muted); max-width: 62ch; }
 
-/* The instruments sit two-up on a wide screen and stack on a narrow one. The
-   figures scroll inside themselves rather than widening the page, because a
-   monospace diagram cannot reflow and must not be allowed to. */
-.lp-instruments {
+/* ---- the crew strip -------------------------------------------------------
+   Role tint identifies, it never decorates a container: a full-width rule
+   under the top edge, the monogram plate, and the uppercase name — nothing
+   else on the cell carries the hue. The tint itself is set as a custom
+   property under the roster's own [data-role-key=…] scope. */
+.lp-crew-band { padding: .4rem 0 0; }
+.lp-crew {
   display: grid;
-  gap: 1px;
-  margin-top: 2.6rem;
-  background: var(--line);
-  border: 1px solid var(--line);
-}
-@media (min-width: 900px) {
-  .lp-instruments { grid-template-columns: 1fr 1fr; }
-}
-.lp-instruments .instrument { border: 0; }
-
-/* ---- The ledger sections -------------------------------------------------
-   Each one is a label, a drawing, what it means, the facts, and the line that
-   says where you can check it yourself. The verify line is the page's
-   signature: every claim above it names the URL that settles it. */
-.lp-section .instrument-figure {
-  margin: 2.2rem 0 0;
-  padding: 1.4rem 1.5rem;
-  border: 1px solid var(--line);
-  background: var(--surface-sunken);
-}
-.lp-facts {
-  display: grid;
-  gap: .85rem;
-  max-width: 68ch;
-  margin: 2.1rem 0 0;
-  padding: 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 1.4rem 0 2.6rem;
   list-style: none;
 }
-.lp-facts li {
-  padding-top: .85rem;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.6;
+.lp-crew-cell {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  padding: .85rem .9rem 1rem;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--dn-role, var(--line));
+  background: var(--surface);
+  transition: transform var(--dur-base) var(--ease-out);
 }
-.lp-term,
-.lp-roster strong {
-  display: block;
-  margin-bottom: .2rem;
-  color: var(--ink);
+.lp-crew-cell[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { --dn-role: var(--role-pm); }
+.lp-crew-cell[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { --dn-role: var(--role-em); }
+.lp-crew-cell[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { --dn-role: var(--role-design); }
+.lp-crew-cell[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.lp-crew-cell[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.lp-crew-cell[data-role-key="AGENT_ROLE_STAFF_PLATFORM"] { --dn-role: var(--role-eng); }
+.lp-crew-monogram { width: 34px; height: 34px; border-radius: var(--radius); font-size: .66rem; }
+.lp-crew-role {
+  margin-top: .15rem;
   font-family: var(--font-mono);
-  font-size: .78rem;
+  font-size: var(--t-2xs);
   font-weight: 600;
-  letter-spacing: .02em;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--dn-role, var(--ink));
 }
-.lp-facts code {
+.lp-crew-does { color: var(--muted); font-size: .78rem; line-height: 1.5; }
+
+/* ---- sections -------------------------------------------------------------- */
+.lp-section { padding: clamp(2.75rem, 6vw, 4.5rem) 0; border-top: 1px solid var(--line); }
+.lp-label {
+  margin: 0 0 1.4rem;
   font-family: var(--font-mono);
-  font-size: .92em;
-  font-variant-numeric: tabular-nums;
-  color: var(--aqua);
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
+.lp-h2 {
+  margin: 0 0 .6rem;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(1.65rem, 3.1vw, 2.3rem);
+  line-height: 1.12;
+  letter-spacing: -.028em;
+  max-width: 24ch;
+}
+.lp-sub { margin: 0; color: var(--text-muted); line-height: 1.62; max-width: 62ch; text-wrap: pretty; }
+
+/* The verify line is the page's signature: every claim above it names the
+   place that settles it. */
 .lp-verify {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: .7rem;
-  margin: 1.9rem 0 0;
+  margin: 2rem 0 0;
   padding-top: 1rem;
   border-top: 1px solid var(--accent-graphic);
 }
@@ -191,102 +213,292 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-.lp-verify code {
+.lp-verify code { font-family: var(--font-mono); font-size: .82rem; color: var(--aqua); overflow-wrap: anywhere; }
+
+/* ---- the ink bands ---------------------------------------------------------
+   The section carries data-theme="dark" in the markup, which re-resolves
+   every token inside it (tokens.css scopes the theme blocks to any
+   [data-theme=…] element, and restarts colour inheritance there). Never
+   patch colours class by class inside a band — the scope is the mechanism. */
+.lp-band-ink { padding: clamp(3.2rem, 7vw, 5.4rem) 0; background: var(--surface-sunken); }
+
+/* ---- the four steps -------------------------------------------------------- */
+.lp-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.6rem;
+  margin: 2.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-step-n {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: .82rem;
-  color: var(--aqua);
-  overflow-wrap: anywhere;
+  font-size: var(--t-xs);
+  font-weight: 500;
+  color: var(--ink);
+}
+.lp-step-title { margin: .85rem 0 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.016em; }
+.lp-step-body { margin: .45rem 0 0; color: var(--muted); font-size: .88rem; line-height: 1.6; text-wrap: pretty; }
+
+/* ---- splits ----------------------------------------------------------------- */
+.lp-split { display: grid; grid-template-columns: 1fr; gap: clamp(2.2rem, 5vw, 4.5rem); align-items: center; }
+/* The activity split's panel is taller than its copy; centering would float
+   the words into the panel's middle and read as lorem placement. */
+.lp-split-panel { align-items: start; }
+
+/* ---- objective records ------------------------------------------------------
+   The app's own treatments, verbatim: the check plate (.obj-check in
+   main.css) proves in kelp, breathes in lumen, shakes in coral — and the
+   state word beside the title says it for anyone the colour misses. */
+.lp-objectives { display: grid; gap: .7rem; margin: 0; padding: 0; list-style: none; }
+.lp-objective {
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+  padding: 1rem 1.1rem 1.05rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.lp-objective .obj-check { margin-top: .1rem; }
+.lp-objective[data-state="proven"] { border-color: var(--status-success-border); background: var(--status-success-bg); }
+.lp-objective[data-state="regressed"] { border-color: var(--status-danger-border); }
+.lp-objective-title { margin: 0; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; font-size: .92rem; font-weight: 600; letter-spacing: -.008em; }
+.lp-objective-word { font-family: var(--font-mono); font-size: .62rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.lp-objective[data-state="proven"] .lp-objective-word { color: var(--status-success-fg); }
+.lp-objective[data-state="running"] .lp-objective-word { color: var(--status-live-fg); }
+.lp-objective[data-state="regressed"] .lp-objective-word { color: var(--status-danger-fg); }
+.lp-objective-measure { margin: .4rem 0 0; font-family: var(--font-mono); font-size: .72rem; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.lp-objective-measure b { color: var(--ink); font-weight: 600; }
+.lp-objective-measure code { font-family: inherit; color: var(--aqua); }
+
+/* ---- facts (the merge-gate quorum) ------------------------------------------ */
+.lp-facts { display: grid; gap: .85rem; max-width: 68ch; margin: 2rem 0 0; padding: 0; list-style: none; }
+.lp-facts li { padding-top: .85rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .95rem; line-height: 1.6; }
+.lp-term {
+  display: block;
+  margin-bottom: .2rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .02em;
 }
 
-/* A grid item's default min-width is auto, so a long word refuses to shrink
-   below its own width and pushes the item wider than its track — which is how
-   a 350px column ends up 404px wide and the whole page scrolls sideways. */
-.lp-hero-grid > *,
-.lp-shell > * { min-width: 0; }
-.lp-h1, .lp-h2, .lp-lede, .lp-sub { overflow-wrap: break-word; }
-
-/* The drawing is the one thing on the page that cannot reflow: its lines are
-   a grid. So the PRE scrolls inside its own frame rather than widening the
-   page, and the frame never exceeds the column. */
-.instrument-figure { max-width: 100%; }
-.instrument-figure > pre {
+/* ---- the artifact: a pull request, rendered as the object it is -------------
+   The product makes pull requests, so the merge gate's illustration is one. */
+.pr { margin: 0; max-width: 100%; border: 1px solid var(--line); background: var(--panel-1); }
+.pr-top {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .7rem .9rem;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.pr-merged { margin-left: auto; color: var(--accent-text); }
+.pr-body { padding: 1rem .9rem; }
+.pr-title { font-family: var(--font-display); font-weight: 640; font-size: var(--t-md); letter-spacing: -.015em; margin: 0 0 .2rem; }
+.pr-by { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); margin: 0 0 .9rem; }
+/* The diff sits on the always-black code surface, so its lines take the
+   status families directly (readable in both themes) rather than the themed
+   text tokens: added work is kelp, removed work is coral, context is the
+   code surface's own quiet grey. */
+.pr-diff {
   margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: 1.75;
+  border: 1px solid var(--line);
+  background: var(--abyss-0);
+  padding: .6rem .7rem;
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
+.pr-diff .add { color: rgb(var(--kelp-rgb)); }
+.pr-diff .del { color: rgb(var(--coral-rgb)); }
+.pr-diff .ctx { color: var(--code-muted); }
+.pr-reviews { display: grid; gap: .5rem; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.pr-review { display: flex; gap: .55rem; align-items: baseline; flex-wrap: wrap; margin: 0; font-size: var(--t-xs); }
+.pr-review b { font-weight: 600; }
+.pr-ok { color: var(--accent-text); font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; }
+.pr-ok .i { color: var(--accent-text); }
 
-/* ---- The console, depicted --------------------------------------------
-   The product's own surface, drawn the way the pull request above it is
-   drawn: machine output on the navy ground, every fact in the machine's
-   face, and the one moment that matters — a reply arriving — shown mid
-   sentence rather than described. */
-.console-shot {
-  margin: 2.2rem 0 0;
+/* Each approval lands after the one above it — the review sequence the
+   product actually enforces, shown rather than described. Gated on the
+   scroll reveal so the choreography plays when the card is seen, and fails
+   open to plain visible rows when no observer runs. */
+@keyframes lp-approve { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+.dn-motion-ready .pr.dn-reveal .pr-review { animation: lp-approve var(--dur-slow) var(--ease-out) both; animation-play-state: paused; }
+.dn-motion-ready .pr.dn-reveal.is-in .pr-review { animation-play-state: running; }
+.dn-motion-ready .pr.dn-reveal.is-in .pr-review:nth-child(1) { animation-delay: 420ms; }
+.dn-motion-ready .pr.dn-reveal.is-in .pr-review:nth-child(2) { animation-delay: 680ms; }
+.dn-motion-ready .pr.dn-reveal.is-in .pr-review:nth-child(3) { animation-delay: 940ms; }
+
+/* ---- the five gates: a ledger of gates, one row each ------------------------- */
+.lp-gates { display: grid; margin: 2.4rem 0 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.lp-gate { display: grid; grid-template-columns: 1fr; gap: .35rem 1.6rem; padding: 1.05rem 0 1.15rem; border-bottom: 1px solid var(--line); }
+.lp-gate-title { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -.016em; }
+.lp-gate-body { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.6; text-wrap: pretty; }
+.lp-gate-evidence { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--aqua); overflow-wrap: anywhere; }
+
+/* ---- the activity panel -------------------------------------------------------
+   The product's spine, drawn with the ledger's own classes: role-tinted
+   actors and rails from main.css, status-worded meta, timestamps that line
+   up. Nothing here is styled twice — the app's rules do the talking. */
+.lp-panel {
+  margin: 0;
+  max-width: 100%;
   border: 1px solid var(--line);
-  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
 }
-.console-shot-bar {
+.lp-panel-head {
   display: flex;
   align-items: center;
   gap: .55rem;
-  padding: .7rem .95rem;
+  padding: .7rem 1.1rem;
   border-bottom: 1px solid var(--line);
+  background: var(--surface-sunken);
   font-family: var(--font-mono);
-  font-size: .72rem;
+  font-size: var(--t-2xs);
   color: var(--ink);
 }
-.console-shot-dot {
-  width: 7px;
-  height: 7px;
-  background: var(--accent-graphic);
+.lp-panel-meta { margin-left: auto; color: var(--muted); }
+.lp-panel-body { padding: .4rem 1.1rem .75rem; }
+.lp-panel .customer-activity-item { padding: .68rem 0; }
+.lp-panel .customer-activity-item p { font-size: .8rem; }
+.lp-panel .customer-activity-details {
+  margin: .3rem 0 .1rem;
+  padding: .1rem 0 .1rem .6rem;
+  border-left: 2px solid var(--line);
 }
-.console-shot-meta { margin-left: auto; color: var(--muted); }
-.console-shot-body { display: grid; }
-@media (min-width: 900px) {
-  .console-shot-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
-  .console-stream { border-right: 1px solid var(--line); }
-}
-.console-stream {
-  display: grid;
-  gap: .5rem;
-  margin: 0;
-  padding: 1rem .95rem;
-  list-style: none;
-  font-family: var(--font-mono);
-  font-size: .72rem;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.console-stream li { display: flex; flex-wrap: wrap; gap: .5rem; }
-.console-stream span { color: var(--muted); font-variant-numeric: tabular-nums; }
-.console-stream b { color: var(--aqua); font-weight: 600; }
-.console-talk { display: grid; gap: .8rem; padding: 1rem .95rem; align-content: start; }
-.console-msg { margin: 0; font-size: .88rem; line-height: 1.55; color: var(--ink); }
-.console-msg span {
+.lp-panel code { font-family: var(--font-mono); font-size: .9em; color: var(--aqua); }
+.lp-panel time { font-variant-numeric: tabular-nums; }
+
+/* ---- proof cells ----------------------------------------------------------- */
+.lp-proof { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2.8rem 0 0; padding: 0; list-style: none; }
+.lp-proof-cell { padding: 1.2rem 1.2rem 1.3rem; border: 1px solid var(--line); background: var(--surface); }
+.lp-proof-num {
   display: block;
-  margin-bottom: .25rem;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.lp-proof-label { display: block; margin-top: .5rem; color: var(--muted); font-size: .82rem; line-height: 1.55; }
+
+/* ---- the closing band -------------------------------------------------------- */
+.lp-close { padding: clamp(3.2rem, 7vw, 5rem) 0; border-top: 1px solid var(--line); text-align: center; }
+.lp-close .lp-h2 { margin-inline: auto; max-width: 20ch; }
+.lp-close .lp-sub { margin: .6rem auto 1.7rem; }
+.lp-close .lp-cta { justify-content: center; }
+.lp-close .lp-mark-badge { margin-bottom: 1.2rem; }
+
+/* ---- pricing: the plans -------------------------------------------------------
+   Per team, not per token. Three cards, three real prices — the same
+   numbers Stripe bills, restated nowhere else. */
+.lp-plans { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2.4rem 0 0; padding: 0; list-style: none; align-items: start; }
+.lp-plan {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+  padding: 1.5rem 1.4rem 1.6rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.lp-plan-featured { border-color: var(--accent); box-shadow: var(--shadow-panel); }
+.lp-plan-name {
   font-family: var(--font-mono);
-  font-size: .66rem;
-  letter-spacing: .12em;
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.console-msg.is-you { padding: .6rem .75rem; border: 1px solid var(--line); }
-.console-caret {
-  display: inline-block;
-  width: .5em;
-  height: 1em;
-  margin-left: .12em;
-  background: var(--accent-graphic);
-  vertical-align: -.14em;
-  animation: console-caret 1.1s steps(1, end) infinite;
+.lp-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
 }
-@keyframes console-caret { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
-.console-writing {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: .66rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--aqua);
+.lp-plan-per { font-family: var(--font-mono); font-size: var(--t-2xs); font-weight: 400; letter-spacing: .02em; color: var(--muted); }
+.lp-plan-body { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.55; }
+.lp-plan-list { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; font-size: .82rem; line-height: 1.55; color: var(--muted); }
+.lp-plan-list li { display: flex; gap: .6rem; }
+.lp-plan-list li::before { content: "—"; flex: none; color: var(--muted); }
+.lp-plans-note { margin: 1.6rem 0 0; max-width: 68ch; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+.lp-terms-note { margin-top: 1.6rem; }
+.lp-section .lp-cta { margin-top: 1.6rem; }
+
+/* ---- pricing: the FAQ ---------------------------------------------------------
+   Answers on the page, not behind disclosure clicks: a reader comparing
+   terms scans all ten at once, and find-in-page works. */
+.lp-faq { display: grid; grid-template-columns: 1fr; gap: 1.7rem 3rem; margin: 2.2rem 0 0; }
+.lp-faq-item { min-width: 0; padding-top: 1.1rem; border-top: 1px solid var(--line); }
+.lp-faq-q { margin: 0; font-family: var(--font-display); font-size: 1.02rem; font-weight: 600; letter-spacing: -.016em; }
+.lp-faq-a { margin: .5rem 0 0; color: var(--muted); font-size: .88rem; line-height: 1.62; text-wrap: pretty; }
+
+/* ---- icons ---------------------------------------------------------------
+   The site sprite is already in the document; <use> against it cannot
+   arrive late the way a network icon can. */
+.i { width: 1em; height: 1em; flex: none; display: inline-block; vertical-align: -0.135em; }
+
+/* ---- choreography indices --------------------------------------------------
+   .dn-reveal (main.css) staggers by --dn-i; grids assign the index by
+   position so no markup carries an inline style. */
+.lp-stagger-reveal > :nth-child(2) { --dn-i: 1; }
+.lp-stagger-reveal > :nth-child(3) { --dn-i: 2; }
+.lp-stagger-reveal > :nth-child(4) { --dn-i: 3; }
+.lp-stagger-reveal > :nth-child(5) { --dn-i: 4; }
+.lp-stagger-reveal > :nth-child(6) { --dn-i: 5; }
+
+/* ---- responsive: the three system stops, no others ------------------------- */
+@media (min-width: 900px) {
+  .lp-crew { grid-template-columns: repeat(3, 1fr); }
+  .lp-steps { grid-template-columns: repeat(2, 1fr); gap: 2rem 1.6rem; }
+  .lp-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .lp-gate { grid-template-columns: 200px minmax(0, 1fr) 220px; align-items: baseline; }
+  .lp-gate-evidence { text-align: right; }
+  .lp-proof { grid-template-columns: repeat(3, 1fr); }
+  .lp-plans { grid-template-columns: repeat(3, 1fr); }
+  .lp-faq { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1200px) {
+  .lp-crew { grid-template-columns: repeat(6, 1fr); }
+  .lp-steps { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 600px) {
+  .lp-crew { grid-template-columns: 1fr; }
+  .lp-mark { top: 12px; right: -90px; width: 320px; }
+  .lp-cta > .lp-btn { flex: 1 1 100%; }
+}
+
+/* ---- hover: a pointer capability, not a device ------------------------------ */
+@media (hover: hover) {
+  .lp-btn-github:hover::after { animation: dn-sweep var(--dur-slow) var(--ease-out) both; }
+  .lp-btn-quiet:hover { border-color: var(--accent-graphic); color: var(--accent-text); }
+  .lp-crew-cell:hover { transform: translateY(-3px); border-color: var(--border-strong); border-top-color: var(--dn-role, var(--line)); }
+  .lp-plan:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+  .lp-plan-featured:hover { border-color: var(--accent); }
+  .pr:hover { border-color: var(--accent-a35); }
 }

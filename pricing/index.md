@@ -2,13 +2,100 @@
 title: Pricing
 image: /assets/images/og/pricing.png
 description: Review the commercial fields deep navy confirms for an early-access pilot before Stripe checkout begins.
-updated: 2026-07-17
+body_class: pricing lp
+extra_css: /assets/css/home.css
+updated: 2026-08-22
 ---
 
-<section class="page-hero"><div class="shell"><span class="eyebrow">Commercial terms / early access</span><h1>$599 per team, per month. $199 per added engineer.</h1><p>Every team ships with a Product Manager, an Engineering Manager, a Designer, and three engineers, plus 50,000 engineering credits per paid period. Five engineers? $599 + 2 × $199 = $997/month — the app shows the exact total before you pay, and there are no setup fees or hidden charges. Work stops before an unpaid balance can accrue.</p><div class="page-meta"><span>Term sheet / v0.3</span><span>Updated July 17, 2026</span></div></div></section>
+<section class="lp-hero lp-hero-sub">
+  <div class="lp-shell dn-stagger">
+    <p class="lp-eyebrow">Commercial terms · early access</p>
+    <h1 class="lp-h1 lp-h1-sub">$599 per team, per month. <em>$199 per added engineer</em>.</h1>
+    <p class="lp-lede">Every team ships with a Product Manager, an Engineering Manager, a Designer, and three engineers, plus 50,000 engineering credits per paid period. Five engineers? $599 + 2 × $199 = $997/month — the app shows the exact total before you pay, and there are no setup fees or hidden charges. Work stops before an unpaid balance can accrue.</p>
+    <p class="lp-note">Term sheet v0.3 · Updated July 17, 2026</p>
+  </div>
+</section>
 
-<section class="content-section" aria-labelledby="terms-title"><div class="shell content-grid"><header><span class="eyebrow">Terms sheet / 01</span><h2 id="terms-title">Founding Team.</h2><p>Paid capacity, prepaid usage, and one accountable team ledger.</p></header><div class="prose"><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Commercial field</th><th>Launch term</th><th>Where confirmed</th></tr></thead><tbody><tr><td>Team subscription</td><td>$599 USD per team each month — includes the Product Manager, Engineering Manager, Designer, and three engineers</td><td>Signed-in plan, subscription quantity, and Stripe invoice</td></tr><tr><td>Additional engineers</td><td>$199 USD per engineer each month, from the fourth engineer up to fifty; three is the floor so every shipped change gets two peer reviews</td><td>Per-engineer subscription item and Stripe invoice</td></tr><tr><td>Changing engineer count</td><td>Increasing charges the prorated remainder of the period now; decreasing credits the unused portion to your next invoice</td><td>Team settings and the following Stripe invoice</td></tr><tr><td>Included credits</td><td>50,000 engineering credits per team per paid billing period</td><td>Webhook-confirmed team credit ledger</td></tr><tr><td>Credit value</td><td>1 credit = $0.01 of billable model, compute, storage, and service usage</td><td>Plan and measured usage ledger</td></tr><tr><td>Prepaid top-up</td><td>$100 USD for 10,000 additional team credits</td><td>Server-owned catalog and Stripe payment</td></tr><tr><td>Additional usage</td><td>No postpaid overage; a positive reserved balance is required before work starts</td><td>Team budget and usage reservation</td></tr><tr><td>Renewal and cancellation</td><td>Monthly; cancellation takes effect at period end</td><td>Stripe subscription and Billing Portal</td></tr></tbody></table></div><p>Stripe renders the encrypted payment fields inside deep navy’s own checkout — card, Apple Pay, or Google Pay. Your card details never touch deep navy’s servers, the exact monthly total is on the pay button, and the card is saved once and reused for every additional team.</p><div class="button-row"><a class="button button-primary" href="{{ '/app/?signin=1' | relative_url }}">Create your team</a><a class="text-link" href="mailto:hello@deep.navy?subject=deep%20navy%20pilot%20terms">Discuss terms →</a></div></div></div></section>
+<section class="lp-section">
+  <div class="lp-shell">
+    <p class="lp-label">The plans</p>
+    <h2 class="lp-h2">Per team, not per token.</h2>
+    <p class="lp-sub">One subscription per provisioned team, engineers added as line items, usage prepaid as credits. Every number below is the number Stripe bills; the app shows the exact monthly total on the pay button before you pay.</p>
+    <ul class="lp-plans lp-stagger-reveal">
+      <li class="lp-plan lp-plan-featured dn-reveal">
+        <span class="lp-plan-name">Founding team</span>
+        <span class="lp-plan-price">$599 <span class="lp-plan-per">per team · month</span></span>
+        <p class="lp-plan-body">The six specialists, working in repositories you choose.</p>
+        <ul class="lp-plan-list">
+          <li>Product manager, engineering manager, designer, three engineers</li>
+          <li>50,000 engineering credits per team, per paid billing period</li>
+          <li>Unlimited issues and pull requests</li>
+          <li>Two peer reviews plus manager approval on every merge</li>
+          <li>Monthly; cancellation takes effect at period end</li>
+        </ul>
+      </li>
+      <li class="lp-plan dn-reveal">
+        <span class="lp-plan-name">Additional engineer</span>
+        <span class="lp-plan-price">$199 <span class="lp-plan-per">per engineer · month</span></span>
+        <p class="lp-plan-body">Scale a team from three engineers up to fifty, in Settings.</p>
+        <ul class="lp-plan-list">
+          <li>From the fourth engineer up to the fiftieth</li>
+          <li>Adding charges the prorated remainder of the period now</li>
+          <li>Removing credits the unused portion to your next invoice</li>
+          <li>Three is the floor, so every shipped change gets two peer reviews</li>
+        </ul>
+      </li>
+      <li class="lp-plan dn-reveal">
+        <span class="lp-plan-name">Credit top-up</span>
+        <span class="lp-plan-price">$100 <span class="lp-plan-per">per 10,000 credits</span></span>
+        <p class="lp-plan-body">Prepaid usage for the selected team. No postpaid overage, ever.</p>
+        <ul class="lp-plan-list">
+          <li>1 credit = $0.01 of billable model, compute, storage, and service usage</li>
+          <li>Credits post only after a signed paid webhook — checkout completion in the browser is not fulfillment</li>
+          <li>A positive reserved balance is required before work starts; otherwise the team stops and asks</li>
+        </ul>
+      </li>
+    </ul>
+    <p class="lp-plans-note">Additional repositories are customer controlled: an organization owner updates GitHub App access, then you update the deep navy selection. Every provisioned team consumes one paid subscription slot — the API blocks creation when no paid slot remains.</p>
+  </div>
+</section>
 
-<section class="content-section" aria-labelledby="capacity-title"><div class="shell content-grid"><header><span class="eyebrow">Capacity changes / 02</span><h2 id="capacity-title">Payment precedes capacity.</h2></header><div class="status-list"><div class="status-row"><div><strong>Additional team</strong><p>Every provisioned team consumes one paid subscription slot. The API blocks creation when no paid slot remains.</p></div><span class="status-label planned">$599 / month</span></div><div class="status-row"><div><strong>Additional engineer</strong><p>Scale a team from three up to fifty engineers in Settings. The subscription updates automatically with proration.</p></div><span class="status-label planned">$199 / month</span></div><div class="status-row"><div><strong>Additional repositories</strong><p>An organization owner updates GitHub App access, then the customer updates the deep navy selection.</p></div><span class="status-label">Customer controlled</span></div><div class="status-row"><div><strong>Additional credits</strong><p>Buy prepaid packs for the selected team. Credits post only after a signed paid webhook; checkout completion in the browser is not fulfillment.</p></div><span class="status-label planned">$100 / 10,000</span></div></div></div></section>
+<section class="lp-section" aria-labelledby="terms-title">
+  <div class="lp-shell">
+    <p class="lp-label">The terms sheet</p>
+    <h2 class="lp-h2" id="terms-title">Every commercial field, and where it is confirmed.</h2>
+    <p class="lp-sub">Paid capacity, prepaid usage, and one accountable team ledger. Each field names the place you can read it back — a term that cannot be checked does not belong on this page.</p>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Commercial field</th><th>Launch term</th><th>Where confirmed</th></tr></thead><tbody><tr><td>Team subscription</td><td>$599 USD per team each month — includes the Product Manager, Engineering Manager, Designer, and three engineers</td><td>Signed-in plan, subscription quantity, and Stripe invoice</td></tr><tr><td>Additional engineers</td><td>$199 USD per engineer each month, from the fourth engineer up to fifty; three is the floor so every shipped change gets two peer reviews</td><td>Per-engineer subscription item and Stripe invoice</td></tr><tr><td>Changing engineer count</td><td>Increasing charges the prorated remainder of the period now; decreasing credits the unused portion to your next invoice</td><td>Team settings and the following Stripe invoice</td></tr><tr><td>Included credits</td><td>50,000 engineering credits per team per paid billing period</td><td>Webhook-confirmed team credit ledger</td></tr><tr><td>Credit value</td><td>1 credit = $0.01 of billable model, compute, storage, and service usage</td><td>Plan and measured usage ledger</td></tr><tr><td>Prepaid top-up</td><td>$100 USD for 10,000 additional team credits</td><td>Server-owned catalog and Stripe payment</td></tr><tr><td>Additional usage</td><td>No postpaid overage; a positive reserved balance is required before work starts</td><td>Team budget and usage reservation</td></tr><tr><td>Renewal and cancellation</td><td>Monthly; cancellation takes effect at period end</td><td>Stripe subscription and Billing Portal</td></tr></tbody></table></div>
+    <p class="lp-sub lp-terms-note">Stripe renders the encrypted payment fields inside deep navy’s own checkout — card, Apple Pay, or Google Pay. Your card details never touch deep navy’s servers, the exact monthly total is on the pay button, and the card is saved once and reused for every additional team.</p>
+    <div class="lp-cta"><a class="lp-btn lp-btn-github" href="{{ '/app/?signin=1' | relative_url }}">Create your team</a><a class="lp-btn lp-btn-quiet" href="mailto:hello@deep.navy?subject=deep%20navy%20pilot%20terms">Discuss terms</a></div>
+  </div>
+</section>
 
-<section class="content-section" aria-labelledby="pricing-questions"><div class="shell content-grid"><header><span class="eyebrow">Reference / 03</span><h2 id="pricing-questions">Billing questions.</h2></header><div class="faq"><details><summary>How does changing the engineer count bill?</summary><p>Adding an engineer charges the saved card for the prorated remainder of the current period immediately; removing one credits the unused portion to your next invoice. Three engineers is the floor — it keeps two peer reviewers on every shipped change.</p></details><details><summary>What is an engineering credit?</summary><p>One credit represents $0.01 of billable model, compute, storage, and service usage. deep navy separately reconciles provider cost so team and admin economics remain auditable.</p></details><details><summary>Can usage exceed the available balance?</summary><p>No postpaid overage is enabled. The runtime must reserve a positive team balance before billable work begins; otherwise it stops and asks for a prepaid top-up.</p></details><details><summary>Is the $599 price per organization or per team?</summary><p>Per provisioned engineering team. Every non-deleted team requires a paid subscription slot and receives its own period allowance and attributable usage ledger.</p></details><details><summary>Where does payment happen?</summary><p>Stripe renders encrypted payment fields inside the deep navy checkout dialog. The server owns prices, verifies signed webhooks, and is the only system allowed to activate capacity or post credits.</p></details></div></div></section>
+<section class="lp-section" aria-labelledby="pricing-questions">
+  <div class="lp-shell">
+    <p class="lp-label">Billing questions</p>
+    <h2 class="lp-h2" id="pricing-questions">The questions technical buyers actually ask.</h2>
+    <dl class="lp-faq">
+      <div class="lp-faq-item dn-reveal">
+        <dt class="lp-faq-q">How does changing the engineer count bill?</dt>
+        <dd class="lp-faq-a">Adding an engineer charges the saved card for the prorated remainder of the current period immediately; removing one credits the unused portion to your next invoice. Three engineers is the floor — it keeps two peer reviewers on every shipped change.</dd>
+      </div>
+      <div class="lp-faq-item dn-reveal">
+        <dt class="lp-faq-q">What is an engineering credit?</dt>
+        <dd class="lp-faq-a">One credit represents $0.01 of billable model, compute, storage, and service usage. deep navy separately reconciles provider cost so team and admin economics remain auditable.</dd>
+      </div>
+      <div class="lp-faq-item dn-reveal">
+        <dt class="lp-faq-q">Can usage exceed the available balance?</dt>
+        <dd class="lp-faq-a">No postpaid overage is enabled. The runtime must reserve a positive team balance before billable work begins; otherwise it stops and asks for a prepaid top-up.</dd>
+      </div>
+      <div class="lp-faq-item dn-reveal">
+        <dt class="lp-faq-q">Is the $599 price per organization or per team?</dt>
+        <dd class="lp-faq-a">Per provisioned engineering team. Every non-deleted team requires a paid subscription slot and receives its own period allowance and attributable usage ledger.</dd>
+      </div>
+      <div class="lp-faq-item dn-reveal">
+        <dt class="lp-faq-q">Where does payment happen?</dt>
+        <dd class="lp-faq-a">Stripe renders encrypted payment fields inside the deep navy checkout dialog. The server owns prices, verifies signed webhooks, and is the only system allowed to activate capacity or post credits.</dd>
+      </div>
+    </dl>
+  </div>
+</section>

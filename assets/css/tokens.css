@@ -346,8 +346,15 @@
   }
 }
 
-/* ---- Explicit user choice. Must override the media query both ways. ----- */
-:root[data-theme="dark"] {
+/* ---- Explicit user choice. Must override the media query both ways. -----
+   The bare [data-theme=…] leg makes the scope section-grade as well as
+   page-grade: a marketing ink band carries data-theme="dark" in its own
+   markup and every token inside it re-resolves at that boundary (custom
+   properties resolve against the NEAREST ancestor definition, so the
+   section's block beats whatever the page chose). This is how one band
+   stays ink in both themes without a single per-class colour patch. */
+:root[data-theme="dark"],
+[data-theme="dark"] {
   --surface:         var(--ink-1000);
   --surface-sunken:  var(--ink-900);
   --surface-raised:  var(--ink-850);
@@ -429,7 +436,8 @@
   color-scheme: dark;
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme="light"] {
   --surface:         var(--ink-0);
   --surface-sunken:  var(--ink-50);
   --surface-raised:  var(--ink-0);
@@ -520,8 +528,15 @@
 /* ---- Accent tints ------------------------------------------------------
    main.css derives its hover washes, focus glows and selected fills from
    these. --accent-rgb is now the ink text triplet, so every wash is an
-   achromatic overlay — the same grey system in both themes. */
-:root {
+   achromatic overlay — the same grey system in both themes.
+
+   Scoped to [data-theme] as well as :root: a custom property substitutes
+   its var() chain at the element that DEFINES it, so a recipe defined only
+   at :root bakes the outer theme's values and inherits them straight
+   through a section-level theme scope. Restating the definitions at the
+   scope makes them recompute against the scope's own tier 2. */
+:root,
+[data-theme] {
   --accent-a03:  rgb(var(--accent-rgb) / .03);
   --accent-a05:  rgb(var(--accent-rgb) / .05);
   --accent-a07:  rgb(var(--accent-rgb) / .07);
@@ -561,8 +576,13 @@
    main.css was written against these names. Pointing them at tier 2 made
    the entire existing stylesheet theme-aware without editing its rules.
    New code should use the semantic names directly; these stay so the
-   marketing pages and app shell keep rendering. */
-:root {
+   marketing pages and app shell keep rendering.
+
+   Scoped to [data-theme] as well as :root for the same reason as the tints
+   above: without the restatement, an ink band's "muted" text would keep
+   the outer theme's grey — dark-on-dark. */
+:root,
+[data-theme] {
   --navy-950:     var(--surface);
   --navy-900:     var(--surface-sunken);
   --navy-850:     var(--surface-raised);
@@ -594,3 +614,10 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A theme scope is self-sufficient: it re-resolves the tokens above AND
+   restarts colour inheritance at its own boundary, so descendants that
+   declare no colour of their own pick up the inner theme instead of an
+   already-computed value from the outer one. Without this, a light page's
+   near-black body colour would inherit straight through an ink band. */
+[data-theme] { color: var(--text); }

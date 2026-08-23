@@ -159,8 +159,8 @@ test("the styling layers introduce no colour outside the token file", () => {
   const instrumentLayer = main.slice(main.indexOf("INSTRUMENT LAYER"));
   assert.ok(main.includes("INSTRUMENT LAYER"), "the instrument layer marker is gone");
   assert.doesNotMatch(instrumentLayer, /#[0-9a-fA-F]{3,8}\b/, "the instrument layer must use tokens only");
-  const homeAddition = home.slice(home.indexOf(".lp-instruments"));
-  assert.doesNotMatch(homeAddition, /#[0-9a-fA-F]{3,8}\b/);
+  assert.doesNotMatch(stripComments(home), /#[0-9a-fA-F]{3,8}\b/,
+    "the marketing stylesheet must use tokens only — every colour is a meaning, and meanings live in tokens.css");
   assert.doesNotMatch(stripComments(typeCss), /#[0-9a-fA-F]{3,8}\b/, "type.css must not define colour");
 });
 
@@ -277,30 +277,32 @@ test("chrome labels are set in the machine's face, prose is not", () => {
    These predate the achromatic thesis and stay true under it. They live on
    here so replacing the old styling test never loosened the page itself. */
 
-// The page is a ledger: each section is a label, a drawing of the mechanism,
-// what it means, the facts, and the line naming where the reader can check it
-// themselves. The verify line is the whole thesis - a claim that cannot be
-// checked does not belong on this page.
+// The page is a ledger dressed in the marketing kit: five labelled sections
+// (the kit's shapes, the shipped claims), and every one of them still ends
+// in the line naming where the reader can check it themselves. The verify
+// line is the whole thesis - a claim that cannot be checked does not belong
+// on this page.
 test("the homepage reads as a ledger, section by section", () => {
   const labels = [...index.matchAll(/<p class="lp-label">([^<]+)<\/p>/g)].map((m) => m[1]);
   assert.deepEqual(labels, [
-    "Unit of work", "The brief", "The roster", "The merge gate", "Built to converge",
-    "Your GitHub", "Metered spend", "Price", "Not on the ledger",
-  ], "the refusals are the last word before the ask, and money stays contiguous");
-  assert.equal((index.match(/class="lp-facts[^"]*"/g) || []).length, 8);
-  assert.equal((index.match(/class="lp-verify"/g) || []).length, 7);
-  assert.doesNotMatch(
-    index.slice(index.indexOf('<p class="lp-label">Not on the ledger</p>')),
-    /class="lp-verify"/,
-    "the refusals section must not claim a receipt it cannot produce");
-  const figures = index.match(/<figure class="instrument-figure"[^>]*>/g) || [];
-  assert.equal(figures.length, 7);
-  for (const figure of figures) {
-    assert.match(figure, /role="img"/);
-    assert.match(figure, /aria-label="[^"]{50,}"/, "every drawing needs a real description, not a stub");
+    "How a team works", "Objectives, not tickets", "The merge gate",
+    "Built to converge", "Nothing happens off-screen",
+  ], "the kit structure: steps band, objectives split, the gate, convergence, the ledger");
+  assert.equal((index.match(/class="lp-verify"/g) || []).length, labels.length,
+    "every labelled section keeps its receipt - one verify line each");
+  // The quorum facts survive under the merge gate, and only there: the other
+  // sections carry the kit's own shapes instead of fact lists.
+  assert.equal((index.match(/class="lp-facts[^"]*"/g) || []).length, 1);
+  const gate = index.slice(index.indexOf('<p class="lp-label">The merge gate</p>'),
+    index.indexOf('<p class="lp-label">Built to converge</p>'));
+  assert.match(gate, /class="lp-facts"/, "the quorum facts belong to the merge gate");
+  for (const term of ["Two engineers", "The manager", "No bypass"]) {
+    assert.ok(gate.includes(`<span class="lp-term">${term}</span>`), `the "${term}" fact is gone`);
   }
-  assert.equal((index.match(/<pre aria-hidden="true">/g) || []).length, 7);
-  assert.equal((index.match(/<li><strong>/g) || []).length, 4);
+  // The five gates keep their mono evidence lines.
+  assert.equal((index.match(/class="lp-gate-evidence"/g) || []).length, 5);
+  assert.match(index, /deep-navy\/review-gate/);
+  assert.match(index, /deep-navy\/objective-/);
 });
 
 // Five destinations, not the sitemap.
@@ -315,28 +317,33 @@ test("the navigation is lean and every label points at a page that exists", () =
     "the homepage writes its own closing CTA, so the shared one must be suppressed");
 });
 
-// A monospace drawing cannot reflow — its lines are a grid — so it must scroll
+// A monospace diff cannot reflow — its lines are a grid — so it must scroll
 // inside its own frame, and grid items must be allowed to shrink.
 test("nothing widens the page on a narrow screen", () => {
-  assert.match(home, /\.lp-hero-grid > \*,\s*\n\.lp-shell > \* \{ min-width: 0; \}/,
+  assert.match(home, /\.lp-shell > \*,\s*\n\.lp-split > \* \{ min-width: 0; \}/,
     "grid items must be allowed to shrink below their content");
-  assert.match(home, /\.instrument-figure > pre \{[^}]*overflow-x: auto;/,
-    "the drawing scrolls inside its frame, never the page");
-  assert.match(home, /\.instrument-figure \{ max-width: 100%; \}/);
+  assert.match(home, /\.pr-diff \{[^}]*overflow-x: auto;/,
+    "the diff scrolls inside its frame, never the page");
+  assert.match(home, /\.pr \{[^}]*max-width: 100%;/);
+  assert.match(home, /\.lp-panel \{[^}]*max-width: 100%;/);
 });
 
-// The console is shown, not just described.
-test("the console is shown, not just described", () => {
-  assert.match(index, /<figure class="console-shot"[^>]*aria-label="[^"]{60,}"/,
-    "the console depiction needs a real description for anyone who cannot see it");
-  assert.match(index, /<ol class="console-stream">/);
-  assert.equal((index.match(/<li><span>\d{2}:\d{2}:\d{2}<\/span>/g) || []).length, 5);
-  assert.match(index, /class="console-msg is-you"/);
-  assert.match(index, /class="console-msg is-pm"/);
-  assert.match(index, /class="console-writing">still writing</);
-  assert.match(home, /\.console-stream span \{[^}]*tabular-nums/, "timestamps must line up");
-  assert.match(home, /@keyframes console-caret/);
-  assert.match(index, /<span class="console-caret" aria-hidden="true">/);
+// The activity ledger is shown, not just described — with the app's own
+// classes, so the marketing depiction can never drift from the product.
+test("the activity ledger is shown, not just described", () => {
+  assert.match(index, /<figure class="lp-panel dn-reveal"[^>]*aria-label="[^"]{60,}"/,
+    "the ledger depiction needs a real description for anyone who cannot see it");
+  assert.match(index, /<ol class="customer-activity-list">/);
+  assert.equal((index.match(/<time datetime="\d{2}:\d{2}:\d{2}">\d{2}:\d{2}:\d{2}<\/time>/g) || []).length, 7,
+    "seven timestamped events, from the PM filing to the gate merging");
+  assert.equal((index.match(/class="ledger-actor" data-role-key="/g) || []).length, 6,
+    "every agent voice is scoped to the roster's own key");
+  assert.match(index, /<span data-status="merged">merged<\/span>/,
+    "the merged word carries its status scope - the engineers' azure");
+  assert.equal((index.match(/class="customer-activity-details"/g) || []).length, 1,
+    "exactly one detail rail - quoted evidence, not decoration");
+  assert.match(home, /\.lp-panel time \{ font-variant-numeric: tabular-nums; \}/,
+    "timestamps must line up");
 });
 
 // The mark is fine line art and a favicon is 16 pixels; the rasters stay.

@@ -34,11 +34,23 @@ test("canonical customer labels stay aligned with the pinned AgentRole enum", ()
 
 test("home role register presents the customer team structure", () => {
   const home = read("index.md");
-  // The register moved from a table to a list in the 2026 rebuild. What the
-  // test protects is the vocabulary, not the element: the home page must name
-  // the same roles the product does, in the same words.
-  const labels = [...home.matchAll(/<li><strong>(?:<svg[^>]*>.*?<\/svg>)?([^<]+)<\/strong>/g)].map((match) => match[1].trim());
-  assert.deepEqual(labels, ["Product Manager", "Engineering Manager", "Product Designer", "Engineers × 3–50"]);
+  // The register moved from a facts list to the marketing kit's crew strip
+  // in the 2026 rebuild. What the test protects is the vocabulary, not the
+  // element: the home page must name the same roles the product does, in
+  // the same words, under the roster's own canonical keys — so the strip
+  // can never drift from the enum the app renders.
+  const cells = [...home.matchAll(/<li class="lp-crew-cell" data-role-key="([A-Z_]+)">[\s\S]*?<span class="lp-crew-role">([^<]+)<\/span>/g)]
+    .map((match) => ({ key: match[1], label: match[2] }));
+  assert.deepEqual(cells, [
+    { key: "AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER", label: "Product Manager" },
+    { key: "AGENT_ROLE_ENGINEERING_MANAGER", label: "Engineering Manager" },
+    { key: "AGENT_ROLE_PRODUCT_DESIGNER", label: "Product Designer" },
+    { key: "AGENT_ROLE_STAFF_CLIENT", label: "Engineer 1" },
+    { key: "AGENT_ROLE_STAFF_BACKEND", label: "Engineer 2" },
+    { key: "AGENT_ROLE_STAFF_PLATFORM", label: "Engineer 3" },
+  ]);
+  // The scaling truth stays on the page in the reader's words.
+  assert.match(home, /Three is the floor/);
   // Marketing must not leak runtime jargon that no longer matches the product.
   assert.doesNotMatch(home, /Staff (Client|Backend|Platform) Engineer|Technical Product Manager/);
 });
