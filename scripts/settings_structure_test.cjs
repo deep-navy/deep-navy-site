@@ -175,22 +175,33 @@ test("the members empty state follows the three-part formula", () => {
     "name the absence, then say what belongs here and how to get it");
 });
 
-test("the settings door sits last in the team scope, after every work surface", () => {
-  // The six doors behind a "…" became a rail with two named scopes, so the
-  // ordering rule moved with them: settings is still last, but last within the
-  // TEAM scope, because settings is a thing you do to the selected team.
-  // Objectives left the list entirely — it is opened from the record it
-  // describes, not from a navigation entry.
-  const railStart = shell.indexOf('data-rail-team-scope');
-  const rail = shell.slice(railStart, shell.indexOf("</nav>", railStart));
-  const order = ["overview", "activity", "runs", "economics", "approvals", "settings"]
-    .map((view) => rail.indexOf(`data-view-link="${view}"`));
-  assert.ok(order.every((position) => position !== -1), "every team door is in the rail");
-  assert.deepEqual([...order].sort((a, b) => a - b), order,
-    "doors read: dashboard, activity, runs, economics, decisions, settings — settings last");
-  // And the organization scope sits above the switcher, not below it: the
-  // switcher is the boundary between "the account" and "this team".
+test("settings is reached from the account card, and the team scope keeps its work order", () => {
+  // Settings used to sit last in the TEAM scope, on the reasoning that it is a
+  // thing you do to the selected team. That is still true of what it DOES — it
+  // holds Engineering capacity and Repositories for the open team, and
+  // app-views.js still lists it in TEAM_VIEWS so it still carries the team
+  // crumb. What changed is where it is reached FROM: it opens onto Account and
+  // Billing sections, so it belongs with the account card at the top of the
+  // rail, beside Billing.
+  const accountStart = shell.indexOf('data-rail-account');
   const orgStart = shell.indexOf('data-rail-organization');
-  assert.ok(orgStart !== -1 && orgStart < shell.indexOf("cs-switcher") && shell.indexOf("cs-switcher") < railStart,
-    "the switcher must sit between the organization scope and the team scope");
+  const teamStart = shell.indexOf('data-rail-team-scope');
+  assert.ok(accountStart !== -1 && accountStart < orgStart && orgStart < teamStart,
+    "the rail reads: account, then organization, then team");
+
+  const account = shell.slice(accountStart, orgStart);
+  for (const view of ["settings", "billing"]) {
+    assert.ok(account.includes(`data-view-link="${view}"`), `${view} is reached from the account card`);
+  }
+
+  // The five work surfaces keep their order under the team heading. Settings is
+  // deliberately absent from this list now, not missing from the rail.
+  const rail = shell.slice(teamStart, shell.indexOf("</nav>", teamStart));
+  const order = ["overview", "activity", "runs", "economics", "approvals"]
+    .map((view) => rail.indexOf(`data-view-link="${view}"`));
+  assert.ok(order.every((position) => position !== -1), "every team work door is in the rail");
+  assert.deepEqual([...order].sort((a, b) => a - b), order,
+    "doors read: dashboard, activity, runs, economics, decisions");
+  assert.ok(!rail.includes('data-view-link="settings"'),
+    "settings is reached from the account card, so it must not also sit in the team scope");
 });

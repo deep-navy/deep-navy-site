@@ -147,6 +147,42 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
    would be a second source of truth for which team is open. It wears the
    switcher's clothes: the monogram beside it comes from the selected option,
    so the plate and the name can never disagree. */
+/* ---- the account card ----
+   Who is signed in and which team is open are two halves of one question, so
+   they share one card at the top of the rail. They used to sit as far apart as
+   the rail allowed — the switcher mid-list between the two scopes, the user in
+   the foot — which meant answering "am I in the right place" took two looks at
+   opposite ends of the same column.
+
+   The card owns the chrome. The switcher keeps its own border only when it is
+   NOT in the card, so the rule below can stay a plain override rather than the
+   switcher needing to know where it lives. */
+.cs-account {
+  flex: none;
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2);
+  padding: var(--space-2);
+  border: var(--hairline) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+}
+/* Inside the card the switcher sheds its own plate; two nested insets would
+   read as two controls when it is one. */
+.cs-account .cs-switcher {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+/* The identity row is hidden until app.js confirms who is signed in. When it
+   is, it needs a rule beneath it: the card holds two different kinds of thing
+   and the eye should not read the name as a label for the select. */
+.cs-account .cs-rail-user:not([hidden]) + .cs-switcher {
+  padding-top: var(--space-2);
+  border-top: var(--hairline) solid var(--border-subtle);
+}
+
 .cs-switcher {
   flex: none;
   display: flex;

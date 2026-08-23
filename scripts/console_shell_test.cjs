@@ -35,7 +35,7 @@ const TEAM = ["overview", "activity", "runs", "economics", "approvals", "setting
 
 /* ---- the rail ----------------------------------------------------------- */
 
-test("the rail is two named scopes with the switcher on the boundary", () => {
+test("the rail opens with the account card, then the two named scopes", () => {
   assert.match(views, /const ORG_VIEWS = \["dashboard", "people", "billing"\];/);
   assert.match(views, /const TEAM_VIEWS = \["overview", "activity", "runs", "economics", "approvals", "settings"\];/);
   assert.match(views, /const VIEWS = ORG_VIEWS\.concat\(TEAM_VIEWS, INLINE_VIEWS\);/);
@@ -46,16 +46,40 @@ test("the rail is two named scopes with the switcher on the boundary", () => {
     assert.notEqual(index, -1, `${needle} is missing from the rail`);
     return index;
   };
-  const orgHeading = at("data-rail-organization");
-  const switcher = at('class="cs-switcher"');
-  const teamHeading = at("data-rail-team-scope");
-  assert.ok(orgHeading < switcher && switcher < teamHeading,
-    "organization scope, then the switcher, then the team scope");
 
-  for (const view of ORG) {
-    assert.ok(at(`data-view-link="${view}"`) < switcher, `${view} is an organization door and belongs above the switcher`);
+  // Who is signed in and which team is open are one question, so they share one
+  // card at the top. They used to sit at opposite ends of the rail — the
+  // switcher mid-list on the scope boundary, the user down in the foot — which
+  // made "am I in the right place" a two-look answer.
+  const account = at("data-rail-account");
+  const card = at('class="cs-account"');
+  const user = at('class="cs-rail-user"');
+  const switcher = at('class="cs-switcher"');
+  const orgHeading = at("data-rail-organization");
+  const teamHeading = at("data-rail-team-scope");
+
+  assert.ok(account < card, "the account scope is named before its card");
+  assert.ok(card < user && user < switcher, "the card holds the identity, then the switcher");
+  assert.ok(switcher < orgHeading && orgHeading < teamHeading,
+    "account card, then the organization scope, then the team scope");
+
+  // The identity belongs to the card now. A copy left in the foot would be a
+  // second answer to the same question.
+  const foot = shell.slice(shell.indexOf('class="cs-rail-foot"'));
+  assert.ok(!foot.includes('class="cs-rail-user"'), "the signed-in user moved out of the foot");
+
+  // Settings and Billing are account surfaces and sit with the card. Settings is
+  // still a TEAM view in app-views.js and still acts on the selected team — this
+  // is where it is reached from, not a change of what it operates on.
+  for (const view of ["settings", "billing"]) {
+    assert.ok(at(`data-view-link="${view}"`) > switcher && at(`data-view-link="${view}"`) < orgHeading,
+      `${view} is an account door and belongs with the account card`);
   }
-  for (const view of TEAM) {
+  for (const view of ORG.filter((v) => v !== "billing")) {
+    assert.ok(at(`data-view-link="${view}"`) > orgHeading && at(`data-view-link="${view}"`) < teamHeading,
+      `${view} is an organization door and belongs under the organization heading`);
+  }
+  for (const view of TEAM.filter((v) => v !== "settings")) {
     assert.ok(at(`data-view-link="${view}"`) > teamHeading, `${view} is a team door and belongs under the team heading`);
   }
 });

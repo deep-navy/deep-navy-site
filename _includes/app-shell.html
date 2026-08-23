@@ -273,18 +273,23 @@
         </div>
 
         <nav class="cs-rail-nav" data-view-nav aria-label="Organization and team">
-        <p class="dn-eyebrow cs-rail-group" data-rail-organization>Your organization</p>
-        <a class="dn-nav dn-bare" data-view-link="dashboard" href="#workspace-dashboard"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-teams"></use></svg></span><span class="dn-nav__label">Teams</span><span class="dn-nav__meta" data-rail-team-count hidden>0</span></a>
-        <a class="dn-nav dn-bare" data-view-link="people" href="#workspace-people"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-people"></use></svg></span><span class="dn-nav__label">People</span></a>
-        <a class="dn-nav dn-bare" data-view-link="billing" href="#workspace-billing"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-billing"></use></svg></span><span class="dn-nav__label">Billing</span></a>
-
-        <div class="cs-rail-rule" role="presentation"></div>
-
-        <!-- The switcher, between the scopes. A native select because app.js
-             populates it and reads it; a bespoke menu would be a second
-             opinion about which team is open. The monogram beside it is
-             derived from the selected option, so the plate and the name
-             cannot disagree. -->
+        <!-- Your account, first, because it answers "who am I and what am I
+             looking at" before any screen does. The signed-in user and the team
+             switcher share one inset card: both are identity, and splitting them
+             across the rail (the switcher mid-list, the user in the foot) meant
+             the two halves of the same question sat as far apart as the rail
+             allowed. Settings and Billing follow because both are account
+             surfaces — Settings already opens onto Account and Billing sections,
+             so the grouping states a relationship the pages already had. -->
+        <p class="dn-eyebrow cs-rail-group" data-rail-account>Your account</p>
+        <div class="cs-account">
+        <div class="cs-rail-user" data-rail-user hidden>
+          <span class="dn-avatar dn-avatar--sm dn-avatar--circle" data-user-initial aria-hidden="true">·</span>
+          <span class="cs-rail-user-copy">
+            <span class="cs-rail-user-name" data-user-name></span>
+            <span class="cs-rail-user-role" data-user-role></span>
+          </span>
+        </div>
         <div class="cs-switcher">
           <span class="dn-avatar dn-avatar--sm cs-switcher-mark" data-rail-team-initial aria-hidden="true">—</span>
           <span class="cs-switcher-field">
@@ -298,6 +303,18 @@
             <svg class="dn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-refresh"></use></svg>
           </button>
         </div>
+        </div>
+        <a class="dn-nav dn-bare" data-view-link="settings" href="#workspace-settings"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-settings"></use></svg></span><span class="dn-nav__label">Settings</span></a>
+        <a class="dn-nav dn-bare" data-view-link="billing" href="#workspace-billing"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-billing"></use></svg></span><span class="dn-nav__label">Billing</span></a>
+
+        <div class="cs-rail-rule" role="presentation"></div>
+
+        <p class="dn-eyebrow cs-rail-group" data-rail-organization>Your organization</p>
+        <a class="dn-nav dn-bare" data-view-link="dashboard" href="#workspace-dashboard"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-teams"></use></svg></span><span class="dn-nav__label">Teams</span><span class="dn-nav__meta" data-rail-team-count hidden>0</span></a>
+        <a class="dn-nav dn-bare" data-view-link="people" href="#workspace-people"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-people"></use></svg></span><span class="dn-nav__label">People</span></a>
+
+        <div class="cs-rail-rule" role="presentation"></div>
+
 
         <p class="dn-eyebrow cs-rail-group" data-rail-team-scope>This team</p>
         <a class="dn-nav dn-bare" data-view-link="overview" href="#workspace-overview"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-dashboard"></use></svg></span><span class="dn-nav__label">Dashboard</span></a>
@@ -305,7 +322,6 @@
         <a class="dn-nav dn-bare" data-view-link="runs" href="#workspace-runs"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-runs"></use></svg></span><span class="dn-nav__label">Runs</span></a>
         <a class="dn-nav dn-bare" data-view-link="economics" href="#workspace-economics"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-economics"></use></svg></span><span class="dn-nav__label">Economics</span></a>
         <a class="dn-nav dn-bare" data-view-link="approvals" href="#workspace-approvals"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-decisions"></use></svg></span><span class="dn-nav__label">Decisions</span><span class="dn-nav__meta" data-approvals-count hidden>0</span></a>
-        <a class="dn-nav dn-bare" data-view-link="settings" href="#workspace-settings"><span class="dn-nav__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-nav-settings"></use></svg></span><span class="dn-nav__label">Settings</span></a>
 
         <!-- The rail ends with the people on it. Six monograms in their own
              role hues, under the team's own name — the roster is a fact about
@@ -322,19 +338,6 @@
             <span class="cs-rail-spend-head"><span class="dn-eyebrow">Credits</span><span class="cs-rail-spend-value" data-rail-spend-value>—</span></span>
             <span class="dn-progress dn-progress--sm"><i class="dn-progress__fill" data-rail-spend-fill></i></span>
             <span class="visually-hidden" data-rail-spend-note>of your prepaid balance</span>
-          </div>
-          <!-- Who is signed in, at the foot of the rail where every console
-               puts it. The hooks are the same [data-user-*] the create screen
-               carries; app.js writes both, so the two can never disagree about
-               who you are. The second line is the membership role the
-               organization response confirmed — not a guess, and absent rather
-               than invented when the API did not say. -->
-          <div class="cs-rail-user" data-rail-user hidden>
-            <span class="dn-avatar dn-avatar--sm dn-avatar--circle" data-user-initial aria-hidden="true">·</span>
-            <span class="cs-rail-user-copy">
-              <span class="cs-rail-user-name" data-user-name></span>
-              <span class="cs-rail-user-role" data-user-role></span>
-            </span>
           </div>
           <div class="cs-rail-identity">
             <span class="dn-badge environment-pill" data-environment>Local</span>
