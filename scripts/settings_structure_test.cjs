@@ -135,14 +135,24 @@ test("the repositories card's pinned contract survives the restyle", () => {
 test("billing money is mono, tabular, and never separated from its unit", () => {
   const billing = settingsCards()[1];
   assert.match(billing, /<dd class="settings-fig" data-settings-team-count>0<\/dd>/);
-  assert.match(billing, /<dd class="settings-fig settings-emphasis" data-settings-billing-amount>\$0\.00\/month<\/dd>/);
-  assert.match(billing, /<dd class="settings-fig" data-settings-billing-unit>\$599\.00\/month<\/dd>/);
+  // No money is shipped in the markup. The subscription is $199 a month for
+  // the ORGANIZATION and the shell cannot know it has been confirmed, so the
+  // static value is the honest one: this is settled at checkout.
+  assert.match(billing, /<dd class="settings-fig settings-emphasis" data-settings-billing-amount>Shown at checkout<\/dd>/);
+  assert.match(billing, /<dd class="settings-fig" data-settings-billing-unit>Shown at checkout<\/dd>/);
+  assert.match(billing, /<dt>Subscription<\/dt>/);
+  assert.match(billing, /<dt>Teams covered<\/dt>/);
+  assert.doesNotMatch(billing, /Price per team|Monthly total|Active teams/,
+    "the licence is the organization's, so no row may read as a per-team charge");
   const fig = cssRule(".settings-list dd.settings-fig");
   assert.match(fig, /font-variant-numeric: tabular-nums/);
   assert.match(fig, /var\(--font-mono\)/);
   // The renderer writes value and unit as one string, so they cannot drift.
-  assert.match(app, /ui\.settingsBillingUnit\.textContent = `\$\{formatCents\(unitCents\)\}\/month`/);
-  assert.match(app, /ui\.settingsBillingAmount\.textContent = `\$\{formatCents\(unitCents \* BigInt\(count\)\)\}\/month`/);
+  // One figure, from the plan the billing service confirmed, never a product
+  // of a price and a team count.
+  assert.match(app, /ui\.settingsBillingAmount\.textContent = organizationSubscriptionLabel\(\)/);
+  assert.doesNotMatch(app, /unitCents \* BigInt\(count\)/);
+  assert.match(app, /ui\.settingsBillingUnit\.textContent = includedCredits !== null && includedCredits > 0n/);
 });
 
 test("humans are ink: the member monogram never wears a crew hue", () => {

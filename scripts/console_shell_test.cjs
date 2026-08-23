@@ -101,25 +101,57 @@ test("below 900 the tab bar carries the same doors, and both are always mounted"
   assert.match(console_, /@media \(max-width: 900px\) \{[\s\S]*?\.cs-rail \{ display: none; \}/);
 });
 
-/* ---- honest placeholders ------------------------------------------------ */
+/* ---- every door opens a screen ------------------------------------------ */
 
-test("every rail door opens a section, and the ones with no data say so", () => {
+test("every rail door opens a section, and none of them is a placeholder", () => {
   for (const view of ORG.concat(TEAM)) {
     assert.ok(shell.includes(`data-view="${view}"`), `${view} has a door but no section`);
     assert.ok(shell.includes(`id="workspace-${view}"`), `${view} has no anchor of its own`);
   }
-  // Four screens the approved design has and the product does not. Each is a
-  // route and a card that names what will live there, admits it is not built,
-  // and points at where the evidence is today. Never a fake screen; never a
-  // blank one.
-  for (const view of ["activity", "runs", "people", "billing"]) {
+  // The four that used to be cards saying so are screens now. Each one has a
+  // head that names it, a state chip that reports where its reading came
+  // from, and at least one container a render fills — and none of them still
+  // claims to be unbuilt.
+  const heads = {
+    activity: "data-activity-screen-state",
+    runs: "data-runs-state",
+    people: "data-people-state",
+    billing: "data-billing-state",
+  };
+  for (const [view, chip] of Object.entries(heads)) {
     const start = shell.indexOf(`data-view="${view}"`);
-    const stub = shell.slice(start, shell.indexOf("</section>", start));
-    assert.match(stub, /<p class="dn-eyebrow">Not built yet<\/p>/, `${view} must admit it is not built`);
-    assert.match(stub, /class="cs-stub-body"/, `${view} must say what will live there`);
-    assert.match(stub, /class="cs-stub-note"/, `${view} must say what is true today`);
-    assert.match(stub, /class="cs-stub-actions"><a class="dn-btn[^>]*data-view-link="/,
-      `${view} must point at the screen that holds the evidence today`);
+    const screen = shell.slice(start, shell.indexOf("<!-- =====", start + 1));
+    assert.ok(!/Not built yet/.test(screen), `${view} is built and must stop saying it is not`);
+    assert.match(screen, /class="wview-head"/, `${view} needs the head every built view wears`);
+    assert.match(screen, new RegExp(chip), `${view} must say where its reading came from`);
+    assert.match(screen, /class="cs-panel"/, `${view} must be composed of the console's panels`);
+  }
+});
+
+test("the four new screens ship containers, never a figure the markup invented", () => {
+  // Every hook below is an empty container. A number, a count or a money
+  // amount baked into the shell is a claim no response confirmed, and it
+  // would be visible on a signed-out page load before any call is made.
+  const filled = [
+    "data-activity-agents", "data-activity-reach",
+    "data-runs-sessions", "data-runs-changes", "data-runs-spend", "data-runs-trace",
+    "data-people-roster", "data-people-reach", "data-people-access", "data-people-rules",
+    "data-billing-stats", "data-billing-subscription", "data-billing-teams", "data-billing-credits",
+  ];
+  for (const hook of filled) {
+    const at = shell.indexOf(hook);
+    assert.notEqual(at, -1, `${hook} is missing from the shell`);
+    const rest = shell.slice(at);
+    const open = rest.indexOf(">");
+    const close = rest.indexOf("<", open);
+    assert.equal(rest.slice(open + 1, close).trim(), "", `${hook} ships content the markup invented`);
+  }
+  // The floor's log and the Activity screen carry the same filter names, so
+  // one filter state drives both and the two can never disagree.
+  assert.equal(shell.match(/data-activity-filters/g).length, 2);
+  for (const category of ["all", "sessions", "workspace", "delivery", "cost"]) {
+    assert.equal(shell.match(new RegExp(`data-activity-filter="${category}"`, "g")).length, 2,
+      `${category} must be a chip on both surfaces`);
   }
 });
 

@@ -915,16 +915,6 @@
             <button class="button button-secondary" type="submit" data-credit-pack-submit disabled>Buy prepaid credits</button>
             <p class="form-help form-help-neutral">Credits are posted only after deep navy verifies Stripe’s signed paid webhook. Agent work stops before an unpaid balance can accrue.</p>
           </form>
-          <section class="invoice-history" data-invoice-history hidden aria-labelledby="invoice-history-title">
-            <div class="credit-pack-heading">
-              <div><span class="eyebrow">Billing ledger</span><strong id="invoice-history-title">Invoices and receipts</strong></div>
-              <span class="data-source-badge" data-invoice-state>Waiting</span>
-            </div>
-            <p class="invoice-history-note">Server-verified billing records for this organization. Payment return screens never create invoice state.</p>
-            <div class="empty-state invoice-empty" data-invoice-empty><strong>No invoices yet</strong><p>Your invoices appear here after your first billing period.</p></div>
-            <ol class="invoice-list" data-invoice-list aria-live="polite" hidden></ol>
-            <button class="button button-quiet button-small invoice-more" type="button" data-invoice-more hidden>Load more invoices</button>
-          </section>
         </section>
 
         <!-- ===== APPROVALS ===== -->
@@ -979,18 +969,18 @@
               </header>
               <div class="settings-card-body">
                 <dl class="settings-list">
-                  <div><dt>Active teams</dt><dd class="settings-fig" data-settings-team-count>0</dd></div>
-                  <div><dt>Monthly total</dt><dd class="settings-fig settings-emphasis" data-settings-billing-amount>$0.00/month</dd></div>
-                  <div><dt>Price per team</dt><dd class="settings-fig" data-settings-billing-unit>$599.00/month</dd></div>
+                  <div><dt>Subscription</dt><dd class="settings-fig settings-emphasis" data-settings-billing-amount>Shown at checkout</dd></div>
+                  <div><dt>Teams covered</dt><dd class="settings-fig" data-settings-team-count>0</dd></div>
+                  <div><dt>Included credits</dt><dd class="settings-fig" data-settings-billing-unit>Shown at checkout</dd></div>
                   <div><dt>Payment method</dt><dd class="settings-fact" data-settings-payment-method>No card on file</dd></div>
                 </dl>
                 <dl class="settings-list plan-summary" data-plan-summary hidden>
                   <div><dt>Plan</dt><dd class="settings-fact" data-plan-name></dd></div>
                   <div><dt>Price</dt><dd class="settings-fig" data-plan-price></dd></div>
                   <div><dt>Included</dt><dd class="settings-fig" data-plan-credits></dd></div>
-                  <div><dt>Capacity</dt><dd data-plan-slots>1 paid team slot per subscription unit</dd></div>
+                  <div><dt>Capacity</dt><dd data-plan-slots>One organization licence · as many teams as you run</dd></div>
                 </dl>
-                <p class="settings-billing-note" data-settings-billing-note>A card is collected the first time you create a team, then reused for every additional team. Billing opens in the Stripe Customer Portal.</p>
+                <p class="settings-billing-note" data-settings-billing-note>One subscription covers this organization and every team in it. A card is collected the first time you create a team; billing opens in the Stripe Customer Portal.</p>
                 <!-- The one action here is a door to Stripe's portal — a
                      departure, not a commit — so it keeps the quiet weight.
                      The decisions themselves happen inside Stripe. -->
@@ -1057,52 +1047,239 @@
             </article>
           </div>
         </section>
-        <!-- ===== ACTIVITY ===== -->
+        <!-- ===== ACTIVITY =====
+             The ledger at full width. It holds no data of its own: the buffer
+             is the one the floor's log already fills — the team's live event
+             stream plus the four snapshot projections folded into it — and
+             both surfaces render from it through renderActivityLedger. The
+             filter row carries the same data-activity-filter names, so one
+             filter state drives both rows and they can never disagree.
+
+             There is no page-back control here on purpose. The activity
+             contract is a stream that replays from a sequence cursor and no
+             procedure lists a page of past events, so "older" would be a
+             button with nothing behind it. The reach panel says that out
+             loud instead. -->
         <section class="wview" data-view="activity" id="workspace-activity" aria-labelledby="workspace-activity-title">
           <div class="wview-head">
-            <div><h2 id="workspace-activity-title">Activity</h2><p>Every plan, code change, review and pull request this team has made, as one ledger.</p></div>
+            <div><h2 id="workspace-activity-title">Activity ledger</h2><p>Everything this team has done, newest first, in the order the platform confirmed it. Agent reasoning is not in this record — only the normalized summaries the stream is allowed to carry.</p></div>
+            <span class="data-source-badge" data-activity-screen-state>Waiting for a team</span>
           </div>
-          <div class="dn-card dn-card--pad cs-stub">
-            <p class="dn-eyebrow">Not built yet</p>
-            <p class="cs-stub-body">The log is real and it is running — it just does not have this screen yet. Today it renders on the dashboard beside the work it narrates, with its own filters, because a separate activity screen once meant reading cause and effect required changing screens. The approved design gives it a screen of its own with the filters, the paging and the per-agent breakdown at full width; this door is here so the navigation already says where that will be.</p>
-            <p class="cs-stub-note">No data of its own. Nothing on this screen is a placeholder for a reading that exists elsewhere — the reading is on the dashboard, and the button below goes there.</p>
-            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="overview" href="#workspace-overview">Read the log on the dashboard</a></p>
+          <div class="cs-cols">
+            <div class="cs-main">
+              <section class="cs-panel" aria-labelledby="activity-screen-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="activity-screen-title">The whole stream</span>
+                  <span class="cs-panel-meta cs-stream" data-activity-screen-count>No events yet</span>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm cs-panel-door" type="button" data-activity-screen-retry hidden>Reconnect</button>
+                </div>
+                <div class="dn-seg cs-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
+                  <button class="dn-seg__item" type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
+                </div>
+                <div class="activity-workspace">
+                  <div data-activity-screen-empty></div>
+                  <ol class="dn-card dn-livebar customer-activity-list cs-ledger" data-activity-screen-list aria-live="polite" aria-relevant="additions" hidden></ol>
+                </div>
+              </section>
+            </div>
+            <aside class="cs-side">
+              <!-- Who produced the stream. Counts are of the buffer on this
+                   screen, never of a period nobody measured, and the label
+                   says which. Every row carries its role's two-letter code
+                   beside the tint, so the split reads in greyscale. -->
+              <section class="cs-panel" aria-labelledby="activity-agents-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="activity-agents-title">Who produced it</span>
+                  <span class="cs-panel-meta" data-activity-agents-meta hidden></span>
+                </div>
+                <div class="dn-card dn-card--pad-sm cs-agentsplit" data-activity-agents></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="activity-reach-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="activity-reach-title">How far back this goes</span></div>
+                <div data-activity-reach></div>
+              </section>
+            </aside>
           </div>
         </section>
-        <!-- ===== RUNS ===== -->
+        <!-- ===== RUNS =====
+             A run is one stretch of work in one workspace, and the platform
+             records two halves of it for a customer: the session's lifecycle
+             and the files it changed. Both are already fetched for the team
+             in the floor's burst, so this screen renders the records the
+             workspace holds rather than opening its own reads.
+
+             What it deliberately does NOT render is the inside of a run.
+             Spans, generations, token counts and time-to-first-token are not
+             on the wire for a customer at all, so the panel that would carry
+             them says "uninstrumented" instead of drawing an empty trace. -->
         <section class="wview" data-view="runs" id="workspace-runs" aria-labelledby="workspace-runs-title">
           <div class="wview-head">
-            <div><h2 id="workspace-runs-title">Runs and workspaces</h2><p>One row per run: which agent started it, the workspace it holds, and the log while it is still going.</p></div>
+            <div><h2 id="workspace-runs-title">Runs and workspaces</h2><p>Every run this team recorded — which agent started it, how it ended, and the files it changed before any of it reached a pull request.</p></div>
+            <span class="data-source-badge" data-runs-state>Waiting for a team</span>
           </div>
-          <div class="dn-card dn-card--pad cs-stub">
-            <p class="dn-eyebrow">Not built yet</p>
-            <p class="cs-stub-body">A run is one stretch of work in one workspace, from the moment an agent picks up an assignment to the moment it hands the result back. That evidence exists — it is what the session records on each agent are built from — but it has never had a screen that lists runs across the whole team, with the live ones first.</p>
-            <p class="cs-stub-note">Not built yet. Until it is, a run is visible through the agent who started it: open the crew on the dashboard and read that agent's sessions.</p>
-            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="overview" href="#workspace-overview">Open the crew</a></p>
+          <div class="cs-cols">
+            <div class="cs-main">
+              <section class="cs-panel" aria-labelledby="runs-sessions-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="runs-sessions-title">Sessions</span>
+                  <span class="cs-panel-meta" data-runs-sessions-meta hidden></span>
+                </div>
+                <div class="cs-tablewrap" data-runs-sessions></div>
+                <div class="cs-pager"><button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-runs-sessions-more hidden>Older sessions</button></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="runs-changes-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="runs-changes-title">Workspace changes</span>
+                  <span class="cs-panel-meta" data-runs-changes-meta hidden></span>
+                </div>
+                <div class="cs-tablewrap" data-runs-changes></div>
+                <div class="cs-pager"><button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-runs-changes-more hidden>Older code changes</button></div>
+              </section>
+            </div>
+            <aside class="cs-side">
+              <section class="cs-panel" aria-labelledby="runs-spend-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="runs-spend-title">Spend by session</span>
+                  <span class="cs-panel-meta" data-runs-spend-meta hidden></span>
+                </div>
+                <div class="dn-card dn-card--pad-sm cs-spendlist" data-runs-spend></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="runs-trace-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="runs-trace-title">Inside one run</span></div>
+                <div data-runs-trace></div>
+              </section>
+            </aside>
           </div>
         </section>
-        <!-- ===== PEOPLE ===== -->
+        <!-- ===== PEOPLE =====
+             One row, and the screen says why it is one row. There is no
+             procedure that lists an organization's members: what the browser
+             can know about people is the signed-in account and the role its
+             membership carries, so that is exactly what renders. An empty
+             roster here would imply the others failed to load.
+
+             The permissions table is not invented either — every line of it
+             is a rule the API enforces and names in its own contract, and the
+             screen says that rather than presenting itself as a per-person
+             capability read. -->
         <section class="wview" data-view="people" id="workspace-people" aria-labelledby="workspace-people-title">
           <div class="wview-head">
-            <div><h2 id="workspace-people-title">People</h2><p>The humans in this organization, and what each of them may do.</p></div>
+            <div><h2 id="workspace-people-title">People</h2><p>Who the platform will tell this browser about, the access their membership carries, and the rules it enforces on everyone else.</p></div>
+            <span class="data-source-badge" data-people-state>Waiting</span>
           </div>
-          <div class="dn-card dn-card--pad cs-stub">
-            <p class="dn-eyebrow">Not built yet</p>
-            <p class="cs-stub-body">Everyone in the GitHub organization, the role they hold here, and which of them can sign off a PRD, buy credits or archive a team. The member list itself is already fetched and already rendered — it sits inside Settings, under the account card, because that is where it landed first.</p>
-            <p class="cs-stub-note">Not built yet. The list and the counts are on the Settings screen today; the permissions half of this page does not exist anywhere.</p>
-            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="settings" href="#workspace-settings">See members in Settings</a></p>
+          <div class="cs-cols">
+            <div class="cs-main">
+              <section class="cs-panel" aria-labelledby="people-roster-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="people-roster-title">Everyone the platform reports</span>
+                  <span class="cs-panel-meta" data-people-roster-meta hidden></span>
+                </div>
+                <div class="cs-tablewrap" data-people-roster></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="people-reach-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="people-reach-title">Why this is one row</span></div>
+                <div data-people-reach></div>
+              </section>
+            </div>
+            <aside class="cs-side">
+              <section class="cs-panel" aria-labelledby="people-access-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="people-access-title">Your access</span></div>
+                <div class="dn-card dn-card--pad-sm" data-people-access></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="people-rules-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="people-rules-title">What each role may do</span>
+                </div>
+                <div class="cs-tablewrap" data-people-rules></div>
+                <p class="cs-stub-note">These are the checks the API makes on every call, not a reading of any one account. Membership roles are set on the organization, not here.</p>
+              </section>
+            </aside>
           </div>
         </section>
-        <!-- ===== BILLING ===== -->
+        <!-- ===== BILLING =====
+             Organization scope: the one subscription, the credits it includes,
+             and the invoices behind both. The subscription is $199 a month for
+             the organization with unlimited teams, so nothing on this screen
+             multiplies a price by a team count — the teams table is a roster
+             of what the licence covers, not a bill.
+
+             The credit reading is the organization's own economics summary,
+             which is the only credit figure that is organization-scoped. The
+             per-team balances belong to Economics and are not summed here: a
+             shared pool read once per team and added up would count the same
+             credits several times. -->
         <section class="wview" data-view="billing" id="workspace-billing" aria-labelledby="workspace-billing-title">
           <div class="wview-head">
-            <div><h2 id="workspace-billing-title">Billing</h2><p>What the organization is paying for, what it has spent, and every invoice behind both.</p></div>
+            <div><h2 id="workspace-billing-title">Billing</h2><p>What this organization subscribes to, the credits that come with it, and every invoice behind both. Card details are held by Stripe and never by deep navy.</p></div>
+            <span class="data-source-badge" data-billing-state>Waiting</span>
           </div>
-          <div class="dn-card dn-card--pad cs-stub">
-            <p class="dn-eyebrow">Not built yet</p>
-            <p class="cs-stub-body">One organization-wide view: the teams being charged for, the credit balance and its hard limit, the card Stripe holds, and the invoice history. Each of those is already wired — the balance and the limit on Settings, the invoices with them — but they answer per-team questions from an organization-shaped page.</p>
-            <p class="cs-stub-note">Not built yet. Credits, the card and the invoice history are on the Settings screen; per-team spend is on Economics.</p>
-            <p class="cs-stub-actions"><a class="dn-btn dn-btn--secondary dn-btn--sm" data-view-link="economics" href="#workspace-economics">See spend on Economics</a></p>
+          <section class="cs-stats" data-billing-stats aria-label="Subscription readings"></section>
+          <div class="cs-cols">
+            <div class="cs-main">
+              <section class="cs-panel" aria-labelledby="billing-subscription-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="billing-subscription-title">The subscription</span>
+                  <span class="cs-panel-meta" data-billing-subscription-meta hidden></span>
+                </div>
+                <div class="dn-card dn-card--pad-sm" data-billing-subscription></div>
+                <div class="cs-pager"><button class="dn-btn dn-btn--secondary dn-btn--sm" type="button" data-billing-portal disabled>Manage billing in Stripe</button></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="billing-teams-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="billing-teams-title">Teams on this licence</span>
+                  <span class="cs-panel-meta" data-billing-teams-meta hidden></span>
+                </div>
+                <div class="cs-tablewrap" data-billing-teams></div>
+              </section>
+              <section class="cs-panel invoice-history" data-invoice-history hidden aria-labelledby="invoice-history-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="invoice-history-title">Invoices and receipts</span>
+                  <span class="cs-panel-meta" data-invoice-state>Waiting</span>
+                </div>
+                <p class="cs-stub-note">Every invoice deep navy has confirmed for this organization. A payment return screen never creates one — only a verified webhook does.</p>
+                <div class="empty-state invoice-empty" data-invoice-empty><strong>No invoices yet</strong><p>Your invoices appear here after your first billing period.</p></div>
+                <ol class="invoice-list" data-invoice-list aria-live="polite" hidden></ol>
+                <button class="button button-quiet button-small invoice-more" type="button" data-invoice-more hidden>Load more invoices</button>
+              </section>
+            </div>
+            <aside class="cs-side">
+              <section class="cs-panel" aria-labelledby="billing-credits-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="billing-credits-title">Credits this period</span>
+                  <span class="cs-panel-meta" data-billing-credits-meta hidden></span>
+                </div>
+                <div class="dn-card dn-card--pad-sm cs-credits" data-billing-credits></div>
+              </section>
+              <section class="cs-panel" aria-labelledby="billing-how-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="billing-how-title">How the price works</span></div>
+                <div class="dn-callout">
+                  <span class="dn-callout__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-info"></use></svg></span>
+                  <div class="dn-callout__copy">
+                    <div class="dn-callout__title">One subscription, as many teams as you need</div>
+                    <div class="dn-callout__body">The subscription licenses the organization, not a team, so a second team costs nothing and a third costs nothing. What still bills per seat is an engineer above a team's floor of three — the floor is there so every shipped change gets two peer reviews.</div>
+                  </div>
+                </div>
+              </section>
+              <section class="cs-panel" aria-labelledby="billing-stop-title">
+                <div class="cs-panel-head"><span class="dn-eyebrow" id="billing-stop-title">When credits run out</span></div>
+                <div class="dn-callout dn-callout--attention">
+                  <span class="dn-callout__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-triangle-alert"></use></svg></span>
+                  <div class="dn-callout__copy">
+                    <div class="dn-callout__title">Work stops rather than overspending</div>
+                    <div class="dn-callout__body">There is no overage. A team that reaches its budget pauses and says so; it never bills past what you have bought. Top up or raise the budget on Economics, where the balance is held.</div>
+                    <div class="dn-callout__actions"><button class="dn-btn dn-btn--secondary dn-btn--sm" type="button" data-view-link="economics">Open Economics</button></div>
+                  </div>
+                </div>
+              </section>
+            </aside>
           </div>
         </section>
       </div>

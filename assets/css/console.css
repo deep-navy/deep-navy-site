@@ -539,18 +539,117 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
 [data-team-phase-state="interviewing"] [data-work-panel],
 [data-team-phase-state="interviewing"] [data-objective-record] { display: none; }
 
-/* ---- honest placeholders ----
-   A door in the navigation that opens on nothing is worse than no door. These
-   screens have a route and a name because the navigation is the product's map;
-   what they say is what will be here, and that it is not here yet. */
-.cs-stub { max-width: 68ch; display: grid; gap: var(--space-3); }
-.cs-stub p { margin: 0; }
-.cs-stub-body { font: var(--type-body); color: var(--text-secondary); }
+/* ---- the quiet aside ----
+   A mono line under a panel that qualifies what the panel just showed. It is
+   deliberately the smallest type on the screen: it is a caveat, not a
+   finding, and a caveat that competes with the finding is a design that does
+   not trust its own reading. */
 .cs-stub-note {
+  margin: 0;
   font: var(--fw-regular) var(--fs-micro)/1.6 var(--font-mono);
   color: var(--text-tertiary);
 }
-.cs-stub-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* ---- tables that are wider than the column they sit in ----
+   Wide content scrolls inside its own box. The page column must never scroll
+   sideways: a horizontal scrollbar on the document is how a reader loses the
+   rail, the crumb and their place at once. The card surface is on the wrapper
+   rather than the table so the hairline stays put while the rows move. */
+.cs-tablewrap {
+  overflow-x: auto;
+  border: var(--hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+}
+.cs-tablewrap > .dn-table { min-width: 100%; }
+/* Every cell holds its line. A column narrow enough to break a file path into
+   one character per row is not a table, and the wrapper already scrolls — so
+   the row keeps its width and the reader moves along it. */
+.cs-tablewrap td, .cs-tablewrap th { white-space: nowrap; }
+/* The one exception: a cell carrying a sentence rather than a figure. It
+   wraps, but only inside a width wide enough to hold several words, so the
+   sentence never collapses into a column of single words. */
+.cs-tablewrap .cs-cell-prose {
+  min-width: 26ch;
+  max-width: 46ch;
+  white-space: normal;
+  color: var(--text-secondary);
+}
+.cs-tablewrap .cs-cell-id { font-family: var(--font-mono); font-size: var(--fs-micro); color: var(--text-tertiary); }
+.cs-tablewrap .cs-cell-path { font-family: var(--font-mono); font-size: var(--fs-micro); }
+
+/* Paging sits after the rows, reached by running out of them. An empty pager
+   costs nothing: its only child carries `hidden` when there is no next page. */
+.cs-pager { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.cs-pager:empty { display: none; }
+
+/* ---- proportional rows ----
+   The one bar shape this console draws by hand. It is not a chart and does
+   not pretend to be one: every row already states its own number in figures,
+   and the bar only puts those numbers in order at a glance. Geometry arrives
+   through CSSOM (style attributes are refused by the shell's style-src), and
+   colour on the fill is identity — the role whose code is printed beside it. */
+.cs-splitrow {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+.cs-splitrow + .cs-splitrow { margin-top: var(--space-3); }
+.cs-splitrow__name { min-width: 0; font: var(--type-ui-sm); color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-splitrow__num { font-family: var(--font-mono); font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.cs-splitrow__track {
+  grid-column: 2 / -1;
+  /* Explicit, because this track is also used outside the grid (the credits
+     reading is one row, not a set) where a bare span would stay inline and
+     drop its height on the floor. */
+  display: block;
+  position: relative;
+  height: 6px;
+  margin-top: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.cs-splitrow__fill { position: absolute; left: 0; top: 0; bottom: 0; min-width: 2px; background: var(--text-tertiary); }
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { background: var(--role-pm); }
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { background: var(--role-em); }
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { background: var(--role-design); }
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
+.cs-splitrow__fill[data-role-key="AGENT_ROLE_ENGINEER"] { background: var(--role-eng); }
+.cs-agentsplit, .cs-spendlist, .cs-credits { display: block; }
+
+/* A person is ink. The plate keeps the crew tile's shape and none of its hue:
+   role colour is an agent's identity and stops at the roster. */
+.cs-person { display: inline-flex; align-items: center; gap: var(--space-2); }
+.cs-person .cs-splitrow__name { white-space: nowrap; }
+
+/* Added and removed lines. The sign is printed on the figure and the column
+   header says which is which, so the pair reads without the colour. */
+.cs-tablewrap [data-tone="add"] { color: var(--diff-add-fg); }
+.cs-tablewrap [data-tone="del"] { color: var(--diff-del-fg); }
+
+/* The credits reading: one figure, one bar, and the two facts under it. The
+   bar is lumen while there is headroom and brass once the period has spent
+   four fifths of the grant — the word beside it changes with the hue, so the
+   warning survives greyscale. */
+.cs-credits__fill[data-tone="live"] { background: var(--status-live-fg); }
+.cs-credits__fill[data-tone="attention"] { background: var(--status-attention-fg); }
+.cs-credits__fill[data-tone="danger"] { background: var(--status-danger-fg); }
+
+/* The ledger at full width. The floor's copy is capped and scrolls inside its
+   panel; this one is the screen, so it runs as long as the record does. */
+.cs-ledger { padding: 0 var(--space-4); }
+/* A changed file's path is one long token and a ledger row is a two-column
+   grid, so at 390 the title ran straight under the timestamp beside it. Let
+   the title break where it has to rather than overprint the time. */
+.customer-activity-item strong { overflow-wrap: anywhere; }
+
+/* dn-callout ships an icon and a body but leaves the wrapper between them to
+   the page (the specimen uses an inline style, which this shell refuses). */
+.dn-callout__copy { flex: 1; min-width: 0; }
 
 /* ---- folds ----
    The three system stops and no others, and only the second one moves the

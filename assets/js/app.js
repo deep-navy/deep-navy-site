@@ -211,6 +211,42 @@
     activityEmpty: document.querySelector("[data-activity-empty]"),
     activityList: document.querySelector("[data-activity-list]"),
     activityRetry: document.querySelector("[data-activity-retry]"),
+    // The Activity, Runs, People and Billing screens. Every hook below is a
+    // container a render fills; none of them holds a value the markup shipped,
+    // so a screen can never show a figure no response confirmed.
+    activityScreenState: document.querySelector("[data-activity-screen-state]"),
+    activityScreenRetry: document.querySelector("[data-activity-screen-retry]"),
+    activityScreenCount: document.querySelector("[data-activity-screen-count]"),
+    activityScreenList: document.querySelector("[data-activity-screen-list]"),
+    activityScreenEmpty: document.querySelector("[data-activity-screen-empty]"),
+    activityAgents: document.querySelector("[data-activity-agents]"),
+    activityAgentsMeta: document.querySelector("[data-activity-agents-meta]"),
+    activityReach: document.querySelector("[data-activity-reach]"),
+    runsState: document.querySelector("[data-runs-state]"),
+    runsSessions: document.querySelector("[data-runs-sessions]"),
+    runsSessionsMeta: document.querySelector("[data-runs-sessions-meta]"),
+    runsSessionsMore: document.querySelector("[data-runs-sessions-more]"),
+    runsChanges: document.querySelector("[data-runs-changes]"),
+    runsChangesMeta: document.querySelector("[data-runs-changes-meta]"),
+    runsChangesMore: document.querySelector("[data-runs-changes-more]"),
+    runsSpend: document.querySelector("[data-runs-spend]"),
+    runsSpendMeta: document.querySelector("[data-runs-spend-meta]"),
+    runsTrace: document.querySelector("[data-runs-trace]"),
+    peopleState: document.querySelector("[data-people-state]"),
+    peopleRoster: document.querySelector("[data-people-roster]"),
+    peopleRosterMeta: document.querySelector("[data-people-roster-meta]"),
+    peopleReach: document.querySelector("[data-people-reach]"),
+    peopleAccess: document.querySelector("[data-people-access]"),
+    peopleRules: document.querySelector("[data-people-rules]"),
+    billingState: document.querySelector("[data-billing-state]"),
+    billingStats: document.querySelector("[data-billing-stats]"),
+    billingSubscription: document.querySelector("[data-billing-subscription]"),
+    billingSubscriptionMeta: document.querySelector("[data-billing-subscription-meta]"),
+    billingTeams: document.querySelector("[data-billing-teams]"),
+    billingTeamsMeta: document.querySelector("[data-billing-teams-meta]"),
+    billingCredits: document.querySelector("[data-billing-credits]"),
+    billingCreditsMeta: document.querySelector("[data-billing-credits-meta]"),
+    billingPortal: document.querySelector("[data-billing-portal]"),
     sessionHistoryState: document.querySelector("[data-session-history-state]"),
     sessionsMore: document.querySelector("[data-sessions-more]"),
     workspaceHistoryState: document.querySelector("[data-workspace-history-state]"),
@@ -342,6 +378,11 @@
     creditPacks: [],
     creditBalance: null,
     creditControl: null,
+    // The ORGANIZATION's measured credit position. It is the only credit
+    // figure that is organization-scoped: the per-team balances read a shared
+    // pool, so summing them would count the same credits several times.
+    organizationEconomics: null,
+    organizationEconomicsState: "loading",
     invoices: [],
     invoiceIds: new Set(),
     invoiceNextPageToken: "",
@@ -399,6 +440,13 @@
     sessionNextPageToken: "",
     sessionPageTokens: new Set(),
     sessionHistoryLoading: false,
+    // What each run cost, from the measured ledger grouped by run. The
+    // lifecycle record carries no money at all, so this is the only honest
+    // source for the question "what did that run cost". The state word is
+    // kept beside it because a rejected read and an empty period are
+    // different facts and the Runs screen says which one it met.
+    sessionSpend: [],
+    sessionSpendState: "loading",
     workspaceChanges: [],
     workspaceChangeIds: new Set(),
     workspaceNextPageToken: "",
@@ -1052,6 +1100,8 @@
     session.creditPacks = [];
     session.creditBalance = null;
     session.creditControl = null;
+    session.organizationEconomics = null;
+    session.organizationEconomicsState = "loading";
     resetInvoiceHistory("Select an organization to load its verified billing records.", "Waiting");
     resetSubscriptionCapacity();
     session.organizationName = "";
@@ -1317,18 +1367,24 @@
     // leave the button disabled forever, with no way to retry from the UI.
     try {
       const teamsGeneration = nextTeamsListGeneration();
-      const [githubResult, planResult, subscriptionResult, teamsResult, invoicesResult] = await Promise.allSettled([
+      const organizationId = session.organizationId;
+      const [githubResult, planResult, subscriptionResult, teamsResult, invoicesResult, organizationEconomicsResult] = await Promise.allSettled([
         apiRequest("github_installation", { organizationId: session.organizationId }),
         apiRequest("billing_plan", { planId: stringValue(config.plan_id) || "founding-team" }),
         apiRequest("subscription", { organizationId: session.organizationId }),
         listAllTeams(),
-        apiRequest("invoices", { organizationId: session.organizationId, page: { pageSize: 25 } })
+        apiRequest("invoices", { organizationId: session.organizationId, page: { pageSize: 25 } }),
+        // Billing needs a credit figure that covers the whole organization,
+        // and this is the one the ledger will give. Reading it per team and
+        // adding the results up would count a shared pool several times.
+        apiRequest("economics", { scopeType: "organization", scopeId: session.organizationId })
       ]);
 
       renderBillingPlanResult(planResult);
       renderSubscriptionResult(subscriptionResult);
       renderTeamsResult(teamsResult, teamsGeneration);
       renderInvoicesResult(invoicesResult);
+      renderOrganizationEconomicsResult(organizationEconomicsResult, organizationId);
       await renderGitHubResult(githubResult);
       updateTeamAction();
       await refreshCreditPacks();
@@ -1657,7 +1713,7 @@
     ui.planName.textContent = stringValue(session.billingPlan.name) || stringValue(session.billingPlan.id);
     ui.planPrice.textContent = formatMoney(session.billingPlan.recurringPrice, session.billingPlan.interval);
     ui.planCredits.textContent = formatCredits(session.billingPlan.includedCreditMicros);
-    ui.planSlots.textContent = "1 paid team slot per subscription unit";
+    ui.planSlots.textContent = "One organization licence · as many teams as you run";
     ui.planSummary.hidden = false;
   }
 
@@ -1727,7 +1783,11 @@
         session.paidTeamSlots = paid;
         session.usedTeamSlots = used;
         session.availableTeamSlots = available;
-        ui.planSlots.textContent = `${paid.toString()} paid · ${used.toString()} in use · ${available.toString()} available`;
+        // The three slot fields are legacy: under an unlimited plan the server
+        // reports "the teams you have, one more you can always add, and their
+        // sum". Reading them back out as paid capacity would put a ceiling in
+        // front of a customer who does not have one.
+        ui.planSlots.textContent = `${used.toString()} ${used === 1n ? "team" : "teams"} running · one licence · no limit`;
       }
       renderSettingsBilling(status === "active" && !validCapacity
         ? "The billing service did not return a consistent paid team-slot balance. Manage billing in the Stripe portal."
@@ -1775,6 +1835,9 @@
     ui.settingsAccountLogin.textContent = login;
     ui.settingsAccountOrg.textContent = stringValue(session.organizationName) || "Not selected";
     renderSettingsMembers();
+    // People is the same one row, given the screen the rail promised it. It
+    // reads the state this render just wrote and never fetches anything.
+    renderPeopleView();
   }
 
   function renderSettingsMembers() {
@@ -1918,18 +1981,24 @@
 
   function renderSettingsBilling(errorMessage = "", tone = "") {
     if (!ui.settingsBillingState) return;
-    // A pending team is not yet paid or provisioned, so it is not billed.
-    const activeTeams = session.teams.filter((team) => !["pending", "deleting", "deleted"].includes(lifecycleLabel(team?.state))).length;
-    // Prefer the signed subscription's used-slot count (the billed quantity) when
-    // it is present and consistent; otherwise fall back to the visible team count.
-    const billedTeams = session.subscriptionManageable && session.paidTeamSlots > 0n
-      ? Number(session.usedTeamSlots)
-      : activeTeams;
-    const count = Number.isSafeInteger(billedTeams) && billedTeams >= 0 ? billedTeams : 0;
+    // Every team the one licence covers, which is every team that exists — a
+    // team still provisioning is covered too. This is the same count the
+    // Billing screen's roster shows, read from the same held teams, so the
+    // two surfaces cannot disagree about how many there are.
+    const covered = session.teams.filter((team) => lifecycleLabel(team?.state) !== "deleted").length;
+    const count = Number.isSafeInteger(covered) && covered >= 0 ? covered : 0;
+    // Unlimited teams: the subscription licenses the ORGANIZATION and its
+    // Stripe quantity is pinned at one, so the team count beside it is a
+    // roster and never a multiplier. Multiplying was correct while a team was
+    // a licensed unit; the day the licence moved to the organization it
+    // started reading "$199 × your team count" and overstated the bill of
+    // every customer with more than one team.
     ui.settingsTeamCount.textContent = String(count);
-    const unitCents = teamUnitAmountCents();
-    ui.settingsBillingUnit.textContent = `${formatCents(unitCents)}/month`;
-    ui.settingsBillingAmount.textContent = `${formatCents(unitCents * BigInt(count))}/month`;
+    ui.settingsBillingAmount.textContent = organizationSubscriptionLabel();
+    const includedCredits = int64Value(session.billingPlan?.includedCreditMicros);
+    ui.settingsBillingUnit.textContent = includedCredits !== null && includedCredits > 0n
+      ? `${formatCreditMicros(includedCredits)} credits/period`
+      : "Shown at checkout";
 
     const pm = paymentMethodSummary(session.subscription?.defaultPaymentMethod);
     ui.settingsPaymentMethod.textContent = pm || "No card on file";
@@ -1944,14 +2013,18 @@
       const status = subscriptionStatusLabel(session.subscription) || "active";
       setSourceState(ui.settingsBillingState, session.subscriptionActive ? "Active" : capitalize(status), session.subscriptionActive ? "success" : "");
       ui.settingsBillingNote.textContent = pm
-        ? "Your card is on file and reused for every team. Manage billing opens the Stripe Customer Portal to update the card, view invoices, or cancel."
+        ? "One subscription covers this organization and as many teams as you run. Manage billing opens the Stripe Customer Portal to update the card, view invoices, or cancel."
         : "Manage billing opens the Stripe Customer Portal to view invoices and update payment.";
     } else {
       setSourceState(ui.settingsBillingState, "No card yet", "");
-      ui.settingsBillingNote.textContent = "Billing starts when you create your first team. A card is collected once in secure Stripe checkout, then reused for every additional team.";
+      ui.settingsBillingNote.textContent = "Billing starts when you create your first team. A card is collected once in secure Stripe checkout, and the subscription it starts covers this organization and every team in it.";
     }
     ui.settingsBillingManage.disabled = !session.subscriptionManageable || checkoutOpening;
     renderEngineerControl();
+    // The Billing screen is the organization-shaped view of the same state
+    // this card summarises, so it repaints on the same beat and can never
+    // disagree with it.
+    renderBillingView();
   }
 
   // Settings → Engineering capacity: change how many engineering agents the
@@ -3216,6 +3289,8 @@
     resetCreditControlView("Loading the current paid-period team budget.", "Loading", "loading");
     resetApprovalView("Loading pending decisions for this team.", "Loading", "loading");
     resetActivityView("Connecting to the team’s normalized activity stream.", "Connecting", "loading");
+    session.sessionSpend = [];
+    session.sessionSpendState = "loading";
     resetSessionHistoryView("Loading assignment-bound session history.", "Loading", "loading");
     resetWorkspaceHistoryView("Loading server-sanitized workspace changes.", "Loading", "loading");
     resetDeliveryHistoryView("Loading webhook-backed GitHub delivery records.", "Loading", "loading");
@@ -3232,10 +3307,14 @@
     // hold the status stream open while it still owes us a terminal state.
     if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
 
-    const [agentsResult, economicsResult, economicsBreakdownsResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult, teamRepositoriesResult, teamInitiativesResult] = await Promise.allSettled([
+    const [agentsResult, economicsResult, economicsBreakdownsResult, sessionSpendResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult, teamRepositoriesResult, teamInitiativesResult] = await Promise.allSettled([
       apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
       apiRequest("economics", { scopeType: "team", scopeId: team.id }),
       loadEconomicsBreakdowns(team.id),
+      // The per-run cut of the same ledger. It is its own read because the
+      // group-by selector on Economics chooses one dimension at a time and
+      // Runs always needs this one.
+      listAllEconomicsBreakdowns(team.id, SESSION_SPEND_GROUP),
       apiRequest("credit_balance", { organizationId: session.organizationId, teamId: team.id }),
       apiRequest("credit_control", { organizationId: session.organizationId, teamId: team.id }),
       apiRequest("approvals", { teamId: team.id, page: { pageSize: 100 } }),
@@ -3258,6 +3337,7 @@
     renderAgentsResult(agentsResult, team.id);
     renderEconomicsResult(economicsResult, team.id);
     renderEconomicsBreakdownsResult(economicsBreakdownsResult);
+    renderSessionSpendResult(sessionSpendResult, team.id);
     renderTeamCreditResults(creditBalanceResult, creditControlResult, team.id);
     renderApprovalsResult(approvalsResult, team.id);
     renderObjectivesResult(objectivesResult, team.id, generation);
@@ -5638,6 +5718,9 @@
     // open. Repaint the identity from what the server just confirmed - a
     // synchronous re-read of held state, never a request.
     if (session.selectedAgentId) renderAgentIdentity();
+    // Runs and the activity split both name agents off this roster, so they
+    // repaint on the same response rather than waiting for the next event.
+    renderRunsView();
   }
 
   // The newest customer-visible event for one role, phrased as an activity
@@ -6464,6 +6547,939 @@
     renderRoleBars();
   }
 
+  // ══ The four screens the rail promised ═════════════════════════════════
+  //
+  // Activity, Runs, People and Billing each had a door in the navigation and
+  // a card behind it explaining that there was nothing there. Each is built
+  // below out of what the platform will actually hand a browser — and each
+  // says out loud where that stops. An absence renders as one of the four
+  // DataState kinds with the sentence that would change it, never as a zero,
+  // a dash or an empty table: a zero is a claim that we counted.
+
+  // One table, built rather than assembled. `columns` is [{ label, numeric,
+  // cellClass }]; a cell may be a string or a node the caller made, so a row
+  // can carry a badge, a monogram or a sentence without this helper knowing
+  // what any of those are.
+  function dataTable(columns, rows) {
+    const table = document.createElement("table");
+    table.className = "dn-table dn-table--dense";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    columns.forEach((column) => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      if (column.numeric) cell.className = "dn-table__num";
+      cell.textContent = column.label;
+      headRow.append(cell);
+    });
+    head.append(headRow);
+    const body = document.createElement("tbody");
+    rows.forEach((cells) => {
+      const row = document.createElement("tr");
+      cells.forEach((content, index) => {
+        const column = columns[index] || {};
+        const cell = document.createElement("td");
+        const classes = [column.numeric ? "dn-table__num" : "", column.cellClass || ""].filter(Boolean);
+        if (classes.length) cell.className = classes.join(" ");
+        if (content instanceof Node) cell.append(content);
+        else cell.textContent = stringValue(content);
+        row.append(cell);
+      });
+      body.append(row);
+    });
+    table.append(head, body);
+    return table;
+  }
+
+  function replaceWithTable(host, columns, rows) {
+    if (!host) return;
+    host.replaceChildren(dataTable(columns, rows));
+    host.hidden = false;
+  }
+
+  // Severity is never decided on a screen. A lifecycle word is mapped onto the
+  // ONE ladder in notice-levels.js and the badge takes that level's tone, so a
+  // failed run is exactly as loud as a failed anything else, and the word
+  // inside the badge carries the state on its own in greyscale.
+  const SESSION_NOTICE_LEVEL = Object.freeze({
+    started: "running",
+    running: "running",
+    waiting: "warning",
+    paused: "warning",
+    blocked: "blocked",
+    succeeded: "success",
+    failed: "error",
+    cancelled: "info"
+  });
+
+  function ladderBadge(word, levelName) {
+    const badge = document.createElement("span");
+    const modifier = levelName ? noticeLevels?.levelClass?.("dn-badge", levelName) : "";
+    badge.className = modifier ? `dn-badge ${modifier}` : "dn-badge";
+    badge.textContent = word;
+    return badge;
+  }
+
+  function monoCell(value, className = "cs-cell-id") {
+    const span = document.createElement("span");
+    span.className = className;
+    span.textContent = stringValue(value);
+    return span;
+  }
+
+  // A row of the one bar shape this console draws by hand: a plate that names
+  // the actor, the actor's own line, its figure, and a track whose fill is
+  // proportional to the largest figure in the set. The figure is printed, so
+  // the bar only orders what the numbers already say.
+  function splitRow({ code, roleKey, name, figure, share, prefix }) {
+    const row = document.createElement("div");
+    row.className = "cs-splitrow";
+    const plate = document.createElement("span");
+    plate.className = "user-avatar crew-monogram-xs";
+    if (roleKey) plate.dataset.roleKey = roleKey;
+    plate.setAttribute("aria-hidden", "true");
+    plate.textContent = code;
+    const label = document.createElement("span");
+    label.className = "cs-splitrow__name";
+    label.textContent = name;
+    const value = document.createElement("span");
+    value.className = "cs-splitrow__num";
+    value.textContent = figure;
+    const track = document.createElement("span");
+    track.className = "cs-splitrow__track";
+    const fill = document.createElement("i");
+    fill.className = "cs-splitrow__fill";
+    if (roleKey) fill.dataset.roleKey = roleKey;
+    setChartGeometry(fill, { width: share }, prefix);
+    track.append(fill);
+    row.append(plate, label, value, track);
+    return row;
+  }
+
+  /* ── Activity ───────────────────────────────────────────────────────────
+     The same buffer the floor's log renders, at full width. This screen holds
+     no data and opens no stream: renderActivityLedger sorts and filters once
+     and hands the result here, so a count, a filter and a row can never
+     disagree between the two surfaces. Its own chrome — the stream's state
+     word and the reconnect door — is mirrored from what that render already
+     wrote, the way app-views.js mirrors the rail's scope headings. */
+  function renderActivityScreen(shown, entries, allEntries, arrived) {
+    if (!ui.activityScreenList || !ui.activityScreenEmpty) return;
+    if (ui.activityScreenState && ui.activityState) {
+      ui.activityScreenState.textContent = ui.activityState.textContent;
+      if (ui.activityState.dataset.tone) ui.activityScreenState.dataset.tone = ui.activityState.dataset.tone;
+      else delete ui.activityScreenState.dataset.tone;
+    }
+    if (ui.activityScreenRetry && ui.activityRetry) ui.activityScreenRetry.hidden = ui.activityRetry.hidden;
+
+    ui.activityScreenList.replaceChildren();
+    shown.forEach(({ entry, evidence }) => {
+      const item = activityLedgerItem(entry, evidence);
+      if (arrived.has(entry.id)) item.classList.add("dn-in-log");
+      ui.activityScreenList.append(item);
+    });
+    ui.activityScreenList.hidden = entries.length === 0;
+    ui.activityScreenEmpty.hidden = entries.length > 0;
+    if (!entries.length) renderActivityScreenEmpty(allEntries);
+    if (ui.activityScreenCount) {
+      ui.activityScreenCount.textContent = allEntries.length
+        ? `${new Intl.NumberFormat().format(allEntries.length)} ${allEntries.length === 1 ? "event" : "events"}${entries.length === allEntries.length ? "" : ` · ${new Intl.NumberFormat().format(entries.length)} shown`}`
+        : "No events yet";
+    }
+    renderActivityAgentSplit(allEntries);
+    renderActivityReach(allEntries);
+  }
+
+  // Which of the four this is depends on why there is nothing, and the stream
+  // already decided that: its state word is the reading. A filtered-empty is
+  // not an absence at all — we counted this category and there were none — so
+  // it is a callout explaining what you are looking at, not a DataState.
+  function renderActivityScreenEmpty(allEntries) {
+    const host = ui.activityScreenEmpty;
+    const tone = stringValue(ui.activityState?.dataset.tone);
+    const label = stringValue(ui.activityState?.textContent).trim();
+    if (allEntries.length) {
+      const chip = ui.activityFilterButtons.find((button) => button.dataset.activityFilter === session.activityFilter);
+      const name = stringValue(chip?.childNodes[0]?.textContent).trim() || "this filter";
+      host.replaceChildren(calloutCard({
+        title: `Nothing under ${name.toLowerCase()} yet`,
+        body: `Your team has produced ${new Intl.NumberFormat().format(allEntries.length)} events and none of them are ${name.toLowerCase()}. That is a count, not a gap — choose All to see everything they have done.`,
+        action: { label: "Show everything", filter: "all" }
+      }));
+      return;
+    }
+    if (!selectedTeam()) {
+      setDataState(host, "unavailable", "No team is selected, and activity belongs to a team. Open a team from Your teams and its record appears here.");
+      return;
+    }
+    if (tone === "error") {
+      setDataState(host, "unavailable", `The activity stream is not delivering right now — it reports “${label}”. Nothing here is a count of zero; it is a reading that did not arrive. Reconnect above to try again.`);
+      return;
+    }
+    if (tone === "loading") {
+      setDataState(host, "loading", "Connecting to your team and replaying everything it has already done. This is a live stream, so the first events arrive as soon as it opens.");
+      return;
+    }
+    setDataState(host, "pending", "The stream is connected and your team has not done anything yet. Work starts when you tell your Product Manager what matters — every plan, code change, review and pull request lands here as it happens.", {
+      action: { label: "Talk to your Product Manager", view: "overview" }
+    });
+  }
+
+  // Who produced the stream. The counts are of the buffer on this screen and
+  // the label says so; they are not a period anybody measured. Only events
+  // that name an agent can be attributed, and the meta line says how many of
+  // the total that is rather than quietly dropping the rest.
+  function renderActivityAgentSplit(allEntries) {
+    const host = ui.activityAgents;
+    if (!host) return;
+    const meta = ui.activityAgentsMeta;
+    const roster = laneRoster();
+    if (!roster.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "The crew roster for this team has not been read, so the record cannot be split by who produced it. The events themselves are beside this panel and are unaffected.");
+      return;
+    }
+    const attributed = allEntries.filter((entry) => stringValue(entry.agentId));
+    const counted = roster.map((member) => ({
+      member,
+      count: attributed.filter((entry) => stringValue(entry.agentId) === member.id).length
+    }));
+    const total = counted.reduce((sum, row) => sum + row.count, 0);
+    if (!total) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "Your crew is standing by and has not produced anything yet. The moment one of them works, this splits the record by who did it.", {
+        action: { label: "Talk to your Product Manager", view: "overview" }
+      });
+      return;
+    }
+    const largest = Math.max(...counted.map((row) => row.count));
+    purgeChartGeometry("ga");
+    host.replaceChildren();
+    host.hidden = false;
+    counted
+      .slice()
+      .sort((left, right) => right.count - left.count)
+      .forEach(({ member, count }) => {
+        host.append(splitRow({
+          code: member.role.code,
+          roleKey: member.role.key,
+          name: crewDisplayName(member.role),
+          figure: `${new Intl.NumberFormat().format(count)} ${count === 1 ? "event" : "events"}`,
+          share: largest ? (count / largest) * 100 : 0,
+          prefix: "ga"
+        }));
+      });
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = `${new Intl.NumberFormat().format(total)} of ${new Intl.NumberFormat().format(allEntries.length)} name an agent`;
+    }
+  }
+
+  // How far back the record goes, and why it stops there. The activity
+  // contract is a stream replayed from a sequence cursor; no procedure lists
+  // a page of past events, so there is no "older" control to offer and the
+  // screen says that instead of growing a button with nothing behind it.
+  function renderActivityReach(allEntries) {
+    const host = ui.activityReach;
+    if (!host) return;
+    const times = allEntries
+      .map((entry) => timestampDate(entry.occurredAt)?.getTime())
+      .filter((value) => Number.isFinite(value));
+    const oldest = times.length ? new Date(Math.min(...times)) : null;
+    host.replaceChildren(calloutCard({
+      title: oldest ? `Back to ${relativeTime(oldest)}` : "As far back as your team goes",
+      body: oldest
+        ? `Everything this team has done since it was set up is on this screen — the platform replays the whole record when the stream opens, so there is no older page to load. What is not here has not happened yet.`
+        : `The platform replays this team's whole record when the stream opens, so when there is something to show, all of it is here at once. There is no older page to load.`
+    }));
+  }
+
+  // A Callout explains what you are looking at. (A Notice reports an event
+  // from somewhere else, which is why only a Notice carries a source, a time
+  // and a code — this carries none of the three.)
+  function calloutCard({ title, body, tone = "", action = null }) {
+    const host = document.createElement("div");
+    host.className = tone ? `dn-callout dn-callout--${tone}` : "dn-callout";
+    const icon = document.createElement("span");
+    icon.className = "dn-callout__icon";
+    icon.append(iconNode(tone === "attention" ? "triangle-alert" : "info"));
+    const copy = document.createElement("div");
+    copy.className = "dn-callout__copy";
+    const heading = document.createElement("div");
+    heading.className = "dn-callout__title";
+    heading.textContent = title;
+    const text = document.createElement("div");
+    text.className = "dn-callout__body";
+    text.textContent = body;
+    copy.append(heading, text);
+    if (action) {
+      const actions = document.createElement("div");
+      actions.className = "dn-callout__actions";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "dn-btn dn-btn--secondary dn-btn--sm";
+      if (action.view) button.dataset.viewLink = action.view;
+      if (action.filter) button.dataset.activityFilter = action.filter;
+      button.textContent = action.label;
+      actions.append(button);
+      copy.append(actions);
+    }
+    host.append(icon, copy);
+    return host;
+  }
+
+  function iconNode(name) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "dn-icon");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.75");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", `#i-${name}`);
+    svg.append(use);
+    return svg;
+  }
+
+  /* ── Runs ───────────────────────────────────────────────────────────────
+     A run is one stretch of work in one workspace, and the platform keeps two
+     halves of it for a customer: the session's lifecycle and the files it
+     changed. Both are already fetched for the whole team in the floor's
+     burst, so this screen renders the records the workspace holds instead of
+     opening reads of its own — and its paging buttons drive the same two
+     loaders the floor's do.
+
+     What it does NOT render is the inside of a run. Spans, generations, token
+     counts and time to first token are not on the wire for a customer at all,
+     so the panel that would carry them says "uninstrumented" rather than
+     drawing an empty trace and calling it a reading. */
+  function runDuration(startedAt, endedAt) {
+    const start = timestampDate(startedAt);
+    const end = endedAt ? timestampDate(endedAt) : null;
+    if (!start) return "Not reported";
+    if (!end) return "Still running";
+    const seconds = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+    if (seconds < 90) return `${seconds}s`;
+    const minutes = Math.round(seconds / 60);
+    return minutes < 90 ? `${minutes}m` : `${Math.round(minutes / 60)}h`;
+  }
+
+  function runAgentName(agentId) {
+    const roster = laneRoster();
+    const member = roster.find((entry) => entry.id === stringValue(agentId));
+    if (!member) return { name: "A former crew member", code: "·", roleKey: "" };
+    return {
+      name: crewDisplayName(member.role),
+      code: member.role.code,
+      roleKey: member.role.key
+    };
+  }
+
+  function renderRunsView() {
+    renderRunSessions();
+    renderRunChanges();
+    renderRunSpend();
+    renderRunTrace();
+    if (ui.runsState) {
+      const team = selectedTeam();
+      const sessions = Array.isArray(session.sessions) ? session.sessions.length : 0;
+      const changes = Array.isArray(session.workspaceChanges) ? session.workspaceChanges.length : 0;
+      if (!team) setSourceState(ui.runsState, "Waiting for a team", "");
+      else if (sessions || changes) setSourceState(ui.runsState, `${sessions} ${sessions === 1 ? "run" : "runs"} · ${changes} ${changes === 1 ? "change" : "changes"}`, "success");
+      else setSourceState(ui.runsState, "Nothing recorded yet", "");
+    }
+  }
+
+  function renderRunSessions() {
+    const host = ui.runsSessions;
+    if (!host) return;
+    const meta = ui.runsSessionsMeta;
+    const pager = ui.runsSessionsMore;
+    if (pager) {
+      pager.hidden = !session.sessionNextPageToken;
+      pager.disabled = Boolean(session.sessionHistoryLoading);
+    }
+    const records = Array.isArray(session.sessions) ? session.sessions : [];
+    if (!selectedTeam()) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No team is selected, and a run belongs to a team. Open a team from Your teams and its runs appear here.");
+      return;
+    }
+    if (stringValue(ui.sessionHistoryState?.dataset.tone) === "error" && !records.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "This team's run history could not be read, so none is shown. Nothing here is a count of zero — the record exists and this browser did not get it. Refresh to try again.");
+      return;
+    }
+    if (!records.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "Your team has not started a run yet. A run begins the moment an agent picks up an assignment — and assignments start with what you tell your Product Manager.", {
+        action: { label: "Talk to your Product Manager", view: "overview" }
+      });
+      return;
+    }
+    const rows = records
+      .slice()
+      .sort((left, right) => (timestampDate(right.startedAt)?.getTime() || 0) - (timestampDate(left.startedAt)?.getTime() || 0))
+      .map((record) => {
+        const status = sessionStatusLabel(record.sessionStatus) || "not reported";
+        const agent = runAgentName(record.agentId);
+        const started = timestampDate(record.startedAt);
+        const work = [
+          int64Value(record.githubIssueNumber) > 0n ? `Issue ${int64Value(record.githubIssueNumber).toString()}` : "",
+          int64Value(record.githubPullRequestNumber) > 0n ? `PR ${int64Value(record.githubPullRequestNumber).toString()}` : ""
+        ].filter(Boolean).join(" · ");
+        return [
+          agent.name,
+          ladderBadge(capitalize(status), SESSION_NOTICE_LEVEL[status] || "info"),
+          sessionKindLabel(record.sessionKind) === "objective" ? "The objective" : "Delegated work",
+          stringValue(record.safeSummary),
+          started ? monoCell(relativeTime(started)) : "Not reported",
+          runDuration(record.startedAt, record.endedAt),
+          work ? monoCell(work) : monoCell("Not attributed")
+        ];
+      });
+    replaceWithTable(host, [
+      { label: "Agent" },
+      { label: "State" },
+      { label: "Kind" },
+      { label: "What it did", cellClass: "cs-cell-prose" },
+      { label: "Started" },
+      { label: "Took", numeric: true },
+      { label: "Work" }
+    ], rows);
+    if (meta) {
+      meta.hidden = false;
+      const running = records.filter((record) => ["started", "running"].includes(sessionStatusLabel(record.sessionStatus))).length;
+      meta.textContent = running
+        ? `${records.length} loaded · ${running} still running`
+        : `${records.length} loaded · newest first`;
+    }
+  }
+
+  function renderRunChanges() {
+    const host = ui.runsChanges;
+    if (!host) return;
+    const meta = ui.runsChangesMeta;
+    const pager = ui.runsChangesMore;
+    if (pager) {
+      pager.hidden = !session.workspaceNextPageToken;
+      pager.disabled = Boolean(session.workspaceHistoryLoading);
+    }
+    const records = Array.isArray(session.workspaceChanges) ? session.workspaceChanges : [];
+    if (!selectedTeam()) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No team is selected, and a workspace belongs to a team. Open a team from Your teams and the files its runs changed appear here.");
+      return;
+    }
+    if (stringValue(ui.workspaceHistoryState?.dataset.tone) === "error" && !records.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "The record of changed files could not be read, so none is shown. Nothing here is a count of zero — the record exists and this browser did not get it. Refresh to try again.");
+      return;
+    }
+    if (!records.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "No run has changed a file yet. Every file your team touches is recorded here before it reaches a pull request, with the counts of what was added and removed.", {
+        action: { label: "Talk to your Product Manager", view: "overview" }
+      });
+      return;
+    }
+    const rows = records
+      .slice()
+      .sort((left, right) => Number((int64Value(right.sequence) || 0n) - (int64Value(left.sequence) || 0n)))
+      .map((record) => {
+        const additions = int64Value(record.additions);
+        const deletions = int64Value(record.deletions);
+        const added = document.createElement("span");
+        added.dataset.tone = "add";
+        added.textContent = additions === null ? "Not reported" : additions === 0n ? "0" : `+${additions.toString()}`;
+        const removed = document.createElement("span");
+        removed.dataset.tone = "del";
+        removed.textContent = deletions === null ? "Not reported" : deletions === 0n ? "0" : `−${deletions.toString()}`;
+        const observed = timestampDate(record.observedAt);
+        return [
+          monoCell(canonicalRelativePath(record.relativePath) || "Path withheld", "cs-cell-path"),
+          workspaceChangeKindLabel(record.changeKind) || "not reported",
+          added,
+          removed,
+          runAgentName(record.agentId).name,
+          workspaceDiffAvailabilityLabel(record.diffAvailability) === "available" ? "Readable on the ledger" : `Withheld · ${workspaceDiffAvailabilityLabel(record.diffAvailability)}`,
+          observed ? monoCell(relativeTime(observed)) : "Not reported"
+        ];
+      });
+    replaceWithTable(host, [
+      { label: "File", cellClass: "cs-cell-path" },
+      { label: "Change" },
+      { label: "Added", numeric: true },
+      { label: "Removed", numeric: true },
+      { label: "Agent" },
+      { label: "Diff" },
+      { label: "Seen" }
+    ], rows);
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = `${records.length} loaded · newest first`;
+    }
+  }
+
+  // What a run cost. The lifecycle record carries no money at all, so this is
+  // the measured ledger's own per-session grouping — the same figures the
+  // Economics screen totals, cut by run instead of by agent.
+  function renderRunSpend() {
+    const host = ui.runsSpend;
+    if (!host) return;
+    const meta = ui.runsSpendMeta;
+    if (!selectedTeam()) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No team is selected, and spend is measured per team. Open a team and what each of its runs cost appears here.");
+      return;
+    }
+    if (session.sessionSpendState === "unavailable") {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "The measured ledger did not return a per-run breakdown for this team, so none is shown. The team's totals are on Economics and are unaffected.");
+      return;
+    }
+    if (session.sessionSpendState === "loading" || session.sessionSpendState === "") {
+      if (meta) meta.hidden = true;
+      setDataState(host, "loading", "Reading what each of this team's runs cost from the measured ledger.");
+      return;
+    }
+    const rows = Array.isArray(session.sessionSpend) ? session.sessionSpend : [];
+    if (!rows.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "Nothing has been metered against a run in this billing period yet. The moment an agent makes a billable call, what it cost lands here against the run that made it.", {
+        action: { label: "Talk to your Product Manager", view: "overview" }
+      });
+      return;
+    }
+    const ranked = rows
+      .map((record) => ({ record, credits: int64Value(record.creditsUsedMicros) || 0n }))
+      .sort((left, right) => Number(right.credits - left.credits))
+      .slice(0, 8);
+    const largest = ranked.reduce((most, row) => (row.credits > most ? row.credits : most), 0n);
+    purgeChartGeometry("gr");
+    host.replaceChildren();
+    host.hidden = false;
+    ranked.forEach(({ record, credits }) => {
+      const scopeId = stringValue(record?.scope?.id);
+      const owner = runAgentName(sessionAgentIdFor(scopeId));
+      host.append(splitRow({
+        code: owner.code,
+        roleKey: owner.roleKey,
+        name: stringValue(record.displayName) || "One run",
+        figure: `${formatCreditMicros(credits)} credits`,
+        share: largest > 0n ? Number((credits * 10000n) / largest) / 100 : 0,
+        prefix: "gr"
+      }));
+    });
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = rows.length > ranked.length ? `Costliest ${ranked.length} of ${rows.length}` : `${rows.length} ${rows.length === 1 ? "run" : "runs"} metered`;
+    }
+  }
+
+  // Which agent a metered run belongs to, taken from the lifecycle record the
+  // workspace already holds. A run the browser has not loaded the lifecycle
+  // for gets no plate rather than a guessed one.
+  function sessionAgentIdFor(sessionId) {
+    const id = stringValue(sessionId);
+    if (!id) return "";
+    const record = (Array.isArray(session.sessions) ? session.sessions : []).find((entry) => stringValue(entry.id) === id);
+    return stringValue(record?.agentId);
+  }
+
+  function renderRunTrace() {
+    const host = ui.runsTrace;
+    if (!host) return;
+    setDataState(host, "uninstrumented", "The inside of a run — its spans, its model calls, its token counts and the time to its first token — is not something the platform will hand a browser. The runtime records no message content by policy, and no procedure serves the observations, so there is nothing here to page or filter. What a run did is in its summary beside this panel; what it cost is above it.");
+  }
+
+  /* ── People ─────────────────────────────────────────────────────────────
+     One row, and the screen says why it is one row. There is no procedure
+     that lists an organization's members: what the browser can know about
+     people is the signed-in account and the role its own membership carries.
+     An empty roster here would imply the others failed to load, and a
+     fabricated one would be worse. The rules table beside it is not invented
+     either — every line is a check the API makes on every call, and the
+     screen says that rather than presenting itself as a per-person read. */
+  const MEMBERSHIP_RULES = Object.freeze([
+    { action: "Read a team, its runs, its record and its spend", roles: "Any member" },
+    { action: "Talk to the Product Manager and answer a decision", roles: "Any member" },
+    { action: "Create, pause, resume or delete a team", roles: "Owner or admin" },
+    { action: "Change a team's repositories or how many engineers it runs", roles: "Owner or admin" },
+    { action: "Start the subscription, open the Stripe portal, buy credits", roles: "Owner or billing" },
+    { action: "Change a team's budget or pause its spending", roles: "Owner or billing" }
+  ]);
+
+  function renderPeopleView() {
+    renderPeopleRoster();
+    renderPeopleReach();
+    renderPeopleAccess();
+    renderPeopleRules();
+    if (ui.peopleState) {
+      if (!session.organizationId) setSourceState(ui.peopleState, "Waiting", "");
+      else setSourceState(ui.peopleState, "1 of 1 the platform reports", "success");
+    }
+  }
+
+  function renderPeopleRoster() {
+    const host = ui.peopleRoster;
+    if (!host) return;
+    const meta = ui.peopleRosterMeta;
+    const members = Array.isArray(session.members) ? session.members : [];
+    if (!session.organizationId || !members.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No organization is established for this session yet, so the platform has not said who you are in it. Choose an organization in the header and your membership appears here.");
+      return;
+    }
+    const rows = members.map((member) => {
+      const identity = document.createElement("span");
+      identity.className = "cs-splitrow__name";
+      identity.textContent = `${stringValue(member.name)}${member.self ? " (you)" : ""}`;
+      const plate = document.createElement("span");
+      plate.className = "user-avatar crew-monogram-xs";
+      plate.setAttribute("aria-hidden", "true");
+      plate.textContent = (stringValue(member.name).charAt(0) || "?").toUpperCase();
+      const person = document.createElement("span");
+      person.className = "cs-person";
+      person.append(plate, identity);
+      const role = stringValue(member.role);
+      return [
+        person,
+        monoCell(stringValue(member.login) || "Not reported"),
+        role ? ladderBadge(capitalize(role), "info") : ladderBadge("Role not reported", "warning")
+      ];
+    });
+    replaceWithTable(host, [
+      { label: "Person" },
+      { label: "GitHub login" },
+      { label: "Role" }
+    ], rows);
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = members.length === 1 ? "One person" : `${members.length} people`;
+    }
+  }
+
+  function renderPeopleReach() {
+    const host = ui.peopleReach;
+    if (!host) return;
+    host.replaceChildren(calloutCard({
+      title: "One row is the whole answer, not a partial one",
+      body: "The platform does not serve a member list to a browser. What it will confirm is the account you signed in with and the role your own membership carries, so that is the one row above — nobody else failed to load, and nobody is hidden. Membership itself is managed on your GitHub organization; changes there are what change this."
+    }));
+  }
+
+  function renderPeopleAccess() {
+    const host = ui.peopleAccess;
+    if (!host) return;
+    const member = (Array.isArray(session.members) ? session.members : []).find((entry) => entry.self);
+    if (!member) {
+      setDataState(host, "unavailable", "Your membership has not been confirmed for this session, so the access it carries cannot be stated.");
+      return;
+    }
+    const role = stringValue(member.role);
+    const list = document.createElement("dl");
+    list.className = "dn-meta dn-meta--rows";
+    const rows = [
+      ["Signed in as", stringValue(member.name)],
+      ["GitHub login", stringValue(member.login) || "Not reported"],
+      ["Organization", stringValue(session.organizationName) || "Not selected"],
+      ["Role", role ? capitalize(role) : "The platform did not report a role"]
+    ];
+    rows.forEach(([key, value]) => {
+      const term = document.createElement("dt");
+      term.className = "dn-meta__k";
+      term.textContent = key;
+      const detail = document.createElement("dd");
+      detail.className = "dn-meta__v";
+      detail.textContent = value;
+      list.append(term, detail);
+    });
+    host.replaceChildren(list);
+    host.hidden = false;
+  }
+
+  function renderPeopleRules() {
+    const host = ui.peopleRules;
+    if (!host) return;
+    replaceWithTable(host, [{ label: "What", cellClass: "cs-cell-prose" }, { label: "Who may" }],
+      MEMBERSHIP_RULES.map((rule) => [rule.action, rule.roles]));
+  }
+
+  /* ── Billing ────────────────────────────────────────────────────────────
+     Organization scope. The subscription licenses the ORGANIZATION and its
+     quantity is pinned at one, so nothing on this screen multiplies a price
+     by a team count: the teams table is a roster of what the one licence
+     already covers, not a bill. The only figure that is authoritatively what
+     you paid is an invoice, and the invoices are on the same screen.
+
+     The credit reading is the organization's own measured summary, because
+     that is the only credit figure that is organization-scoped. The per-team
+     balances belong to Economics and are deliberately NOT summed here: the
+     pool is shared, so adding it up once per team would count the same
+     credits several times. */
+  // The organization's subscription price, taken from the plan the billing
+  // service confirmed and from nowhere else. There is deliberately no default:
+  // a price nobody served is a price we would be inventing, and this is the
+  // screen where a customer checks what they pay.
+  function organizationSubscriptionCents() {
+    const money = session.billingPlan?.recurringPrice;
+    const units = signedInt64Value(money?.units);
+    const nanos = Number(money?.nanos || 0);
+    if (units === null || units < 0n || !Number.isInteger(nanos) || Math.abs(nanos) > 999_999_999) return null;
+    const cents = units * 100n + BigInt(Math.round(nanos / 10_000_000));
+    return cents > 0n ? cents : null;
+  }
+
+  function organizationSubscriptionLabel() {
+    const cents = organizationSubscriptionCents();
+    return cents === null ? "Shown at checkout" : `${formatCents(cents)}/month`;
+  }
+
+  function renderBillingView() {
+    renderBillingStats();
+    renderBillingSubscription();
+    renderBillingTeams();
+    renderBillingCredits();
+    if (ui.billingPortal) ui.billingPortal.disabled = !session.subscriptionManageable || checkoutOpening;
+    if (ui.billingState) {
+      if (!session.organizationId) setSourceState(ui.billingState, "Waiting", "");
+      else if (session.subscriptionManageable) {
+        const status = subscriptionStatusLabel(session.subscription) || "active";
+        setSourceState(ui.billingState, session.subscriptionActive ? "Active" : capitalize(status), session.subscriptionActive ? "success" : "attention");
+      } else setSourceState(ui.billingState, "No subscription yet", "");
+    }
+  }
+
+  function billingStat(label, value, unit = "") {
+    const stat = document.createElement("div");
+    stat.className = "dn-stat";
+    const name = document.createElement("span");
+    name.className = "dn-stat__label";
+    name.textContent = label;
+    const figure = document.createElement("span");
+    figure.className = "dn-stat__value";
+    figure.textContent = value;
+    if (unit) {
+      const suffix = document.createElement("span");
+      suffix.className = "dn-stat__unit";
+      suffix.textContent = unit;
+      figure.append(suffix);
+    }
+    stat.append(name, figure);
+    return stat;
+  }
+
+  function renderBillingStats() {
+    const host = ui.billingStats;
+    if (!host) return;
+    const plan = session.billingPlan;
+    if (!plan) {
+      host.hidden = true;
+      return;
+    }
+    // Every team the licence covers, which is every team that exists: a team
+    // still provisioning is covered too, and counting only the active ones
+    // made this stat disagree with the roster directly below it.
+    const covered = session.teams.filter((team) => lifecycleLabel(team?.state) !== "deleted").length;
+    const periodEnds = timestampDate(session.subscription?.currentPeriodEndsAt);
+    const included = int64Value(plan.includedCreditMicros);
+    host.replaceChildren(
+      billingStat("Subscription", organizationSubscriptionCents() === null ? "At checkout" : formatCents(organizationSubscriptionCents()), organizationSubscriptionCents() === null ? "" : session.billingPlan?.interval === 2 || session.billingPlan?.interval === "BILLING_INTERVAL_YEAR" ? "/ year" : "/ month"),
+      billingStat("Teams it covers", new Intl.NumberFormat().format(covered), "· no limit"),
+      billingStat("Credits included", included !== null && included > 0n ? formatCreditMicros(included) : "Shown at checkout", included !== null && included > 0n ? "· each period" : ""),
+      billingStat(session.subscription?.cancelAtPeriodEnd ? "Ends" : "Renews", periodEnds ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(periodEnds) : "Not reported")
+    );
+    host.hidden = false;
+  }
+
+  function engineerSeatsAboveFloor() {
+    return session.teams.reduce((total, team) => {
+      if (["pending", "deleting", "deleted"].includes(lifecycleLabel(team?.state))) return total;
+      const count = Number(team?.engineerCount || 0);
+      return total + (Number.isInteger(count) && count > ENGINEER_FLOOR ? count - ENGINEER_FLOOR : 0);
+    }, 0);
+  }
+
+  function renderBillingSubscription() {
+    const host = ui.billingSubscription;
+    if (!host) return;
+    const meta = ui.billingSubscriptionMeta;
+    if (!session.organizationId) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No organization is established for this session, and a subscription belongs to one. Choose an organization in the header and its billing appears here.");
+      return;
+    }
+    if (session.billingPlanError && !session.billingPlan) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", session.billingPlanError);
+      return;
+    }
+    if (!session.subscriptionManageable) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "This organization has no subscription yet. It starts the first time you create a team: a card is collected once in secure Stripe checkout and then reused, and deep navy never sees the card itself.", {
+        action: { label: "Create your first team", view: "dashboard" }
+      });
+      return;
+    }
+    const status = subscriptionStatusLabel(session.subscription) || "active";
+    const seats = engineerSeatsAboveFloor();
+    const card = paymentMethodSummary(session.subscription?.defaultPaymentMethod);
+    const periodEnds = timestampDate(session.subscription?.currentPeriodEndsAt);
+    const list = document.createElement("dl");
+    list.className = "dn-meta dn-meta--rows";
+    const rows = [
+      ["Plan", stringValue(session.billingPlan?.name) || stringValue(session.billingPlan?.id) || "Not reported"],
+      ["State", status === "active" ? "Active" : capitalize(status)],
+      ["Base licence", organizationSubscriptionCents() === null
+        ? "The billing service did not report the plan price, so it is not shown here. Your invoice below carries what you were charged."
+        : `${formatCents(organizationSubscriptionCents())} a month for this organization · as many teams as you need`],
+      ["Engineer seats", seats ? `${seats} above the floor of ${ENGINEER_FLOOR}, billed per seat` : `None above the floor of ${ENGINEER_FLOOR}, so nothing is billed per seat`],
+      [session.subscription?.cancelAtPeriodEnd ? "Ends" : "Renews", periodEnds ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(periodEnds) : "Not reported"],
+      ["Card on file", card || "No card on file"]
+    ];
+    rows.forEach(([key, value]) => {
+      const term = document.createElement("dt");
+      term.className = "dn-meta__k";
+      term.textContent = key;
+      const detail = document.createElement("dd");
+      detail.className = "dn-meta__v";
+      detail.textContent = value;
+      list.append(term, detail);
+    });
+    const note = document.createElement("p");
+    note.className = "cs-stub-note";
+    note.textContent = "The amount you were actually charged is an invoice, and the invoices are below. Nothing on this screen is computed as your bill.";
+    host.replaceChildren(list, note);
+    host.hidden = false;
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = card ? "Card held by Stripe" : "No card yet";
+    }
+  }
+
+  function renderBillingTeams() {
+    const host = ui.billingTeams;
+    if (!host) return;
+    const meta = ui.billingTeamsMeta;
+    const teams = session.teams.filter((team) => !["deleted"].includes(lifecycleLabel(team?.state)));
+    if (!session.organizationId) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No organization is established for this session, so there is no roster to cover.");
+      return;
+    }
+    if (!teams.length) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "pending", "There are no teams on this licence yet. The subscription covers as many as you want to run, so the first one costs no more than the second.", {
+        action: { label: "Create a team", view: "dashboard" }
+      });
+      return;
+    }
+    const rows = teams.map((team) => {
+      const state = lifecycleLabel(team?.state) || "not reported";
+      const engineers = Number(team?.engineerCount || 0);
+      const above = Number.isInteger(engineers) && engineers > ENGINEER_FLOOR ? engineers - ENGINEER_FLOOR : 0;
+      return [
+        stringValue(team.name) || "Unnamed team",
+        stringValue(team.objective) || "No objective stated yet",
+        ladderBadge(capitalize(state), state === "active" ? "success" : state === "failed" ? "error" : state === "suspended" ? "warning" : "info"),
+        Number.isInteger(engineers) && engineers > 0 ? String(engineers) : "Not reported",
+        above ? String(above) : "0"
+      ];
+    });
+    replaceWithTable(host, [
+      { label: "Team" },
+      { label: "Objective", cellClass: "cs-cell-prose" },
+      { label: "State" },
+      { label: "Engineers", numeric: true },
+      { label: "Above the floor", numeric: true },
+    ], rows);
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = `${teams.length} ${teams.length === 1 ? "team" : "teams"} · all covered by the one licence`;
+    }
+  }
+
+  function renderBillingCredits() {
+    const host = ui.billingCredits;
+    if (!host) return;
+    const meta = ui.billingCreditsMeta;
+    if (!session.organizationId) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "No organization is established for this session, and credits are held by an organization.");
+      return;
+    }
+    if (session.organizationEconomicsState === "unavailable") {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "The measured ledger did not answer for this organization, so its credit position is not shown. Nothing here is a zero — the balance exists and this browser did not get it. Refresh to try again.");
+      return;
+    }
+    const summary = session.organizationEconomics;
+    if (!summary) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "loading", "Reading this organization's measured credit position for the current billing period.");
+      return;
+    }
+    const used = int64Value(summary.creditsUsedMicros);
+    const remaining = int64Value(summary.creditsRemainingMicros);
+    const included = int64Value(session.billingPlan?.includedCreditMicros);
+    if (used === null || remaining === null) {
+      if (meta) meta.hidden = true;
+      setDataState(host, "unavailable", "The measured ledger answered without a credit figure, so none is shown rather than a zero standing in for one.");
+      return;
+    }
+    // Where the period stands, as a word first. The bar is the same fact in
+    // proportion; the word is what survives greyscale.
+    const grant = included !== null && included > 0n ? included : used + remaining;
+    const share = grant > 0n ? Number((used * 10000n) / grant) / 100 : 0;
+    const [word, tone] = share >= 100 ? ["Past the included grant", "danger"] : share >= 80 ? ["Running low", "attention"] : ["Headroom", "live"];
+    const heading = document.createElement("div");
+    heading.className = "cs-splitrow__name";
+    heading.textContent = word;
+    const figure = document.createElement("div");
+    figure.className = "cs-splitrow__num";
+    figure.textContent = `${formatCreditMicros(used)} used of ${formatCreditMicros(grant)} included`;
+    const track = document.createElement("span");
+    track.className = "cs-splitrow__track";
+    const fill = document.createElement("i");
+    fill.className = "cs-splitrow__fill cs-credits__fill";
+    fill.dataset.tone = tone;
+    purgeChartGeometry("gc");
+    setChartGeometry(fill, { width: Math.min(100, share) }, "gc");
+    track.append(fill);
+    const list = document.createElement("dl");
+    list.className = "dn-meta dn-meta--rows";
+    const measured = timestampDate(summary.measuredAt);
+    [
+      ["Balance now", `${formatCreditMicros(remaining)} credits`],
+      ["Used this period", `${formatCreditMicros(used)} credits`],
+      ["Measured", measured ? relativeTime(measured) : "Not reported"]
+    ].forEach(([key, value]) => {
+      const term = document.createElement("dt");
+      term.className = "dn-meta__k";
+      term.textContent = key;
+      const detail = document.createElement("dd");
+      detail.className = "dn-meta__v";
+      detail.textContent = value;
+      list.append(term, detail);
+    });
+    host.replaceChildren(heading, figure, track, list);
+    host.hidden = false;
+    if (meta) {
+      meta.hidden = false;
+      meta.textContent = "This organization, all teams";
+    }
+  }
+
+  // The per-run dimension. It is deliberately NOT in the group-by selector
+  // below: that control is a question about where a team's money went, and
+  // "which run" is the question the Runs screen already asks in full.
+  const SESSION_SPEND_GROUP = Object.freeze({ key: "session", label: "Run", scopeType: 11 });
+
   const economicsGroupDefinitions = Object.freeze([
     { key: "initiative", label: "Initiative", scopeType: 7 },
     { key: "agent", label: "Agent", scopeType: 4 },
@@ -6839,6 +7855,45 @@
       sequenceLabel: "Snapshot",
       occurredAt: economics.measuredAt
     });
+  }
+
+  // The ORGANIZATION's own measured summary. It is validated exactly the way
+  // the team summary is — a response about a different scope is refused rather
+  // than displayed — and its absence is a state word rather than a zero,
+  // because "we could not read the balance" and "the balance is nought" are
+  // different facts and only one of them is true.
+  function renderOrganizationEconomicsResult(result, organizationId) {
+    if (stringValue(organizationId) !== session.organizationId) return;
+    const refuse = () => {
+      session.organizationEconomics = null;
+      session.organizationEconomicsState = "unavailable";
+      renderBillingView();
+    };
+    if (result.status !== "fulfilled") return refuse();
+    const economics = result.value?.economics;
+    const scopeType = stringValue(economics?.scopeType).toLowerCase();
+    const scopeId = stringValue(economics?.scopeId) || stringValue(economics?.scope?.id);
+    if (!economics || (scopeType && scopeType !== "organization") || (scopeId && scopeId !== session.organizationId)) return refuse();
+    session.organizationEconomics = economics;
+    session.organizationEconomicsState = "loaded";
+    renderBillingView();
+  }
+
+  // What each run cost. A session's lifecycle record carries no money, so the
+  // only honest answer is the measured ledger cut by run — the same figures
+  // Economics totals, grouped differently. A rejection leaves the panel
+  // saying so; it never leaves a run looking free.
+  function renderSessionSpendResult(result, teamId) {
+    if (stringValue(teamId) !== session.selectedTeamId) return;
+    if (result.status !== "fulfilled" || !Array.isArray(result.value?.records)) {
+      session.sessionSpend = [];
+      session.sessionSpendState = "unavailable";
+      renderRunsView();
+      return;
+    }
+    session.sessionSpend = result.value.records;
+    session.sessionSpendState = "loaded";
+    renderRunsView();
   }
 
   function resetApprovalView(message, label, tone = "") {
@@ -7300,6 +8355,7 @@
     // An emptied buffer empties the lanes and bars with it — the honest
     // empty, not yesterday's spans over a team that just changed.
     renderDashboardCharts();
+    renderActivityScreen([], [], [], new Set());
   }
 
   function resetSessionHistoryView(message, label, tone = "") {
@@ -7313,6 +8369,7 @@
     ui.sessionsMore.disabled = false;
     ui.sessionsMore.setAttribute("aria-label", message);
     replaceActivityProjections("session-history:", []);
+    renderRunsView();
   }
 
   function resetWorkspaceHistoryView(message, label, tone = "") {
@@ -7327,6 +8384,7 @@
     ui.workspaceMore.disabled = false;
     ui.workspaceMore.setAttribute("aria-label", message);
     replaceActivityProjections("workspace-change:", []);
+    renderRunsView();
   }
 
   function safeOpaqueId(value, required = true) {
@@ -7397,6 +8455,10 @@
     return {
       id: `session-history:${id}`,
       category: "sessions",
+      // The agent this record belongs to. It rides the entry so the Activity
+      // screen can split the record by who produced it: without it a snapshot
+      // was an event with no author, and the split undercounted every agent.
+      agentId,
       source: "SessionService snapshot",
       title: `Session · ${status}`,
       safeSummary: summary,
@@ -7494,6 +8556,7 @@
     return {
       id: `workspace-change:${id}`,
       category: "workspace",
+      agentId,
       source: "workspace",
       title: `${relativePath} · ${kind}`,
       safeSummary: `${additions.toString()} additions · ${deletions.toString()} deletions · ${diffState}.`,
@@ -7530,6 +8593,7 @@
       setSourceState(ui.sessionHistoryState, "Unavailable", "error");
       ui.sessionsMore.hidden = !session.sessionNextPageToken;
       ui.sessionsMore.setAttribute("aria-label", apiErrorMessage(result.reason, "Session history could not be loaded."));
+      renderRunsView();
       return;
     }
     try {
@@ -7553,6 +8617,7 @@
       ui.sessionsMore.hidden = !next;
       ui.sessionsMore.disabled = false;
       ui.sessionsMore.setAttribute("aria-label", next ? "Load the next opaque SessionService snapshot page" : "All session history pages loaded");
+      renderRunsView();
     } catch (error) {
       if (!append) {
         session.sessions = [];
@@ -7563,6 +8628,7 @@
       setSourceState(ui.sessionHistoryState, "Invalid response", "error");
       ui.sessionsMore.hidden = true;
       ui.sessionsMore.setAttribute("aria-label", apiErrorMessage(error, "Session history was rejected because it was invalid."));
+      renderRunsView();
     }
   }
 
@@ -7572,6 +8638,7 @@
       setSourceState(ui.workspaceHistoryState, "Unavailable", "error");
       ui.workspaceMore.hidden = !session.workspaceNextPageToken;
       ui.workspaceMore.setAttribute("aria-label", apiErrorMessage(result.reason, "Workspace changes could not be loaded."));
+      renderRunsView();
       return;
     }
     try {
@@ -7598,6 +8665,7 @@
       ui.workspaceMore.hidden = !next;
       ui.workspaceMore.disabled = false;
       ui.workspaceMore.setAttribute("aria-label", next ? "Load the next opaque WorkspaceService snapshot page" : "All workspace change pages loaded");
+      renderRunsView();
     } catch (error) {
       if (!append) {
         session.workspaceChanges = [];
@@ -7609,6 +8677,7 @@
       setSourceState(ui.workspaceHistoryState, "Invalid response", "error");
       ui.workspaceMore.hidden = true;
       ui.workspaceMore.setAttribute("aria-label", apiErrorMessage(error, "Workspace changes were rejected because they were invalid."));
+      renderRunsView();
     }
   }
 
@@ -9340,6 +10409,11 @@
       const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
       return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
     });
+    // Both surfaces paint the same rows, so the arrival marks are read from
+    // one snapshot taken before either does: the floor consumes them below,
+    // and the Activity screen is handed the copy, so the row that just landed
+    // rises on whichever of the two the reader is actually looking at.
+    const arrived = new Set(session.freshActivityIds);
     shown.forEach(({ entry, evidence }) => {
       const item = activityLedgerItem(entry, evidence);
       // A row the stream just delivered rises and flashes once (.dn-in-log).
@@ -9359,6 +10433,7 @@
     } else if (!entries.length) {
       setEmptyState(ui.activityEmpty, "No activity yet", "The selected team has no customer-safe events or source snapshots yet.");
     }
+    renderActivityScreen(shown, entries, allEntries, arrived);
   }
 
   // Setup states are enum names - "succeeded", "waiting for gateway" - and the
@@ -9817,7 +10892,7 @@
   }
 
   function changeActivityFilter(event) {
-    const button = event.target.closest("[data-activity-filter]");
+    const button = event.target instanceof Element ? event.target.closest("[data-activity-filter]") : null;
     const filter = stringValue(button?.dataset.activityFilter);
     if (!button || !activityCategories.has(filter)) return;
     session.activityFilter = filter;
@@ -10839,14 +11914,27 @@
     resetAgentDetailView("Choose a crew member on the floor to open their record.");
     refreshSelectedTeam();
   });
-  ui.activityFilters.addEventListener("click", changeActivityFilter);
-  ui.activityRetry.addEventListener("click", () => {
+  // The filter chips live in two toolbars now — the floor's log and the
+  // Activity screen — and the one door out of a filtered empty is a button
+  // built after load. One delegated listener covers all three; the handler
+  // already validates the chip against the category list, so nothing else
+  // on the page can change the filter by accident.
+  document.addEventListener("click", changeActivityFilter);
+  const reconnectActivity = () => {
     const team = selectedTeam();
     if (team) {
       startActivityStream(team.id, session.workspaceGeneration);
       if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, session.workspaceGeneration);
     }
-  });
+  };
+  ui.activityRetry.addEventListener("click", reconnectActivity);
+  if (ui.activityScreenRetry) ui.activityScreenRetry.addEventListener("click", reconnectActivity);
+  // The two histories page from the floor and from Runs. One loader each; the
+  // Runs buttons derive their own hidden/disabled from the same cursors the
+  // floor's do, so the two can never disagree about whether more exists.
+  if (ui.runsSessionsMore) ui.runsSessionsMore.addEventListener("click", loadMoreSessions);
+  if (ui.runsChangesMore) ui.runsChangesMore.addEventListener("click", loadMoreWorkspaceChanges);
+  if (ui.billingPortal) ui.billingPortal.addEventListener("click", manageBilling);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
     refreshRepositoryAccessAfterReturn();
