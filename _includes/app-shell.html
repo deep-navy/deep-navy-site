@@ -281,26 +281,26 @@
                  lifecycle state, and a failing acceptance run after a proof
                  reads as regressed, which is a different fact from
                  never-proven. -->
-            <section class="statstrip" data-stat-strip hidden aria-label="Team instruments">
+            <section class="statstrip dn-stagger" data-stat-strip hidden aria-label="Team instruments">
               <div class="statcell">
                 <span class="statcell-label">Objectives proven</span>
-                <strong class="statcell-value" data-stat-objectives>—</strong>
+                <strong class="statcell-value dn-odometer" data-stat-objectives>—</strong>
                 <span class="statcell-note" data-stat-objectives-note></span>
               </div>
               <div class="statcell">
                 <span class="statcell-label">Credits remaining</span>
-                <strong class="statcell-value" data-stat-credits>—</strong>
+                <strong class="statcell-value dn-odometer" data-stat-credits>—</strong>
                 <span class="statcell-meter" aria-hidden="true"><i data-stat-credits-fill></i></span>
                 <span class="statcell-note" data-stat-credits-note></span>
               </div>
               <div class="statcell">
                 <span class="statcell-label">Open PRs · issues</span>
-                <strong class="statcell-value" data-stat-delivery>—</strong>
+                <strong class="statcell-value dn-odometer" data-stat-delivery>—</strong>
                 <span class="statcell-note" data-stat-delivery-note></span>
               </div>
               <div class="statcell">
                 <span class="statcell-label">Agents active</span>
-                <strong class="statcell-value" data-stat-agents>—</strong>
+                <strong class="statcell-value dn-odometer" data-stat-agents>—</strong>
                 <span class="statcell-note" data-stat-agents-note></span>
               </div>
             </section>
@@ -314,7 +314,7 @@
                 <span class="crew-state" data-agents-state></span>
               </div>
               <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
-              <div class="agent-roster" data-agent-list aria-live="polite" hidden></div>
+              <div class="agent-roster dn-stagger" data-agent-list aria-live="polite" hidden></div>
             </section>
 
             <div class="wspace-grid">
@@ -365,7 +365,7 @@
                     <h4 id="signoff-title">PRD sign-off</h4>
                   </div>
                   <ol class="signoff-list" data-signoff-list></ol>
-                  <p class="signoff-locking" data-signoff-locking hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
+                  <p class="signoff-locking dn-livebar" data-signoff-locking hidden><span class="signoff-chip" data-tone="signed"><span class="signoff-tick" aria-hidden="true">✓</span>&nbsp;Signed</span><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
                 </section>
                 <form class="console-form" data-conversation-form>
                   <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
@@ -400,6 +400,11 @@
               <section class="onnow" data-objective-record hidden aria-label="Current objective">
                 <div class="onnow-head">
                   <span class="lbl">On now</span>
+                  <!-- The proof plate: kelp tick when the acceptance run
+                       holds, breathing lumen while the crew works, coral
+                       when a proof regressed. app.js stamps data-state from
+                       the same classifier the objectives view uses. -->
+                  <span class="obj-check" data-objective-check aria-hidden="true"></span>
                   <div class="objective-select" data-objective-select-control hidden>
                     <label class="visually-hidden" for="objective-select">Objective</label>
                     <select id="objective-select" data-objective-select disabled></select>
@@ -548,17 +553,17 @@
             <section class="statstrip agent-counters" data-agent-counters aria-label="Agent readings">
               <div class="statcell">
                 <span class="statcell-label">Sessions</span>
-                <strong class="statcell-value" data-agent-count-sessions>—</strong>
+                <strong class="statcell-value dn-odometer" data-agent-count-sessions>—</strong>
                 <span class="statcell-note" data-agent-count-sessions-note></span>
               </div>
               <div class="statcell">
                 <span class="statcell-label">Code changes</span>
-                <strong class="statcell-value" data-agent-count-changes>—</strong>
+                <strong class="statcell-value dn-odometer" data-agent-count-changes>—</strong>
                 <span class="statcell-note" data-agent-count-changes-note></span>
               </div>
               <div class="statcell">
                 <span class="statcell-label">Credits used</span>
-                <strong class="statcell-value" data-agent-count-spend>—</strong>
+                <strong class="statcell-value dn-odometer" data-agent-count-spend>—</strong>
                 <span class="statcell-note" data-agent-count-spend-note></span>
               </div>
             </section>

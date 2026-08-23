@@ -286,7 +286,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .plan-summary dd { margin: 0; color: var(--muted-bright); font-size: .72rem; text-align: right; }
 .user-summary { display: flex; align-items: center; gap: .8rem; }.user-avatar { display: grid; width: 44px; height: 44px; color: var(--navy-950); border-radius: 8px; background: var(--aqua); font-family: var(--font-mono); font-weight: 650; place-items: center; }.user-summary strong { display: block; font-size: .85rem; }.user-summary span { color: var(--muted); font-size: .7rem; }
 .app-dashboard { min-width: 0; padding: 1.2rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }.app-dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }.app-dashboard-header h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.02em; }.empty-state { padding: 2.5rem 0; text-align: left; }.empty-state strong { display: block; font-family: var(--font-mono); }.empty-state p { max-width: 500px; margin: .45rem 0 0; font-size: .8rem; }
-.data-source-badge, .stream-state { display: inline-flex; min-height: 0; align-items: center; padding: 0; color: var(--muted); font-family: var(--font-mono); font-size: .57rem; line-height: 1.2; text-transform: uppercase; }.data-source-badge[data-tone="success"], .stream-state[data-tone="success"] { color: var(--aqua); }.data-source-badge[data-tone="error"], .stream-state[data-tone="error"] { color: var(--ink); }.data-source-badge[data-tone="loading"], .stream-state[data-tone="loading"] { color: var(--muted-bright); }
+.data-source-badge, .stream-state { display: inline-flex; min-height: 0; align-items: center; padding: 0; color: var(--muted); font-family: var(--font-mono); font-size: .57rem; line-height: 1.2; text-transform: uppercase; }.data-source-badge[data-tone="success"], .stream-state[data-tone="success"] { color: var(--status-success-fg); }.data-source-badge[data-tone="error"], .stream-state[data-tone="error"] { color: var(--status-danger-fg); }.data-source-badge[data-tone="loading"], .stream-state[data-tone="loading"] { color: var(--muted-bright); }
 /* Crew rail — the roster as people, from the approved workspace design.
    A breathing accent dot says "present and ready"; anything else is stated in
    words. No identifiers, no timestamps: those read as machine telemetry. */
@@ -297,7 +297,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    stack of chunky cards rather than a list of people. */
 .crew-row.is-on { background: transparent; }
 .crew-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: .5rem; background: var(--text-muted); opacity: .45; transition: box-shadow var(--dur-slow) var(--ease-standard), opacity var(--dur-slow) var(--ease-standard); }
-.crew-row.is-on .crew-dot { background: var(--accent-graphic); opacity: 1; box-shadow: 0 0 0 1px var(--accent-a35), 0 0 14px -2px var(--accent-a48); animation: crew-breathe 2.6s ease-in-out infinite; }
+.crew-row.is-on .crew-dot { background: var(--status-live-dot); opacity: 1; box-shadow: 0 0 0 1px var(--status-live-border), 0 0 14px -2px var(--status-live-dot); animation: crew-breathe var(--dur-ambient) var(--ease-in-out) infinite; }
 @keyframes crew-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 .crew-copy strong { display: block; font-size: .8rem; font-weight: 560; letter-spacing: -.01em; }
 .crew-copy small { display: block; color: var(--text-muted); font-size: .68rem; }
@@ -627,8 +627,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* data badges as calm pills */
 .app-body .data-source-badge{ padding:2px 9px; border:1px solid var(--line-soft); border-radius:999px; background:var(--panel-2); }
-.app-body .data-source-badge[data-tone="success"]{ color:var(--aqua); border-color:var(--accent-a24); background:var(--accent-a08); }
-.app-body .data-source-badge[data-tone="error"]{ color:var(--coral); border-color:var(--crit-a28); background:var(--crit-a08); }
+.app-body .data-source-badge[data-tone="success"]{ color:var(--status-success-fg); border-color:var(--status-success-border); background:var(--status-success-bg); }
+.app-body .data-source-badge[data-tone="error"]{ color:var(--status-danger-fg); border-color:var(--status-danger-border); background:var(--status-danger-bg); }
 
 /* signed-out: centered focus */
 .app-body .signed-out-card{ min-height:min(62vh,560px); place-items:center; text-align:center; border:0; }
@@ -744,7 +744,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .crew-row { display: flex; gap: .6rem; align-items: flex-start; padding: .42rem .5rem; margin: 0 -.5rem; border-radius: 3px; }
 .crew-row.is-on { background: transparent; }
 .crew-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-top: .45rem; background: var(--muted); opacity: .45; }
-.crew-row.is-on .crew-dot { background: var(--aqua); box-shadow: 0 0 0 1px var(--accent-a24), 0 0 12px -2px var(--accent-a35); opacity: 1; animation: crew-breathe 2.6s ease-in-out infinite; }
+.crew-row.is-on .crew-dot { background: var(--status-live-dot); box-shadow: 0 0 0 1px var(--status-live-border), 0 0 12px -2px var(--status-live-dot); opacity: 1; animation: crew-breathe var(--dur-ambient) var(--ease-in-out) infinite; }
 @keyframes crew-breathe { 0%, 100% { opacity: .5; transform: scale(.82); } 50% { opacity: 1; transform: scale(1); } }
 .crew-copy { flex: 1; min-width: 0; }
 .crew-copy strong { display: block; font-size: .82rem; font-weight: 600; letter-spacing: -.01em; }
@@ -861,8 +861,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 @media (prefers-reduced-motion: reduce) { .msg.is-writing .msg-text::after { animation: none; } }
 .msg-meta { display: inline-flex; align-items: baseline; gap: .7rem; font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }
 .msg-state { text-transform: uppercase; letter-spacing: .1em; }
-.msg-state[data-tone="success"] { color: var(--aqua); }
-.msg-state[data-tone="error"] { color: var(--coral); }
+.msg-state[data-tone="success"] { color: var(--status-success-fg); }
+.msg-state[data-tone="error"] { color: var(--status-danger-fg); }
 .msg-state[data-tone="loading"] { color: var(--muted-bright); }
 .msg-error { margin: .1rem 0 0; font-size: var(--t-xs); color: var(--coral); }
 /* The Product Manager mid-reply: the same breathing accent as a live
@@ -904,7 +904,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Brass says "waiting on a human"; the word and the chip shape carry the
    state, so it still reads in greyscale. */
 .signoff-chip { display: inline-flex; align-items: center; padding: .12rem .45rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-.signoff-chip[data-tone="waiting"] { color: var(--signal-warn); border-color: var(--warn-a12); background: var(--warn-a12); }
+.signoff-chip[data-tone="waiting"] { color: var(--status-attention-fg); border-color: var(--status-attention-border); background: var(--status-attention-bg); }
 /* The voided treatment in the console card is the chip form of the same
    coral label the queue renders — reason as body text, no controls. */
 .signoff-card .approval-voided { padding-left: 0; border-left: 0; }
@@ -948,8 +948,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .objective-card-desc { margin: 0; color: var(--text-muted); max-width: 70ch; }
 .objective-card-dispatch { margin: 0; }
 .objective-proof { display: inline-flex; align-items: center; padding: .12rem .45rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--muted); }
-.objective-proof[data-state="proven"] { color: var(--signal-ok); border-color: var(--ok-a12); background: var(--ok-a12); }
-.objective-proof[data-state="regressed"] { color: var(--signal-crit); border-color: var(--crit-a08); background: var(--crit-a08); }
+.objective-proof[data-state="proven"] { color: var(--signal-ok); border-color: var(--status-success-border); background: var(--status-success-bg); }
+.objective-proof[data-state="regressed"] { color: var(--signal-crit); border-color: var(--status-danger-border); background: var(--status-danger-bg); }
 .objective-proof-since { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); }
 .objective-proof-since time, .objective-evidence time { font-variant-numeric: tabular-nums; }
 .objective-evidence { display: grid; gap: .35rem; }
@@ -997,8 +997,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   text-transform: uppercase;
   color: var(--muted);
 }
-.app-body .data-source-badge[data-tone="success"] { color: var(--aqua); background: none; border: 0; }
-.app-body .data-source-badge[data-tone="error"] { color: var(--coral); background: none; border: 0; }
+.app-body .data-source-badge[data-tone="success"] { color: var(--status-success-fg); background: none; border: 0; }
+.app-body .data-source-badge[data-tone="error"] { color: var(--status-danger-fg); background: none; border: 0; }
 
 /* Panels stop pretending to be cards: no shadow, no inset ring. Sections
    are separated by a single hairline, the way a spec sheet is ruled. */
@@ -1075,8 +1075,8 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .descent-item a:hover { color: var(--aqua); }
 
 /* Alive. The only glow in the product, on the only thing that is happening. */
-.descent-item.is-live::before { background: var(--accent-graphic); box-shadow: 0 0 0 1px var(--accent-a35), 0 0 12px -2px var(--accent-a48); animation: crew-breathe 2.6s ease-in-out infinite; }
-.descent-item.is-live .who { color: var(--accent-text); }
+.descent-item.is-live::before { background: var(--status-live-dot); box-shadow: 0 0 0 1px var(--status-live-border), 0 0 12px -2px var(--status-live-dot); animation: crew-breathe var(--dur-ambient) var(--ease-in-out) infinite; }
+.descent-item.is-live .who { color: var(--status-live-fg); }
 /* Shipped work is settled: it keeps its place in the descent but stops
    asking for attention. */
 .descent-band[data-state="shipped"] .descent-item { opacity: .62; }
@@ -1260,7 +1260,7 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 
 /* The doing panel's dot answers the same liveness question the tiles do. */
 [data-agent-doing-panel] .crew-dot { margin-top: 0; align-self: center; }
-[data-agent-doing-panel].is-on .crew-dot { background: var(--aqua); opacity: 1; box-shadow: 0 0 0 1px var(--accent-a24), 0 0 12px -2px var(--accent-a35); animation: crew-breathe 2.6s ease-in-out infinite; }
+[data-agent-doing-panel].is-on .crew-dot { background: var(--status-live-dot); opacity: 1; box-shadow: 0 0 0 1px var(--status-live-border), 0 0 12px -2px var(--status-live-dot); animation: crew-breathe var(--dur-ambient) var(--ease-in-out) infinite; }
 @media (prefers-reduced-motion: reduce) {
   [data-agent-doing-panel].is-on .crew-dot { animation: none; }
 }
@@ -1268,13 +1268,13 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* Role colour is identity, never state: in this app it appears only on the
    monogram that names the agent, scoped by the roster's own role key. The
    three engineer staff roles and the repeatable engineer share one azure. */
-.user-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); background: rgb(var(--role-pm-rgb) / .13); border: 1px solid rgb(var(--role-pm-rgb) / .32); }
-.user-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); background: rgb(var(--role-em-rgb) / .13); border: 1px solid rgb(var(--role-em-rgb) / .32); }
-.user-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); background: rgb(var(--role-design-rgb) / .13); border: 1px solid rgb(var(--role-design-rgb) / .32); }
+.user-avatar[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); background: var(--role-pm-soft); border: 1px solid var(--role-pm-border); }
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); background: var(--role-em-soft); border: 1px solid var(--role-em-border); }
+.user-avatar[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); background: var(--role-design-soft); border: 1px solid var(--role-design-border); }
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
 .user-avatar[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
-.user-avatar[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); background: rgb(var(--role-eng-rgb) / .13); border: 1px solid rgb(var(--role-eng-rgb) / .32); }
+.user-avatar[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); background: var(--role-eng-soft); border: 1px solid var(--role-eng-border); }
 
 /* Team lifecycle is not work. It sits under the floor, quiet. */
 .wfoot { margin-top: 1.7rem; padding-top: 1.2rem; border-top: 1px solid var(--line); opacity: .62; transition: opacity .24s ease; }
@@ -1489,4 +1489,137 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .dn-sweep:hover { text-decoration: none; }
   .dn-nudge:hover .dn-icon:last-child { transform: translateX(3px); }
   .dn-nudge-back:hover .dn-icon:first-child { transform: translateX(-3px); }
+}
+
+/* ===========================================================================
+   EXPRESSION LAYER — applied
+   ===========================================================================
+   Role colour is identity, never state, and only ever paints under a
+   [data-role-key=…] scope with the monogram beside it. Status colour paints
+   only under data-state/data-status/data-tone scopes or a liveness class.
+   Everything else on these surfaces stays ink. */
+
+/* ── The crew: monogram plates ─────────────────────────────────────────
+   The role's code in the role's hue on its soft plate; the liveness dot
+   rides the plate's corner; a working agent's plate grows a breathing
+   ring in its own colour. The hue arrives from the .user-avatar
+   [data-role-key=…] rules above — this block is geometry only. */
+.app-body .crew-monogram { position: relative; width: 26px; height: 26px; flex: none; border-radius: var(--radius-sm); font-size: .56rem; font-weight: 650; letter-spacing: .04em; }
+.app-body .crew-monogram .crew-dot { position: absolute; right: -3px; bottom: -3px; margin: 0; box-shadow: 0 0 0 2px var(--surface); }
+.app-body .crew-row.is-on .crew-monogram::after {
+  content: ""; position: absolute; inset: -4px; border-radius: calc(var(--radius-sm) + 4px);
+  border: 1px solid currentColor; opacity: .35; pointer-events: none;
+  animation: dn-breathe var(--dur-ambient) var(--ease-in-out) infinite;
+}
+/* The agent view hero answers the same liveness question its tile does. */
+.agent-monogram { position: relative; }
+.agent-monogram.is-on::after {
+  content: ""; position: absolute; inset: -5px; border-radius: calc(var(--ra-lg, 8px) + 5px);
+  border: 1px solid currentColor; opacity: .35; pointer-events: none;
+  animation: dn-breathe var(--dur-ambient) var(--ease-in-out) infinite;
+}
+
+/* ── The ledger: who did it, in their own hue ─────────────────────────
+   The actor's NAME carries the actor's role tint — the name is the word
+   the colour pairs with — and the evidence rail under the sentence takes
+   the same identity, so a glance down the log reads as voices. */
+.ledger-actor { font-weight: 600; }
+.ledger-actor[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] { color: var(--role-pm); }
+.ledger-actor[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] { color: var(--role-em); }
+.ledger-actor[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] { color: var(--role-design); }
+.ledger-actor[data-role-key="AGENT_ROLE_STAFF_CLIENT"],
+.ledger-actor[data-role-key="AGENT_ROLE_STAFF_BACKEND"],
+.ledger-actor[data-role-key="AGENT_ROLE_STAFF_PLATFORM"],
+.ledger-actor[data-role-key="AGENT_ROLE_ENGINEER"] { color: var(--role-eng); }
+/* The detail block reads as quoted evidence: a rail, tinted by its author. */
+.app-body .customer-activity-details { border-left: 2px solid var(--line); padding-left: .6rem; }
+.customer-activity-item[data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER"] .customer-activity-details { border-left-color: var(--role-pm-border); }
+.customer-activity-item[data-role-key="AGENT_ROLE_ENGINEERING_MANAGER"] .customer-activity-details { border-left-color: var(--role-em-border); }
+.customer-activity-item[data-role-key="AGENT_ROLE_PRODUCT_DESIGNER"] .customer-activity-details { border-left-color: var(--role-design-border); }
+.customer-activity-item[data-role-key="AGENT_ROLE_STAFF_CLIENT"] .customer-activity-details,
+.customer-activity-item[data-role-key="AGENT_ROLE_STAFF_BACKEND"] .customer-activity-details,
+.customer-activity-item[data-role-key="AGENT_ROLE_STAFF_PLATFORM"] .customer-activity-details,
+.customer-activity-item[data-role-key="AGENT_ROLE_ENGINEER"] .customer-activity-details { border-left-color: var(--role-eng-border); }
+
+/* State words in the meta line: open is kelp, merged is the engineers'
+   azure — the deliberate signature, merged work is theirs — waiting states
+   are brass, failures coral, running is lumen. The word itself stays. */
+.customer-activity-meta [data-status="open"] { color: var(--status-success-fg); }
+.customer-activity-meta [data-status="succeeded"] { color: var(--status-success-fg); }
+.customer-activity-meta [data-status="merged"] { color: var(--role-eng); }
+.customer-activity-meta [data-status="pending"] { color: var(--status-attention-fg); }
+.customer-activity-meta [data-status="running"] { color: var(--status-live-fg); }
+.customer-activity-meta [data-status="failed"],
+.customer-activity-meta [data-status="voided"] { color: var(--status-danger-fg); }
+
+/* ── The objectives: the check plate ──────────────────────────────────
+   Kelp plate with the tick scaling in for a proof that holds; the tick is
+   --surface so it opposes the fill in both themes (white on the darker
+   light-theme kelp, black on the lighter dark-theme kelp). Lumen breathe
+   while the crew works toward proof; coral plate with one shake for a
+   proof that stopped holding. The chip beside it carries the word. */
+.obj-check { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text-dim); background: transparent; }
+.obj-check::before { content: ""; font: 600 .68rem/1 var(--font-mono); }
+.obj-check[data-state="proven"] { background: var(--status-success-dot); border-color: var(--status-success-dot); color: var(--surface); }
+.obj-check[data-state="proven"]::before { content: "✓"; animation: dn-tick var(--dur-slow) var(--ease-arrive) both; }
+.obj-check[data-state="running"] { border-color: var(--status-live-dot); color: var(--status-live-fg); }
+.obj-check[data-state="running"]::before { content: "●"; font-size: .5rem; animation: dn-breathe var(--dur-loop) var(--ease-in-out) infinite; }
+.obj-check[data-state="regressed"] { border-color: var(--status-danger-dot); color: var(--status-danger-fg); background: var(--status-danger-bg); animation: dn-shake var(--dur-slower) var(--ease-in-out) both; }
+.obj-check[data-state="regressed"]::before { content: "✕"; }
+.objective-card-head .obj-check { align-self: center; }
+.onnow-head .obj-check { margin-right: auto; }
+/* The acceptance evidence line's state reading, through its own scope. */
+.objective-evidence[data-state="proven"] .objective-evidence-line { color: var(--status-success-fg); }
+.objective-evidence[data-state="regressed"] .objective-evidence-line { color: var(--status-danger-fg); }
+/* The dispatch state word on the "On now" line follows its tone. */
+.onnow-state [data-tone="success"] { color: var(--status-success-fg); }
+.onnow-state [data-tone="error"] { color: var(--status-danger-fg); }
+
+/* ── The descent: state glyph colours ─────────────────────────────────
+   Building already glows lumen above. Review waits on a human, so its
+   marker and holder read brass; merged keeps the engineers' azure even
+   at shipped-band opacity, and closed stays quiet ink. */
+.descent-band[data-state="review"] .descent-item::before { background: var(--status-attention-dot); }
+.descent-band[data-state="review"] .descent-item .who { color: var(--status-attention-fg); }
+.descent-item[data-status="merged"]::before { background: var(--role-eng); }
+.descent-item[data-status="merged"] .who { color: var(--role-eng); }
+
+/* ── The sign-off card ────────────────────────────────────────────────
+   The locking beat carries the travelling live hairline (the class rides
+   the markup; [hidden] keeps it inert until the beat is real). The signed
+   chip is kelp and its check ticks in each time the beat surfaces; a
+   voided label arrives with one shake — the shake is the non-verbal half,
+   the reason underneath is the verbal one. */
+.signoff-chip[data-tone="signed"] { color: var(--status-success-fg); border-color: var(--status-success-border); background: var(--status-success-bg); }
+.signoff-chip[data-tone="signed"] .signoff-tick { display: inline-block; animation: dn-tick var(--dur-slow) var(--ease-arrive) both; }
+.signoff-card .approval-voided-label { animation: dn-shake var(--dur-slower) var(--ease-in-out) both; }
+
+/* ── Live signals ─────────────────────────────────────────────────────
+   The console's writing caret takes the live colour and the loop-fast
+   beat, alongside the pinned rule that draws it; the typing dots breathe
+   in the same lumen. Both exist only while something is genuinely live. */
+.msg.is-writing .msg-text::after { color: var(--status-live-dot); animation-duration: var(--dur-loop-fast); }
+.console-typing-dots i { background: var(--status-live-dot); }
+
+/* ── Buttons: the sweep of light ──────────────────────────────────────
+   Press physics live on the shared .button rule above. The primary action
+   gains the one hairline of light that sweeps across it on hover — drawn
+   in the label's own colour, so it stays achromatic and theme-correct. */
+.button-primary { position: relative; overflow: hidden; }
+.button-primary::after { content: ""; position: absolute; left: 0; top: 0; height: 1px; width: 100%; background: currentColor; opacity: .55; transform: scaleX(0); transform-origin: left; }
+
+/* ── A toast arrives ──────────────────────────────────────────────────
+   The unprompted-arrival curve; replays each time [hidden] lifts. */
+.toast { animation: dn-pop var(--dur-slow) var(--ease-arrive) both; }
+
+/* ── First-run and settings: the same vocabulary ──────────────────────
+   A chosen repository reads as selected (achromatic — selection is not
+   status) and its check scales in with the same confirmation curve
+   everything else uses. Destructive actions keep their coral. */
+.repository-option:has(input:checked) { background: var(--accent-a05); }
+.repository-option:has(input:checked) strong { color: var(--text-bright); }
+.repository-option input:checked { animation: dn-tick var(--dur-slow) var(--ease-arrive) both; }
+
+@media (hover: hover) {
+  .button-primary:hover::after { animation: dn-sweep var(--dur-slow) var(--ease-out) both; }
 }

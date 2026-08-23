@@ -168,6 +168,7 @@
     objectiveSubmit: document.querySelector("[data-objective-form] button"),
     objectiveError: document.querySelector("[data-objective-error]"),
     objectiveRecord: document.querySelector("[data-objective-record]"),
+    objectiveCheck: document.querySelector("[data-objective-check]"),
     objectiveTitle: document.querySelector("[data-objective-title]"),
     objectiveDescription: document.querySelector("[data-objective-description]"),
     objectiveDispatchState: document.querySelector("[data-objective-dispatch-state]"),
@@ -342,6 +343,10 @@
     provisioningRouteKey: "",
     activityEvents: [],
     activityEventIds: new Set(),
+    // Rows the live stream just delivered, still owed their one arrival
+    // flash. Marked on append, consumed on the very next ledger paint, so
+    // a later repaint can never replay the motion.
+    freshActivityIds: new Set(),
     provisioningEvents: [],
     activityProjections: new Map(),
     activityFilter: "all",
@@ -3408,6 +3413,9 @@
     if (ui.objectiveSubmit) ui.objectiveSubmit.disabled = false;
     if (ui.objectiveEmpty) ui.objectiveEmpty.hidden = true;
     ui.objectiveRecord.hidden = false;
+    // The overview card carries the same check plate as the objective's own
+    // record, from the same classifier, so the two can never disagree.
+    if (ui.objectiveCheck) ui.objectiveCheck.dataset.state = objectivePlateState(objective, objectiveAcceptanceState(objective));
     ui.objectiveTitle.textContent = stringValue(objective.title) || "Untitled objective";
     ui.objectiveDescription.textContent = stringValue(objective.description) || "No description returned.";
     renderObjectiveDispatch(objective.dispatch);
@@ -4009,6 +4017,15 @@
     item.className = "objective-card";
     const head = document.createElement("div");
     head.className = "objective-card-head";
+    // The check plate says the proof state before the words do: kelp with a
+    // tick that scales in for proven, a breathing lumen dot while the crew
+    // is still working toward proof, coral with one shake for a proof that
+    // stopped holding. The chip beside it carries the word, so the plate is
+    // never the only cue.
+    const check = document.createElement("span");
+    check.className = "obj-check";
+    check.dataset.state = objectivePlateState(objective, acceptanceState);
+    check.setAttribute("aria-hidden", "true");
     const title = document.createElement("strong");
     title.className = "objective-card-title";
     title.textContent = stringValue(objective.title) || "Untitled objective";
@@ -4016,7 +4033,7 @@
     proof.className = "objective-proof";
     proof.dataset.state = acceptanceState;
     proof.textContent = acceptanceState === "proven" ? "Proven" : acceptanceState === "regressed" ? "Regressed" : "Not proven yet";
-    head.append(title, proof);
+    head.append(check, title, proof);
     const satisfiedAt = timestampDate(objective.satisfiedAt);
     if (satisfiedAt) {
       const since = document.createElement("span");
@@ -4835,6 +4852,17 @@
       const dot = document.createElement("i");
       dot.className = "crew-dot";
       dot.setAttribute("aria-hidden", "true");
+      // The monogram plate: the role's code (PM, EM, PD, E1…) in the role's
+      // own hue on its soft plate. Identity colour never appears without the
+      // monogram that names the agent, and the paint is scoped by the same
+      // role key the tile already carries. The liveness dot rides the
+      // plate's corner, so presence and identity read as one mark.
+      const monogram = document.createElement("span");
+      monogram.className = "user-avatar crew-monogram";
+      monogram.dataset.roleKey = canonicalRole.key;
+      monogram.setAttribute("aria-hidden", "true");
+      monogram.textContent = canonicalRole.code;
+      monogram.append(dot);
       const copy = document.createElement("div");
       copy.className = "crew-copy";
       const name = document.createElement("strong");
@@ -4862,7 +4890,7 @@
       row.dataset.idleLine = active ? "waiting for work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
       row.classList.toggle("is-on", live.state === "working" || live.state === "briefed");
       roleLine.textContent = crewStatusLine(live, row.dataset.idleLine);
-      row.append(dot, copy);
+      row.append(monogram, copy);
       ui.agentList.append(row);
     });
     // Role keys, not agent ids: liveness is measured per role, so the three
@@ -5033,6 +5061,19 @@
     return Boolean(conclusion) && !["success", "neutral", "skipped"].includes(conclusion);
   }
 
+  // Write a strip reading; when the value actually changed, replay the tick
+  // confirmation by removing the class, forcing one reflow (offsetWidth is a
+  // READ — style-src blocks style writes, not layout reads) and adding it
+  // back so the animation restarts. An unchanged value never moves.
+  function setStatValue(element, text) {
+    if (!element) return;
+    if (element.textContent === text) return;
+    element.textContent = text;
+    element.classList.remove("dn-tick");
+    void element.offsetWidth;
+    element.classList.add("dn-tick");
+  }
+
   function renderStatStrip() {
     if (!ui.statStrip) return;
     const team = selectedTeam();
@@ -5053,10 +5094,10 @@
     if (Array.isArray(objectives) && objectives.length) {
       const proven = objectives.filter((objective) => objectiveAcceptanceState(objective) === "proven").length;
       const regressed = objectives.filter((objective) => objectiveAcceptanceState(objective) === "regressed").length;
-      ui.statObjectives.textContent = `${proven}/${objectives.length}`;
+      setStatValue(ui.statObjectives, `${proven}/${objectives.length}`);
       ui.statObjectivesNote.textContent = regressed ? `${regressed} regressed` : "proven by acceptance runs";
     } else {
-      ui.statObjectives.textContent = "—";
+      setStatValue(ui.statObjectives, "—");
       ui.statObjectivesNote.textContent = Array.isArray(objectives) ? "no objectives yet" : "not loaded";
     }
 
@@ -5066,7 +5107,7 @@
     const remaining = session.creditBalance;
     const consumed = session.creditPeriodConsumed;
     if (remaining !== null && remaining !== undefined) {
-      ui.statCredits.textContent = formatCreditMicros(remaining);
+      setStatValue(ui.statCredits, formatCreditMicros(remaining));
       if (consumed !== null && consumed !== undefined) {
         const total = Number(remaining) + Number(consumed);
         ui.statCreditsNote.textContent = `${formatCreditMicros(consumed)} used this period`;
@@ -5076,7 +5117,7 @@
         setGaugeWidth(ui.statCreditsFill, 0);
       }
     } else {
-      ui.statCredits.textContent = "—";
+      setStatValue(ui.statCredits, "—");
       ui.statCreditsNote.textContent = "balance unavailable";
       setGaugeWidth(ui.statCreditsFill, 0);
     }
@@ -5088,10 +5129,10 @@
     if (pullsLoaded || issuesLoaded) {
       const openPulls = session.githubPullRequests.filter((record) => githubPullRequestStateLabel(record?.state) === "open").length;
       const openIssues = session.githubIssues.filter((record) => githubIssueStateLabel(record?.state) === "open").length;
-      ui.statDelivery.textContent = `${pullsLoaded ? openPulls.toString() : "—"} · ${issuesLoaded ? openIssues.toString() : "—"}`;
+      setStatValue(ui.statDelivery, `${pullsLoaded ? openPulls.toString() : "—"} · ${issuesLoaded ? openIssues.toString() : "—"}`);
       ui.statDeliveryNote.textContent = "open PRs · open issues";
     } else {
-      ui.statDelivery.textContent = "—";
+      setStatValue(ui.statDelivery, "—");
       ui.statDeliveryNote.textContent = session.deliveryRepositoryId ? "delivery not loaded" : "no repository selected";
     }
 
@@ -5099,12 +5140,23 @@
     // liveness answer, so the number and the glow always agree.
     if (session.agentRoster.length) {
       const active = session.agentRoster.filter((roleKey) => ["working", "briefed"].includes(agentLiveness(roleKey).state)).length;
-      ui.statAgents.textContent = `${active}/${session.agentRoster.length}`;
+      setStatValue(ui.statAgents, `${active}/${session.agentRoster.length}`);
       ui.statAgentsNote.textContent = active ? "working now" : "waiting for work";
     } else {
-      ui.statAgents.textContent = "—";
+      setStatValue(ui.statAgents, "—");
       ui.statAgentsNote.textContent = "no roster loaded";
     }
+  }
+
+  // The check plate's own state: the acceptance classification, except that
+  // an unproven objective whose handoff is in flight or delivered reads as
+  // "running" — the crew has it, so the plate breathes lumen instead of
+  // sitting as an empty box. Proof states pass through untouched; the
+  // classifier below stays the single authority on proven/regressed.
+  function objectivePlateState(objective, acceptanceState) {
+    if (acceptanceState !== "unproven") return acceptanceState;
+    const dispatchLabel = objectiveDispatchStateLabel(objective?.dispatch?.state);
+    return ["queued", "delivering", "delivered"].includes(dispatchLabel) ? "running" : "unproven";
   }
 
   // The one classifier for an objective's proof, shared by the instrument
@@ -5943,6 +5995,8 @@
   function resetActivityView(message, label, tone = "") {
     session.activityEvents = [];
     session.activityEventIds = new Set();
+    session.freshActivityIds = new Set();
+    setLogLive(false);
     session.provisioningEvents = [];
     session.activityProjections = new Map();
     session.activityFilter = "all";
@@ -6434,6 +6488,9 @@
       ui.agentLivenessChip.classList.toggle("is-on", on);
     }
     if (ui.agentDoingPanel) ui.agentDoingPanel.classList.toggle("is-on", on);
+    // The hero's monogram plate grows the breathing ring exactly when the
+    // crew tile does — same liveness answer, same ambient beat.
+    if (ui.agentMonogram) ui.agentMonogram.classList.toggle("is-on", on);
     if (ui.agentDoing) ui.agentDoing.textContent = (roleKey && latestActivityForRole(roleKey)) || "Nothing on the stream right now.";
     renderAgentActivity();
   }
@@ -6578,17 +6635,17 @@
   function renderAgentCounters() {
     if (ui.agentCountSessions) {
       const loaded = Array.isArray(session.agentSessions);
-      ui.agentCountSessions.textContent = loaded ? `${session.agentSessions.length}${session.agentSessionsMore ? "+" : ""}` : "—";
+      setStatValue(ui.agentCountSessions, loaded ? `${session.agentSessions.length}${session.agentSessionsMore ? "+" : ""}` : "—");
       if (ui.agentCountSessionsNote) ui.agentCountSessionsNote.textContent = loaded ? (session.agentSessionsMore ? "more on the record" : "on the record") : "not loaded";
     }
     if (ui.agentCountChanges) {
       const loaded = Array.isArray(session.agentChanges);
-      ui.agentCountChanges.textContent = loaded ? `${session.agentChanges.length}${session.agentChangesMore ? "+" : ""}` : "—";
+      setStatValue(ui.agentCountChanges, loaded ? `${session.agentChanges.length}${session.agentChangesMore ? "+" : ""}` : "—");
       if (ui.agentCountChangesNote) ui.agentCountChangesNote.textContent = loaded ? (session.agentChangesMore ? "more on the record" : "on the record") : "not loaded";
     }
     if (ui.agentCountSpend) {
       const record = agentSpendRecord();
-      ui.agentCountSpend.textContent = record ? formatCreditMicros(record.creditsUsedMicros) : "—";
+      setStatValue(ui.agentCountSpend, record ? formatCreditMicros(record.creditsUsedMicros) : "—");
       if (ui.agentCountSpendNote) ui.agentCountSpendNote.textContent = record ? "this paid period" : "not measured";
     }
   }
@@ -7060,6 +7117,16 @@
     session.activityAbort = null;
     if (session.activityReconnectTimer) window.clearTimeout(session.activityReconnectTimer);
     session.activityReconnectTimer = null;
+    setLogLive(false);
+  }
+
+  // The travelling hairline on the log's masthead is a claim that something
+  // is actively streaming, so it is set exactly where the stream's own state
+  // is set — established on, torn down or failed off — never left painted by
+  // a state the transport no longer vouches for.
+  function setLogLive(on) {
+    const head = ui.activityState ? ui.activityState.closest(".log-head") : null;
+    if (head) head.classList.toggle("dn-livebar", Boolean(on));
   }
 
   function stopProvisioningStream() {
@@ -7159,6 +7226,7 @@
       if (streamEstablished || controller.signal.aborted) return;
       streamEstablished = true;
       setSourceState(ui.activityState, "Listening", "success");
+      setLogLive(true);
       if (!allActivityEntries().length) {
         setEmptyState(ui.activityEmpty, "Listening", "Connected to your team. The first thing they do appears here.");
       }
@@ -7194,6 +7262,7 @@
           scheduleActivityReconnect(teamId, generation, nextAttempt, false);
           return;
         }
+        setLogLive(false);
         setSourceState(ui.activityState, "Stream ended", "error");
         ui.activityRetry.hidden = false;
       }
@@ -7216,6 +7285,7 @@
         return;
       }
       const message = apiErrorMessage(normalized, "Live activity is unavailable.");
+      setLogLive(false);
       setSourceState(ui.activityState, "Unavailable", "error");
       if (!allActivityEntries().length) {
         ui.activityEmpty.hidden = false;
@@ -7482,9 +7552,21 @@
     session.lastActivitySequence = entry.sequence;
     session.activityEventIds.add(entry.id);
     session.activityEvents.push(entry);
+    // The append path is the only place a row earns arrival motion, and the
+    // flash claims "this just happened" — so a replayed history (the stream
+    // replays recorded events through this same loop on every connect) must
+    // paint still. Recency is the honest discriminator: only an event that
+    // occurred moments ago rises and flashes once.
+    const occurredMs = timestampDate(entry.occurredAt)?.getTime();
+    if (Number.isFinite(occurredMs) && Date.now() - occurredMs <= 90 * 1000) {
+      session.freshActivityIds.add(entry.id);
+    }
     if (session.activityEvents.length > 80) {
       const removed = session.activityEvents.shift();
-      if (removed) session.activityEventIds.delete(removed.id);
+      if (removed) {
+        session.activityEventIds.delete(removed.id);
+        session.freshActivityIds.delete(removed.id);
+      }
     }
     renderActivityLedger();
   }
@@ -7688,6 +7770,10 @@
       items.forEach((entry) => {
         const row = document.createElement("div");
         row.className = band.state === "building" ? "descent-item is-live" : "descent-item";
+        // Shipped work keeps its last state word on the row so the glyph
+        // colour can say it too: merged carries the engineers' azure — the
+        // deliberate signature, merged work is theirs — closed stays quiet.
+        if (band.state === "shipped") row.dataset.status = stringValue(entry.status) === "merged" ? "merged" : "closed";
         const left = document.createElement("span");
         const ref = document.createElement("span");
         ref.className = "ref";
@@ -7749,7 +7835,21 @@
     // being shown underneath that; now it is the entry.
     const speaker = agentDisplayName(entry);
     const roleLabel = entry.source === "runtime" ? agentRoleLabel(entry.agentRole) : "";
-    title.textContent = speaker ? `${speaker} · ${roleLabel}` : (stringValue(entry.title) || "Update");
+    // The actor's name carries the actor's role hue — the name IS the word
+    // the colour pairs with, so the tint is never the only cue. The role key
+    // also rides the row itself, so the evidence rail underneath can carry
+    // the same identity. Colour paints only under [data-role-key=…] scopes.
+    const actorRole = entry.source === "runtime" ? agentRoleContract?.canonicalAgentRole?.(entry.agentRole) : null;
+    if (speaker && actorRole) {
+      const actor = document.createElement("span");
+      actor.className = "ledger-actor";
+      actor.dataset.roleKey = actorRole.key;
+      actor.textContent = speaker;
+      title.append(actor, ` · ${roleLabel}`);
+      item.dataset.roleKey = actorRole.key;
+    } else {
+      title.textContent = speaker ? `${speaker} · ${roleLabel}` : (stringValue(entry.title) || "Update");
+    }
     summary.textContent = stringValue(entry.safeSummary) || stringValue(entry.title) || "No detail was reported.";
     // Human context only. The raw resource UUIDs the sources attach read as
     // machine telemetry in a customer timeline; anyone debugging still has
@@ -7766,6 +7866,11 @@
     metaValues.filter(Boolean).forEach((value) => {
       const span = document.createElement("span");
       span.textContent = value;
+      // The state word carries the state colour: open is kelp, merged is
+      // the engineers' azure (the deliberate signature — merged work is
+      // theirs), failed and voided are coral. The word itself stays, so
+      // the line still reads in greyscale.
+      if (value === stringValue(entry.status)) span.dataset.status = value.toLowerCase();
       meta.append(span);
     });
     copy.append(title, summary);
@@ -7835,7 +7940,17 @@
       const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
       return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
     });
-    shown.forEach(({ entry, evidence }) => ui.activityList.append(activityLedgerItem(entry, evidence)));
+    shown.forEach(({ entry, evidence }) => {
+      const item = activityLedgerItem(entry, evidence);
+      // A row the stream just delivered rises and flashes once (.dn-in-log).
+      // The mark is consumed here, on its first paint, so re-renders — a
+      // filter change, a projection refresh — can never replay the motion.
+      if (session.freshActivityIds.has(entry.id)) {
+        item.classList.add("dn-in-log");
+        session.freshActivityIds.delete(entry.id);
+      }
+      ui.activityList.append(item);
+    });
     ui.activityEmpty.hidden = entries.length > 0;
     ui.activityList.hidden = entries.length === 0;
     if (!entries.length && allEntries.length) {

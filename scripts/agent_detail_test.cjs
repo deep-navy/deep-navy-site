@@ -208,6 +208,9 @@ test("role hues paint only under selectors scoped to the roster's role key", () 
   // Walk every rule that paints with a role token: its selector must be
   // pinned to [data-role-key=...]. Identity colour on the monogram that
   // names the agent - never on chrome, never keyed to anything but the role.
+  // ONE deliberate exception, from the design system itself: merged work
+  // carries the engineers' azure ([data-status="merged"]) — merged work is
+  // theirs, and the signature is scoped to that exact state and nothing else.
   const chunks = css.replace(/\/\*[\s\S]*?\*\//g, "").split("}");
   let painted = 0;
   for (const chunk of chunks) {
@@ -217,7 +220,7 @@ test("role hues paint only under selectors scoped to the roster's role key", () 
     const body = chunk.slice(brace + 1);
     if (!/var\(--role-/.test(body)) continue;
     painted += 1;
-    assert.match(selector, /\[data-role-key=/,
+    assert.match(selector, /\[data-role-key=|\[data-status="merged"\]/,
       `role hue outside a role-scoped selector: ${selector.trim().slice(0, 80)}`);
   }
   assert.ok(painted >= 4, `expected the four role monogram rules, found ${painted}`);
