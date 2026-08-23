@@ -437,22 +437,39 @@
                 <span class="stream-state" data-activity-state>Waiting for a team</span>
                 <button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button>
               </div>
-<div class="activity-workspace">
-            <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
-            <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
-            <!-- Paging lives after the events, reached by running out of them,
-                 rather than above the feed as a control panel. -->
-            <div class="activity-more" aria-label="Load older activity">
-              <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
-              <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
-              <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
-              <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
-              <button class="button button-quiet button-small" type="button" data-sessions-more hidden>Older sessions</button>
-              <button class="button button-quiet button-small" type="button" data-workspace-more hidden>Older code changes</button>
-              <button class="button button-quiet button-small" type="button" data-issues-more hidden>Older issues</button>
-              <button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>Older pull requests</button>
-            </div>
-          </div>
+              <!-- The filters live where the log lives. They spent two waves
+                   on a separate Activity screen no navigation reached, while
+                   the list they filter rendered here; a control and the thing
+                   it controls belong in the same place. Each chip hides
+                   itself while its category is empty ("All" stays), so the
+                   row describes what this team has actually done. -->
+              <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
+                <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
+                <button type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
+                <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
+                <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
+                <button type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
+                <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
+                <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
+                <button type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
+                <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
+              </div>
+              <div class="activity-workspace">
+                <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
+                <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
+                <!-- Paging lives after the events, reached by running out of them,
+                     rather than above the feed as a control panel. -->
+                <div class="activity-more" aria-label="Load older activity">
+                  <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
+                  <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
+                  <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
+                  <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
+                  <button class="button button-quiet button-small" type="button" data-sessions-more hidden>Older sessions</button>
+                  <button class="button button-quiet button-small" type="button" data-workspace-more hidden>Older code changes</button>
+                  <button class="button button-quiet button-small" type="button" data-issues-more hidden>Older issues</button>
+                  <button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>Older pull requests</button>
+                </div>
+              </div>
             </aside>
             </div>
 
@@ -464,34 +481,10 @@
           </div>
         </section>
 
-        <section class="wview" data-view="activity" id="workspace-activity" aria-labelledby="activity-title">
-          <!-- The stream is the whole screen. What was here before put nine
-               filter chips and three internal pagination panels above the
-               feed - "snapshot source coverage", a per-source load-more, a
-               repository select - which is machinery the customer did not ask
-               about. Filters now hide themselves when they have nothing to
-               filter, and paging happens at the end of the list, where you
-               reach it by running out of events. -->
-          <header class="wtop">
-            <h2 id="activity-title">Activity</h2>
-            <p class="wctx">Everything your team does, newest first.</p>
-            <p class="wmeta"><span class="stream-state" data-activity-state>Waiting for a team</span><button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button></p>
-          </header>
-
-          <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
-            <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
-            <button type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
-            <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
-            <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
-            <button type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
-            <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
-            <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
-            <button type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
-            <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
-          </div>
-
-          <p class="wctx">This team's work and log are on the main screen.</p>
-        </section>
+        <!-- There is no Activity view. The log and its filters live on the
+             floor, beside the work they narrate - a separate activity screen
+             was tried and it meant reading cause and effect required
+             changing screens. -->
 
         <!-- ===== OBJECTIVES ===== -->
         <section class="wview" data-view="objectives" id="workspace-objectives" aria-labelledby="workspace-objectives-title">

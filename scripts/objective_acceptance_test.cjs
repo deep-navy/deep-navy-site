@@ -39,7 +39,7 @@ const timestampDate = (timestamp) => {
 const stringValue = (value) => (typeof value === "string" ? value.trim() : "");
 
 test("the objectives view is registered, shipped in the shell, and every hook has a reader", () => {
-  assert.match(views, /const VIEWS = \["overview", "activity", "economics", "approvals", "settings", "agent", "objectives"\];/);
+  assert.match(views, /const VIEWS = \["overview", "economics", "approvals", "settings", "agent", "objectives"\];/);
   assert.match(shell, /<section class="wview" data-view="objectives" id="workspace-objectives" aria-labelledby="workspace-objectives-title">/);
   assert.match(shell, /id="workspace-objectives-title"/);
   for (const hook of ["data-objectives-view-state", "data-objectives-view-empty", "data-objectives-view-list"]) {

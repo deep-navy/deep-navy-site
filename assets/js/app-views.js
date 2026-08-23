@@ -38,7 +38,10 @@
   // "objectives" has two ordinary doors - the overflow menu and the "On now"
   // card's own link - and app.js loads that view's proposals on the same
   // click this router switches the surface on.
-  const VIEWS = ["overview", "activity", "economics", "approvals", "settings", "agent", "objectives"];
+  // There is no "activity" view: the log and its filters render on the
+  // overview, beside the work they narrate, so a separate screen would only
+  // hold a sentence pointing back here.
+  const VIEWS = ["overview", "economics", "approvals", "settings", "agent", "objectives"];
   let currentView = "overview";
   let newTeamRequested = false;
   let teamCountAtRequest = 0;

@@ -30,7 +30,7 @@ function between(startMarker, endMarker) {
 test("the agent view is registered, shipped in the shell, and every hook has a reader", () => {
   // The router knows the view; the shell ships its skeleton with a unique id
   // and a labelled heading, and the way back is an ordinary view link.
-  assert.match(views, /const VIEWS = \["overview", "activity", "economics", "approvals", "settings", "agent", "objectives"\];/);
+  assert.match(views, /const VIEWS = \["overview", "economics", "approvals", "settings", "agent", "objectives"\];/);
   assert.match(shell, /<section class="wview" data-view="agent" id="workspace-agent" aria-labelledby="workspace-agent-title">/);
   assert.match(shell, /id="workspace-agent-title"/);
   const agentSection = shell.slice(shell.indexOf('data-view="agent"'), shell.indexOf('data-view="economics"'));
