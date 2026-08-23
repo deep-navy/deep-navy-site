@@ -183,8 +183,14 @@ test("role and status hues exist, and never style base chrome", () => {
   // scoping is the roster's own key attribute: a selector pinned to
   // [data-role-key=…] paints the monogram that names an agent, which is the
   // second legitimate meaning this file's header describes.
-  const HUE_REF = /var\(--(?:role-|signal-|lumen|kelp|brass|coral|amber|warning|warn-a|crit-a)/;
-  const STATE_SCOPED = /(data-tone|data-status|data-state|\[data-role-key=|\.is-(?:blocked|live|on)\b|danger|voided|error|warn|wait|crit|status|\.del\b|\.add\b|\.pr-ok\b)/;
+  // --status-* and --diff-* joined the hue-bearing set with the expression
+  // layer, so the walker polices them too. The scope matcher grew exactly
+  // four admissions, each a state's own class: .is-writing (a reply being
+  // composed), .console-typing (the composing shimmer, hidden otherwise),
+  // and the two live utilities .dn-caret/.dn-livebar, which are applied
+  // only while something genuinely streams.
+  const HUE_REF = /var\(--(?:role-|signal-|status-|diff-|lumen|kelp|brass|coral|amber|warning|warn-a|crit-a)/;
+  const STATE_SCOPED = /(data-tone|data-status|data-state|\[data-role-key=|\.is-(?:blocked|live|on|writing)\b|\.dn-(?:caret|livebar)\b|\.console-typing\b|danger|voided|error|warn|wait|crit|status|\.del\b|\.add\b|\.pr-ok\b)/;
   for (const [file, css] of [["main.css", main], ["home.css", home]]) {
     for (const { selector, body } of rules(css)) {
       for (const { prop, value } of declsOf(body)) {
