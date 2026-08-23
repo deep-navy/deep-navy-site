@@ -37,35 +37,54 @@ test("engineer count is floored at three, capped at fifty, and defaults to the f
   assert.equal(normalizeEngineerCount("nonsense"), 3, "an unparseable count falls back to the floor");
 });
 
-test("pricing is a $199 organization licence plus $199 per engineer above the floor", () => {
+/* CHANGED DELIBERATELY. This used to assert "$199 organization licence plus
+ * $199 per engineer above the floor", and it was RIGHT until the server deleted
+ * the per-seat add-on — seats are unlimited within a team and credits are the
+ * only usage charge now.
+ *
+ * The replacement is not the old assertion with the numbers edited out. A stale
+ * add-on here was never a dead constant: teamPricing's total goes onto the
+ * create-team pay button, so every engineer above three quoted the customer
+ * $199/month that the server will not bill. So what is pinned now is the
+ * property rather than a figure — the total DOES NOT MOVE with the engineer
+ * count, swept across the whole legal range. Reintroducing any per-seat term
+ * fails this immediately, whatever price it picks. */
+test("the engineer count is not an input to the price, anywhere in its range", () => {
   const floor = teamPricing({ engineerCount: 3 });
   assert.equal(floor.totalCents, 19900n);
-  assert.equal(floor.additionalEngineers, 0);
   assert.equal(floor.includesBase, true);
 
-  const five = teamPricing({ engineerCount: 5 });
-  assert.equal(five.additionalEngineers, 2);
-  assert.equal(five.addonTotalCents, 39800n);
-  assert.equal(five.totalCents, 59700n, "$199 + 2 × $199 = $597/mo");
-
+  for (const count of [3, 4, 5, 12, 49, 50]) {
+    assert.equal(teamPricing({ engineerCount: count }).totalCents, 19900n,
+      `${count} engineers changed the price; seats are unlimited and must not bill`);
+  }
   // Below the floor is treated as the floor: never priced under the base.
   assert.equal(teamPricing({ engineerCount: 2 }).totalCents, 19900n);
-  // The base can be overridden by the signed billing plan; the add-on is per-seat.
-  assert.equal(teamPricing({ engineerCount: 4, baseCents: 60000n }).totalCents, 79900n);
+  // The base can still be overridden by the signed billing plan, and that
+  // override is the ONLY thing that moves the total.
+  assert.equal(teamPricing({ engineerCount: 4, baseCents: 60000n }).totalCents, 60000n);
+
+  // And no per-seat field survives for a caller to multiply by.
+  for (const dead of ["addonCents", "addonTotalCents", "additionalEngineers"]) {
+    assert.ok(!(dead in floor), `${dead} is a per-seat price field and must not come back`);
+  }
+  // The floor is still reported, because it is a composition rule.
+  assert.equal(floor.engineerFloor, 3);
+  assert.equal(teamPricing({ engineerCount: 9 }).engineerCount, 9);
 });
 
 // Unlimited teams: the licence belongs to the ORGANIZATION and is bought once.
-// A second team is covered by it and costs nothing, unless it asks for
-// engineers above the floor — which is a genuine per-seat item and still bills.
-test("a team the subscription already covers charges nothing for its base", () => {
+// A second team is covered by it and costs nothing — now with no exception,
+// because the per-seat item that used to be the exception is deleted.
+test("a team the subscription already covers charges nothing at all", () => {
   const covered = teamPricing({ engineerCount: 3, includeBase: false });
   assert.equal(covered.totalCents, 0n, "a second team at the floor is free");
   assert.equal(covered.includesBase, false);
   assert.equal(covered.baseCents, 19900n, "the licence's price is still reported, it is just not charged again");
 
-  const coveredWithSeats = teamPricing({ engineerCount: 5, includeBase: false });
-  assert.equal(coveredWithSeats.totalCents, 39800n, "only the two seats above the floor");
-  assert.equal(coveredWithSeats.addonTotalCents, 39800n);
+  const coveredWithMoreEngineers = teamPricing({ engineerCount: 50, includeBase: false });
+  assert.equal(coveredWithMoreEngineers.totalCents, 0n,
+    "a covered team is free at any roster size — there is no per-seat item left to charge");
 });
 
 test("the roster a count implies is PM + EM + Designer + the chosen engineers", () => {

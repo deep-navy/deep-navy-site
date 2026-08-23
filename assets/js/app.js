@@ -1940,9 +1940,9 @@
   }
 
   // Engineering-agent count: a floor of three (the adversarial-review floor) up
-  // to fifty. Every team includes its three floor engineers at no extra charge;
-  // each engineer above the floor is a $199/month per-seat add-on, matched
-  // against the server.
+  // to fifty. It is a COMPOSITION rule, not a price — seats are unlimited within
+  // a team and the per-seat add-on that used to price them is deleted
+  // server-side.
   const ENGINEER_FLOOR = launchContract?.ENGINEER_FLOOR ?? 3;
   const ENGINEER_MAX = launchContract?.ENGINEER_MAX ?? 50;
 
@@ -1955,36 +1955,35 @@
 
   // What creating THIS team costs. The base is charged once, by the team that
   // starts the organization's subscription; every team after it is covered by
-  // that same licence and costs nothing unless it asks for engineers above the
-  // floor. Charging the base again is exactly the bug the unlimited-teams plan
-  // was shipped to end.
+  // that same licence and costs nothing. Charging the base again is exactly the
+  // bug the unlimited-teams plan was shipped to end.
+  //
+  // The engineer count is not part of it. It used to add a per-seat charge, and
+  // that number went onto the pay button - so leaving it here would quote a
+  // customer a total the server will not bill.
   function teamPricingFor(engineerCount) {
     const includeBase = !session.subscriptionActive;
     if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents(), includeBase });
-    const count = normalizeEngineerCount(engineerCount);
-    const additional = Math.max(0, count - ENGINEER_FLOOR);
-    const base = teamUnitAmountCents();
-    const addon = 19900n;
-    return { engineerCount: count, includedEngineers: ENGINEER_FLOOR, additionalEngineers: additional, includesBase: includeBase, baseCents: base, addonCents: addon, addonTotalCents: addon * BigInt(additional), totalCents: (includeBase ? base : 0n) + addon * BigInt(additional) };
+    return {
+      engineerCount: normalizeEngineerCount(engineerCount),
+      engineerFloor: ENGINEER_FLOOR,
+      includesBase: includeBase,
+      baseCents: teamUnitAmountCents(),
+      totalCents: includeBase ? teamUnitAmountCents() : 0n
+    };
   }
 
   // What this team adds to the bill, in the customer's own arithmetic:
   //
-  //   first team, floor crew   "$199 a month for your organization
-  //                             (includes 3 engineers, and every team after)"
-  //   later team, floor crew   "Covered by your subscription — no extra charge"
-  //   with engineers above     "… + 2 × $199 engineers = $597/mo"
+  //   first team    "$199 a month for your organization, and every team after
+  //                  this one is covered by it"
+  //   later team    "Covered by your subscription — no extra charge"
+  //
+  // There is no third case any more. The engineer count used to open one
+  // ("… + 2 × $199 engineers = $597/mo") and the server no longer bills it.
   function pricingBreakdown(pricing) {
-    const engineers = pricing.additionalEngineers > 0
-      ? `${pricing.additionalEngineers} × ${formatCents(pricing.addonCents)} engineers`
-      : "";
-    if (!pricing.includesBase) {
-      if (!engineers) return "Covered by your subscription — no extra charge";
-      return `${engineers} = ${formatCents(pricing.totalCents)}/mo on top of your subscription`;
-    }
-    const base = `${formatCents(pricing.baseCents)} a month for your organization`;
-    if (!engineers) return `${base} (includes ${pricing.includedEngineers} engineers, and every team after this one)`;
-    return `${base} + ${engineers} = ${formatCents(pricing.totalCents)}/mo`;
+    if (!pricing.includesBase) return "Covered by your subscription — no extra charge";
+    return `${formatCents(pricing.baseCents)} a month for your organization, and every team after this one is covered by it`;
   }
 
   // True only when the server will actually charge the saved card off-session:
@@ -7603,7 +7602,9 @@
       ["Base licence", organizationSubscriptionCents() === null
         ? "The billing service did not report the plan price, so it is not shown here. Your invoice below carries what you were charged."
         : `${formatCents(organizationSubscriptionCents())} a month for this organization · as many teams as you need`],
-      ["Engineer seats", seats ? `${seats} above the floor of ${ENGINEER_FLOOR}, billed per seat` : `None above the floor of ${ENGINEER_FLOOR}, so nothing is billed per seat`],
+      ["Engineers", seats
+        ? `${seats} above the floor of ${ENGINEER_FLOOR} across your teams, at no per-seat charge`
+        : `Every team is at the floor of ${ENGINEER_FLOOR}. Engineers are not charged per seat either way`],
       [session.subscription?.cancelAtPeriodEnd ? "Ends" : "Renews", periodEnds ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(periodEnds) : "Not reported"],
       ["Card on file", card || "No card on file"]
     ];

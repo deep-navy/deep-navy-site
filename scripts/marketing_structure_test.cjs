@@ -167,7 +167,14 @@ test("the mobile nav is the kit's full-height sheet", () => {
 /* ---- pricing: the kit's plans and FAQ over the real numbers ---------------- */
 test("pricing restyles the contracted numbers — it invents none", () => {
   assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per organization · month<\/span><\/span>/);
-  assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per engineer · month<\/span><\/span>/);
+  /* CHANGED DELIBERATELY: this pinned "$199 per engineer · month". The server
+   * deleted the per-seat add-on, so that card was quoting a charge that no
+   * longer exists. The card stays — three cards is the grid — and now states
+   * the real figure, which is nothing. Pinned as $0 rather than deleted so the
+   * page cannot quietly drift back to naming a per-seat price. */
+  assert.match(pricing, /<span class="lp-plan-price">\$0 <span class="lp-plan-per">per engineer · month<\/span><\/span>/);
+  assert.doesNotMatch(pricing, /\$199 USD per engineer/, "the per-engineer charge is deleted server-side");
+  assert.doesNotMatch(pricing, /Additional engineers/, "there is no additional-engineer line item to bill");
   assert.match(pricing, /<span class="lp-plan-price">\$100 <span class="lp-plan-per">per 10,000 credits<\/span><\/span>/);
   assert.equal((pricing.match(/class="lp-plan-price"/g) || []).length, 3, "three prices exist; a fourth would be invented");
   assert.match(pricing, /class="lp-plan lp-plan-featured dn-reveal"/, "the organization plan is the featured card");

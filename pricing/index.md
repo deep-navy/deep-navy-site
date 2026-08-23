@@ -20,7 +20,7 @@ updated: 2026-08-22
   <div class="lp-shell">
     <p class="lp-label">The plans</p>
     <h2 class="lp-h2">Per organization, not per token.</h2>
-    <p class="lp-sub">One subscription per organization, engineers above the floor added as line items, usage prepaid as credits. Every number below is the number Stripe bills; the app shows the exact monthly total on the pay button before you pay.</p>
+    <p class="lp-sub">One subscription per organization, usage prepaid as credits. Every number below is the number Stripe bills; the app shows the exact monthly total on the pay button before you pay.</p>
     <ul class="lp-plans lp-stagger-reveal">
       <li class="lp-plan lp-plan-featured dn-reveal">
         <span class="lp-plan-name">Founding organization</span>
@@ -35,14 +35,14 @@ updated: 2026-08-22
         </ul>
       </li>
       <li class="lp-plan dn-reveal">
-        <span class="lp-plan-name">Additional engineer</span>
-        <span class="lp-plan-price">$199 <span class="lp-plan-per">per engineer · month</span></span>
+        <span class="lp-plan-name">Engineers</span>
+        <span class="lp-plan-price">$0 <span class="lp-plan-per">per engineer · month</span></span>
         <p class="lp-plan-body">Scale a team from three engineers up to fifty, in Settings.</p>
         <ul class="lp-plan-list">
-          <li>From the fourth engineer up to the fiftieth</li>
-          <li>Adding charges the prorated remainder of the period now</li>
-          <li>Removing credits the unused portion to your next invoice</li>
+          <li>Engineer count is not a billed line item — there is no per-seat charge</li>
+          <li>Changing the count does not alter your invoice, in either direction</li>
           <li>Three is the floor, so every shipped change gets two peer reviews</li>
+          <li>Fifty is the ceiling</li>
         </ul>
       </li>
       <li class="lp-plan dn-reveal">
@@ -65,7 +65,7 @@ updated: 2026-08-22
     <p class="lp-label">The terms sheet</p>
     <h2 class="lp-h2" id="terms-title">Every commercial field, and where it is confirmed.</h2>
     <p class="lp-sub">One organization licence, prepaid usage, and one accountable ledger per team. Each field names the place you can read it back — a term that cannot be checked does not belong on this page.</p>
-    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Commercial field</th><th>Launch term</th><th>Where confirmed</th></tr></thead><tbody><tr><td>Organization subscription</td><td>$199 USD per organization each month — unlimited teams, each with a Product Manager, Engineering Manager, Designer, and three engineers</td><td>Signed-in plan, the Billing screen, and the Stripe invoice</td></tr><tr><td>Additional engineers</td><td>$199 USD per engineer each month, from the fourth engineer up to fifty; three is the floor so every shipped change gets two peer reviews</td><td>Per-engineer subscription item and Stripe invoice</td></tr><tr><td>Changing engineer count</td><td>Increasing charges the prorated remainder of the period now; decreasing credits the unused portion to your next invoice</td><td>Team settings and the following Stripe invoice</td></tr><tr><td>Included credits</td><td>10,000 engineering credits for the whole organization per paid billing period</td><td>Webhook-confirmed credit ledger</td></tr><tr><td>Credit value</td><td>1 credit = $0.01 of billable model, compute, storage, and service usage</td><td>Plan and measured usage ledger</td></tr><tr><td>Prepaid top-up</td><td>$100 USD for 10,000 additional credits</td><td>Server-owned catalog and Stripe payment</td></tr><tr><td>Additional usage</td><td>No postpaid overage; a positive reserved balance is required before work starts</td><td>Team budget and usage reservation</td></tr><tr><td>Renewal and cancellation</td><td>Monthly; cancellation takes effect at period end</td><td>Stripe subscription and Billing Portal</td></tr></tbody></table></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>Commercial field</th><th>Launch term</th><th>Where confirmed</th></tr></thead><tbody><tr><td>Organization subscription</td><td>$199 USD per organization each month — unlimited teams, each with a Product Manager, Engineering Manager, Designer, and three engineers</td><td>Signed-in plan, the Billing screen, and the Stripe invoice</td></tr><tr><td>Engineer count</td><td>Not separately charged. A team runs from three engineers up to fifty; three is the floor so every shipped change gets two peer reviews</td><td>Team settings</td></tr><tr><td>Changing engineer count</td><td>Takes effect on the team's next provisioning generation. It does not alter your invoice in either direction</td><td>Team settings</td></tr><tr><td>Included credits</td><td>10,000 engineering credits for the whole organization per paid billing period</td><td>Webhook-confirmed credit ledger</td></tr><tr><td>Credit value</td><td>1 credit = $0.01 of billable model, compute, storage, and service usage</td><td>Plan and measured usage ledger</td></tr><tr><td>Prepaid top-up</td><td>$100 USD for 10,000 additional credits</td><td>Server-owned catalog and Stripe payment</td></tr><tr><td>Additional usage</td><td>No postpaid overage; a positive reserved balance is required before work starts</td><td>Team budget and usage reservation</td></tr><tr><td>Renewal and cancellation</td><td>Monthly; cancellation takes effect at period end</td><td>Stripe subscription and Billing Portal</td></tr></tbody></table></div>
     <p class="lp-sub lp-terms-note">Stripe renders the encrypted payment fields inside deep navy’s own checkout — card, Apple Pay, or Google Pay. Your card details never touch deep navy’s servers, the exact monthly total is on the pay button, and the card is saved once — a second team is covered by the same subscription and charges nothing.</p>
     <div class="lp-cta"><a class="lp-btn lp-btn-github" href="{{ '/app/?signin=1' | relative_url }}">Create your team</a><a class="lp-btn lp-btn-quiet" href="mailto:hello@deep.navy?subject=deep%20navy%20pilot%20terms">Discuss terms</a></div>
   </div>

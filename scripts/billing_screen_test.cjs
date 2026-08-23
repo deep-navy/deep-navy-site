@@ -86,11 +86,24 @@ test("the licence covers every team it has, and the stat agrees with the roster"
   assert.match(teams, /all covered by the one licence/);
 });
 
-test("what still bills per seat is an engineer above the floor, and only that", () => {
+/* CHANGED DELIBERATELY. This used to be "what still bills per seat is an
+ * engineer above the floor, and only that" — true when an engineer above three
+ * was a $199/month subscription item. The server deleted that add-on: seats are
+ * unlimited within a team and credits are the only usage charge.
+ *
+ * The COUNT survives and is still shown, because the floor of three is a real
+ * composition rule (two peer reviewers on every shipped change) and the roster
+ * is worth reading. What must not survive is any suggestion that the count
+ * costs money, so that is what is pinned. */
+test("the engineer count is reported as a roster fact, never as a charge", () => {
   const seats = renderer("engineerSeatsAboveFloor", "renderBillingSubscription");
-  assert.match(seats, /count > ENGINEER_FLOOR \? count - ENGINEER_FLOOR : 0/);
-  assert.match(screen(), /an engineer above a team's floor of three/);
+  assert.match(seats, /count > ENGINEER_FLOOR \? count - ENGINEER_FLOOR : 0/,
+    "the roster is still counted against the floor");
+  assert.match(screen(), /Engineers are not a per-seat charge/);
   assert.match(screen(), /every shipped change gets two peer[\s\S]{0,20}reviews/);
+  // The console must not tell a customer a seat bills.
+  assert.doesNotMatch(screen(), /billed per seat/);
+  assert.doesNotMatch(screen(), /bills per seat/);
 });
 
 test("the credit meter's hue is paired with a word, and is drawn through CSSOM", () => {

@@ -459,18 +459,24 @@
     ].filter(Boolean);
   }
 
-  // Pricing mirrors the server: $199/month licenses the ORGANIZATION and covers
-  // as many teams as it runs, each with the floor of three engineering agents;
-  // every engineer above that floor is a $199/month per-seat add-on. The floor
-  // of three keeps two peer reviewers on every shipped ticket.
+  // Pricing mirrors the server: the subscription licenses the ORGANIZATION and
+  // covers as many teams as it runs.
   //
   // The base was a per-team charge until the licence moved to the organization.
   // A second team is now free, so the base is charged once — which is why
   // teamPricing takes includeBase rather than always adding it.
+  //
+  // ENGINEER SEATS ARE NOT PRICED. There used to be a $199/month per-seat
+  // add-on for every engineer above the floor; the server deleted it, seats are
+  // unlimited within a team, and credits are the only usage charge. The floor
+  // and ceiling survive as a COMPOSITION rule rather than a price: three keeps
+  // two peer reviewers on every shipped ticket, and fifty is the cap. Nothing
+  // here may multiply a count by a price again — that arithmetic reached the
+  // customer on the create-team pay button, so a stale add-on was not a dead
+  // constant but a live over-charge quoted to their face.
   const ENGINEER_FLOOR = 3;
   const ENGINEER_MAX = 50;
   const ORGANIZATION_BASE_CENTS = 19900n;
-  const ENGINEER_ADDON_CENTS = 19900n;
 
   function normalizeEngineerCount(value, { floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
     const parsed = typeof value === "number"
@@ -488,31 +494,25 @@
     return null;
   }
 
-  // Pure price calculation: (base if this team starts the subscription) plus
-  // addon × max(0, engineerCount − floor). The base and add-on can be
-  // overridden (e.g. from the signed billing plan) but default to the
-  // founding-organization figures.
+  // Pure price calculation: the base, and only if this team starts the
+  // subscription. The base can be overridden (e.g. from the signed billing
+  // plan) but defaults to the founding-organization figure.
   //
   // includeBase is the whole difference between the first team and the second.
   // The first starts the organization's subscription and costs the base; every
-  // team after it is covered by that same licence and costs nothing unless it
-  // asks for engineers above the floor.
-  function teamPricing({ engineerCount, baseCents, addonCents, includeBase = true, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
+  // team after it is covered by that same licence and costs nothing.
+  //
+  // engineerCount is still normalised and reported, because the floor and the
+  // ceiling are real. It is deliberately NOT an input to the total.
+  function teamPricing({ engineerCount, baseCents, includeBase = true, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
     const count = normalizeEngineerCount(engineerCount, { floor, max });
-    const additional = Math.max(0, count - floor);
     const base = toCents(baseCents) ?? ORGANIZATION_BASE_CENTS;
-    const addon = toCents(addonCents) ?? ENGINEER_ADDON_CENTS;
-    const addonTotal = addon * BigInt(additional);
-    const charged = includeBase ? base : 0n;
     return Object.freeze({
       engineerCount: count,
-      includedEngineers: floor,
-      additionalEngineers: additional,
+      engineerFloor: floor,
       includesBase: includeBase,
       baseCents: base,
-      addonCents: addon,
-      addonTotalCents: addonTotal,
-      totalCents: charged + addonTotal
+      totalCents: includeBase ? base : 0n
     });
   }
 
@@ -573,7 +573,6 @@
   }
 
   return {
-    ENGINEER_ADDON_CENTS,
     ENGINEER_FLOOR,
     ENGINEER_MAX,
     GITHUB_INSTALLATION_STATE,
