@@ -34,11 +34,26 @@ const test = require("node:test");
 const app = readFileSync("assets/js/app.js", "utf8");
 const shell = readFileSync("_includes/app-shell.html", "utf8");
 
+/* The body's opening brace, not the first brace after the name — a default
+ * parameter such as `options = {}` puts one in the SIGNATURE, and starting
+ * there returns half a function that then fails to parse. */
+function bodyBrace(source, start) {
+  let depth = 0;
+  for (let i = source.indexOf("(", start); i < source.length; i++) {
+    if (source[i] === "(") depth += 1;
+    else if (source[i] === ")") {
+      depth -= 1;
+      if (depth === 0) return source.indexOf("{", i);
+    }
+  }
+  throw new Error("unbalanced parameter list");
+}
+
 function fn(name) {
   const start = app.indexOf(`  function ${name}(`);
   assert.notEqual(start, -1, `app.js no longer defines ${name}`);
   let depth = 0;
-  for (let i = app.indexOf("{", start); i < app.length; i++) {
+  for (let i = bodyBrace(app, start); i < app.length; i++) {
     if (app[i] === "{") depth += 1;
     else if (app[i] === "}") {
       depth -= 1;

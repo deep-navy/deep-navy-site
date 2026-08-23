@@ -346,6 +346,28 @@
     creditPackSummary: document.querySelector("[data-credit-pack-summary]"),
     creditPackError: document.querySelector("[data-credit-pack-error]"),
     creditPackSubmit: document.querySelector("[data-credit-pack-submit]"),
+    topUpPanel: document.querySelector("[data-topup-panel]"),
+    topUpState: document.querySelector("[data-topup-state]"),
+    topUpNotice: document.querySelector("[data-topup-notice]"),
+    topUpSummary: document.querySelector("[data-topup-summary]"),
+    topUpForm: document.querySelector("[data-topup-form]"),
+    topUpEnabled: document.querySelector("[data-topup-enabled]"),
+    topUpThreshold: document.querySelector("[data-topup-threshold]"),
+    topUpPack: document.querySelector("[data-topup-pack]"),
+    topUpQuantity: document.querySelector("[data-topup-quantity]"),
+    topUpCap: document.querySelector("[data-topup-cap]"),
+    topUpCapNote: document.querySelector("[data-topup-cap-note]"),
+    topUpConsent: document.querySelector("[data-topup-consent]"),
+    topUpConsentTitle: document.querySelector("[data-topup-consent-title]"),
+    topUpConsentText: document.querySelector("[data-topup-consent-text]"),
+    topUpConsentAccept: document.querySelector("[data-topup-consent-accept]"),
+    topUpConsentVersion: document.querySelector("[data-topup-consent-version]"),
+    topUpSummaryLine: document.querySelector("[data-topup-summary-line]"),
+    topUpError: document.querySelector("[data-topup-error]"),
+    topUpSubmit: document.querySelector("[data-topup-submit]"),
+    topUpHistoryState: document.querySelector("[data-topup-history-state]"),
+    topUpHistoryEmpty: document.querySelector("[data-topup-history-empty]"),
+    topUpHistoryList: document.querySelector("[data-topup-history-list]"),
     invoiceHistory: document.querySelector("[data-invoice-history]"),
     invoiceState: document.querySelector("[data-invoice-state]"),
     invoiceEmpty: document.querySelector("[data-invoice-empty]"),
@@ -437,6 +459,11 @@
     invoiceLoading: false,
     economicsBreakdowns: new Map(),
     selectedEconomicsGroup: "operation",
+    creditTopUp: null,
+    creditTopUpState: "waiting",
+    creditTopUpError: "",
+    creditTopUps: [],
+    creditTopUpsState: "waiting",
     teamServiceAvailable: false,
     teams: [],
     // The repository set each team is KNOWN to run with, keyed by team id —
@@ -590,6 +617,10 @@
   // The Settings engineer stepper resets to the team's confirmed count only when
   // the selected team changes, so a background re-render never clobbers an edit.
   let engineerControlTeamId = "";
+  // A repaint must not overwrite what someone is halfway through typing. The
+  // form fills itself from the server's settings only while it is untouched;
+  // after that the customer owns the fields until they save.
+  let topUpFormDirty = false;
   let engineerControlBusy = false;
   // Same discipline for the Settings repository checklist: it is rebuilt from
   // the team's confirmed set only when the selected team (or the accessible
@@ -1145,6 +1176,11 @@
     resetOrganizationControls();
     session.organizationId = "";
     session.creditPacks = [];
+    session.creditTopUp = null;
+    session.creditTopUpState = "waiting";
+    session.creditTopUps = [];
+    session.creditTopUpsState = "waiting";
+    topUpFormDirty = false;
     session.creditBalance = null;
     session.creditControl = null;
     session.creditBalanceShownMicros = null;
@@ -2695,8 +2731,12 @@
       }
       session.creditPacks = packs;
       renderCreditPackControls();
+      // The top-up form offers these same packs, so it can only be filled in
+      // once they are known.
+      refreshCreditTopUp();
     } catch (error) {
       renderCreditPackControls(apiErrorMessage(error, "Prepaid credit packs are unavailable."));
+      refreshCreditTopUp();
     }
   }
 
@@ -7505,8 +7545,513 @@
     return cents === null ? "Shown at checkout" : `${formatCents(cents)}/month`;
   }
 
+  // ── Automatic credit top-up ───────────────────────────────────────────────
+  //
+  // Engineering credits are one pool per ORGANIZATION. When it empties, every
+  // team in the organization stops mid-objective — which is the failure this
+  // exists to prevent: below a threshold the customer sets, the card already on
+  // file is charged for a credit pack, without them present.
+  //
+  // "Without them present" is the whole design, and two things follow from it
+  // that this screen has to carry honestly rather than decorate.
+  //
+  // CONSENT IS NOT A TOGGLE. The card networks require a recorded agreement for
+  // an unscheduled off-session charge. The server publishes the exact text and
+  // version it will record, and a CHECK constraint refuses to store an enabled
+  // policy without a version, a timestamp and a user — an enabled policy with no
+  // consent is literally unstorable. So the terms are rendered VERBATIM from
+  // required_consent rather than paraphrased, the opt-in ships unticked, and the
+  // version is echoed back on save. Paraphrasing would also break the
+  // disclosures Stripe requires: timing, frequency, how the amount is
+  // determined, and how to cancel.
+  //
+  // A DECLINE DISARMS THE ORGANIZATION, TERMINALLY. Off session, Strong Customer
+  // Authentication does not arrive as a state a server can hold open — Stripe
+  // reports it as a decline only the customer can clear, on session. So a
+  // decline is never retried; it stores a disarm that persists until the
+  // customer fixes the card AND re-arms with fresh consent. Turning the toggle
+  // back on does not fix a declined card, and the screen says so in those words,
+  // because a customer who believes it does will sit disarmed believing they are
+  // covered.
+  const CREDIT_TOP_UP_STATES = Object.freeze({
+    1: Object.freeze({ word: "Decided", level: "info", detail: "Recorded, and no charge has been issued yet." }),
+    2: Object.freeze({ word: "Charging", level: "running", detail: "A charge was issued and its outcome is not recorded yet. It is never charged twice." }),
+    3: Object.freeze({ word: "Granted", level: "success", detail: "Paid, and the credits are in your organization's pool." }),
+    4: Object.freeze({ word: "Declined", level: "blocked", detail: "The card was declined. This is never retried automatically." }),
+    5: Object.freeze({ word: "Needs your bank", level: "blocked", detail: "Your bank asked for authentication, which cannot be completed while you are away." }),
+    6: Object.freeze({ word: "Abandoned", level: "info", detail: "Stopped before any money moved." })
+  });
+
+  // Two of these are STORED disarms that persist until the customer acts; the
+  // rest are computed at read time and clear by themselves. The difference is
+  // the difference between "you must do something" and "wait", so it decides
+  // the level: a stored disarm is `blocked` — rank 0, needs you — and never
+  // `warning`, which would let a customer scroll past an organization that has
+  // silently stopped refilling.
+  const CREDIT_TOP_UP_BLOCKS = Object.freeze({
+    2: Object.freeze({
+      level: "blocked",
+      title: "Your card was declined, so automatic top-up switched itself off",
+      body: "The charge was refused and we will not try it again. Turning this back on will not fix it: update the card in Stripe first, then re-arm here and agree to the terms again."
+    }),
+    3: Object.freeze({
+      level: "blocked",
+      title: "Your bank wants to check it is you, and automatic top-up switched itself off",
+      body: "That check cannot be completed while you are away, so the charge was refused and we will not try it again. Buy a pack yourself once to satisfy your bank, then re-arm here and agree to the terms again."
+    }),
+    4: Object.freeze({
+      level: "warning",
+      title: "This period's automatic top-up ceiling is spent",
+      body: "Nothing more will be charged automatically until your billing period resets. Raise the ceiling below if you want more headroom."
+    }),
+    5: Object.freeze({
+      level: "blocked",
+      title: "Automatic top-up cannot run without an active subscription",
+      body: "It never charges against an inactive subscription. Restore the subscription and it resumes on its own."
+    }),
+    6: Object.freeze({
+      level: "blocked",
+      title: "There is no saved card to charge",
+      body: "Add a payment method in Stripe and automatic top-up resumes on its own."
+    }),
+    7: Object.freeze({
+      level: "info",
+      title: "Cooling off after the last top-up",
+      body: "A short wait after each top-up is what stops a pool that drains as fast as it fills from becoming a charge loop."
+    })
+  });
+
+  function creditTopUpEnumKey(value, prefix) {
+    if (typeof value === "number") return value;
+    if (typeof value === "bigint") return Number(value);
+    const normalized = stringValue(value).replace(prefix, "");
+    return normalized;
+  }
+
+  function creditTopUpStateShape(value) {
+    const key = creditTopUpEnumKey(value, /^CREDIT_TOP_UP_STATE_/);
+    if (typeof key === "number") return CREDIT_TOP_UP_STATES[key] || null;
+    const byName = { PENDING: 1, CHARGING: 2, GRANTED: 3, DECLINED: 4, AUTHENTICATION_REQUIRED: 5, ABANDONED: 6 }[key];
+    return byName ? CREDIT_TOP_UP_STATES[byName] : null;
+  }
+
+  function creditTopUpBlockShape(value) {
+    const key = creditTopUpEnumKey(value, /^CREDIT_TOP_UP_BLOCK_REASON_/);
+    if (typeof key === "number") return CREDIT_TOP_UP_BLOCKS[key] || null;
+    const byName = {
+      CARD_DECLINED: 2, AUTHENTICATION_REQUIRED: 3, PERIOD_CAP_REACHED: 4,
+      SUBSCRIPTION_INACTIVE: 5, NO_PAYMENT_METHOD: 6, COOLING_DOWN: 7
+    }[key];
+    return byName ? CREDIT_TOP_UP_BLOCKS[byName] : null;
+  }
+
+  async function refreshCreditTopUp() {
+    if (!ui.topUpPanel) return;
+    if (!session.organizationId) {
+      session.creditTopUp = null;
+      session.creditTopUpState = "waiting";
+      renderCreditTopUp();
+      return;
+    }
+    session.creditTopUpState = "loading";
+    renderCreditTopUp();
+    const [settings, history] = await Promise.allSettled([
+      apiRequest("credit_top_up_settings", { organizationId: session.organizationId }),
+      apiRequest("credit_top_ups", { organizationId: session.organizationId, page: { pageSize: 20, pageToken: "" } })
+    ]);
+    if (settings.status === "fulfilled" && settings.value?.settings) {
+      session.creditTopUp = settings.value.settings;
+      session.creditTopUpState = "loaded";
+      session.creditTopUpError = "";
+    } else {
+      session.creditTopUp = null;
+      session.creditTopUpState = "unavailable";
+      session.creditTopUpError = settings.status === "rejected"
+        ? apiErrorMessage(settings.reason, "Automatic top-up settings are unavailable.")
+        : "BillingService returned no automatic top-up settings. Nothing was assumed about whether it is armed.";
+    }
+    if (history.status === "fulfilled") {
+      session.creditTopUps = Array.isArray(history.value?.topUps) ? history.value.topUps : [];
+      session.creditTopUpsState = "loaded";
+    } else {
+      session.creditTopUps = [];
+      session.creditTopUpsState = "unavailable";
+    }
+    renderCreditTopUp();
+    renderCreditTopUpHistory(history.status === "rejected" ? apiErrorMessage(history.reason, "") : "");
+  }
+
+  function renderCreditTopUp() {
+    if (!ui.topUpPanel) return;
+    const settings = session.creditTopUp;
+    // The panel belongs to the organization, and there is nothing to arm until
+    // a subscription exists to charge against.
+    ui.topUpPanel.hidden = !session.organizationId;
+    if (!session.organizationId) return;
+
+    if (session.creditTopUpState === "loading") {
+      setSourceState(ui.topUpState, "Loading", "loading");
+      setDataState(ui.topUpSummary, "loading", "Reading whether this organization refills itself.");
+      ui.topUpForm.hidden = true;
+      if (ui.topUpNotice) ui.topUpNotice.replaceChildren();
+      return;
+    }
+    if (!settings) {
+      setSourceState(ui.topUpState, "Unavailable", "error");
+      setDataState(ui.topUpSummary, "unavailable", session.creditTopUpError || "Automatic top-up settings are unavailable.");
+      ui.topUpForm.hidden = true;
+      if (ui.topUpNotice) ui.topUpNotice.replaceChildren();
+      return;
+    }
+
+    const enabled = Boolean(settings.enabled);
+    const reArmRequired = Boolean(settings.reArmRequired);
+    const block = creditTopUpBlockShape(settings.blockReason);
+
+    // THE LADDER DECIDES THE LOUDNESS, not the screen. A stored disarm with a
+    // failing card is `blocked` — it needs a person, and it is the only thing on
+    // this panel that does.
+    if (ui.topUpNotice) {
+      ui.topUpNotice.replaceChildren();
+      if (block) {
+        const eligible = timestampDate(settings.nextEligibleAt);
+        const body = reArmRequired
+          ? `${block.body} Until you do, nothing is refilled and your teams stop when the pool empties.`
+          : eligible
+            ? `${block.body} The next one can be decided ${relativeTime(eligible)}.`
+            : block.body;
+        const notice = buildNotice({
+          level: block.level,
+          title: block.title,
+          body,
+          source: "Billing"
+        });
+        if (notice) ui.topUpNotice.append(notice);
+      }
+    }
+
+    setSourceState(
+      ui.topUpState,
+      reArmRequired ? "Disarmed" : enabled ? (block ? "Armed, blocked" : "Armed") : "Off",
+      reArmRequired ? "error" : enabled ? (block ? "attention" : "success") : ""
+    );
+    renderCreditTopUpSummary(settings, enabled, reArmRequired, block);
+    renderCreditTopUpForm(settings, enabled, reArmRequired);
+  }
+
+  function renderCreditTopUpSummary(settings, enabled, reArmRequired, block) {
+    const rows = [];
+    rows.push(["State", reArmRequired
+      ? "Disarmed — it will not fire until you re-arm it"
+      : enabled
+        ? (block ? "On, but nothing can fire right now" : "On")
+        : "Off — nothing is charged automatically"]);
+    rows.push(["Fires when the pool falls to", `${formatCreditMicros(settings.thresholdMicros)} credits`]);
+    const pack = session.creditPacks.find((candidate) => stringValue(candidate.id) === stringValue(settings.creditPackId));
+    const quantity = int64Value(settings.packQuantity);
+    rows.push(["Each top-up buys", pack
+      ? `${quantity === null ? "1" : quantity.toString()} × ${stringValue(pack.name) || formatCredits(pack.creditMicros)} · ${formatCanonicalMoney(pack.price)} each`
+      : stringValue(settings.creditPackId) || "Not reported"]);
+    rows.push(["Ceiling this billing period", `${formatCanonicalMoney(settings.periodSpent)} spent of ${formatCanonicalMoney(settings.periodCap)}`]);
+    const cooldown = int64Value(settings.cooldownSeconds);
+    rows.push(["Wait between top-ups", cooldown === null
+      ? "Not reported"
+      : `${Math.round(Number(cooldown) / 60)} minutes, set by deep navy`]);
+    const consent = settings.consent;
+    const recorded = timestampDate(consent?.recordedAt);
+    rows.push(["Your agreement", recorded
+      ? `Version ${stringValue(consent.termsVersion) || "not reported"}, recorded ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(recorded)}`
+      : "Not given yet — automatic top-up cannot be switched on without it"]);
+
+    const list = document.createElement("dl");
+    list.className = "dn-meta dn-meta--rows";
+    rows.forEach(([key, value]) => {
+      const term = document.createElement("dt");
+      term.className = "dn-meta__k";
+      term.textContent = key;
+      const detail = document.createElement("dd");
+      detail.className = "dn-meta__v";
+      detail.textContent = value;
+      list.append(term, detail);
+    });
+    const note = document.createElement("p");
+    note.className = "cs-stub-note";
+    note.textContent = "A top-up funds the organization's shared pool. It never raises a team's own hard limit — a team stopped by the ceiling you set for it is stopped on purpose, and buying credits is not the fix for that.";
+    ui.topUpSummary.replaceChildren(list, note);
+    ui.topUpSummary.hidden = false;
+  }
+
+  function renderCreditTopUpForm(settings, enabled, reArmRequired) {
+    const form = ui.topUpForm;
+    if (!form) return;
+    const manageable = Boolean(session.subscriptionManageable);
+    form.hidden = false;
+
+    if (!topUpFormDirty) {
+      ui.topUpEnabled.checked = enabled;
+      ui.topUpThreshold.value = microsInputValue(settings.thresholdMicros);
+      ui.topUpQuantity.value = (int64Value(settings.packQuantity) ?? 1n).toString();
+      const capMinor = signedInt64Value(settings.periodCap?.units);
+      const capNanos = Number(settings.periodCap?.nanos || 0);
+      if (capMinor !== null) {
+        ui.topUpCap.value = (Number(capMinor) + capNanos / 1_000_000_000).toFixed(2);
+      }
+      ui.topUpPack.replaceChildren();
+      session.creditPacks.forEach((pack) => {
+        const option = document.createElement("option");
+        option.value = stringValue(pack.id);
+        option.textContent = `${stringValue(pack.name) || formatCredits(pack.creditMicros)} · ${formatCanonicalMoney(pack.price)}`;
+        ui.topUpPack.append(option);
+      });
+      if (session.creditPacks.some((pack) => stringValue(pack.id) === stringValue(settings.creditPackId))) {
+        ui.topUpPack.value = stringValue(settings.creditPackId);
+      }
+    }
+
+    const ready = manageable && session.creditPacks.length > 0;
+    [ui.topUpEnabled, ui.topUpThreshold, ui.topUpPack, ui.topUpQuantity, ui.topUpCap].forEach((field) => {
+      if (field) field.disabled = !ready;
+    });
+    if (ui.topUpCapNote) {
+      // The ceiling is the one number that bounds total exposure, so what has
+      // already been spent against it belongs beside the field, not three rows
+      // away in the summary.
+      ui.topUpCapNote.textContent = `${formatCanonicalMoney(settings.periodSpent)} of the current ceiling has been spent this billing period. The ceiling resets when your billing period does.`;
+    }
+    renderCreditTopUpConsent(settings, reArmRequired);
+    updateCreditTopUpSummaryLine(settings, reArmRequired);
+    setFieldError(ui.topUpError, ready ? "" : (!manageable
+      ? "Only an owner or a billing member can change automatic top-up."
+      : "No prepaid packs are available, so there is nothing to buy automatically."));
+    ui.topUpSubmit.disabled = !ready || !creditTopUpFormSatisfied(settings, reArmRequired);
+  }
+
+  // The terms, exactly as the server publishes them. Rendered paragraph by
+  // paragraph with textContent — never paraphrased, never summarised, and never
+  // assembled from a string. What the customer reads has to be what the server
+  // records, or the record is of an agreement they were not shown.
+  function renderCreditTopUpConsent(settings, reArmRequired) {
+    const block = ui.topUpConsent;
+    if (!block) return;
+    const required = settings.requiredConsent;
+    const text = stringValue(required?.text);
+    const version = stringValue(required?.version);
+    const wanted = creditTopUpConsentRequired(settings, reArmRequired);
+    block.hidden = !wanted;
+    if (!wanted) {
+      ui.topUpConsentAccept.checked = false;
+      return;
+    }
+    if (!text || !version) {
+      ui.topUpConsentText.replaceChildren();
+      setDataState(ui.topUpConsentText, "unavailable", "BillingService did not publish the agreement, so there is nothing to consent to. Automatic top-up cannot be switched on until it does.");
+      ui.topUpConsentAccept.disabled = true;
+      ui.topUpConsentVersion.textContent = "";
+      return;
+    }
+    ui.topUpConsentAccept.disabled = false;
+    // Re-arming is a different act from arming, and the customer should be told
+    // which one they are performing.
+    if (ui.topUpConsentTitle) {
+      ui.topUpConsentTitle.textContent = reArmRequired
+        ? "Agree again to re-arm automatic top-up"
+        : stringValue(settings.consent?.termsVersion) && stringValue(settings.consent.termsVersion) !== version
+          ? "These terms have changed since you last agreed"
+          : "Your agreement";
+    }
+    const paragraphs = text.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+    ui.topUpConsentText.replaceChildren(...paragraphs.map((part) => {
+      const p = document.createElement("p");
+      p.textContent = part;
+      return p;
+    }));
+    ui.topUpConsentVersion.textContent = `These are version ${version}. Agreeing records that version, the time, and that it was you.`;
+  }
+
+  // Consent is demanded exactly when the server demands it: on any request that
+  // ENABLES automatic top-up, and on any re-arm. Turning it off never needs it —
+  // a customer can always stop an unattended charge.
+  function creditTopUpConsentRequired(settings, reArmRequired) {
+    if (!ui.topUpEnabled?.checked) return false;
+    return true;
+  }
+
+  function creditTopUpFormSatisfied(settings, reArmRequired) {
+    if (!ui.topUpEnabled?.checked) return true;
+    if (!stringValue(settings.requiredConsent?.version)) return false;
+    return Boolean(ui.topUpConsentAccept?.checked);
+  }
+
+  function updateCreditTopUpSummaryLine(settings, reArmRequired) {
+    const line = ui.topUpSummaryLine;
+    if (!line) return;
+    if (!ui.topUpEnabled?.checked) {
+      line.textContent = "Saving with this off stops all future automatic charges immediately. It does not reverse a charge already made.";
+      return;
+    }
+    const pack = session.creditPacks.find((candidate) => stringValue(candidate.id) === stringValue(ui.topUpPack?.value));
+    const quantity = Number(ui.topUpQuantity?.value || 1);
+    const threshold = creditInputMicros(ui.topUpThreshold?.value);
+    const parts = [];
+    if (threshold !== null) parts.push(`When the organization pool falls to ${formatCreditMicros(threshold)} credits`);
+    if (pack && Number.isInteger(quantity) && quantity > 0) {
+      parts.push(`charge your saved card for ${quantity} × ${stringValue(pack.name) || formatCredits(pack.creditMicros)}`);
+    }
+    const cap = Number(ui.topUpCap?.value || 0);
+    if (Number.isFinite(cap) && cap > 0) parts.push(`never more than ${formatCents(BigInt(Math.round(cap * 100)))} in a billing period`);
+    line.textContent = parts.length
+      ? `${parts.join(", ")}.${reArmRequired ? " Saving this also re-arms it after the decline." : ""}`
+      : "Choose a threshold, a pack and a ceiling.";
+  }
+
+  async function saveCreditTopUp(event) {
+    event.preventDefault();
+    if (!session.organizationId || !session.creditTopUp) return;
+    const settings = session.creditTopUp;
+    const enabled = Boolean(ui.topUpEnabled.checked);
+    const reArmRequired = Boolean(settings.reArmRequired);
+    const threshold = creditInputMicros(ui.topUpThreshold.value);
+    const quantity = Number(ui.topUpQuantity.value);
+    const capDollars = Number(ui.topUpCap.value);
+    const packId = stringValue(ui.topUpPack.value);
+
+    if (threshold === null || threshold <= 0n) return setFieldError(ui.topUpError, "Give a threshold above zero, in credits.");
+    if (!Number.isInteger(quantity) || quantity < 1) return setFieldError(ui.topUpError, "Choose at least one pack per top-up.");
+    if (!Number.isFinite(capDollars) || capDollars <= 0) return setFieldError(ui.topUpError, "Give a per-period ceiling above zero.");
+    if (!packId) return setFieldError(ui.topUpError, "Choose the pack to buy.");
+    // The client refuses before the server does, because a refusal that costs a
+    // round trip reads as a bug rather than as a rule.
+    if (enabled && !ui.topUpConsentAccept.checked) {
+      return setFieldError(ui.topUpError, "Automatic top-up cannot be switched on until you agree to the terms above. They are what your card issuer requires us to record before charging you while you are away.");
+    }
+    const version = stringValue(settings.requiredConsent?.version);
+    if (enabled && !version) {
+      return setFieldError(ui.topUpError, "The agreement to record is unavailable, so automatic top-up cannot be switched on right now.");
+    }
+
+    const capMinor = BigInt(Math.round(capDollars * 100));
+    const expectedVersion = int64Value(settings.version) ?? 0n;
+    const fingerprint = `${session.organizationId}:${enabled}:${threshold.toString()}:${packId}:${quantity}:${capMinor.toString()}:${expectedVersion.toString()}`;
+    ui.topUpSubmit.disabled = true;
+    ui.topUpSubmit.textContent = "Saving…";
+    try {
+      const result = await apiRequest("update_credit_top_up_settings", {
+        organizationId: session.organizationId,
+        enabled,
+        thresholdMicros: threshold.toString(),
+        creditPackId: packId,
+        packQuantity: String(quantity),
+        periodCapMinor: capMinor.toString(),
+        // Echoed, never invented: the server refuses a version it does not
+        // publish, and only sends one when enabling.
+        consentTermsVersion: enabled ? version : "",
+        // A re-arm clears the stored disarm, and is refused without consent.
+        reArm: Boolean(enabled && reArmRequired),
+        expectedVersion: expectedVersion.toString(),
+        idempotencyKey: mutationKeys.for("updateCreditTopUp", fingerprint)
+      });
+      if (!result?.settings) throw new ApiError("Billing service returned no automatic top-up settings", 0, "invalid_response", "");
+      mutationKeys.clear("updateCreditTopUp");
+      session.creditTopUp = result.settings;
+      session.creditTopUpState = "loaded";
+      topUpFormDirty = false;
+      renderCreditTopUp();
+      toast(enabled ? "Automatic top-up is armed." : "Automatic top-up is off.", "success");
+      // A save that armed it may also have cleared a disarm, which changes the
+      // history; and a decline recorded since the last read belongs on screen.
+      refreshCreditTopUp();
+    } catch (error) {
+      setFieldError(ui.topUpError, apiErrorMessage(error, "Automatic top-up settings were not saved."));
+      if (error instanceof ApiError && ["aborted", "failed_precondition"].includes(error.code)) refreshCreditTopUp();
+    } finally {
+      ui.topUpSubmit.textContent = "Save top-up settings";
+      if (session.creditTopUp) renderCreditTopUp();
+    }
+  }
+
+  function renderCreditTopUpHistory(errorMessage = "") {
+    const list = ui.topUpHistoryList;
+    const empty = ui.topUpHistoryEmpty;
+    if (!list || !empty) return;
+    const records = Array.isArray(session.creditTopUps) ? session.creditTopUps : [];
+    if (session.creditTopUpsState === "unavailable") {
+      list.hidden = true;
+      setDataState(empty, "unavailable", errorMessage || "The automatic top-up history is unavailable. Nothing was inferred from its absence.");
+      setSourceState(ui.topUpHistoryState, "Unavailable", "error");
+      return;
+    }
+    if (!records.length) {
+      list.hidden = true;
+      // A zero here is a real claim and it is the right one: we read the record
+      // and it is empty. That is not the same as not having read it.
+      setDataState(empty, "pending", "No automatic top-up has ever run for this organization. One will appear here the moment the first is decided, whether or not it succeeds.");
+      setSourceState(ui.topUpHistoryState, "None yet", "");
+      return;
+    }
+    empty.hidden = true;
+    list.replaceChildren();
+    records.forEach((record) => {
+      list.append(creditTopUpRow(record));
+    });
+    list.hidden = false;
+    setSourceState(ui.topUpHistoryState, `${records.length} recorded`, "success");
+  }
+
+  function creditTopUpRow(record) {
+    const shape = creditTopUpStateShape(record?.state) || { word: "Recorded", level: "info", detail: "" };
+    const row = document.createElement("li");
+    row.className = "credit-movement-row";
+
+    const kind = document.createElement("span");
+    kind.className = "credit-movement-kind";
+    kind.append(ladderBadge(shape.word, shape.level));
+
+    const what = document.createElement("span");
+    what.className = "credit-movement-what";
+    const quantity = int64Value(record?.packQuantity);
+    const packName = stringValue(record?.creditPackId) || "a credit pack";
+    // Automatic, and said so on every row: the ledger reason the server writes
+    // is automatic_credit_top_up rather than prepaid_credit_pack, and a customer
+    // reading a list of charges needs to know which ones they did not make.
+    what.textContent = `Charged automatically · ${quantity === null ? "1" : quantity.toString()} × ${packName}`;
+
+    const amount = document.createElement("span");
+    amount.className = "credit-movement-delta";
+    amount.dataset.direction = "credit";
+    const credits = int64Value(record?.creditMicros);
+    amount.textContent = record?.amount
+      ? `${formatCanonicalMoney(record.amount)}${credits === null ? "" : ` · +${formatCreditMicros(credits)} credits`}`
+      : "Not reported";
+
+    const meta = document.createElement("span");
+    meta.className = "credit-movement-meta";
+    const parts = [];
+    // WHY IT FIRED, captured at the decision and never recomputed.
+    const threshold = int64Value(record?.thresholdMicros);
+    const observed = signedInt64Value(record?.observedBalanceMicros);
+    if (threshold !== null && observed !== null) {
+      parts.push(`pool was ${formatCreditMicros(observed)} against a threshold of ${formatCreditMicros(threshold)}`);
+    }
+    // The server's own safe sentence is preferred over anything written here:
+    // it says what happened, what it means and what happens next, and it is the
+    // only thing that knows the decline.
+    const safe = stringValue(record?.safeMessage);
+    if (safe) parts.push(safe);
+    else if (shape.detail) parts.push(shape.detail);
+    const decline = stringValue(record?.declineCode);
+    if (decline) parts.push(`reason ${decline}`);
+    const settled = timestampDate(record?.settledAt) || timestampDate(record?.createdAt);
+    if (settled) parts.push(relativeTime(settled));
+    meta.textContent = parts.join(" · ");
+
+    row.append(kind, what, amount);
+    if (parts.length) row.append(meta);
+    return row;
+  }
+
   function renderBillingView() {
     renderBillingStats();
+    renderCreditTopUp();
     renderBillingSubscription();
     renderBillingTeams();
     renderBillingCredits();
@@ -7721,9 +8266,34 @@
     const list = document.createElement("dl");
     list.className = "dn-meta dn-meta--rows";
     const measured = timestampDate(summary.measuredAt);
+    // WHERE THE BALANCE CAME FROM.
+    //
+    // A number with no provenance cannot be audited, and "308,945 credits" on
+    // its own does not reconcile against a plan that includes 10,000 — the rest
+    // arrived from somewhere and the screen was not saying where. Credits reach
+    // the pool by exactly three routes and each has its own evidence, so each is
+    // named with the place it can be checked rather than folded into a total.
+    //
+    // Only figures that are actually reported are stated as figures. The
+    // included grant comes from the signed plan; automatic top-ups are counted
+    // from the top-up record itself. A route we cannot total from what this
+    // browser has read is named and pointed at its evidence rather than guessed
+    // at — a decomposition that does not add up is worse than none.
+    const granted = (Array.isArray(session.creditTopUps) ? session.creditTopUps : [])
+      .filter((record) => creditTopUpStateShape(record?.state)?.word === "Granted");
+    const toppedUpMicros = granted.reduce((total, record) => total + (int64Value(record?.creditMicros) ?? 0n), 0n);
     [
-      ["Balance now", `${formatCreditMicros(remaining)} credits`],
-      ["Used this period", `${formatCreditMicros(used)} credits`],
+      ["Balance now", `${formatCreditMicros(remaining)} credits · ${formatCreditValue(remaining)}`],
+      ["Used this period", `${formatCreditMicros(used)} credits · ${formatCreditValue(used)}`],
+      ["— of which, included with your plan", included !== null && included > 0n
+        ? `${formatCreditMicros(included)} credits each billing period, granted once the period's invoice is paid`
+        : "The plan did not report an included grant, so none is stated here."],
+      ["— of which, bought automatically", session.creditTopUpsState !== "loaded"
+        ? "The automatic top-up record is unavailable, so none is counted."
+        : granted.length
+          ? `${formatCreditMicros(toppedUpMicros)} credits across ${granted.length} automatic top-up${granted.length === 1 ? "" : "s"} — listed under Automatic credit top-up`
+          : "None. No automatic top-up has been granted."],
+      ["— of which, bought by you", "Any prepaid pack you buy yourself lands in the same shared pool. Each one is on an invoice below."],
       ["Measured", measured ? relativeTime(measured) : "Not reported"]
     ].forEach(([key, value]) => {
       const term = document.createElement("dt");
@@ -12678,6 +13248,20 @@
   ui.creditPackSelect.addEventListener("change", updateCreditPackSummary);
   ui.creditPackQuantity.addEventListener("input", updateCreditPackSummary);
   ui.creditControlForm.addEventListener("submit", saveCreditControl);
+  if (ui.topUpForm) {
+    ui.topUpForm.addEventListener("submit", saveCreditTopUp);
+    // Any edit takes ownership of the fields, so a background repaint cannot
+    // overwrite a half-typed threshold; the summary line and the consent block
+    // follow every keystroke because both are claims about what saving will do.
+    ui.topUpForm.addEventListener("input", () => {
+      topUpFormDirty = true;
+      if (session.creditTopUp) renderCreditTopUp();
+    });
+    ui.topUpForm.addEventListener("change", () => {
+      topUpFormDirty = true;
+      if (session.creditTopUp) renderCreditTopUp();
+    });
+  }
   ui.economicsGroup.addEventListener("change", selectEconomicsGroup);
   ui.creditHardLimitInput.addEventListener("input", updateCreditControlSummary);
   ui.creditCustomerPaused.addEventListener("change", updateCreditControlSummary);

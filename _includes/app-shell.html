@@ -1265,6 +1265,65 @@
                 <div class="dn-card dn-card--pad-sm" data-billing-subscription></div>
                 <div class="cs-pager"><button class="dn-btn dn-btn--secondary dn-btn--sm" type="button" data-billing-portal disabled>Manage billing in Stripe</button></div>
               </section>
+              <!-- Automatic credit top-up.
+                   Credits are one pool per ORGANIZATION, so when it empties every
+                   team stops mid-objective. This is the customer arming a refill
+                   against that: below a threshold they choose, the card already on
+                   file is charged for a credit pack without them present.
+
+                   "Without them present" is why the consent block below is not
+                   decoration. The card networks require a recorded agreement for
+                   an unscheduled off-session charge, the server publishes the exact
+                   text and version it will record, and a CHECK constraint refuses
+                   to store an enabled policy that has no version, timestamp and
+                   user against it. So the terms are rendered VERBATIM from
+                   required_consent, the opt-in ships unticked, and the version is
+                   echoed back on save. -->
+              <section class="cs-panel credit-topup" data-topup-panel aria-labelledby="billing-topup-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="billing-topup-title">Automatic credit top-up</span>
+                  <span class="cs-panel-meta" data-topup-state>Waiting</span>
+                </div>
+                <div data-topup-notice></div>
+                <div class="dn-card dn-card--pad-sm" data-topup-summary></div>
+                <form class="credit-pack-form topup-form" data-topup-form hidden>
+                  <label class="credit-pause-toggle" for="topup-enabled"><input id="topup-enabled" name="enabled" data-topup-enabled type="checkbox" disabled> Refill automatically when the shared pool runs low</label>
+
+                  <label for="topup-threshold">Top up when the organization pool falls to</label>
+                  <input id="topup-threshold" name="thresholdCredits" data-topup-threshold type="number" inputmode="decimal" min="0.000001" step="0.000001" disabled>
+                  <p class="cs-field-note">Credits. This is headroom, not a floor: detection runs periodically, so it needs to cover what your teams can spend inside one interval.</p>
+
+                  <label for="topup-pack">Buy</label>
+                  <select id="topup-pack" name="creditPackId" data-topup-pack disabled></select>
+
+                  <label for="topup-quantity">Packs per top-up</label>
+                  <input id="topup-quantity" name="packQuantity" data-topup-quantity type="number" inputmode="numeric" min="1" step="1" value="1" disabled>
+
+                  <label for="topup-cap">Never spend more than this per billing period</label>
+                  <input id="topup-cap" name="periodCap" data-topup-cap type="number" inputmode="decimal" min="0.01" step="0.01" disabled>
+                  <p class="cs-field-note" data-topup-cap-note></p>
+
+                  <fieldset class="topup-consent" data-topup-consent hidden>
+                    <legend data-topup-consent-title>Your agreement</legend>
+                    <div class="topup-consent__text" data-topup-consent-text></div>
+                    <label class="credit-pause-toggle" for="topup-consent-accept"><input id="topup-consent-accept" name="consentAccepted" data-topup-consent-accept type="checkbox"> I have read and agree to these terms</label>
+                    <p class="cs-field-note" data-topup-consent-version></p>
+                  </fieldset>
+
+                  <p class="credit-pack-summary" data-topup-summary-line></p>
+                  <p class="form-error" data-topup-error role="alert" hidden></p>
+                  <button class="button button-secondary" type="submit" data-topup-submit disabled>Save top-up settings</button>
+                </form>
+                <div class="topup-history">
+                  <div class="cs-panel-head">
+                    <span class="dn-eyebrow" id="billing-topup-history-title">Automatic top-ups</span>
+                    <span class="cs-panel-meta" data-topup-history-state>Waiting</span>
+                  </div>
+                  <p class="cs-stub-note">Every automatic charge, in every state, with the threshold and the balance that provoked it. A pack you bought yourself is not here — that is a one-off purchase and it is on your invoice.</p>
+                  <div data-topup-history-empty></div>
+                  <ol class="credit-movement-list" data-topup-history-list aria-live="polite" hidden></ol>
+                </div>
+              </section>
               <section class="cs-panel" aria-labelledby="billing-teams-title">
                 <div class="cs-panel-head">
                   <span class="dn-eyebrow" id="billing-teams-title">Teams on this licence</span>

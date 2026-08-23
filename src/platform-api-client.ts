@@ -50,6 +50,9 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "credit_balance",
   "credit_control",
   "update_credit_control",
+  "credit_top_up_settings",
+  "update_credit_top_up_settings",
+  "credit_top_ups",
   "billing_portal",
   "team",
   "teams",
@@ -468,6 +471,37 @@ export function createPlatformApi(options: PlatformApiOptions) {
             customerPaused: booleanField(payload, "customerPaused"),
             expectedVersion: int64Field(payload.expectedVersion, "expectedVersion", false),
             idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        // ── Automatic credit top-up ──────────────────────────────────────
+        // Read is open to any organization member; the write requires owner or
+        // billing and carries the consent the card networks require for an
+        // unscheduled off-session charge.
+        case "credit_top_up_settings":
+          return await billing.getCreditTopUpSettings({
+            organizationId: textField(payload, "organizationId")
+          }, callOptions);
+        case "update_credit_top_up_settings":
+          return await billing.updateCreditTopUpSettings({
+            organizationId: textField(payload, "organizationId"),
+            enabled: booleanField(payload, "enabled"),
+            thresholdMicros: int64Field(payload.thresholdMicros, "thresholdMicros", false),
+            creditPackId: textField(payload, "creditPackId"),
+            packQuantity: int64Field(payload.packQuantity, "packQuantity", false),
+            periodCapMinor: int64Field(payload.periodCapMinor, "periodCapMinor", false),
+            // Optional on the wire: it is REQUIRED when enabling or re-arming
+            // and the server refuses the request without it rather than
+            // defaulting one. A client must never invent a version.
+            consentTermsVersion: textField(payload, "consentTermsVersion", false),
+            reArm: booleanField(payload, "reArm"),
+            // Zero is legitimate here, and only here: an organization that has
+            // never stored a settings row has no version to match.
+            expectedVersion: int64Field(payload.expectedVersion, "expectedVersion"),
+            idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        case "credit_top_ups":
+          return await billing.listCreditTopUps({
+            organizationId: textField(payload, "organizationId"),
+            page: pageRequest(payload.page)
           }, callOptions);
         case "billing_portal":
           return await billing.createBillingPortalSession({

@@ -1528,6 +1528,35 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .credit-movement-delta { font-family: var(--font-mono); font-size: .72rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted-bright); }
 .credit-movement-meta { grid-column: 1 / -1; color: var(--muted); font-family: var(--font-mono); font-size: .56rem; letter-spacing: .05em; text-transform: uppercase; }
 
+/* --- automatic credit top-up ---------------------------------------------
+   An unattended charge, so the surface it is armed from carries more weight
+   than a preference: the consent block is a bordered field of its own rather
+   than a line of small print, and the terms inside it are set as running text
+   at reading size, because they are the thing the customer is actually
+   agreeing to. Everything here is achromatic — the only hue on this panel
+   comes from the Notice the ladder builds when something is blocked, which is
+   the one thing that means anything. */
+.credit-topup { display: grid; gap: .7rem; }
+.cs-field-note { margin: -.15rem 0 .35rem; color: var(--muted); font-size: .65rem; line-height: 1.55; }
+.topup-form { margin-top: .3rem; }
+.topup-consent { display: grid; gap: .6rem; margin: .5rem 0 .2rem; padding: .9rem 1rem; border: 1px solid var(--line); background: var(--navy-900); }
+.topup-consent > legend { padding: 0 .35rem; color: var(--muted-bright); font-family: var(--font-mono); font-size: .58rem; letter-spacing: .06em; text-transform: uppercase; }
+/* Reading size, not fine print, and NOT IN A SCROLL BOX.
+   These paragraphs are the agreement the server records verbatim. A capped
+   height put the last one - the CANCELLATION clause, one of the four things a
+   card network requires an off-session agreement to state - half below a fold
+   the reader had to discover, immediately above the box they were being asked
+   to tick. Four short paragraphs do not need a scroller, and an agreement that
+   hides its own get-out is not one a customer can be said to have read. */
+.topup-consent__text { display: grid; gap: .6rem; color: var(--muted-bright); font-size: .72rem; line-height: 1.65; }
+.topup-consent__text p { margin: 0; }
+.topup-consent__text p:first-child { color: var(--ink); font-family: var(--font-mono); font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; }
+.topup-consent .credit-pause-toggle { padding-top: .2rem; border-top: 1px solid var(--line); }
+.topup-history { display: grid; gap: .5rem; margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+@media (max-width: 600px) {
+  .topup-consent { padding: .75rem .8rem; }
+}
+
 /* The live line, copied from the console mockup's own (console.dc.html:591):
    right-aligned, inline, immediately before the count it qualifies, in mono
    micro uppercase at tertiary ink. The LINE is achromatic — only .dn-dot--live
