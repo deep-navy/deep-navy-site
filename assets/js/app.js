@@ -7833,11 +7833,11 @@
       ui.topUpCapNote.textContent = `${formatCanonicalMoney(settings.periodSpent)} of the current ceiling has been spent this billing period. The ceiling resets when your billing period does.`;
     }
     renderCreditTopUpConsent(settings, reArmRequired);
-    updateCreditTopUpSummaryLine(settings, reArmRequired);
+    updateCreditTopUpSummaryLine(reArmRequired);
     setFieldError(ui.topUpError, ready ? "" : (!manageable
       ? "Only an owner or a billing member can change automatic top-up."
       : "No prepaid packs are available, so there is nothing to buy automatically."));
-    ui.topUpSubmit.disabled = !ready || !creditTopUpFormSatisfied(settings, reArmRequired);
+    ui.topUpSubmit.disabled = !ready || !creditTopUpFormSatisfied(settings);
   }
 
   // The terms, exactly as the server publishes them. Rendered paragraph by
@@ -7850,7 +7850,7 @@
     const required = settings.requiredConsent;
     const text = stringValue(required?.text);
     const version = stringValue(required?.version);
-    const wanted = creditTopUpConsentRequired(settings, reArmRequired);
+    const wanted = creditTopUpConsentRequired();
     block.hidden = !wanted;
     if (!wanted) {
       ui.topUpConsentAccept.checked = false;
@@ -7883,23 +7883,26 @@
   }
 
   // Consent is demanded exactly when the server demands it: on any request that
-  // ENABLES automatic top-up, and on any re-arm. Turning it off never needs it —
-  // a customer can always stop an unattended charge.
-  function creditTopUpConsentRequired(settings, reArmRequired) {
-    if (!ui.topUpEnabled?.checked) return false;
-    return true;
+  // ENABLES automatic top-up, and on any re-arm. A re-arm can only happen on a
+  // request that enables, so "the enable box is ticked" covers both and there is
+  // nothing else to consult. Turning it off never needs consent — a customer can
+  // always stop an unattended charge.
+  function creditTopUpConsentRequired() {
+    return Boolean(ui.topUpEnabled?.checked);
   }
 
-  function creditTopUpFormSatisfied(settings, reArmRequired) {
-    if (!ui.topUpEnabled?.checked) return true;
+  function creditTopUpFormSatisfied(settings) {
+    if (!creditTopUpConsentRequired()) return true;
+    // Nothing to agree to means nothing can be armed: the server refuses a
+    // version it does not publish, so the button must too.
     if (!stringValue(settings.requiredConsent?.version)) return false;
     return Boolean(ui.topUpConsentAccept?.checked);
   }
 
-  function updateCreditTopUpSummaryLine(settings, reArmRequired) {
+  function updateCreditTopUpSummaryLine(reArmRequired) {
     const line = ui.topUpSummaryLine;
     if (!line) return;
-    if (!ui.topUpEnabled?.checked) {
+    if (!creditTopUpConsentRequired()) {
       line.textContent = "Saving with this off stops all future automatic charges immediately. It does not reverse a charge already made.";
       return;
     }
