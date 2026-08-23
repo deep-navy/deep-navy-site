@@ -409,9 +409,25 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
    eases out so banked jumps read as continuous motion). */
 .provisioning-progress { margin-top: .65rem; max-width: 460px; }
 .provisioning-track { height: 6px; background: var(--text-a08); border: 1px solid var(--line); overflow: hidden; }
-.provisioning-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--aqua), var(--aqua-strong)); transition: width .9s cubic-bezier(.22, .61, .36, 1); }
+/* Built on the DS progress component's own contract (core.css .dn-progress__fill):
+   an ink fill by default, the hue supplied by the state, and the DS duration
+   and out-curve rather than a bespoke pair. The gradient this replaces was
+   decoration - it said exactly the same thing at 18% as it did at 92%.
+   Colour is the meaning here and it never transitions: the tone is a static
+   state, so the bar changes what it MEANS in one paint instead of sliding
+   between two meanings. Working is the live teal every streaming surface in
+   the console uses; done is the success green the phase badge uses, so the
+   bar and the badge agree at the moment they both settle. */
+.provisioning-fill { display: block; height: 100%; width: 0; background: var(--text-primary); transition: width var(--dur-slower) var(--ease-out); }
+.provisioning-progress[data-tone="working"] .provisioning-fill { background: var(--status-live-dot); }
+.provisioning-progress[data-tone="done"] .provisioning-fill { background: var(--status-success-dot); }
+.provisioning-progress[data-tone="done"] .provisioning-copy { color: var(--status-success-fg); }
+/* The step name is the labour illusion doing its work, so it carries the
+   reading weight; the ETA is a caveat and stays quiet. */
 .provisioning-copy { margin: .4rem 0 0; font-size: .82rem; color: var(--muted-bright); }
 .provisioning-copy small { color: var(--muted); margin-left: .4rem; }
+/* A fill that animates its width is still motion. */
+@media (prefers-reduced-motion: reduce) { .provisioning-fill { transition: none; } }
 .checkout-footer { display: flex; grid-column: 1 / -1; justify-content: space-between; gap: 1rem; padding: .85rem 1.4rem; color: var(--muted); border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: .55rem; text-transform: uppercase; }
 .objective-select { display: grid; gap: .35rem; margin: .35rem 0 .9rem; }.objective-select label { color: var(--muted); font-family: var(--font-mono); font-size: .58rem; text-transform: uppercase; }.objective-select select { min-height: 42px; padding: .5rem 2rem .5rem .6rem; color: var(--ink); border: 1px solid var(--line); border-radius: 0; background: var(--navy-900); }
 .approval-list { display: grid; margin: 0; padding: 0; list-style: none; }.approval-list > li { border-top: 1px solid var(--line); }.approval-list > li:last-child { border-bottom: 1px solid var(--line); }.approval-card { display: grid; gap: .65rem; padding: 1rem 0; }.approval-card[aria-busy="true"] { opacity: .72; }.approval-card-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }.approval-action-type { color: var(--aqua); font-family: var(--font-mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; }.approval-card-header time { color: var(--muted); font-size: .65rem; white-space: nowrap; }.approval-card > strong { font-family: var(--font-mono); font-size: .79rem; line-height: 1.45; }.approval-requester { margin: 0; color: var(--muted); font-size: .67rem; }.approval-card label { color: var(--muted-bright); font-size: .69rem; }.approval-card textarea { width: 100%; min-height: 4.5rem; padding: .65rem .7rem; resize: vertical; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; background: var(--navy-900); }.approval-card textarea::placeholder { color: var(--muted); }.approval-card textarea:hover { border-color: var(--accent-a35); }.approval-card textarea:focus-visible { border-color: var(--aqua); outline-offset: 2px; }.approval-card small { color: var(--muted); font-size: .64rem; line-height: 1.45; }.approval-actions { display: flex; flex-wrap: wrap; gap: .55rem; }.approval-deny { color: var(--muted-bright); }.approval-more { margin-top: .85rem; }

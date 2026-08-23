@@ -3647,7 +3647,7 @@
     session.workspaceGeneration += 1;
     stopActivityStream();
     ui.dashboardState.textContent = message;
-    if (ui.provisioningProgress) ui.provisioningProgress.hidden = true;
+    hideProvisioningProgress();
     resetAgentView(message, "Waiting");
     resetEconomicsView(message, "Waiting");
     resetCreditBalanceView(message, "Waiting");
@@ -9311,6 +9311,21 @@
   // Buell/Norton labor illusion of naming the real work in progress). Hidden
   // the moment the team is active or provisioning fails — a failed build shows
   // the error surfaces, never a stuck bar.
+  // The bar was yanked off screen the instant teams.state flipped to active.
+  // That is the moment the provisioning COMMAND completed, not the moment the
+  // runtime began serving, and two things were wrong with it. The customer
+  // never saw 100%: the bar simply vanished at 92% - "waiting for your team's
+  // gateway to come online" - so the terminal acceleration the milestone map
+  // is built around (Harrison et al., UIST 2007) never happened, and a bar
+  // that disappears mid-sentence reads as a build that gave up. And a
+  // disappearance is not a completion signal; nothing ever said "done".
+  //
+  // Leaving the pending states is now what FINISHES the bar rather than what
+  // hides it: 100%, the success tone, one tick, held long enough to read.
+  let provisioningProgressVisible = false;
+  let provisioningCompletionTimer = 0;
+  let provisioningLastMessage = "";
+
   function renderProvisioningProgress(team) {
     if (!ui.provisioningProgress) return;
     // Deletion is a multi-minute pipeline too (back up, revoke, tear down), and
@@ -9318,18 +9333,82 @@
     // Delete and the row went quiet. Same treatment as provisioning.
     const pendingStates = ["pending", "deleting"];
     const state = lifecycleLabel(team?.state);
-    const progress = team && pendingStates.includes(state)
-      ? launchContract?.provisioningProgress?.(team.provisioning || {})
-      : null;
+    const pending = Boolean(team) && pendingStates.includes(state);
+    const progress = pending ? launchContract?.provisioningProgress?.(team.provisioning || {}) : null;
+
     if (!progress) {
-      ui.provisioningProgress.hidden = true;
+      // A failed build is not a completion. The error surfaces own that
+      // message, and a triumphant 100% over a failure would be a lie.
+      const failed = launchContract?.provisioningPresentation?.(team?.provisioning || {})?.failed === true;
+      if (provisioningProgressVisible && !failed && state === "active") {
+        finishProvisioningProgress();
+        return;
+      }
+      hideProvisioningProgress();
       return;
     }
+
+    window.clearTimeout(provisioningCompletionTimer);
+    if (!provisioningProgressVisible) {
+      ui.provisioningProgress.classList.add("dn-in");
+      provisioningProgressVisible = true;
+    }
     ui.provisioningProgress.hidden = false;
+    ui.provisioningProgress.dataset.tone = "working";
+    // The DS travelling hairline is the "actively streaming" signal, and it is
+    // the only honest thing to show through the gateway wait, where the
+    // percentage deliberately stops climbing at 92%. Without it a bar that has
+    // stopped moving is indistinguishable from a bar that has stalled.
+    ui.provisioningTrack.classList.add("dn-livebar");
     setGaugeWidth(ui.provisioningFill, progress.percent);
     ui.provisioningTrack.setAttribute("aria-valuenow", String(progress.percent));
+    // Tick only when the STEP changed. Ticking on every re-render would replay
+    // the animation on unrelated team updates, which is noise, not meaning.
+    if (progress.message !== provisioningLastMessage) {
+      retriggerMotion(ui.provisioningMessage, "dn-tick");
+      provisioningLastMessage = progress.message;
+    }
     ui.provisioningMessage.textContent = progress.message;
     ui.provisioningEta.textContent = progress.eta || "";
+  }
+
+  function finishProvisioningProgress() {
+    if (!ui.provisioningProgress) return;
+    window.clearTimeout(provisioningCompletionTimer);
+    ui.provisioningProgress.hidden = false;
+    ui.provisioningProgress.dataset.tone = "done";
+    ui.provisioningTrack.classList.remove("dn-livebar");
+    setGaugeWidth(ui.provisioningFill, 100);
+    ui.provisioningTrack.setAttribute("aria-valuenow", "100");
+    ui.provisioningMessage.textContent = "Your team is live";
+    ui.provisioningEta.textContent = "";
+    retriggerMotion(ui.provisioningMessage, "dn-tick");
+    provisioningLastMessage = "";
+    provisioningProgressVisible = false;
+    // Long enough to read the completion, short enough that it does not become
+    // furniture on a page whose headline already says the team is running.
+    provisioningCompletionTimer = window.setTimeout(hideProvisioningProgress, 2600);
+  }
+
+  function hideProvisioningProgress() {
+    if (!ui.provisioningProgress) return;
+    window.clearTimeout(provisioningCompletionTimer);
+    ui.provisioningProgress.hidden = true;
+    ui.provisioningProgress.classList.remove("dn-in");
+    ui.provisioningTrack?.classList.remove("dn-livebar");
+    delete ui.provisioningProgress.dataset.tone;
+    provisioningProgressVisible = false;
+    provisioningLastMessage = "";
+  }
+
+  // Replaying a CSS animation needs the class removed, layout flushed, and the
+  // class restored. Without the forced reflow the browser coalesces both class
+  // changes into one style recalculation and the animation never replays.
+  function retriggerMotion(element, className) {
+    if (!element) return;
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
   }
 
   function appendProvisioningEvent(event) {
