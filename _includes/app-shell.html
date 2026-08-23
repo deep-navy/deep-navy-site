@@ -234,6 +234,12 @@
           <summary aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></summary>
           <div class="wsmenu-panel">
             <a data-view-link="overview" href="#workspace-overview">The floor</a>
+            <!-- The approvals view was reachable only through one inline link
+                 buried in the plan detail. It is a real destination - the full
+                 queue and its history live there - so it gets a real door, and
+                 the door carries the pending count (app-views.js keeps the
+                 number in step with the rendered queue). -->
+            <a data-view-link="approvals" href="#workspace-approvals">Approvals <span class="wsmenu-count" data-approvals-count hidden>0</span></a>
             <a data-view-link="economics" href="#workspace-economics">Economics</a>
             <a data-view-link="settings" href="#workspace-settings">Settings</a>
           </div>
@@ -310,6 +316,22 @@
                      your delivered message, so the shimmer cannot outlive the
                      truth behind it. -->
                 <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
+                <!-- The PRD sign-off, beside the conversation that produced
+                     it. The approvals view keeps the full queue; this card
+                     carries only prd_signoff decisions, rendered from the
+                     same validated approval objects by the same render pass,
+                     so the two surfaces can never disagree. A voided sign-off
+                     keeps its reason and loses its controls here exactly as
+                     it does in the queue; after a recorded sign-off the card
+                     holds a short locking beat while the platform locks the
+                     discussion as the signed record. -->
+                <section class="signoff" data-signoff-card hidden aria-labelledby="signoff-title">
+                  <div class="signoff-head">
+                    <h4 id="signoff-title">PRD sign-off</h4>
+                  </div>
+                  <ol class="signoff-list" data-signoff-list></ol>
+                  <p class="signoff-locking" data-signoff-locking hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
+                </section>
                 <form class="console-form" data-conversation-form>
                   <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
                   <div class="objective-field console-field">

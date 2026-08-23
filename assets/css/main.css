@@ -980,6 +980,36 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .console-form { display: grid; gap: .5rem; }
 .console-field textarea { min-height: 64px; }
 
+/* ── The PRD sign-off, beside the conversation that produced it ──────
+   A hairline frame, no coloured edge: role and status colour go on the
+   chip, never the container. The full queue keeps living in the
+   approvals view; this is only the decision, where the customer is
+   already looking. */
+.signoff { margin: .2rem 0 1rem; padding: .85rem .95rem 0; border: 1px solid var(--line); background: var(--navy-900); }
+.signoff[hidden] { display: none; }
+.signoff-head { display: flex; align-items: baseline; gap: .8rem; }
+.signoff-head h4 { margin: 0; font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.signoff-list { list-style: none; margin: 0; padding: 0; }
+.signoff-list > li + li { border-top: 1px solid var(--line); }
+.signoff-card { padding: .7rem 0 1rem; }
+/* Brass says "waiting on a human"; the word and the chip shape carry the
+   state, so it still reads in greyscale. */
+.signoff-chip { display: inline-flex; align-items: center; padding: .12rem .45rem; border: 1px solid var(--line); font-family: var(--font-mono); font-size: .57rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.signoff-chip[data-tone="waiting"] { color: var(--signal-warn); border-color: var(--warn-a12); background: var(--warn-a12); }
+/* The voided treatment in the console card is the chip form of the same
+   coral label the queue renders — reason as body text, no controls. */
+.signoff-card .approval-voided { padding-left: 0; border-left: 0; }
+.signoff-card .approval-voided-label { display: inline-flex; align-items: center; width: fit-content; padding: .12rem .45rem; border: 1px solid var(--crit-a28); background: var(--crit-a08); }
+/* The locking beat borrows the console's typing affordance: the same dots,
+   the same mono whisper, because it is the same claim — something is
+   happening that the customer does not need to act on. */
+.signoff-locking { display: flex; align-items: center; gap: .6rem; margin: 0; padding: .8rem 0 1rem; font-family: var(--font-mono); font-size: var(--t-2xs); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-bright); }
+.signoff-locking[hidden] { display: none; }
+
+/* The overflow menu's pending-approvals count: a number, set in the face
+   numbers are set in, kept in step with the queue by app-views.js. */
+.wsmenu-count { margin-left: .4rem; font-family: var(--font-mono); font-size: .62rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+
 /* What the team is on now — a state line, not a record card. */
 .onnow { padding: 1.4rem 0 0; }
 .onnow-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }

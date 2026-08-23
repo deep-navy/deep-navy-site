@@ -195,6 +195,9 @@
     approvalsEmpty: document.querySelector("[data-approvals-empty]"),
     approvalList: document.querySelector("[data-approval-list]"),
     approvalsMore: document.querySelector("[data-approvals-more]"),
+    signoffCard: document.querySelector("[data-signoff-card]"),
+    signoffList: document.querySelector("[data-signoff-list]"),
+    signoffLocking: document.querySelector("[data-signoff-locking]"),
     creditPackForm: document.querySelector("[data-credit-pack-form]"),
     creditPackSelect: document.querySelector("[data-credit-pack-select]"),
     creditPackQuantity: document.querySelector("[data-credit-pack-quantity]"),
@@ -339,7 +342,12 @@
     approvals: [],
     approvalNextPageToken: "",
     approvalPageTokens: new Set(),
-    approvalDecisionIds: new Set()
+    approvalDecisionIds: new Set(),
+    // The sign-off card's locking beat: a recorded sign-off leaves the
+    // pending queue immediately, so the card holds this bounded window while
+    // the platform locks the discussion, then stands down on its own.
+    signoffLockingUntil: 0,
+    signoffLockingTimer: null
   };
 
   const environment = stringValue(config.environment) || "local";
@@ -4867,6 +4875,10 @@
     session.approvalNextPageToken = "";
     session.approvalPageTokens = new Set();
     session.approvalDecisionIds = new Set();
+    stopSignoffLockingBeat();
+    if (ui.signoffList) ui.signoffList.replaceChildren();
+    if (ui.signoffLocking) ui.signoffLocking.hidden = true;
+    if (ui.signoffCard) ui.signoffCard.hidden = true;
     ui.approvalList.replaceChildren();
     ui.approvalList.hidden = true;
     ui.approvalsMore.hidden = true;
@@ -4957,9 +4969,43 @@
     renderApprovalQueue();
   }
 
-  function renderApprovalQueue() {
-    ui.approvalList.replaceChildren();
-    session.approvals.forEach((approval, index) => {
+  // A recorded sign-off leaves the pending queue at once, and the queue is
+  // the only thing this page can read — nothing on the wire says when the
+  // discussion lock lands. So the card holds a bounded beat instead of a
+  // spinner-forever: long enough to say what is happening, then it stands
+  // down and the activity record carries the fact from there.
+  const signoffLockingBeatMs = 8000;
+
+  function signoffLockingActive() {
+    return session.signoffLockingUntil > Date.now();
+  }
+
+  function beginSignoffLockingBeat() {
+    session.signoffLockingUntil = Date.now() + signoffLockingBeatMs;
+    if (session.signoffLockingTimer) window.clearTimeout(session.signoffLockingTimer);
+    const generation = session.workspaceGeneration;
+    session.signoffLockingTimer = window.setTimeout(() => {
+      session.signoffLockingTimer = null;
+      if (generation !== session.workspaceGeneration) return;
+      session.signoffLockingUntil = 0;
+      renderApprovalQueue();
+    }, signoffLockingBeatMs);
+  }
+
+  function stopSignoffLockingBeat() {
+    session.signoffLockingUntil = 0;
+    if (session.signoffLockingTimer) window.clearTimeout(session.signoffLockingTimer);
+    session.signoffLockingTimer = null;
+  }
+
+  // One card builder for both surfaces. The approvals view renders every
+  // pending action; the console's sign-off card renders the prd_signoff
+  // subset — the same validated approval objects, the same controls, the
+  // same decide flow, appended by the same render pass so the two surfaces
+  // can never disagree. The prefix keeps the reason-field ids unique when
+  // one approval is on screen twice.
+  function appendApprovalCard(list, approval, index, prefix) {
+      const consoleCard = prefix === "signoff";
       const id = stringValue(approval.id);
       const actionType = stringValue(approval.actionType);
       const summary = stringValue(approval.safeSummary);
@@ -4968,7 +5014,7 @@
       const pending = session.approvalDecisionIds.has(id);
       const item = document.createElement("li");
       const form = document.createElement("form");
-      form.className = "approval-card";
+      form.className = consoleCard ? "approval-card signoff-card" : "approval-card";
       form.dataset.approvalId = id;
       if (pending) form.setAttribute("aria-busy", "true");
 
@@ -4985,6 +5031,16 @@
         requested.title = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(requestedAt);
       }
       header.append(type, requested);
+      if (consoleCard && !voidedReason) {
+        // Brass is "waiting on a human" — the one hue this card may carry
+        // while the decision is still the customer's to make. The voided
+        // treatment below brings its own coral label instead.
+        const chip = document.createElement("span");
+        chip.className = "signoff-chip";
+        chip.dataset.tone = "waiting";
+        chip.textContent = "Awaiting sign-off";
+        header.insertBefore(chip, requested);
+      }
 
       const safeSummary = document.createElement("strong");
       safeSummary.textContent = summary;
@@ -5026,11 +5082,11 @@
         voided.append(voidedLabel, voidedDetail);
         form.append(voided);
         item.append(form);
-        ui.approvalList.append(item);
+        list.append(item);
         return;
       }
 
-      const reasonId = `approval-reason-${index}`;
+      const reasonId = `${prefix}-reason-${index}`;
       const reasonLabel = document.createElement("label");
       reasonLabel.htmlFor = reasonId;
       reasonLabel.textContent = "Decision note";
@@ -5073,8 +5129,26 @@
       actions.append(approve, deny);
       form.append(reasonLabel, reason, help, error, actions);
       item.append(form);
-      ui.approvalList.append(item);
-    });
+      list.append(item);
+  }
+
+  // The sign-off card beside the conversation. Filtered from the queue the
+  // page just validated — never a second fetch — and visible whenever a PRD
+  // decision is waiting, was voided, or is being locked as the signed record.
+  function renderSignoffCard() {
+    if (!ui.signoffCard || !ui.signoffList) return;
+    ui.signoffList.replaceChildren();
+    const signoffs = session.approvals.filter((approval) => stringValue(approval.actionType) === "prd_signoff");
+    signoffs.forEach((approval, index) => appendApprovalCard(ui.signoffList, approval, index, "signoff"));
+    const locking = signoffLockingActive();
+    if (ui.signoffLocking) ui.signoffLocking.hidden = !locking;
+    ui.signoffCard.hidden = !signoffs.length && !locking;
+  }
+
+  function renderApprovalQueue() {
+    ui.approvalList.replaceChildren();
+    session.approvals.forEach((approval, index) => appendApprovalCard(ui.approvalList, approval, index, "approval"));
+    renderSignoffCard();
 
     const count = session.approvals.length;
     const undecided = session.approvals.filter((approval) => !stringValue(approval.voidedReason)).length;
@@ -5176,6 +5250,9 @@
       if (generation !== session.workspaceGeneration || stringValue(team.id) !== session.selectedTeamId) return;
       session.approvalDecisionIds.delete(id);
       session.approvals = session.approvals.filter((candidate) => stringValue(candidate.id) !== id);
+      // The signed PRD leaves the pending queue immediately; the console
+      // card keeps saying what the platform is doing with it for one beat.
+      if (actionType === "prd_signoff" && approved) beginSignoffLockingBeat();
       upsertActivityProjection({
         id: `approval-decision:${id}`,
         category: "approvals",
@@ -8003,6 +8080,8 @@
     if (team) startConversationStream(team.id, session.workspaceGeneration);
   });
   ui.approvalList.addEventListener("submit", decideApproval);
+  // The console's sign-off card submits through the very same decide flow.
+  if (ui.signoffList) ui.signoffList.addEventListener("submit", decideApproval);
   ui.approvalsMore.addEventListener("click", loadMoreApprovals);
   ui.sessionsMore.addEventListener("click", loadMoreSessions);
   ui.workspaceMore.addEventListener("click", loadMoreWorkspaceChanges);
