@@ -71,6 +71,10 @@ test("customer economics breakdowns are server-calculated, scoped, and bounded",
   assert.doesNotMatch(app, /formatCanonicalMoney\(record\.directCost\)/,
     "our measured direct cost is cost of goods and does not belong on a customer surface");
   assert.match(client, /economics\.listEconomicsBreakdowns/);
+  // groupBy travels as the definition's KEY, so a dimension the app offers and
+  // the client cannot map is a screen that throws invalid_argument on open.
+  assert.match(client, /operation: EconomicsScopeType\.OPERATION/,
+    "the app offers an Operation breakdown; the client must be able to send it");
 });
 
 test("the activity stream reconnects itself and heals an expired token", () => {
