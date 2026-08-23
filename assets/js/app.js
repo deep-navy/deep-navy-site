@@ -28,6 +28,25 @@
     railUser: document.querySelector("[data-rail-user]"),
     railCrew: document.querySelector("[data-rail-crew]"),
     railCrewScope: document.querySelector("[data-rail-crew-scope]"),
+    teamHeadline: document.querySelector("[data-team-headline]"),
+    teamMeasure: document.querySelector("[data-team-measure]"),
+    teamPhase: document.querySelector("[data-team-phase]"),
+    objectiveEyebrow: document.querySelector("[data-objective-eyebrow]"),
+    teamSysbar: document.querySelector("[data-team-sysbar]"),
+    teamSysbarGlyph: document.querySelector("[data-team-sysbar-glyph]"),
+    teamSysbarMsg: document.querySelector("[data-team-sysbar-msg]"),
+    teamSysbarDetail: document.querySelector("[data-team-sysbar-detail]"),
+    interview: document.querySelector("[data-interview]"),
+    crewPanel: document.querySelector("[data-crew-panel]"),
+    consolePlate: document.querySelector("[data-console-plate]"),
+    answerPm: document.querySelector("[data-answer-pm]"),
+    initiativesPanel: document.querySelector("[data-initiatives-panel]"),
+    initiativesCount: document.querySelector("[data-initiatives-count]"),
+    teamInitiatives: document.querySelector("[data-team-initiatives]"),
+    workPanel: document.querySelector("[data-work-panel]"),
+    workCount: document.querySelector("[data-work-count]"),
+    teamReposPanel: document.querySelector("[data-team-repos-panel]"),
+    teamRepos: document.querySelector("[data-team-repos]"),
     organizationDependent: document.querySelector("[data-organization-dependent]"),
     organizationConnect: document.querySelector("[data-organization-connect]"),
     organizationBootstrapForm: document.querySelector("[data-organization-bootstrap]"),
@@ -421,6 +440,14 @@
     objectiveListsByTeam: new Map(),
     objectiveDispatchTimer: null,
     objectiveDispatchCheckedAt: null,
+    // Every initiative under every objective the selected team owns, from one
+    // team-scoped read. null is "not read", which is a different fact from the
+    // empty array's "read, and there are none".
+    teamInitiatives: null,
+    // The selected team's own repository grant, from ListTeamRepositories.
+    // null is "not read"; it is what every team-scoped delivery read is
+    // validated against, and it is NOT the organization's projection.
+    teamRepositories: null,
     // Initiatives already loaded, keyed by objective id: the "On now" card's
     // own load fills it for the selected objective, and the objectives view's
     // fan-out fills the rest — neither ever refetches what the other holds.
@@ -3092,6 +3119,7 @@
       renderEngineerControl();
       renderRepositoryControl();
       renderContextRepositories();
+      renderTeamHeadline();
       return;
     }
     const provisioning = launchContract?.provisioningPresentation(team.provisioning || {}) || {};
@@ -3120,6 +3148,10 @@
     renderEngineerControl();
     renderRepositoryControl();
     renderContextRepositories();
+    // The floor's title comes from the team's own objective, which the roster
+    // response already carries — so it paints on selection rather than waiting
+    // for the workspace burst to come back.
+    renderTeamHeadline();
   }
 
   // "Provisioning succeeded" is a past event, not a present state. A team can
@@ -3182,7 +3214,6 @@
     resetSessionHistoryView("Loading assignment-bound session history.", "Loading", "loading");
     resetWorkspaceHistoryView("Loading server-sanitized workspace changes.", "Loading", "loading");
     resetDeliveryHistoryView("Loading webhook-backed GitHub delivery records.", "Loading", "loading");
-    const deliveryRepository = configureDeliveryRepository();
     syncProvisioningSnapshot(team);
     resetObjectiveView("Loading durable objectives for the selected team.");
     setSourceState(ui.objectiveState, "Loading", "loading");
@@ -3196,7 +3227,7 @@
     // hold the status stream open while it still owes us a terminal state.
     if (teamNeedsProvisioningStream(team)) startProvisioningStream(team.id, generation);
 
-    const [agentsResult, economicsResult, economicsBreakdownsResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult] = await Promise.allSettled([
+    const [agentsResult, economicsResult, economicsBreakdownsResult, creditBalanceResult, creditControlResult, approvalsResult, objectivesResult, sessionsResult, workspaceResult, issuesResult, pullRequestsResult, teamRepositoriesResult, teamInitiativesResult] = await Promise.allSettled([
       apiRequest("agents", { teamId: team.id, page: { pageSize: 50 } }),
       apiRequest("economics", { scopeType: "team", scopeId: team.id }),
       loadEconomicsBreakdowns(team.id),
@@ -3206,8 +3237,17 @@
       listAllObjectives(team.id),
       apiRequest("sessions", { teamId: team.id, page: { pageSize: 100 } }),
       apiRequest("workspace_changes", { teamId: team.id, afterSequence: "0", page: { pageSize: 100 } }),
-      deliveryRepository ? apiRequest("github_issues", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: deliveryRepository.id, page: { pageSize: 100 } }) : null,
-      deliveryRepository ? apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: deliveryRepository.id, page: { pageSize: 100 } }) : null
+      // Zero means the team's whole grant. Until platform-protos 350acd91 the
+      // server required a repository id, so the floor had to make the customer
+      // pick one and then showed that one repository's work as the team's.
+      apiRequest("github_issues", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: "0", page: { pageSize: 100 } }),
+      apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId: team.id, githubRepositoryId: "0", page: { pageSize: 100 } }),
+      // Two Wave 0 reads, both in the same burst the floor already pays for:
+      // this team's own repository grant, and every initiative under every
+      // objective it owns. The second used to cost a request per objective,
+      // which is why the floor never listed them.
+      apiRequest("team_repositories", { teamId: team.id, page: { pageSize: 100 } }),
+      apiRequest("initiatives", { teamId: team.id, page: { pageSize: 100 } })
     ]);
     if (generation !== session.workspaceGeneration || team.id !== session.selectedTeamId) return;
     renderAgentsResult(agentsResult, team.id);
@@ -3218,14 +3258,359 @@
     renderObjectivesResult(objectivesResult, team.id, generation);
     renderSessionHistoryResult(sessionsResult, team.id, "", false);
     renderWorkspaceHistoryResult(workspaceResult, team.id, "", false);
-    if (deliveryRepository) {
-      renderGitHubIssuesResult(issuesResult, team.id, deliveryRepository, "", false);
-      renderGitHubPullRequestsResult(pullRequestsResult, team.id, deliveryRepository, "", false);
+    // The grant is what the delivery records are validated against, so it is
+    // accepted before they are — both came back in the same burst, so this is
+    // an ordering of two settled results and not a second round trip.
+    renderTeamRepositoriesResult(teamRepositoriesResult, team.id);
+    const deliveryScopeForTeam = configureDeliveryRepository();
+    if (deliveryScopeForTeam) {
+      renderGitHubIssuesResult(issuesResult, team.id, deliveryScopeForTeam, "", false);
+      renderGitHubPullRequestsResult(pullRequestsResult, team.id, deliveryScopeForTeam, "", false);
     }
     renderCreditPackControls();
-    // The instrument strip reads what the renders above just accepted, so it
-    // paints last, under the same generation guard they all sat behind.
+    // A rejected read leaves the list null — "not read", which the panel says
+    // out loud rather than rendering as "none".
+    session.teamInitiatives = teamInitiativesResult.status === "fulfilled" && Array.isArray(teamInitiativesResult.value?.initiatives)
+      ? teamInitiativesResult.value.initiatives
+      : null;
+    renderTeamInitiatives();
+    // The instrument strip and the headline read what the renders above just
+    // accepted, so they paint last, under the same generation guard they all
+    // sat behind. The headline needs the objectives AND the credit control,
+    // because the phase is derived from both.
     renderStatStrip();
+    renderTeamHeadline();
+  }
+
+  // ── The floor's headline ────────────────────────────────────────────────
+  // One team is one business objective, so the objective is the title of its
+  // floor. The team's name is a label the customer chose for a slot; putting
+  // it in the h1 made every team's floor read the same, and said nothing
+  // about the work. Team.objective became readable in Wave 0 — before it, the
+  // customer typed the sentence, the server accepted it, and it was discarded.
+  //
+  // The screen is phase-aware because a phase decides what the floor IS. A
+  // team whose objective is not agreed yet has no measure to read and no
+  // initiatives to list, so the running layout would be empty furniture; a
+  // team that met its objective is idle rather than finished, and says so.
+
+  // A sprite glyph, in a slot the design system styles by class. Colour never
+  // carries type in this system — this is what does.
+  function spriteIcon(id, size = 16) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "dn-icon");
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.75");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", `#i-${id}`);
+    svg.append(use);
+    return svg;
+  }
+
+  // The objective the floor is about: the one the record card has selected, or
+  // the first the team owns. Never invented — a team with none returns null
+  // and the interviewing phase takes over.
+  function primaryObjective() {
+    const objectives = session.objectiveListsByTeam.get(session.selectedTeamId) || [];
+    const remembered = session.objectivesByTeam.get(session.selectedTeamId);
+    return objectives.find((candidate) => stringValue(candidate.id) === stringValue(remembered?.id)) || objectives[0] || null;
+  }
+
+  // Four phases, every one derived from a fact the server confirmed. Nothing
+  // here is a mode the console chose for itself.
+  function teamPhase(team) {
+    const lifecycle = lifecycleLabel(team?.state);
+    if (["suspended", "suspending", "pending", "deleting"].includes(lifecycle)) return "halted";
+    // Out of credits stops work as surely as a suspension does, and the
+    // customer experiences it the same way: the crew is not running.
+    const spendable = signedInt64Value(session.creditControl?.effectiveAvailableMicros);
+    if (session.creditControl?.customerPaused === true) return "halted";
+    if (spendable !== null && spendable <= 0n) return "halted";
+    const objectives = session.objectiveListsByTeam.get(stringValue(team?.id)) || [];
+    if (!objectives.length) return "interviewing";
+    // Met is not an end state: the team keeps its slot and stays idle until a
+    // person archives it. A regressed proof is not met — it is a different
+    // fact from never-proven and from proven, and all three are kept apart.
+    if (objectives.every((objective) => objectiveAcceptanceState(objective) === "proven")) return "met";
+    return "running";
+  }
+
+  // The measure the team exists for, as the objective's own KPI states it.
+  // measurement_source reached the wire in Wave 0 and is the difference
+  // between a measured objective and an asserted one, so it is named when the
+  // platform has it and its absence is said out loud when it does not.
+  function objectiveMeasure(objective) {
+    const kpis = Array.isArray(objective?.kpis) ? objective.kpis : [];
+    const kpi = kpis.find((candidate) => candidate && !candidate.guardrail) || kpis[0];
+    if (!kpi || !stringValue(kpi.name)) return null;
+    const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 7 });
+    const unit = stringValue(kpi.unit);
+    // "22%" and "54 seconds": a symbol closes up against the figure, a word
+    // does not. Getting this wrong reads as a typo in a number.
+    const withUnit = (value) => `${number.format(value)}${unit ? (/^[a-z]/i.test(unit) ? ` ${unit}` : unit) : ""}`;
+    const target = Number.isFinite(Number(kpi.target)) ? withUnit(Number(kpi.target)) : "";
+    const baseline = Number.isFinite(Number(kpi.baseline)) ? withUnit(Number(kpi.baseline)) : "";
+    return {
+      name: stringValue(kpi.name),
+      baseline,
+      target,
+      direction: stringValue(kpi.direction).toLowerCase(),
+      source: stringValue(kpi.measurementSource)
+    };
+  }
+
+  const TEAM_PHASE_BADGE = Object.freeze({
+    running: { label: "Running", className: "dn-badge dn-badge--live", live: true },
+    interviewing: { label: "Interviewing", className: "dn-badge dn-badge--attention", live: false },
+    met: { label: "Met · idle", className: "dn-badge dn-badge--success", live: false },
+    halted: { label: "Stopped", className: "dn-badge dn-badge--danger", live: false }
+  });
+
+  function renderTeamHeadline() {
+    if (!ui.teamHeadline) return;
+    const team = selectedTeam();
+    const section = document.querySelector('.wview[data-view="overview"]');
+    if (!team) {
+      if (section) delete section.dataset.teamPhaseState;
+      ui.teamHeadline.textContent = "Choose a team";
+      if (ui.objectiveEyebrow) ui.objectiveEyebrow.textContent = "no team selected";
+      if (ui.teamMeasure) ui.teamMeasure.hidden = true;
+      if (ui.teamPhase) ui.teamPhase.hidden = true;
+      if (ui.teamSysbar) ui.teamSysbar.hidden = true;
+      if (ui.interview) ui.interview.hidden = true;
+      return;
+    }
+    const phase = teamPhase(team);
+    if (section) section.dataset.teamPhaseState = phase;
+    const objective = primaryObjective();
+    // Team.objective is the customer's own sentence; an objective record's
+    // title is the PM's. Prefer the customer's, because it is what they asked
+    // for — and fall back rather than showing nothing.
+    const stated = stringValue(team.objective) || stringValue(objective?.title);
+
+    if (phase === "interviewing") {
+      ui.teamHeadline.textContent = stated || "The Product Manager is working out what this team is for";
+      if (ui.objectiveEyebrow) ui.objectiveEyebrow.textContent = "day one";
+    } else {
+      ui.teamHeadline.textContent = stated || "This team has no objective on record";
+      if (ui.objectiveEyebrow) ui.objectiveEyebrow.textContent = "the team's objective";
+    }
+    if (ui.interview) ui.interview.hidden = phase !== "interviewing";
+
+    // The measure line.
+    if (ui.teamMeasure) {
+      const measure = phase === "interviewing" ? null : objectiveMeasure(objective);
+      ui.teamMeasure.replaceChildren();
+      if (!measure) {
+        ui.teamMeasure.hidden = true;
+      } else {
+        ui.teamMeasure.hidden = false;
+        const name = document.createElement("span");
+        name.textContent = measure.name;
+        ui.teamMeasure.append(name);
+        if (measure.baseline) {
+          const from = document.createElement("span");
+          from.textContent = ` · baseline `;
+          const value = document.createElement("b");
+          value.textContent = measure.baseline;
+          ui.teamMeasure.append(from, value);
+        }
+        if (measure.target) {
+          const arrow = document.createElement("span");
+          arrow.textContent = ` → target `;
+          const value = document.createElement("b");
+          value.textContent = measure.target;
+          ui.teamMeasure.append(arrow, value);
+        }
+        const source = document.createElement("span");
+        // An objective nobody can measure is an objective nobody can settle,
+        // so the absence is stated rather than left blank.
+        source.textContent = measure.source ? ` · ${measure.source}` : " · no measurement source connected";
+        ui.teamMeasure.append(source);
+      }
+    }
+
+    // The phase badge. Live gets the pulsing dot; the other three do not,
+    // because only one of them is a claim about right now.
+    if (ui.teamPhase) {
+      const badge = TEAM_PHASE_BADGE[phase];
+      ui.teamPhase.className = badge.className;
+      ui.teamPhase.replaceChildren();
+      if (badge.live) {
+        const dot = document.createElement("span");
+        dot.className = "dn-dot dn-dot--sm dn-dot--live dn-dot--pulse";
+        dot.setAttribute("aria-hidden", "true");
+        ui.teamPhase.append(dot);
+      }
+      ui.teamPhase.append(document.createTextNode(badge.label));
+      ui.teamPhase.hidden = false;
+    }
+
+    renderTeamSystemBar(team, phase);
+  }
+
+  // The one banner a team may raise about itself. Met and stopped are the two
+  // states where the crew is not working and a person has to decide something,
+  // and neither is an error — so neither is a toast.
+  function renderTeamSystemBar(team, phase) {
+    if (!ui.teamSysbar) return;
+    const name = stringValue(team?.name) || "This team";
+    if (phase === "met") {
+      ui.teamSysbar.className = "dn-sysbar dn-sysbar--success cs-sysbar";
+      ui.teamSysbarGlyph.replaceChildren(spriteIcon("check-circle", 15));
+      ui.teamSysbarMsg.textContent = `${name} met its objective and stopped`;
+      ui.teamSysbarDetail.textContent = "Every objective on this team has a passing acceptance run on the default branch. It is idle, not archived — it keeps its slot until you archive it, and it will not resume on its own if the number drifts back.";
+      ui.teamSysbar.hidden = false;
+      return;
+    }
+    if (phase === "halted") {
+      ui.teamSysbar.className = "dn-sysbar dn-sysbar--danger cs-sysbar";
+      ui.teamSysbarGlyph.replaceChildren(spriteIcon("octagon-alert", 15));
+      ui.teamSysbarMsg.textContent = `${name} is not working`;
+      ui.teamSysbarDetail.textContent = haltedReason(team);
+      ui.teamSysbar.hidden = false;
+      return;
+    }
+    ui.teamSysbar.hidden = true;
+  }
+
+  // Why it stopped, from the record that stopped it — never a guess.
+  function haltedReason(team) {
+    const lifecycle = lifecycleLabel(team?.state);
+    if (lifecycle === "suspended" || lifecycle === "suspending") return "The team is paused. Its agents are stopped and nothing new is filed, reviewed or merged; the issues and branches it opened stay in your repositories.";
+    if (lifecycle === "pending") return "The team is waiting on a confirmed payment. Nothing provisions on a browser return — only on the signed webhook.";
+    if (lifecycle === "deleting") return "The team is being removed. Its workspace is already gone; the issues, branches and pull requests it opened stay in your repositories.";
+    if (session.creditControl?.customerPaused === true) return "Billable agent work is paused for this team, from its own budget control. Resume it in Economics.";
+    return "The team is out of spendable credits. It stops between initiatives rather than leaving work half-written, so nothing is half-finished.";
+  }
+
+  // ── Initiatives under this objective ────────────────────────────────────
+  // One row per initiative in the design system's objective grammar. The row
+  // states its state THREE ways — the glyph, the badge word, and the row's own
+  // border — which is why the meter under it stays ink: a fourth spend of the
+  // same signal on the least readable element would be decoration.
+  //
+  // Fed by one team-scoped read. Before Wave 0 this needed a request per
+  // objective, so the floor never showed it.
+  function initiativeRowState(initiative) {
+    if (timestampDate(initiative?.completedAt)) return "met";
+    const status = stringValue(initiative?.status).toLowerCase();
+    if (["blocked", "stopped", "cancelled", "canceled", "abandoned"].some((word) => status.includes(word))) return "blocked";
+    if (timestampDate(initiative?.startedAt)) return "running";
+    return "queued";
+  }
+
+  const INITIATIVE_ROW = Object.freeze({
+    met: { glyph: "check", badge: "shipped", badgeClass: "dn-badge dn-badge--success", modifier: "dn-obj--met" },
+    running: { glyph: "circle-dot", badge: "working", badgeClass: "dn-badge dn-badge--live", modifier: "dn-obj--running" },
+    blocked: { glyph: "warning", badge: "blocked", badgeClass: "dn-badge dn-badge--danger", modifier: "dn-obj--blocked" },
+    queued: { glyph: "circle-dot", badge: "queued", badgeClass: "dn-badge", modifier: "" }
+  });
+
+  function renderTeamInitiatives() {
+    if (!ui.teamInitiatives) return;
+    const rows = Array.isArray(session.teamInitiatives) ? session.teamInitiatives : null;
+    ui.teamInitiatives.replaceChildren();
+    if (ui.initiativesCount) ui.initiativesCount.textContent = rows ? String(rows.length) : "";
+    if (rows === null) {
+      // The read failed or has not happened. That is not "none" — it is a
+      // reading that is missing, and the two must not look alike.
+      setDataState(ui.teamInitiatives, "unavailable", "The initiative list for this team could not be read, so none is shown. The objective record behind “Every objective” carries the same initiatives, one objective at a time.");
+      if (ui.initiativesPanel) ui.initiativesPanel.hidden = false;
+      return;
+    }
+    if (!rows.length) {
+      setDataState(ui.teamInitiatives, "pending", "The Product Manager proposes initiatives in the PRD, and files nothing in your repositories until you sign it off. Tell it what matters and the first ones appear here.", {
+        action: { label: "Answer the Product Manager", view: "approvals" }
+      });
+      if (ui.initiativesPanel) ui.initiativesPanel.hidden = false;
+      return;
+    }
+    rows.forEach((initiative) => {
+      const state = initiativeRowState(initiative);
+      const shape = INITIATIVE_ROW[state];
+      const row = document.createElement("div");
+      row.className = shape.modifier ? `dn-obj ${shape.modifier}` : "dn-obj";
+      const check = document.createElement("span");
+      check.className = "dn-obj__check";
+      check.append(spriteIcon(shape.glyph, 15));
+      const main = document.createElement("div");
+      main.className = "dn-obj__main";
+      const title = document.createElement("div");
+      title.className = "dn-obj__title";
+      title.textContent = stringValue(initiative.title) || "Untitled initiative";
+      const badge = document.createElement("span");
+      badge.className = shape.badgeClass;
+      badge.textContent = shape.badge;
+      title.append(badge);
+      const measure = document.createElement("div");
+      measure.className = "dn-obj__measure";
+      // The hypothesis is what the initiative claims will move the number, so
+      // it is the honest second line. Where there is none, the status the
+      // platform recorded is; where there is neither, the row says so.
+      measure.textContent = stringValue(initiative.hypothesis)
+        || stringValue(initiative.description)
+        || (stringValue(initiative.status) ? stringValue(initiative.status).replaceAll("_", " ") : "no hypothesis recorded");
+      main.append(title, measure);
+      row.append(check, main);
+      ui.teamInitiatives.append(row);
+    });
+    if (ui.initiativesPanel) ui.initiativesPanel.hidden = false;
+  }
+
+  // ── This team's repository grant ────────────────────────────────────────
+  // Not the organization's projection and not what the GitHub App can reach:
+  // the grant this team works inside. It became readable in Wave 0. A
+  // repository that has lost access still appears — the grant outlives the
+  // access, and hiding it would make a broken team look correctly configured.
+  function renderTeamRepositoriesResult(result, teamId) {
+    if (!ui.teamRepos) return;
+    ui.teamRepos.replaceChildren();
+    if (result?.status === "rejected") {
+      session.teamRepositories = null;
+      setDataState(ui.teamRepos, "unavailable", "This team's repository grant could not be read. The organization's own selection is on the Settings screen; it is a wider set than this team's and must not be read as one.");
+      return;
+    }
+    const repositories = Array.isArray(result?.value?.repositories) ? result.value.repositories : [];
+    session.teamRepositories = repositories;
+    if (repositories.some((repository) => stringValue(repository?.organizationId) !== session.organizationId)) {
+      session.teamRepositories = null;
+      setDataState(ui.teamRepos, "unavailable", "The grant returned a repository outside this organization, so none is shown. Nothing was changed.");
+      return;
+    }
+    if (!repositories.length) {
+      setDataState(ui.teamRepos, "unavailable", "This team holds no repositories of its own. It cannot read or write anything until an owner grants it one in Settings.");
+      return;
+    }
+    repositories.forEach((repository) => {
+      const granted = repository.accessState === 1 || stringValue(repository.accessState) === "REPOSITORY_ACCESS_STATE_ACCESSIBLE";
+      const row = document.createElement("div");
+      row.className = granted ? "cs-repo" : "cs-repo cs-repo--lost";
+      const name = document.createElement("span");
+      name.className = "cs-repo-name";
+      name.textContent = `${stringValue(repository.owner)}/${stringValue(repository.name)}`;
+      const dot = document.createElement("span");
+      dot.className = granted ? "dn-dot dn-dot--sm dn-dot--success" : "dn-dot dn-dot--sm dn-dot--danger";
+      dot.setAttribute("aria-hidden", "true");
+      // Never colour alone: the dot and the word say the same thing.
+      const access = document.createElement("span");
+      access.className = "cs-repo-access";
+      access.textContent = granted ? "reachable" : "no access";
+      row.append(name, dot, access);
+      ui.teamRepos.append(row);
+    });
+    const note = document.createElement("p");
+    note.className = "cs-repo-note";
+    note.textContent = "This team's own grant. Your other teams hold their own, and none of them can see this one's.";
+    ui.teamRepos.append(note);
   }
 
   function renderPendingTeamGuidance(team) {
@@ -3278,7 +3663,14 @@
     // An agent id is only meaningful inside its team's workspace.
     session.selectedAgentId = "";
     resetAgentDetailView(message);
+    // A different team is a different grant and a different set of
+    // initiatives. Both drop to "not read" rather than showing the last
+    // team's, which is the one wrong answer neither panel may give.
+    session.teamInitiatives = null;
+    renderTeamInitiatives();
+    renderTeamRepositoriesResult({ status: "rejected" }, "");
     renderStatStrip();
+    renderTeamHeadline();
   }
 
   function setEmptyState(element, title, message) {
@@ -4954,6 +5346,13 @@
   // A row is the agent's own record, so it opens the agent view — the surface
   // that deliberately has no rail door. That is the same relationship the crew
   // tiles have; the roster is a list of records, not a group of destinations.
+  // Three engineers are three people. The canonical roster gives them one
+  // shared label and distinct codes, so every surface that lists the crew
+  // numbers them from the code rather than repeating "Engineer".
+  function crewDisplayName(canonicalRole) {
+    return /^E\d+$/.test(canonicalRole.code) ? `Engineer ${canonicalRole.code.slice(1)}` : canonicalRole.label;
+  }
+
   function renderRailCrew(rows) {
     if (!ui.railCrew) return;
     const crew = Array.isArray(rows) ? rows : [];
@@ -5062,7 +5461,7 @@
       const copy = document.createElement("div");
       copy.className = "crew-copy";
       const name = document.createElement("strong");
-      name.textContent = canonicalRole.label;
+      name.textContent = crewDisplayName(canonicalRole);
       const roleLine = document.createElement("small");
       roleLine.textContent = active ? "ready to work" : (lifecycleLabel(agent.state) || "state not reported").toLowerCase();
       copy.append(name, roleLine);
@@ -5092,10 +5491,7 @@
         agentId: stringValue(agent.id),
         roleKey: canonicalRole.key,
         code: canonicalRole.code,
-        // Three engineers are three people. The canonical label is the same
-        // word for all of them, so the rail numbers them from the code the
-        // roster already assigned rather than listing "Engineer" three times.
-        label: /^E\d+$/.test(canonicalRole.code) ? `Engineer ${canonicalRole.code.slice(1)}` : canonicalRole.label,
+        label: crewDisplayName(canonicalRole),
         live: live.state === "working" || live.state === "briefed"
       });
     });
@@ -5449,20 +5845,16 @@
   // footer names the one that was counted rather than implying a total.
   async function loadDashboardTeamStats(team) {
     const teamId = stringValue(team.id);
-    const labels = repositoryLabelIndex();
-    const repositoryIds = knownTeamRepositoryIds(teamId);
-    const deliveryRepositoryId = repositoryIds.find((candidate) => labels.has(candidate)) || "";
-    const requests = [
+    // Zero is the team's whole grant. This used to count one repository — the
+    // first the team was known to hold — and name it in the footer, because
+    // the server would not answer a wider question. It answers one now, so
+    // the tile's count is the team's rather than a sample of it.
+    const [objectivesResult, approvalsResult, issuesResult, pullsResult] = await Promise.allSettled([
       listAllObjectives(teamId),
-      apiRequest("approvals", { teamId, page: { pageSize: 100 } })
-    ];
-    if (deliveryRepositoryId) {
-      requests.push(
-        apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: deliveryRepositoryId, page: { pageSize: 100 } }),
-        apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: deliveryRepositoryId, page: { pageSize: 100 } })
-      );
-    }
-    const [objectivesResult, approvalsResult, issuesResult, pullsResult] = await Promise.allSettled(requests);
+      apiRequest("approvals", { teamId, page: { pageSize: 100 } }),
+      apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: "0", page: { pageSize: 100 } }),
+      apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: "0", page: { pageSize: 100 } })
+    ]);
     const stats = { approvalsLoaded: false, pendingApprovals: 0, deliveryLoaded: false, openIssues: 0, openPullRequests: 0, deliveryScope: "" };
     if (objectivesResult.status === "fulfilled") session.objectiveListsByTeam.set(teamId, objectivesResult.value);
     if (approvalsResult.status === "fulfilled") {
@@ -5478,7 +5870,6 @@
       stats.deliveryLoaded = true;
       stats.openIssues = issues.filter((record) => githubIssueStateLabel(record?.state) === "open").length;
       stats.openPullRequests = pulls.filter((record) => githubPullRequestStateLabel(record?.state) === "open").length;
-      if (repositoryIds.length > 1) stats.deliveryScope = stringValue(labels.get(deliveryRepositoryId)).split("/")[1] || "";
     }
     return stats;
   }
@@ -7491,11 +7882,15 @@
     ui.deliveryRepository.disabled = true;
   }
 
+  // Every repository the SELECTED TEAM was granted — not the organization's
+  // projection, which is wider. A team may legitimately hold a repository the
+  // organization has since deselected, so selectedForTeams is not a filter
+  // here: the grant is the authority, and hiding a granted repository would
+  // make a broken team look correctly configured.
   function deliveryRepositories() {
     const repositories = [];
     const seen = new Set();
-    for (const repository of session.repositories) {
-      if (repository?.selectedForTeams !== true) continue;
+    for (const repository of (session.teamRepositories || [])) {
       const numericId = int64Value(repository?.githubRepositoryId);
       const owner = stringValue(repository?.owner);
       const name = stringValue(repository?.name);
@@ -7511,6 +7906,12 @@
     return repositories;
   }
 
+  // The scope a delivery read is answered in. The default is the team's WHOLE
+  // grant, which the server accepts as an absent repository filter since
+  // platform-protos 350acd91 — before that a customer had to pick one
+  // repository from a dropdown and the floor showed one repository's work as
+  // though it were the team's. A narrower pick is still available, because
+  // "what is happening in this one repository" is a real question.
   function configureDeliveryRepository(preferredId = "") {
     try {
       const repositories = deliveryRepositories();
@@ -7524,21 +7925,25 @@
         session.deliveryRepositoryId = "";
         session.githubIssuesState = "empty";
         session.githubPullRequestsState = "empty";
-        setSourceState(ui.deliveryHistoryState, "No selected repositories");
-        ui.deliveryHistoryState.title = "Choose at least one accessible repository in GitHub setup before loading delivery records.";
+        setSourceState(ui.deliveryHistoryState, "No repositories granted");
+        ui.deliveryHistoryState.title = "This team holds no repositories, so it has no delivery records. An owner grants them in Settings.";
         return null;
       }
+      const all = document.createElement("option");
+      all.value = "";
+      all.textContent = repositories.length === 1 ? repositories[0].label : `All ${repositories.length} repositories`;
+      ui.deliveryRepository.append(all);
       repositories.forEach((repository) => {
         const option = document.createElement("option");
         option.value = repository.id;
         option.textContent = repository.label;
         ui.deliveryRepository.append(option);
       });
-      const selected = repositories.find((repository) => repository.id === preferredId) || repositories.find((repository) => repository.id === session.deliveryRepositoryId) || repositories[0];
-      session.deliveryRepositoryId = selected.id;
-      ui.deliveryRepository.value = selected.id;
+      const narrowed = repositories.find((repository) => repository.id === preferredId) || null;
+      session.deliveryRepositoryId = narrowed ? narrowed.id : "";
+      ui.deliveryRepository.value = session.deliveryRepositoryId;
       ui.deliveryRepository.disabled = false;
-      return selected;
+      return deliveryScope(repositories, narrowed);
     } catch (error) {
       session.deliveryRepositoryId = "";
       ui.deliveryRepository.replaceChildren();
@@ -7628,9 +8033,14 @@
     return !previous || current.createdAt < previous.createdAt || (current.createdAt === previous.createdAt && current.id.localeCompare(previous.id) < 0);
   }
 
-  function normalizedGitHubIssue(record, repository, previousSort) {
+  function normalizedGitHubIssue(record, scope, previousSort) {
     const id = safeOpaqueId(record?.id);
     const repositoryId = int64Value(record?.githubRepositoryId);
+    // The record names its own repository; the scope says which ones this
+    // read was allowed to return. A record outside it is a widened response,
+    // which is rejected rather than displayed.
+    const repository = repositoryId === null ? null : scope.repositories.get(repositoryId.toString()) || null;
+    if (!repository) throw new ApiError("GitHubDeliveryService returned a record outside the team's granted repositories", 0, "invalid_response", "");
     const number = int64Value(record?.number);
     const comments = int64Value(record?.commentsCount);
     const title = safeGitHubText(record?.title, 256, true);
@@ -7645,7 +8055,7 @@
     const sort = { id, createdAt: createdAt?.getTime() || 0 };
     const artifactUrl = number === null ? "" : exactGitHubDeliveryUrl(record?.githubUrl, repository, "issues", number.toString());
     if (
-      !id || repositoryId === null || repositoryId.toString() !== repository.id || number === null || number <= 0n || comments === null || comments < 0n ||
+      !id || number === null || number <= 0n || comments === null || comments < 0n ||
       !title || !state || !artifactUrl || typeof record?.locked !== "boolean" || !createdAt || !updatedAt || updatedAt < createdAt ||
       (record?.closedAt && (!closedAt || closedAt < createdAt)) || !validDeliverySort(sort, previousSort)
     ) throw new ApiError("GitHubDeliveryService returned an invalid issue projection", 0, "invalid_response", "");
@@ -7668,9 +8078,14 @@
     };
   }
 
-  function normalizedGitHubPullRequest(record, repository, previousSort) {
+  function normalizedGitHubPullRequest(record, scope, previousSort) {
     const id = safeOpaqueId(record?.id);
     const repositoryId = int64Value(record?.githubRepositoryId);
+    // The record names its own repository; the scope says which ones this
+    // read was allowed to return. A record outside it is a widened response,
+    // which is rejected rather than displayed.
+    const repository = repositoryId === null ? null : scope.repositories.get(repositoryId.toString()) || null;
+    if (!repository) throw new ApiError("GitHubDeliveryService returned a record outside the team's granted repositories", 0, "invalid_response", "");
     const number = int64Value(record?.number);
     const title = safeGitHubText(record?.title, 256, true);
     const state = githubPullRequestStateLabel(record?.state);
@@ -7688,7 +8103,7 @@
     const sort = { id, createdAt: createdAt?.getTime() || 0 };
     const artifactUrl = number === null ? "" : exactGitHubDeliveryUrl(record?.githubUrl, repository, "pull", number.toString());
     if (
-      !id || repositoryId === null || repositoryId.toString() !== repository.id || number === null || number <= 0n || !title || !state ||
+      !id || number === null || number <= 0n || !title || !state ||
       !artifactUrl || typeof record?.draft !== "boolean" || !headRef || !baseRef || Object.values(counters).some((value) => value === null || value < 0n) ||
       !createdAt || !updatedAt || updatedAt < createdAt || (record?.closedAt && (!closedAt || closedAt < createdAt)) ||
       (record?.mergedAt && (!mergedAt || mergedAt < createdAt)) || (state === "merged" && !mergedAt) || !validDeliverySort(sort, previousSort)
@@ -7712,8 +8127,8 @@
     };
   }
 
-  function renderGitHubIssuesResult(result, teamId, repository, requestedToken, append) {
-    if (stringValue(teamId) !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+  function renderGitHubIssuesResult(result, teamId, scope, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
     if (result.status === "rejected") {
       session.githubIssuesState = "unavailable";
       ui.issuesMore.hidden = !session.githubIssuesNextPageToken;
@@ -7727,7 +8142,7 @@
       const localIds = new Set(session.githubIssueIds);
       let previousSort = session.githubIssueLastSort;
       const normalized = records.map((record) => {
-        const value = normalizedGitHubIssue(record, repository, previousSort);
+        const value = normalizedGitHubIssue(record, scope, previousSort);
         if (localIds.has(value.entry.id)) throw new ApiError("GitHubDeliveryService returned a duplicate issue", 0, "invalid_response", "");
         localIds.add(value.entry.id);
         previousSort = value.sort;
@@ -7761,8 +8176,8 @@
     renderStatStrip();
   }
 
-  function renderGitHubPullRequestsResult(result, teamId, repository, requestedToken, append) {
-    if (stringValue(teamId) !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
+  function renderGitHubPullRequestsResult(result, teamId, scope, requestedToken, append) {
+    if (stringValue(teamId) !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
     if (result.status === "rejected") {
       session.githubPullRequestsState = "unavailable";
       ui.pullRequestsMore.hidden = !session.githubPullRequestsNextPageToken;
@@ -7776,7 +8191,7 @@
       const localIds = new Set(session.githubPullRequestIds);
       let previousSort = session.githubPullRequestLastSort;
       const normalized = records.map((record) => {
-        const value = normalizedGitHubPullRequest(record, repository, previousSort);
+        const value = normalizedGitHubPullRequest(record, scope, previousSort);
         if (localIds.has(value.entry.id)) throw new ApiError("GitHubDeliveryService returned a duplicate pull request", 0, "invalid_response", "");
         localIds.add(value.entry.id);
         previousSort = value.sort;
@@ -7812,44 +8227,66 @@
 
   async function reloadGitHubDelivery() {
     const teamId = session.selectedTeamId;
-    const repository = configureDeliveryRepository(stringValue(ui.deliveryRepository.value));
-    if (!teamId || !repository) return;
+    const scope = configureDeliveryRepository(stringValue(ui.deliveryRepository.value));
+    if (!teamId || !scope) return;
     resetDeliveryRecords("Loading webhook-backed GitHub issues and pull requests.", "Loading", "loading");
-    session.deliveryRepositoryId = repository.id;
-    ui.deliveryRepository.value = repository.id;
     const generation = session.deliveryLoadGeneration;
+    // Zero is the documented sentinel for "the team's whole grant". The server
+    // resolves the authorized set itself and filters the list on it, so a
+    // wider request cannot outrun the grant.
+    const githubRepositoryId = scope.id || "0";
     const [issuesResult, pullRequestsResult] = await Promise.allSettled([
-      apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100 } }),
-      apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100 } })
+      apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId, page: { pageSize: 100 } }),
+      apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId, page: { pageSize: 100 } })
     ]);
-    if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
-    renderGitHubIssuesResult(issuesResult, teamId, repository, "", false);
-    renderGitHubPullRequestsResult(pullRequestsResult, teamId, repository, "", false);
+    if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
+    renderGitHubIssuesResult(issuesResult, teamId, scope, "", false);
+    renderGitHubPullRequestsResult(pullRequestsResult, teamId, scope, "", false);
+  }
+
+  // A scope carries the repositories a record may belong to, keyed by the
+  // GitHub id the record reports. `id` is the guard token: "" is the whole
+  // grant, a numeric string is one repository. A record from outside the
+  // scope is rejected, exactly as a record from the wrong repository was.
+  function deliveryScope(repositories, narrowed) {
+    const map = new Map();
+    (narrowed ? [narrowed] : repositories).forEach((repository) => map.set(repository.id, repository));
+    return {
+      id: narrowed ? narrowed.id : "",
+      label: narrowed ? narrowed.label : `${repositories.length} repositories`,
+      repositories: map
+    };
   }
 
   function currentDeliveryRepository() {
-    try { return deliveryRepositories().find((repository) => repository.id === session.deliveryRepositoryId) || null; } catch { return null; }
+    try {
+      const repositories = deliveryRepositories();
+      if (!repositories.length) return null;
+      const narrowed = repositories.find((repository) => repository.id === session.deliveryRepositoryId) || null;
+      if (session.deliveryRepositoryId && !narrowed) return null;
+      return deliveryScope(repositories, narrowed);
+    } catch { return null; }
   }
 
   async function loadMoreGitHubIssues() {
     const teamId = session.selectedTeamId;
-    const repository = currentDeliveryRepository();
+    const scope = currentDeliveryRepository();
     const pageToken = session.githubIssuesNextPageToken;
     const generation = session.deliveryLoadGeneration;
-    if (!teamId || !repository || !pageToken || session.githubIssuesLoading) return;
+    if (!teamId || !scope || !pageToken || session.githubIssuesLoading) return;
     session.githubIssuesLoading = true;
     session.githubIssuesState = "loading";
     ui.issuesMore.disabled = true;
     updateDeliveryHistoryState();
     try {
-      const response = await apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100, pageToken } });
-      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
-      renderGitHubIssuesResult({ status: "fulfilled", value: response }, teamId, repository, pageToken, true);
+      const response = await apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId: scope.id || "0", page: { pageSize: 100, pageToken } });
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
+      renderGitHubIssuesResult({ status: "fulfilled", value: response }, teamId, scope, pageToken, true);
     } catch (error) {
-      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
-      renderGitHubIssuesResult({ status: "rejected", reason: error }, teamId, repository, pageToken, true);
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
+      renderGitHubIssuesResult({ status: "rejected", reason: error }, teamId, scope, pageToken, true);
     } finally {
-      if (generation === session.deliveryLoadGeneration && repository.id === session.deliveryRepositoryId) {
+      if (generation === session.deliveryLoadGeneration && scope.id === session.deliveryRepositoryId) {
         session.githubIssuesLoading = false;
         ui.issuesMore.disabled = false;
       }
@@ -7858,23 +8295,23 @@
 
   async function loadMoreGitHubPullRequests() {
     const teamId = session.selectedTeamId;
-    const repository = currentDeliveryRepository();
+    const scope = currentDeliveryRepository();
     const pageToken = session.githubPullRequestsNextPageToken;
     const generation = session.deliveryLoadGeneration;
-    if (!teamId || !repository || !pageToken || session.githubPullRequestsLoading) return;
+    if (!teamId || !scope || !pageToken || session.githubPullRequestsLoading) return;
     session.githubPullRequestsLoading = true;
     session.githubPullRequestsState = "loading";
     ui.pullRequestsMore.disabled = true;
     updateDeliveryHistoryState();
     try {
-      const response = await apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: repository.id, page: { pageSize: 100, pageToken } });
-      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
-      renderGitHubPullRequestsResult({ status: "fulfilled", value: response }, teamId, repository, pageToken, true);
+      const response = await apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId: scope.id || "0", page: { pageSize: 100, pageToken } });
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
+      renderGitHubPullRequestsResult({ status: "fulfilled", value: response }, teamId, scope, pageToken, true);
     } catch (error) {
-      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || repository.id !== session.deliveryRepositoryId) return;
-      renderGitHubPullRequestsResult({ status: "rejected", reason: error }, teamId, repository, pageToken, true);
+      if (generation !== session.deliveryLoadGeneration || teamId !== session.selectedTeamId || scope.id !== session.deliveryRepositoryId) return;
+      renderGitHubPullRequestsResult({ status: "rejected", reason: error }, teamId, scope, pageToken, true);
     } finally {
-      if (generation === session.deliveryLoadGeneration && repository.id === session.deliveryRepositoryId) {
+      if (generation === session.deliveryLoadGeneration && scope.id === session.deliveryRepositoryId) {
         session.githubPullRequestsLoading = false;
         ui.pullRequestsMore.disabled = false;
       }
@@ -8549,6 +8986,7 @@
     // The conversation with the Product Manager is the floor's headline now;
     // the tracked-objective form ships demoted (is-secondary) in the shell and
     // never reclaims primacy, so there is nothing to toggle here.
+    if (ui.workCount) ui.workCount.textContent = work.length ? String(work.length) : "";
     if (!work.length) { ui.descent.hidden = true; return; }
     ui.descent.hidden = false;
 
@@ -8573,42 +9011,64 @@
       head.append(h4, rule, count);
       li.append(head);
 
-      items.forEach((entry) => {
-        const row = document.createElement("div");
-        row.className = band.state === "building" ? "descent-item is-live" : "descent-item";
-        // Shipped work keeps its last state word on the row so the glyph
-        // colour can say it too: merged carries the engineers' azure — the
-        // deliberate signature, merged work is theirs — closed stays quiet.
-        if (band.state === "shipped") row.dataset.status = stringValue(entry.status) === "merged" ? "merged" : "closed";
-        const left = document.createElement("span");
-        const ref = document.createElement("span");
-        ref.className = "ref";
-        ref.textContent = entry.pullRequestId ? `PR #${entry.pullRequestId}` : `#${entry.githubIssueId}`;
-        const what = document.createElement("span");
-        what.className = "what";
-        // The entry title is "Issue #1 · Add /healthz endpoint"; the reference
-        // is already its own column, so only the human part is repeated here.
-        what.textContent = stringValue(entry.title).replace(/^(Issue|PR)\s+#\d+\s*·\s*/, "");
-        left.append(ref, document.createTextNode(" "), what);
-        if (entry.artifactUrl) {
-          const link = document.createElement("a");
-          link.href = entry.artifactUrl;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.referrerPolicy = "no-referrer";
-          link.append(left);
-          row.append(link);
-        } else {
-          row.append(left);
-        }
-        const who = document.createElement("span");
-        who.className = "who";
-        who.textContent = descentWho(entry, band.state);
-        row.append(who);
-        li.append(row);
-      });
+      items.forEach((entry) => li.append(descentWorkRow(entry, band.state)));
       ui.descentList.append(li);
     });
+  }
+
+  // One row of open work, in the design system's own work grammar: a state
+  // glyph, the human title, the reference and who has it underneath, and a
+  // badge saying where it is. State is carried by the glyph and the word; the
+  // row's tint is the system's, and it never carries type on its own.
+  const WORK_ROW = Object.freeze({
+    planned: { modifier: "dn-work--open", glyph: "circle-dot", badge: "Planned", badgeClass: "dn-badge" },
+    building: { modifier: "dn-work--open", glyph: "circle-dot", badge: "Building", badgeClass: "dn-badge dn-badge--live" },
+    review: { modifier: "dn-work--review", glyph: "git-pull-request", badge: "In review", badgeClass: "dn-badge dn-badge--attention" },
+    merged: { modifier: "dn-work--merged", glyph: "git-merge", badge: "Merged", badgeClass: "dn-badge dn-badge--success" },
+    closed: { modifier: "dn-work--closed", glyph: "ban", badge: "Closed", badgeClass: "dn-badge" }
+  });
+
+  function descentWorkRow(entry, bandState) {
+    const shipped = bandState === "shipped";
+    const key = shipped ? (stringValue(entry.status) === "merged" ? "merged" : "closed") : bandState;
+    const shape = WORK_ROW[key] || WORK_ROW.planned;
+    const linked = Boolean(entry.artifactUrl);
+    const row = document.createElement(linked ? "a" : "div");
+    row.className = `dn-work ${shape.modifier}${linked ? " dn-bare" : ""}`;
+    if (linked) {
+      row.href = entry.artifactUrl;
+      row.target = "_blank";
+      row.rel = "noopener noreferrer";
+      row.referrerPolicy = "no-referrer";
+    }
+    const glyph = document.createElement("span");
+    glyph.className = "dn-work__glyph";
+    glyph.append(spriteIcon(shape.glyph, 15));
+    const main = document.createElement("div");
+    main.className = "dn-work__main";
+    const title = document.createElement("div");
+    title.className = "dn-work__title";
+    // The entry title is "Issue #1 · Add /healthz endpoint"; the reference is
+    // its own chip below, so only the human part is repeated here.
+    title.textContent = stringValue(entry.title).replace(/^(Issue|PR)\s+#\d+\s*·\s*/, "");
+    const sub = document.createElement("div");
+    sub.className = "dn-work__sub";
+    const ref = document.createElement("span");
+    ref.textContent = entry.pullRequestId ? `PR #${entry.pullRequestId}` : `#${entry.githubIssueId}`;
+    const sep = document.createElement("span");
+    sep.textContent = "·";
+    const who = document.createElement("span");
+    who.textContent = descentWho(entry, bandState);
+    sub.append(ref, sep, who);
+    main.append(title, sub);
+    const right = document.createElement("div");
+    right.className = "dn-work__right";
+    const badge = document.createElement("span");
+    badge.className = shape.badgeClass;
+    badge.textContent = shape.badge;
+    right.append(badge);
+    row.append(glyph, main, right);
+    return row;
   }
 
   // Who has it, in the customer's terms. Never a bot login or a raw label.

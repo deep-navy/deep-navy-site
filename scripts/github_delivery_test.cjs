@@ -27,7 +27,18 @@ test("delivery records are selectable per authorized repository and independentl
   assert.match(shell, /data-delivery-repository/);
   assert.match(shell, /data-issues-more/);
   assert.match(shell, /data-pull-requests-more/);
-  assert.match(app, /repository\?\.selectedForTeams !== true/);
+  // The list a customer can narrow to is the SELECTED TEAM's own grant, from
+  // ListTeamRepositories — not the organization's selection projection. The
+  // two are different sets: a team may still hold a repository the
+  // organization has since deselected, and filtering the team's list by
+  // `selectedForTeams` hid exactly that repository, which is the one case
+  // where a misconfigured team most needs to look misconfigured. The pin that
+  // used to sit here asserted that filter, so it is replaced by a pin on the
+  // grant being the source and on the org projection NOT being it.
+  assert.match(app, /for \(const repository of \(session\.teamRepositories \|\| \[\]\)\)/);
+  assert.match(app, /function deliveryRepositories\(\)[\s\S]{0,400}session\.teamRepositories/);
+  assert.doesNotMatch(app, /function deliveryRepositories\(\)[\s\S]{0,400}selectedForTeams/);
+  assert.match(app, /apiRequest\("team_repositories", \{ teamId/);
   assert.match(app, /organizationId !== session\.organizationId/);
   assert.match(app, /apiRequest\("github_issues", \{ organizationId: session\.organizationId, teamId/);
   assert.match(app, /apiRequest\("github_pull_requests", \{ organizationId: session\.organizationId, teamId/);
@@ -37,7 +48,17 @@ test("delivery records are selectable per authorized repository and independentl
 });
 
 test("issue and pull-request rows reject invalid scope, order, and typed states", () => {
-  assert.match(app, /repositoryId\.toString\(\) !== repository\.id/);
+  // Scope, not equality. A read is now answered in the team's WHOLE grant by
+  // default, so "the record's repository is the one repository we asked for"
+  // stopped being expressible — but the invariant behind it did not change
+  // and is not weakened: every record must name a repository inside the scope
+  // the read was made in, and one that does not is rejected outright rather
+  // than rendered. A single-repository scope holds exactly one entry, so the
+  // narrowed case still enforces precisely what the old equality did.
+  assert.match(app, /const repository = repositoryId === null \? null : scope\.repositories\.get\(repositoryId\.toString\(\)\) \|\| null;/);
+  assert.match(app, /if \(!repository\) throw new ApiError\("GitHubDeliveryService returned a record outside the team's granted repositories"/);
+  assert.doesNotMatch(app, /repositoryId\.toString\(\) !== repository\.id/,
+    "the per-record repository equality is superseded by the scope membership check, not dropped");
   assert.match(app, /function validDeliverySort/);
   assert.match(app, /current\.createdAt < previous\.createdAt/);
   assert.match(app, /GIT_HUB_ISSUE_STATE_DELETED/);

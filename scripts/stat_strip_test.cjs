@@ -36,9 +36,16 @@ test("the strip and all of its readings ship in the shell, above the crew", () =
     assert.ok(new RegExp(`${hook}(?![\\w-])`).test(shell), `shell is missing ${hook}`);
     assert.ok(app.includes(`[${hook}]`), `app.js never reads ${hook}`);
   }
+  // The instruments are read before the people: four numbers over the crew,
+  // then the crew. The crew grid wears the system's panel grammar now, so the
+  // pin follows the hook rather than the old bespoke class.
   const strip = shell.indexOf("data-stat-strip");
-  const crew = shell.indexOf('class="crew"');
+  const crew = shell.indexOf("data-crew-panel");
   assert.ok(strip !== -1 && crew !== -1 && strip < crew, "the strip must sit above the crew grid");
+  // And the objective is read before either: it is the h1, and the strip is
+  // the reading under it.
+  const headline = shell.indexOf("data-team-headline");
+  assert.ok(headline !== -1 && headline < strip, "the objective is the headline, above its own instruments");
 });
 
 test("every reading comes from state the refresh already fetched, built without markup assembly", () => {

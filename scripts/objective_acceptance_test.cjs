@@ -54,9 +54,14 @@ test("the objectives view is registered, shipped in the shell, and every hook ha
   assert.match(section, /data-view-link="overview" href="#workspace-overview">Back to the floor</);
   assert.doesNotMatch(shell, /<a class="dn-nav[^>]*data-view-link="objectives"/,
     "objectives has no rail door: the On now card is its door");
-  const onnow = shell.slice(shell.indexOf("data-objective-record"), shell.indexOf("wspace-log"));
-  assert.match(onnow, /data-view-link="objectives" href="#workspace-objectives"/,
-    "the overview's at-a-glance card must carry a real door into the objectives view");
+  // The door is still on the floor and still a real link; it moved from the
+  // "On now" card's footnote to the head of the panel that lists the team's
+  // initiatives, which is where a reader looking for the full record now is.
+  const floor = shell.slice(shell.indexOf('data-view="overview"'), shell.indexOf('data-view="objectives"'));
+  assert.match(floor, /data-view-link="objectives" href="#workspace-objectives"/,
+    "the floor must carry a real door into the objectives view");
+  assert.match(floor, /data-initiatives-panel[\s\S]{0,400}data-view-link="objectives"/,
+    "the door belongs beside the initiatives it opens the record for");
   // app.js loads the view's proposals on the same click the router switches on.
   assert.match(app, /data-view-link="objectives"[^\n]*ensureObjectivesViewWork/);
 });

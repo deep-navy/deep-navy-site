@@ -446,149 +446,152 @@
 
         <!-- ===== OVERVIEW ===== -->
         <section class="wview" data-view="overview" id="workspace-overview" aria-labelledby="workspace-overview-title">
-          <!-- One question per screen. Everything here answers "what is my team
-               doing, and what needs me" - in that order. Team lifecycle,
-               proposals and read-only records are not that, and have moved to
-               their own views. -->
-          <header class="wtop">
-            <h2 class="now-line" id="workspace-overview-title" data-context-team>Team workspace</h2>
-            <p class="wctx" data-dashboard-state>Choose a team to see what it is working on.</p>
-            <p class="wmeta"><span data-context-organization>—</span><span data-context-repositories>—</span></p>
-            <div class="provisioning-progress" data-provisioning-progress hidden>
-              <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
-                <span class="provisioning-fill" data-provisioning-fill></span>
-              </div>
-              <p class="provisioning-copy" aria-live="polite"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
+          <!-- The objective is the headline. The team's name is not the work;
+               it is a label the customer chose for a slot, and putting it in
+               the h1 made every team's floor read the same. One team is one
+               business objective, so the objective is the title of its floor,
+               and the measure under it is how the team knows it is done.
+
+               The screen is phase-aware, because a team's phase decides what
+               the floor even IS: a team whose objective is not agreed yet has
+               no measure to chart and no initiatives to list, so the running
+               layout would be a screen of empty furniture. app.js stamps the
+               phase onto this section and CSS folds the parts that cannot
+               honestly be filled. -->
+
+          <!-- The one banner a team may raise about itself: it met its
+               objective and is idle, or it stopped. Both are facts about THIS
+               team, so it lives inside the team scope and never above an
+               organization screen. -->
+          <div class="dn-sysbar cs-sysbar" data-team-sysbar hidden>
+            <span class="dn-sysbar__glyph" data-team-sysbar-glyph aria-hidden="true"><svg class="dn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#i-check-circle"></use></svg></span>
+            <span class="dn-sysbar__msg" data-team-sysbar-msg></span>
+            <span class="dn-sysbar__detail" data-team-sysbar-detail></span>
+            <span class="dn-sysbar__spacer"></span>
+            <span class="dn-sysbar__act">
+              <button class="dn-btn dn-btn--primary dn-btn--sm" type="button" data-view-link="settings">Team settings</button>
+              <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-view-link="economics">See where it went</button>
+            </span>
+          </div>
+
+          <header class="cs-head">
+            <div class="cs-head-copy">
+              <p class="dn-eyebrow"><span data-context-team>Team workspace</span> · <span data-objective-eyebrow>the team's objective</span></p>
+              <h1 class="cs-h1" id="workspace-overview-title" data-team-headline>Choose a team</h1>
+              <!-- The measure, in the system's mono, because it is a reading
+                   and not a sentence. Absent rather than invented when the
+                   objective carries no KPI the platform can read. -->
+              <p class="cs-measure" data-team-measure hidden></p>
+              <p class="cs-subhead" data-dashboard-state>Choose a team to see what it is working on.</p>
+              <p class="cs-facts"><span data-context-organization>—</span><span data-context-repositories>—</span></p>
+            </div>
+            <div class="cs-head-actions">
+              <span class="dn-badge" data-team-phase hidden></span>
+              <button class="dn-btn dn-btn--secondary" type="button" data-view-link="dashboard">All teams</button>
+              <button class="dn-btn dn-btn--primary" type="button" data-view-link="approvals" data-answer-pm>Answer the PM</button>
             </div>
           </header>
 
-          <div class="wspace">
-            <!-- The instrument strip: four readings over the crew - proof,
-                 money, delivery, presence - fed entirely from responses the
-                 workspace refresh already holds, so nothing here costs a
-                 request. Proven counts satisfied_at evidence rather than
-                 lifecycle state, and a failing acceptance run after a proof
-                 reads as regressed, which is a different fact from
-                 never-proven. -->
-            <section class="statstrip dn-stagger" data-stat-strip hidden aria-label="Team instruments">
-              <div class="statcell">
-                <span class="statcell-label">Objectives proven</span>
-                <strong class="statcell-value dn-odometer" data-stat-objectives>—</strong>
-                <span class="statcell-note" data-stat-objectives-note></span>
-              </div>
-              <div class="statcell">
-                <span class="statcell-label">Credits remaining</span>
-                <strong class="statcell-value dn-odometer" data-stat-credits>—</strong>
-                <span class="statcell-meter" aria-hidden="true"><i data-stat-credits-fill></i></span>
-                <span class="statcell-note" data-stat-credits-note></span>
-              </div>
-              <div class="statcell">
-                <span class="statcell-label">Open PRs · issues</span>
-                <strong class="statcell-value dn-odometer" data-stat-delivery>—</strong>
-                <span class="statcell-note" data-stat-delivery-note></span>
-              </div>
-              <div class="statcell">
-                <span class="statcell-label">Agents active</span>
-                <strong class="statcell-value dn-odometer" data-stat-agents>—</strong>
-                <span class="statcell-note" data-stat-agents-note></span>
-              </div>
-            </section>
+          <div class="provisioning-progress" data-provisioning-progress hidden>
+            <div class="provisioning-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="provisioning-progress-label" data-provisioning-track>
+              <span class="provisioning-fill" data-provisioning-fill></span>
+            </div>
+            <p class="provisioning-copy" aria-live="polite"><span id="provisioning-progress-label" data-provisioning-message>Preparing…</span> <small data-provisioning-eta></small></p>
+          </div>
 
-            <!-- The crew, full width and first. Each tile carries what that
-                 agent is doing right now, taken from the activity stream, so
-                 the screen answers "is anything happening" without a click. -->
-            <section class="crew" aria-labelledby="agents-title">
-              <div class="crew-head">
-                <h3 id="agents-title">The crew</h3>
-                <span class="crew-state" data-agents-state></span>
-              </div>
-              <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
-              <div class="agent-roster dn-stagger" data-agent-list aria-live="polite" hidden></div>
-            </section>
+          <!-- Four readings over the crew — proof, money, delivery, presence —
+               in the design system's own stat grammar: a mono label in caps, a
+               display-face number in tabular figures, and a note under it that
+               says where the number came from. Every one is fed from responses
+               the workspace refresh already holds, so nothing here costs a
+               request, and a reading nobody fetched shows an em dash rather
+               than a zero. -->
+          <section class="cs-stats dn-stagger" data-stat-strip hidden aria-label="Team instruments">
+            <div class="dn-stat statcell">
+              <span class="dn-stat__label statcell-label">Objectives proven</span>
+              <strong class="dn-stat__value statcell-value dn-odometer" data-stat-objectives>—</strong>
+              <span class="statcell-note" data-stat-objectives-note></span>
+            </div>
+            <div class="dn-stat statcell">
+              <span class="dn-stat__label statcell-label">Credits remaining</span>
+              <strong class="dn-stat__value statcell-value dn-odometer" data-stat-credits>—</strong>
+              <span class="statcell-meter" aria-hidden="true"><i data-stat-credits-fill></i></span>
+              <span class="statcell-note" data-stat-credits-note></span>
+            </div>
+            <div class="dn-stat statcell">
+              <span class="dn-stat__label statcell-label">Open PRs · issues</span>
+              <strong class="dn-stat__value statcell-value dn-odometer" data-stat-delivery>—</strong>
+              <span class="statcell-note" data-stat-delivery-note></span>
+            </div>
+            <div class="dn-stat statcell">
+              <span class="dn-stat__label statcell-label">Agents active</span>
+              <strong class="dn-stat__value statcell-value dn-odometer" data-stat-agents>—</strong>
+              <span class="statcell-note" data-stat-agents-note></span>
+            </div>
+          </section>
 
-            <div class="wspace-grid">
+          <!-- The interview. Only mounted while the team has no objective the
+               platform can read: on day one the PM is working out what the
+               team is for, and until that is agreed nothing is filed. The
+               conversation itself is the same one the running floor shows —
+               this block is the framing that says which question it is. -->
+          <section class="cs-interview" data-interview hidden aria-labelledby="interview-title">
+            <div class="dn-empty">
+              <span class="dn-empty__glyph" aria-hidden="true"><svg class="dn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#i-doc"></use></svg></span>
+              <div class="dn-empty__title" id="interview-title">No initiatives yet</div>
+              <div class="dn-empty__body">The Product Manager proposes these in the PRD, once the objective is agreed. Nothing appears in your repositories before you sign it off.</div>
+            </div>
+          </section>
 
-            <div class="wspace-main">
-              <!-- The conversation. The floor opens on the same exchange a
-                   business leader has with the product manager they hired:
-                   you say what matters, the Product Manager answers here.
-                   Customer messages carry their own delivery chip, driven by
-                   streamed re-sends of the same message, so the state on
-                   screen is always the last thing the server said - never a
-                   guess. System rows on the stream are wake plumbing and are
-                   not rendered as chat. -->
-              <section class="console" aria-labelledby="console-title">
-                <div class="console-head">
-                  <h3 id="console-title" data-console-title>Your Product Manager</h3>
-                  <span class="stream-state" data-conversation-state>Waiting for a team</span>
-                  <!-- Replies are written in Markdown, so they are rendered as
-                       Markdown. This shows the source instead, for anyone who
-                       wants to copy a PRD out exactly as it was written. -->
-                  <button class="button button-quiet button-small" type="button" data-conversation-format aria-pressed="false">Show Markdown source</button>
-                  <button class="button button-quiet button-small" type="button" data-conversation-retry hidden>Reconnect</button>
+          <div class="cs-cols">
+            <div class="cs-main">
+              <!-- The crew, in the system's agent-card grammar. The rail lists
+                   who is on the team; this says what each of them is doing
+                   right now, which is the reason to keep this page open. -->
+              <section class="cs-panel" data-crew-panel aria-labelledby="agents-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="agents-title">The crew</span>
+                  <span class="cs-panel-meta" data-agents-state></span>
                 </div>
-                <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p>
-                  <!-- The platform's own SYSTEM rows carry what the team knows
-                       so far: the briefing request names the repositories, and
-                       the introduction embeds engineering's briefing verbatim.
-                       This block shows that text to the customer while they
-                       wait - it never invents a word. -->
-                  <div class="console-briefing" data-conversation-briefing hidden><span class="console-briefing-label" data-conversation-briefing-label></span><div class="console-briefing-body" data-conversation-briefing-body></div></div></div>
-                <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
-                <!-- The Product Manager mid-reply: shown only while their
-                     crew-tile liveness says they are actually working after
-                     your delivered message, so the shimmer cannot outlive the
-                     truth behind it. -->
-                <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
-                <!-- The PRD sign-off, beside the conversation that produced
-                     it. The approvals view keeps the full queue; this card
-                     carries only prd_signoff decisions, rendered from the
-                     same validated approval objects by the same render pass,
-                     so the two surfaces can never disagree. A voided sign-off
-                     keeps its reason and loses its controls here exactly as
-                     it does in the queue; after a recorded sign-off the card
-                     holds a short locking beat while the platform locks the
-                     discussion as the signed record. -->
-                <section class="signoff" data-signoff-card hidden aria-labelledby="signoff-title">
-                  <div class="signoff-head">
-                    <h4 id="signoff-title">PRD sign-off</h4>
-                  </div>
-                  <ol class="signoff-list" data-signoff-list></ol>
-                  <p class="signoff-locking dn-livebar" data-signoff-locking hidden><span class="signoff-chip" data-tone="signed"><span class="signoff-tick" aria-hidden="true">✓</span>&nbsp;Signed</span><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
-                </section>
-                <form class="console-form" data-conversation-form>
-                  <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
-                  <div class="objective-field console-field">
-                    <textarea id="conversation-text" name="conversationText" maxlength="4000" rows="2" placeholder="Tell your Product Manager what matters next." required disabled></textarea>
-                    <div class="objective-foot">
-                      <span class="objective-key" aria-hidden="true">⌘↵</span>
-                      <button class="button button-primary" type="submit" disabled>Send</button>
-                    </div>
-                  </div>
-                  <p class="form-help form-help-neutral" data-conversation-hint>The conversation opens when your team finishes setting up.</p>
-                  <p class="form-error" data-conversation-error role="alert" hidden></p>
-                </form>
+                <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
+                <div class="cs-crew dn-stagger" data-agent-list aria-live="polite" hidden></div>
               </section>
 
-              <!-- There is exactly one ask on this floor: the conversation
-                   above. Objectives the platform tracks still render as the
-                   "On now" record when one exists; nothing here collects a
-                   second version of the same question. -->
-
-              <!-- The descent. Work sinks: planned at the surface, shipped in
-                   the trench, on one continuous line. A column board would
-                   crush forty issues into forty short titles; a single
-                   descent scrolls and keeps every title readable, and the
-                   order carries the progress. -->
-              <section class="descent" data-descent hidden aria-labelledby="descent-title">
-                <h3 class="visually-hidden" id="descent-title">Work in progress</h3>
-                <ol class="descent-list" data-descent-list></ol>
+              <!-- Initiatives under this objective. One row per initiative in
+                   the system's own objective grammar: a glyph, a title, the
+                   measure it moves, and a meter. The row states its state
+                   three ways — glyph, word and border — so the meter can stay
+                   ink and the colour is never spent twice on the same fact.
+                   Fed by one team-scoped read, which is a Wave 0 procedure:
+                   before it, this needed a request per objective. -->
+              <section class="cs-panel" data-initiatives-panel hidden aria-labelledby="initiatives-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="initiatives-title">Initiatives under this objective</span>
+                  <span class="cs-panel-meta" data-initiatives-count></span>
+                  <a class="dn-btn dn-btn--ghost dn-btn--sm cs-panel-door" data-view-link="objectives" href="#workspace-objectives">Every objective</a>
+                </div>
+                <div class="cs-obj-list" data-team-initiatives></div>
               </section>
 
-              <!-- What the team is on now. One line of state, not a record card. -->
-              <section class="onnow" data-objective-record hidden aria-label="Current objective">
+              <!-- Open work. Issues and pull requests the team has actually
+                   opened, newest first, in the system's work-row grammar with
+                   the review pips the merge gate fills. The descent that used
+                   to render here said the same thing with a bespoke shape. -->
+              <section class="cs-panel" data-work-panel aria-labelledby="work-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="work-title">Open work</span>
+                  <span class="cs-panel-meta" data-work-count></span>
+                  <a class="dn-btn dn-btn--ghost dn-btn--sm cs-panel-door" data-view-link="runs" href="#workspace-runs">Runs and diffs</a>
+                </div>
+                <div class="dn-card cs-work" data-descent hidden><ol class="descent-list" data-descent-list></ol></div>
+              </section>
+
+              <!-- What the team is on now. The record itself — acceptance
+                   evidence, measures, initiatives — lives behind its own door;
+                   this is the one line of state the floor keeps. -->
+              <section class="onnow dn-card dn-card--pad-sm" data-objective-record hidden aria-label="Current objective">
                 <div class="onnow-head">
-                  <span class="lbl">On now</span>
+                  <span class="dn-eyebrow">On now</span>
                   <!-- The proof plate: kelp tick when the acceptance run
                        holds, breathing lumen while the crew works, coral
                        when a proof regressed. app.js stamps data-state from
@@ -596,82 +599,126 @@
                   <span class="obj-check" data-objective-check aria-hidden="true"></span>
                   <div class="objective-select" data-objective-select-control hidden>
                     <label class="visually-hidden" for="objective-select">Objective</label>
-                    <select id="objective-select" data-objective-select disabled></select>
+                    <span class="dn-select dn-select--sm"><select id="objective-select" data-objective-select disabled></select><span class="dn-select__caret" aria-hidden="true"><svg class="dn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false"><use href="#i-caret-down"></use></svg></span></span>
                   </div>
                 </div>
                 <strong data-objective-title></strong>
                 <p data-objective-description></p>
                 <p class="onnow-state"><span data-objective-dispatch-state>Not started</span> <span data-objective-dispatch-detail>Your Product Manager picks this up and turns it into issues.</span></p>
-                <!-- The floor keeps the at-a-glance card; the record itself -
-                     acceptance evidence, measures, initiatives, one card per
-                     objective - lives on its own screen behind this door. -->
-                <p class="onnow-note onnow-open"><a data-view-link="objectives" href="#workspace-objectives">Review every objective</a> — acceptance evidence, measures and initiatives, one record per objective.</p>
                 <details class="onnow-more">
                   <summary>Plan detail</summary>
                   <div class="onnow-plan">
-                    <div><span class="lbl">Measures</span><span hidden data-objective-kpi-state></span>
+                    <div><span class="dn-eyebrow">Measures</span><span hidden data-objective-kpi-state></span>
                       <div class="empty-state" data-objective-kpi-empty><strong>No measures yet</strong><p>Added as your Product Manager breaks this down.</p></div>
                       <ol data-objective-kpi-list hidden></ol>
                     </div>
-                    <div><span class="lbl">Initiatives</span><span hidden data-initiative-state></span>
+                    <div><span class="dn-eyebrow">Initiatives</span><span hidden data-initiative-state></span>
                       <ol data-initiative-list></ol>
                     </div>
-                    <p class="onnow-note">Decisions that need you appear in <a href="#workspace-approvals" data-view-link="approvals">approvals</a>.</p>
                   </div>
                 </details>
               </section>
             </div>
-            <!-- The log runs beside the work, so a card moving and the
-                 sentence explaining why sit level with each other. It was a
-                 separate tab, which meant reading cause and effect required
-                 changing screens. -->
-            <aside class="wspace-log" aria-labelledby="log-title">
-              <div class="log-head">
-                <h3 id="log-title">Log</h3>
-                <span class="stream-state" data-activity-state>Waiting for a team</span>
-                <button class="button button-quiet button-small" type="button" data-activity-retry hidden>Reconnect</button>
-              </div>
-              <!-- The filters live where the log lives. They spent two waves
-                   on a separate Activity screen no navigation reached, while
-                   the list they filter rendered here; a control and the thing
-                   it controls belong in the same place. Each chip hides
-                   itself while its category is empty ("All" stays), so the
-                   row describes what this team has actually done. -->
-              <div class="activity-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
-                <button type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
-                <button type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
-                <button type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
-                <button type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
-                <button type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
-                <button type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
-                <button type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
-                <button type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
-                <button type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
-              </div>
-              <div class="activity-workspace">
-                <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="button button-secondary button-small" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
-                <ol class="customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
-                <!-- Paging lives after the events, reached by running out of them,
-                     rather than above the feed as a control panel. -->
-                <div class="activity-more" aria-label="Load older activity">
-                  <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
-                  <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
-                  <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
-                  <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
-                  <button class="button button-quiet button-small" type="button" data-sessions-more hidden>Older sessions</button>
-                  <button class="button button-quiet button-small" type="button" data-workspace-more hidden>Older code changes</button>
-                  <button class="button button-quiet button-small" type="button" data-issues-more hidden>Older issues</button>
-                  <button class="button button-quiet button-small" type="button" data-pull-requests-more hidden>Older pull requests</button>
+
+            <aside class="cs-side" aria-label="The Product Manager and the stream">
+              <!-- The Product Manager's channel, and the decision that needs
+                   you inside it. A decision does not get a screen of its own:
+                   it is answered where it was raised, in the thread that
+                   raised it, which is why the Decisions surface sends you back
+                   here rather than opening a second inbox. -->
+              <section class="dn-card cs-console" aria-labelledby="console-title">
+                <div class="cs-console-head">
+                  <span class="dn-avatar dn-avatar--sm" data-console-plate data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" aria-hidden="true">PM</span>
+                  <span class="cs-console-id">
+                    <span class="cs-console-title" id="console-title" data-console-title>Your Product Manager</span>
+                    <span class="cs-console-meta" data-conversation-state>Waiting for a team</span>
+                  </span>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-format aria-pressed="false">Markdown</button>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-retry hidden>Reconnect</button>
                 </div>
-              </div>
+                <div class="cs-console-body">
+                  <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p>
+                    <div class="console-briefing" data-conversation-briefing hidden><span class="console-briefing-label" data-conversation-briefing-label></span><div class="console-briefing-body" data-conversation-briefing-body></div></div></div>
+                  <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
+                  <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
+                  <!-- The decision, opened in the thread it was raised in.
+                       The queue keeps the full list; this card carries the one
+                       the customer walked in to answer, rendered from the same
+                       validated approval objects by the same render pass — so
+                       the two surfaces can never disagree. -->
+                  <section class="signoff" data-signoff-card hidden aria-labelledby="signoff-title">
+                    <div class="signoff-head">
+                      <h4 id="signoff-title">Needs you</h4>
+                    </div>
+                    <ol class="signoff-list" data-signoff-list></ol>
+                    <p class="signoff-locking dn-livebar" data-signoff-locking hidden><span class="signoff-chip" data-tone="signed"><span class="signoff-tick" aria-hidden="true">✓</span>&nbsp;Signed</span><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
+                  </section>
+                </div>
+                <form class="cs-console-form" data-conversation-form>
+                  <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
+                  <div class="objective-field console-field">
+                    <textarea class="dn-input dn-textarea" id="conversation-text" name="conversationText" maxlength="4000" rows="2" placeholder="Tell your Product Manager what matters next." required disabled></textarea>
+                    <div class="objective-foot">
+                      <span class="objective-key" aria-hidden="true">⌘↵</span>
+                      <button class="dn-btn dn-btn--primary dn-btn--sm" type="submit" disabled>Send</button>
+                    </div>
+                  </div>
+                  <p class="dn-field__hint" data-conversation-hint>The conversation opens when your team finishes setting up.</p>
+                  <p class="form-error" data-conversation-error role="alert" hidden></p>
+                </form>
+              </section>
+
+              <!-- The stream, beside the work it narrates. Rows are the
+                   system's event grammar: a role-tinted plate, the actor, the
+                   verb, the target it acted on, and the time it happened. -->
+              <section class="cs-panel" aria-labelledby="log-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="log-title">Live activity</span>
+                  <span class="cs-panel-meta cs-stream" data-activity-state>Waiting for a team</span>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm cs-panel-door" type="button" data-activity-retry hidden>Reconnect</button>
+                </div>
+                <div class="dn-seg cs-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
+                  <button class="dn-seg__item" type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
+                  <button class="dn-seg__item" type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
+                </div>
+                <div class="activity-workspace">
+                  <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="dn-btn dn-btn--secondary dn-btn--sm" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
+                  <ol class="dn-card dn-livebar customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
+                  <div class="activity-more" aria-label="Load older activity">
+                    <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
+                    <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
+                    <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
+                    <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-sessions-more hidden>Older sessions</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-workspace-more hidden>Older code changes</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-issues-more hidden>Older issues</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-pull-requests-more hidden>Older pull requests</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- This team's own repository grant — not the organization's
+                   projection and not what the App can reach. It became
+                   readable in Wave 0; before that the floor could not say what
+                   the crew was allowed to touch. A repository that has lost
+                   access still appears, because the grant outlives the access
+                   and hiding it would make a broken team look configured. -->
+              <section class="cs-panel" data-team-repos-panel aria-labelledby="team-repos-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="team-repos-title">Repositories for this team</span>
+                </div>
+                <div class="dn-card dn-card--pad-sm cs-repos" data-team-repos></div>
+              </section>
             </aside>
-            </div>
-            <!-- Team lifecycle moved to the teams surface above: this screen
-                 answers "what is my team doing", the teams surface answers
-                 "what teams do I have". -->
           </div>
         </section>
-
         <!-- There is no Activity view. The log and its filters live on the
              floor, beside the work they narrate - a separate activity screen
              was tried and it meant reading cause and effect required

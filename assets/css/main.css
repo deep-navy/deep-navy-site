@@ -1070,26 +1070,16 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .descent-band-head .rule { flex: 1; height: 1px; background: var(--line); }
 .descent-band-head .count { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); font-variant-numeric: tabular-nums; }
 
-.descent-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem 1rem; padding: .5rem 0; align-items: baseline; }
-.descent-item::before {
-  content: ""; position: absolute; left: -1.75rem; top: .95rem; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--line-mid); border: 2px solid var(--navy-950); box-sizing: content-box;
-}
-.descent-item .ref { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--muted); }
-.descent-item .what { font-size: var(--t-sm); color: var(--ink); }
-.descent-item .who { font-family: var(--font-mono); font-size: var(--t-2xs); color: var(--muted); white-space: nowrap; }
-.descent-item a { color: inherit; text-decoration: none; }
-.descent-item a:hover { color: var(--aqua); }
-
-/* Alive. The only glow in the product, on the only thing that is happening. */
-.descent-item.is-live::before { background: var(--status-live-dot); box-shadow: 0 0 0 1px var(--status-live-border), 0 0 12px -2px var(--status-live-dot); animation: crew-breathe var(--dur-ambient) var(--ease-in-out) infinite; }
-.descent-item.is-live .who { color: var(--status-live-fg); }
-/* Shipped work is settled: it keeps its place in the descent but stops
-   asking for attention. */
-.descent-band[data-state="shipped"] .descent-item { opacity: .62; }
-.descent-band[data-state="shipped"] .descent-item:hover { opacity: 1; }
-
-@media (prefers-reduced-motion: reduce) { .descent-item.is-live::before { animation: none; } }
+/* The rows themselves are the design system's .dn-work now: a state glyph, a
+   title, the reference and holder underneath, and a badge. It says the same
+   three things this file's bespoke row said — including that merged work
+   wears the engineers' azure — and it says them in the grammar every other
+   list of work in the product uses. The band, the descending line and the
+   shipped fade are what remain site-specific, because they are the ordering
+   idea rather than the row. */
+.descent-band .dn-work { padding-left: 0; padding-right: 0; }
+.descent-band[data-state="shipped"] .dn-work { opacity: .62; }
+.descent-band[data-state="shipped"] .dn-work:hover { opacity: 1; }
 
 .wspace-main { display: flex; flex-direction: column; }
 .descent { order: 1; }
@@ -1556,15 +1546,6 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 /* The dispatch state word on the "On now" line follows its tone. */
 .onnow-state [data-tone="success"] { color: var(--status-success-fg); }
 .onnow-state [data-tone="error"] { color: var(--status-danger-fg); }
-
-/* ── The descent: state glyph colours ─────────────────────────────────
-   Building already glows lumen above. Review waits on a human, so its
-   marker and holder read brass; merged keeps the engineers' azure even
-   at shipped-band opacity, and closed stays quiet ink. */
-.descent-band[data-state="review"] .descent-item::before { background: var(--status-attention-dot); }
-.descent-band[data-state="review"] .descent-item .who { color: var(--status-attention-fg); }
-.descent-item[data-status="merged"]::before { background: var(--role-eng); }
-.descent-item[data-status="merged"] .who { color: var(--role-eng); }
 
 /* ── The sign-off card ────────────────────────────────────────────────
    The locking beat carries the travelling live hairline (the class rides

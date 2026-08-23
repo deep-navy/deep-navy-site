@@ -24,6 +24,7 @@ const main = readFileSync("assets/css/main.css", "utf8");
 const home = readFileSync("assets/css/home.css", "utf8");
 const app = readFileSync("assets/js/app.js", "utf8");
 const shell = readFileSync("_includes/app-shell.html", "utf8");
+const agents = readFileSync("assets/css/ds/components/agents/agents.css", "utf8");
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -282,8 +283,10 @@ test("a changed instrument reading replays its tick without element.style", () =
   for (const cell of ["statObjectives", "statCredits", "statDelivery", "statAgents"]) {
     assert.match(render, new RegExp(`setStatValue\\(ui\\.${cell},`), `${cell} must tick through the helper`);
   }
-  // The strip's values are odometers: tabular figures, no reflow.
-  assert.match(shell, /class="statcell-value dn-odometer" data-stat-objectives/);
+  // The strip's values are odometers: tabular figures, no reflow. They wear the
+  // design system's own stat value now, so the site class rides beside it
+  // rather than instead of it — the odometer must survive that.
+  assert.match(shell, /class="dn-stat__value statcell-value dn-odometer" data-stat-objectives/);
   assert.match(main, /\.dn-odometer \{ font-variant-numeric: tabular-nums; display: inline-block; \}/);
 });
 
@@ -318,12 +321,22 @@ test("the ledger speaks in voices: role-tinted actor, role-tinted rail, status-w
 
 test("merged work carries the engineers' azure — the deliberate signature", () => {
   assert.match(main, /\.customer-activity-meta \[data-status="merged"\] \{ color: var\(--role-eng\); \}/);
-  assert.match(main, /\.descent-item\[data-status="merged"\]::before \{ background: var\(--role-eng\); \}/);
-  // And its neighbours stay status, not identity: open is kelp, review
-  // waits in brass.
+  // The work rows moved onto the design system's own .dn-work, and the system
+  // states the same doctrine this file used to: merged is the engineers'
+  // azure, open is kelp, review waits in brass, closed is quiet ink. The site
+  // rule that said it a second time was deleted rather than kept in parallel —
+  // one statement of a rule cannot drift from itself.
+  assert.match(agents, /\.dn-work--merged \.dn-work__glyph\{color:var\(--role-eng\)\}/);
+  assert.match(agents, /\.dn-work--open \.dn-work__glyph\{color:var\(--status-success-fg\)\}/);
+  assert.match(agents, /\.dn-work--review \.dn-work__glyph\{color:var\(--status-attention-fg\)\}/);
+  assert.match(agents, /\.dn-work--closed \.dn-work__glyph\{color:var\(--text-tertiary\)\}/);
+  assert.doesNotMatch(main, /\.descent-item/, "the bespoke descent row is gone, not shadowing the system's");
+  // And its neighbour on the ledger stays status, not identity.
   assert.match(main, /\.customer-activity-meta \[data-status="open"\] \{ color: var\(--status-success-fg\); \}/);
-  assert.match(main, /\.descent-band\[data-state="review"\] \.descent-item::before \{ background: var\(--status-attention-dot\); \}/);
-  assert.match(app, /row\.dataset\.status = stringValue\(entry\.status\) === "merged" \? "merged" : "closed"/);
+  // The row picks its shape from one table, so a merged row cannot end up
+  // with a review glyph or an open badge.
+  assert.match(app, /const shape = WORK_ROW\[key\] \|\| WORK_ROW\.planned;/);
+  assert.match(app, /const key = shipped \? \(stringValue\(entry\.status\) === "merged" \? "merged" : "closed"\) : bandState;/);
 });
 
 test("the objective check plate proves, breathes or shakes — and the tick opposes the fill in both themes", () => {
