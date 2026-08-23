@@ -125,15 +125,19 @@
           <button class="button button-secondary organization-retry" type="button" data-profile-retry hidden>Try again</button>
         </section>
 
-        <!-- The name is the hero; the repository choice is the quiet second
-             beat under it. The input enables the moment the background
-             connections are ready; payment opens from this button, and the
-             team starts working minutes after it clears. -->
+        <!-- The kit's setup grid: the ask on the left, the promise on the
+             right. The left column is the same form it always was — the name
+             is the hero, the repository choice the quiet second beat inside
+             it, payment opens from its one button. The right column says who
+             arrives and what happens next, and stands down with the form
+             whenever a blocking card takes its place. -->
+        <div class="setup-grid">
+          <div class="setup-main">
         <article class="firstrun-card team-card" data-step="team" data-state="loading" tabindex="-1">
           <span class="visually-hidden" data-step-state>Checking</span>
           <p class="visually-hidden" data-step-message>Name your team to get started.</p>
           <form class="team-form" data-team-form>
-            <label class="visually-hidden" for="team-name">Team name</label>
+            <label class="team-name-label" for="team-name">Team name</label>
             <input id="team-name" name="teamName" minlength="2" maxlength="80" autocomplete="off" aria-describedby="team-name-help team-name-error" placeholder="Product engineering" required disabled>
             <!-- Every repository the GitHub App can reach, with the
                  organization's current selection pre-checked. The choice is
@@ -180,9 +184,44 @@
             </div>
             <p class="form-error" id="team-name-error" data-team-error role="alert" hidden></p>
             <button class="button button-primary" type="submit" disabled>Continue to payment — $599/month</button>
+            <!-- The kit's closing note, told truthfully: the Engineering
+                 Manager reads the ticked repositories once the team is live,
+                 not the instant the button is pressed. -->
+            <p class="setup-note" data-firstrun-count aria-live="polite" hidden></p>
           </form>
           <button class="button button-quiet button-small firstrun-back" type="button" data-firstrun-cancel hidden>Back to workspace</button>
         </article>
+          </div>
+          <aside class="firstrun-aside" aria-label="Your team and what happens next">
+            <!-- The six who arrive. The roster is fixed at creation — a
+                 Product Manager, an Engineering Manager, a Product Designer
+                 and three engineers — so this preview promises exactly what
+                 provisioning delivers. Capacity changes live in Settings. -->
+            <article class="firstrun-aside-card">
+              <div class="firstrun-aside-head"><strong>Your team</strong><span>6 agents</span></div>
+              <div class="crew-preview">
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" aria-hidden="true">PM</span><span><span class="crew-preview-name">Product Manager</span><span class="crew-preview-note">Interviews you, writes the PRD, and files the issues.</span></span></div>
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_ENGINEERING_MANAGER" aria-hidden="true">EM</span><span><span class="crew-preview-name">Engineering Manager</span><span class="crew-preview-note">Reads your repositories first, then triages and assigns the work.</span></span></div>
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_PRODUCT_DESIGNER" aria-hidden="true">PD</span><span><span class="crew-preview-name">Product Designer</span><span class="crew-preview-note">Consulted by the others; holds the design decisions.</span></span></div>
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_STAFF_CLIENT" aria-hidden="true">E1</span><span><span class="crew-preview-name">Engineer</span><span class="crew-preview-note">Writes code, opens pull requests, reviews the others.</span></span></div>
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_STAFF_BACKEND" aria-hidden="true">E2</span><span><span class="crew-preview-name">Engineer</span><span class="crew-preview-note">Writes code, opens pull requests, reviews the others.</span></span></div>
+                <div class="crew-preview-row"><span class="user-avatar crew-monogram-xs" data-role-key="AGENT_ROLE_STAFF_PLATFORM" aria-hidden="true">E3</span><span><span class="crew-preview-name">Engineer</span><span class="crew-preview-note">Writes code, opens pull requests, reviews the others.</span></span></div>
+              </div>
+            </article>
+            <!-- What happens next, in the order it actually happens: the
+                 briefing, the interview, the sign-off that locks the record,
+                 and delivery proven by acceptance runs. -->
+            <article class="firstrun-aside-card">
+              <div class="firstrun-aside-head"><strong>What happens next</strong></div>
+              <ol class="next-list">
+                <li><span class="next-list-n" aria-hidden="true">1</span><span><b>Your Engineering Manager reads every repository</b> you ticked and briefs the team — stack, structure, where the risk is.</span></li>
+                <li><span class="next-list-n" aria-hidden="true">2</span><span><b>Your Product Manager opens the conversation</b> and interviews you until every objective is measurable.</span></li>
+                <li><span class="next-list-n" aria-hidden="true">3</span><span><b>You sign off the PRD.</b> Nothing ships without your sign-off, and the signed discussion is locked as the record.</span></li>
+                <li><span class="next-list-n" aria-hidden="true">4</span><span><b>The team works until every objective is proven</b> — issues, code, review, merge, with acceptance runs on your default branch as the evidence.</span></li>
+              </ol>
+            </article>
+          </aside>
+        </div>
 
         <div data-organization-dependent hidden>
           <!-- GitHub App: connects itself from the sign-in. Shown only while
