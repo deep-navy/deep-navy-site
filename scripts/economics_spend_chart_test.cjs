@@ -83,3 +83,42 @@ test("an emptied summary takes the plot with it", () => {
   const reset = app.slice(app.indexOf("function resetEconomicsView"), app.indexOf("function resetCreditBalanceView"));
   assert.match(reset, /economicsDailyPanel\.hidden = true/);
 });
+
+// "The same total cut five ways" — the kit's phrase for the breakdown. The
+// console already offered seven dimensions and already fetched them; what it
+// did not do was show them as proportions. The rule the kit states is about
+// meaning, not decoration: role slices carry the crew tints, everything else is
+// ink, because role colour is an agent's identity and says nothing true about a
+// repository or an issue.
+test("the breakdown shows proportions, and only roles are tinted", () => {
+  const group = app.slice(app.indexOf("function renderSelectedEconomicsGroup"),
+    app.indexOf("function renderEconomicsBreakdownNote"));
+
+  // The design system's own bar, not a second one invented here.
+  assert.match(group, /cs-splitrow__track/);
+  assert.match(group, /cs-splitrow__fill/);
+
+  // style-src 'self' forbids element.style, so the width goes through the
+  // adopted stylesheet like every other gauge on this page — and the previous
+  // dimension's rules are purged, or switching dimensions leaks them.
+  assert.match(group, /setChartGeometry\(fill, \{ width:/);
+  assert.match(group, /purgeChartGeometry\("eb"\)/);
+  assert.doesNotMatch(group, /\.style\./);
+
+  // Tint is conditional on the dimension actually being roles.
+  assert.match(group, /definition\.key === "agent_role"/);
+  assert.match(group, /canonicalAgentRole/, "the role comes from the shared contract, not a local map");
+  assert.match(group, /if \(role\) fill\.dataset\.roleKey = role\.key/,
+    "no role, no tint — every other dimension stays ink");
+});
+
+test("the share is against the largest slice, and the figure is always printed", () => {
+  const group = app.slice(app.indexOf("function renderSelectedEconomicsGroup"),
+    app.indexOf("function renderEconomicsBreakdownNote"));
+  // Against the total, one dominant line flattens every other row to a sliver —
+  // and on a real team one line IS dominant: the provisioning charge.
+  assert.match(group, /largestSlice/);
+  assert.doesNotMatch(group, /\/ total\b/, "the bar ranks against the largest slice, not the total");
+  // The bar orders what the numbers say; it never replaces them.
+  assert.match(group, /values\.textContent = `\$\{formatCreditMicros/);
+});

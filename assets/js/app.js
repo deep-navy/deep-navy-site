@@ -8430,18 +8430,38 @@
       setEmptyState(ui.economicsBreakdownEmpty, `${definition.label} breakdown unavailable`, result ? apiErrorMessage(result.reason, "The server-calculated breakdown is unavailable.") : "No breakdown response was loaded.");
       return;
     }
-    result.value.records.forEach((record) => {
+    // The design system's own bar shape, so the same total cut seven ways reads
+    // as proportions and not as a column of numbers to subtract in your head.
+    // The share is against the LARGEST slice, not the total: the bar orders what
+    // the printed figures already say, and against a total one dominant line
+    // flattens every other row to an indistinguishable sliver. Role slices carry
+    // the crew tints; every other dimension is ink, because role colour is an
+    // agent's identity and means nothing applied to a repository or an issue.
+    purgeChartGeometry("eb");
+    const slices = result.value.records.map((record) => int64Value(record.creditsUsedMicros) || 0n);
+    const largestSlice = slices.reduce((most, credits) => (credits > most ? credits : most), 0n);
+    result.value.records.forEach((record, index) => {
       const item = document.createElement("li");
       const name = document.createElement("strong");
       const values = document.createElement("span");
       const time = document.createElement("span");
       name.textContent = stringValue(record.displayName);
       values.textContent = `${formatCreditMicros(record.creditsUsedMicros)} credits · ${formatCreditValue(record.creditsUsedMicros)} · ${formatIntegerCount(record.usageEventCount)} usage events`;
+      const track = document.createElement("span");
+      track.className = "cs-splitrow__track economics-share";
+      const fill = document.createElement("i");
+      fill.className = "cs-splitrow__fill";
+      const role = definition.key === "agent_role"
+        ? agentRoleContract?.canonicalAgentRole?.(stringValue(record?.scope?.id))
+        : null;
+      if (role) fill.dataset.roleKey = role.key;
+      setChartGeometry(fill, { width: largestSlice > 0n ? Number((slices[index] * 10000n) / largestSlice) / 100 : 0 }, "eb");
+      track.append(fill);
       const measured = result.value.measuredAt;
       const first = timestampDate(record.firstOccurredAt);
       const last = timestampDate(record.lastOccurredAt);
       time.textContent = `Measured ${relativeTime(measured)}${first && last ? ` · activity ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(first)} – ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(last)}` : ""}`;
-      item.append(name, values, time);
+      item.append(name, values, track, time);
       ui.economicsBreakdownList.append(item);
     });
     ui.economicsBreakdownEmpty.hidden = result.value.records.length > 0;

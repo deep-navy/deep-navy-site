@@ -762,3 +762,8 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
    set inline; style-src forbids that here, so each key names its own. */
 .dn-chart__swatch--spend { --dn-key: var(--viz-2); }
 .dn-chart__swatch--cumulative { --dn-key: var(--viz-3); }
+
+/* The breakdown's share bar. cs-splitrow__track is built for the split-row
+   grid, where it spans columns 2..-1; here it sits inside a plain <li>, so the
+   grid placement has to be undone or it collapses to nothing. */
+.economics-share { grid-column: auto; width: 100%; margin: var(--space-15) 0 var(--space-1); }
