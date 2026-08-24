@@ -28,7 +28,7 @@ import { SessionService } from "../vendor/platform-protos/deepnavy/v1/sessions_p
 import { TeamService } from "../vendor/platform-protos/deepnavy/v1/teams_pb.js";
 import { WorkspaceService } from "../vendor/platform-protos/deepnavy/v1/workspaces_pb.js";
 
-export const PLATFORM_PROTOS_REVISION = "43051f3f56c6c2d35ef82eb2a94ade15590b4870";
+export const PLATFORM_PROTOS_REVISION = "0674a18bffc7092403c48f93295c4793ba28f977";
 
 export const SUPPORTED_PROCEDURES = Object.freeze([
   "current_user",
@@ -79,6 +79,8 @@ export const SUPPORTED_PROCEDURES = Object.freeze([
   "approvals",
   "decide_approval",
   "send_team_message",
+  "list_team_question_sets",
+  "answer_team_questions",
   "sign_out"
 ] as const);
 
@@ -135,6 +137,7 @@ export const PLATFORM_CAPABILITIES = Object.freeze({
   approvalDiscovery: true,
   conversationSend: true,
   conversationStream: true,
+  conversationQuestions: true,
   creditMovementStream: true
 });
 
@@ -182,6 +185,31 @@ function textField(input: InputRecord, name: string, required = true): string {
   const value = typeof input[name] === "string" ? input[name].trim() : "";
   if (required && !value) throw new PlatformClientError(`${name} is required.`, "invalid_argument", 400, "");
   return value;
+}
+
+/* The customer's answers, checked into the shape the contract expects.
+ *
+ * Every value is validated rather than passed through: this is the one payload
+ * a person composes by hand in a browser, and the server refuses an option
+ * nobody offered, so sending a malformed set would fail the whole submission
+ * with a message the customer cannot act on. Better to be exact here. */
+function answerList(input: InputRecord): { questionId: string; optionIds: string[]; text: string }[] {
+  const raw = input.answers;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new PlatformClientError("answers is required.", "invalid_argument", 400, "");
+  }
+  return raw.map((entry) => {
+    const record = entry && typeof entry === "object" ? entry as InputRecord : {};
+    const questionId = typeof record.questionId === "string" ? record.questionId.trim() : "";
+    if (!questionId) {
+      throw new PlatformClientError("every answer needs its question.", "invalid_argument", 400, "");
+    }
+    const optionIds = Array.isArray(record.optionIds)
+      ? record.optionIds.filter((value): value is string => typeof value === "string" && value.trim() !== "").map((value) => value.trim())
+      : [];
+    const text = typeof record.text === "string" ? record.text.trim() : "";
+    return { questionId, optionIds, text };
+  });
 }
 
 function int64Field(value: unknown, name: string, allowZero = true): bigint {
@@ -655,6 +683,20 @@ export function createPlatformApi(options: PlatformApiOptions) {
             teamId: textField(payload, "teamId"),
             text: textField(payload, "text"),
             idempotencyKey: textField(payload, "idempotencyKey")
+          }, callOptions);
+        case "list_team_question_sets":
+          return await conversations.listTeamQuestionSets({
+            teamId: textField(payload, "teamId")
+          }, callOptions);
+        case "answer_team_questions":
+          // The answers are passed through as the generated message rather than
+          // rebuilt field by field. They were assembled from the question set the
+          // server sent, so re-deriving them here would be a second chance to
+          // disagree with what the customer was actually asked.
+          return await conversations.answerTeamQuestions({
+            questionSetId: textField(payload, "questionSetId"),
+            idempotencyKey: textField(payload, "idempotencyKey"),
+            answers: { answers: answerList(payload) }
           }, callOptions);
         case "sign_out":
           return await auth.signOut({}, callOptions);

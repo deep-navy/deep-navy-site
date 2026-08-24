@@ -12,13 +12,399 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file deepnavy/v1/conversations.proto.
  */
 export const file_deepnavy_v1_conversations: GenFile = /*@__PURE__*/
-  fileDesc("Ch9kZWVwbmF2eS92MS9jb252ZXJzYXRpb25zLnByb3RvEgtkZWVwbmF2eS52MSKcAgoXVGVhbUNvbnZlcnNhdGlvbk1lc3NhZ2USCgoCaWQYASABKAkSDwoHdGVhbV9pZBgCIAEoCRIQCghzZXF1ZW5jZRgDIAEoAxIvCgZhdXRob3IYBCABKA4yHy5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25BdXRob3ISDAoEdGV4dBgFIAEoCRIuCgpjcmVhdGVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI+Cg5kZWxpdmVyeV9zdGF0ZRgHIAEoDjImLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkRlbGl2ZXJ5U3RhdGUSEgoKc2FmZV9lcnJvchgIIAEoCRIPCgdwYXJ0aWFsGAkgASgIIlAKFlNlbmRUZWFtTWVzc2FnZVJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIMCgR0ZXh0GAIgASgJEhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCSJQChdTZW5kVGVhbU1lc3NhZ2VSZXNwb25zZRI1CgdtZXNzYWdlGAEgASgLMiQuZGVlcG5hdnkudjEuVGVhbUNvbnZlcnNhdGlvbk1lc3NhZ2UiSAodU3RyZWFtVGVhbUNvbnZlcnNhdGlvblJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIWCg5hZnRlcl9zZXF1ZW5jZRgCIAEoAyJXCh5TdHJlYW1UZWFtQ29udmVyc2F0aW9uUmVzcG9uc2USNQoHbWVzc2FnZRgBIAEoCzIkLmRlZXBuYXZ5LnYxLlRlYW1Db252ZXJzYXRpb25NZXNzYWdlIrcCChpDb252ZXJzYXRpb25EaXNwYXRjaFN0YXR1cxITCgtkaXNwYXRjaF9pZBgBIAEoCRI1CgVzdGF0ZRgCIAEoDjImLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkRlbGl2ZXJ5U3RhdGUSDwoHYXR0ZW1wdBgDIAEoBRJGCg5mYWlsdXJlX3JlYXNvbhgEIAEoDjIuLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkRpc3BhdGNoRmFpbHVyZVJlYXNvbhISCgpzYWZlX2Vycm9yGAUgASgJEi4KCnVwZGF0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKDGRlbGl2ZXJlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiZAobQ29udmVyc2F0aW9uRGlzcGF0Y2hQYXlsb2FkEg8KB3ZlcnNpb24YASABKAUSEgoKbWVzc2FnZV9pZBgCIAEoCRIMCgR0ZXh0GAMgASgJEhIKCnNlc3Npb25faWQYBCABKAkihQIKFENvbnZlcnNhdGlvbkRpc3BhdGNoEgoKAmlkGAEgASgJEhcKD29yZ2FuaXphdGlvbl9pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEhcKD3RlYW1fZ2VuZXJhdGlvbhgEIAEoAxIXCg90YXJnZXRfYWdlbnRfaWQYBSABKAkSGAoQdGFyZ2V0X2FnZW50X2tleRgGIAEoCRI5CgdwYXlsb2FkGAcgASgLMiguZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGlzcGF0Y2hQYXlsb2FkEjAKDHJlcXVlc3RlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiggEKIkxlYXNlQ29udmVyc2F0aW9uRGlzcGF0Y2hlc1JlcXVlc3QSEQoJd29ya2VyX2lkGAEgASgJEhYKDm1heF9kaXNwYXRjaGVzGAIgASgFEjEKDmxlYXNlX2R1cmF0aW9uGAMgASgLMhkuZ29vZ2xlLnByb3RvYnVmLkR1cmF0aW9uIq0BChpMZWFzZWRDb252ZXJzYXRpb25EaXNwYXRjaBIzCghkaXNwYXRjaBgBIAEoCzIhLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkRpc3BhdGNoEhMKC2xlYXNlX3Rva2VuGAIgASgJEjQKEGxlYXNlX2V4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2F0dGVtcHQYBCABKAUiYgojTGVhc2VDb252ZXJzYXRpb25EaXNwYXRjaGVzUmVzcG9uc2USOwoKZGlzcGF0Y2hlcxgBIAMoCzInLmRlZXBuYXZ5LnYxLkxlYXNlZENvbnZlcnNhdGlvbkRpc3BhdGNoIoQBCiVSZW5ld0NvbnZlcnNhdGlvbkRpc3BhdGNoTGVhc2VSZXF1ZXN0EhMKC2Rpc3BhdGNoX2lkGAEgASgJEhMKC2xlYXNlX3Rva2VuGAIgASgJEjEKDmxlYXNlX2R1cmF0aW9uGAMgASgLMhkuZ29vZ2xlLnByb3RvYnVmLkR1cmF0aW9uIl4KJlJlbmV3Q29udmVyc2F0aW9uRGlzcGF0Y2hMZWFzZVJlc3BvbnNlEjQKEGxlYXNlX2V4cGlyZXNfYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqkBCiZBY2tub3dsZWRnZUNvbnZlcnNhdGlvbkRpc3BhdGNoUmVxdWVzdBITCgtkaXNwYXRjaF9pZBgBIAEoCRITCgtsZWFzZV90b2tlbhgCIAEoCRIQCghldmVudF9pZBgDIAEoCRIvCgtvYnNlcnZlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKcmVwbHlfdGV4dBgFIAEoCSKnAQokUHVibGlzaENvbnZlcnNhdGlvblJlcGx5RHJhZnRSZXF1ZXN0EhMKC2Rpc3BhdGNoX2lkGAEgASgJEhMKC2xlYXNlX3Rva2VuGAIgASgJEhAKCGV2ZW50X2lkGAMgASgJEi8KC29ic2VydmVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgpyZXBseV90ZXh0GAUgASgJIlwKJVB1Ymxpc2hDb252ZXJzYXRpb25SZXBseURyYWZ0UmVzcG9uc2USMwoFcmVwbHkYASABKAsyJC5kZWVwbmF2eS52MS5UZWFtQ29udmVyc2F0aW9uTWVzc2FnZSKZAQonQWNrbm93bGVkZ2VDb252ZXJzYXRpb25EaXNwYXRjaFJlc3BvbnNlEjkKCGRpc3BhdGNoGAEgASgLMicuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGlzcGF0Y2hTdGF0dXMSMwoFcmVwbHkYAiABKAsyJC5kZWVwbmF2eS52MS5UZWFtQ29udmVyc2F0aW9uTWVzc2FnZSL1AQofRmFpbENvbnZlcnNhdGlvbkRpc3BhdGNoUmVxdWVzdBITCgtkaXNwYXRjaF9pZBgBIAEoCRITCgtsZWFzZV90b2tlbhgCIAEoCRIQCghldmVudF9pZBgDIAEoCRI+CgZyZWFzb24YBCABKA4yLi5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25EaXNwYXRjaEZhaWx1cmVSZWFzb24SEgoKc2FmZV9lcnJvchgFIAEoCRIRCglyZXRyeWFibGUYBiABKAgSLwoLb2JzZXJ2ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIl0KIEZhaWxDb252ZXJzYXRpb25EaXNwYXRjaFJlc3BvbnNlEjkKCGRpc3BhdGNoGAEgASgLMicuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGlzcGF0Y2hTdGF0dXMqpAEKEkNvbnZlcnNhdGlvbkF1dGhvchIjCh9DT05WRVJTQVRJT05fQVVUSE9SX1VOU1BFQ0lGSUVEEAASIAocQ09OVkVSU0FUSU9OX0FVVEhPUl9DVVNUT01FUhABEicKI0NPTlZFUlNBVElPTl9BVVRIT1JfUFJPRFVDVF9NQU5BR0VSEAISHgoaQ09OVkVSU0FUSU9OX0FVVEhPUl9TWVNURU0QAyrvAQoZQ29udmVyc2F0aW9uRGVsaXZlcnlTdGF0ZRIrCidDT05WRVJTQVRJT05fREVMSVZFUllfU1RBVEVfVU5TUEVDSUZJRUQQABImCiJDT05WRVJTQVRJT05fREVMSVZFUllfU1RBVEVfUVVFVUVEEAESKgomQ09OVkVSU0FUSU9OX0RFTElWRVJZX1NUQVRFX0RFTElWRVJJTkcQAhIpCiVDT05WRVJTQVRJT05fREVMSVZFUllfU1RBVEVfREVMSVZFUkVEEAMSJgoiQ09OVkVSU0FUSU9OX0RFTElWRVJZX1NUQVRFX0ZBSUxFRBAEKs4CCiFDb252ZXJzYXRpb25EaXNwYXRjaEZhaWx1cmVSZWFzb24SNAowQ09OVkVSU0FUSU9OX0RJU1BBVENIX0ZBSUxVUkVfUkVBU09OX1VOU1BFQ0lGSUVEEAASPAo4Q09OVkVSU0FUSU9OX0RJU1BBVENIX0ZBSUxVUkVfUkVBU09OX0dBVEVXQVlfVU5BVkFJTEFCTEUQARI/CjtDT05WRVJTQVRJT05fRElTUEFUQ0hfRkFJTFVSRV9SRUFTT05fUE1fU0VTU0lPTl9VTkFWQUlMQUJMRRACEjoKNkNPTlZFUlNBVElPTl9ESVNQQVRDSF9GQUlMVVJFX1JFQVNPTl9ERUxJVkVSWV9SRUpFQ1RFRBADEjgKNENPTlZFUlNBVElPTl9ESVNQQVRDSF9GQUlMVVJFX1JFQVNPTl9SRVRSWV9FWEhBVVNURUQQBDLsAQoXVGVhbUNvbnZlcnNhdGlvblNlcnZpY2USXAoPU2VuZFRlYW1NZXNzYWdlEiMuZGVlcG5hdnkudjEuU2VuZFRlYW1NZXNzYWdlUmVxdWVzdBokLmRlZXBuYXZ5LnYxLlNlbmRUZWFtTWVzc2FnZVJlc3BvbnNlEnMKFlN0cmVhbVRlYW1Db252ZXJzYXRpb24SKi5kZWVwbmF2eS52MS5TdHJlYW1UZWFtQ29udmVyc2F0aW9uUmVxdWVzdBorLmRlZXBuYXZ5LnYxLlN0cmVhbVRlYW1Db252ZXJzYXRpb25SZXNwb25zZTABMr8FCh1UZWFtQ29udmVyc2F0aW9uV29ya2VyU2VydmljZRKAAQobTGVhc2VDb252ZXJzYXRpb25EaXNwYXRjaGVzEi8uZGVlcG5hdnkudjEuTGVhc2VDb252ZXJzYXRpb25EaXNwYXRjaGVzUmVxdWVzdBowLmRlZXBuYXZ5LnYxLkxlYXNlQ29udmVyc2F0aW9uRGlzcGF0Y2hlc1Jlc3BvbnNlEokBCh5SZW5ld0NvbnZlcnNhdGlvbkRpc3BhdGNoTGVhc2USMi5kZWVwbmF2eS52MS5SZW5ld0NvbnZlcnNhdGlvbkRpc3BhdGNoTGVhc2VSZXF1ZXN0GjMuZGVlcG5hdnkudjEuUmVuZXdDb252ZXJzYXRpb25EaXNwYXRjaExlYXNlUmVzcG9uc2USjAEKH0Fja25vd2xlZGdlQ29udmVyc2F0aW9uRGlzcGF0Y2gSMy5kZWVwbmF2eS52MS5BY2tub3dsZWRnZUNvbnZlcnNhdGlvbkRpc3BhdGNoUmVxdWVzdBo0LmRlZXBuYXZ5LnYxLkFja25vd2xlZGdlQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXNwb25zZRKGAQodUHVibGlzaENvbnZlcnNhdGlvblJlcGx5RHJhZnQSMS5kZWVwbmF2eS52MS5QdWJsaXNoQ29udmVyc2F0aW9uUmVwbHlEcmFmdFJlcXVlc3QaMi5kZWVwbmF2eS52MS5QdWJsaXNoQ29udmVyc2F0aW9uUmVwbHlEcmFmdFJlc3BvbnNlEncKGEZhaWxDb252ZXJzYXRpb25EaXNwYXRjaBIsLmRlZXBuYXZ5LnYxLkZhaWxDb252ZXJzYXRpb25EaXNwYXRjaFJlcXVlc3QaLS5kZWVwbmF2eS52MS5GYWlsQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXNwb25zZUJEWkJnaXRodWIuY29tL2RlZXAtbmF2eS9wbGF0Zm9ybS1wcm90b3MvZ2VuL2dvL2RlZXBuYXZ5L3YxO2RlZXBuYXZ5djFiBnByb3RvMw", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
+  fileDesc("Ch9kZWVwbmF2eS92MS9jb252ZXJzYXRpb25zLnByb3RvEgtkZWVwbmF2eS52MSJMChpDb252ZXJzYXRpb25RdWVzdGlvbk9wdGlvbhIKCgJpZBgBIAEoCRINCgVsYWJlbBgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCSLGAQoUQ29udmVyc2F0aW9uUXVlc3Rpb24SCgoCaWQYASABKAkSMwoEa2luZBgCIAEoDjIlLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvblF1ZXN0aW9uS2luZBIMCgR0ZXh0GAMgASgJEjgKB29wdGlvbnMYBCADKAsyJy5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25RdWVzdGlvbk9wdGlvbhITCgthbGxvd19vdGhlchgFIAEoCBIQCghyZXF1aXJlZBgGIAEoCCJPChdDb252ZXJzYXRpb25RdWVzdGlvblNldBI0CglxdWVzdGlvbnMYASADKAsyIS5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25RdWVzdGlvbiJLChJDb252ZXJzYXRpb25BbnN3ZXISEwoLcXVlc3Rpb25faWQYASABKAkSEgoKb3B0aW9uX2lkcxgCIAMoCRIMCgR0ZXh0GAMgASgJIl0KFUNvbnZlcnNhdGlvbkFuc3dlclNldBISCgptZXNzYWdlX2lkGAEgASgJEjAKB2Fuc3dlcnMYAiADKAsyHy5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25BbnN3ZXIi5wIKG1RlYW1Db252ZXJzYXRpb25RdWVzdGlvblNldBIKCgJpZBgBIAEoCRIPCgd0ZWFtX2lkGAIgASgJEh4KFnJlcXVlc3RlZF9ieV9hZ2VudF9rZXkYAyABKAkSNwoJcXVlc3Rpb25zGAQgASgLMiQuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uUXVlc3Rpb25TZXQSOgoGc3RhdHVzGAUgASgOMiouZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uUXVlc3Rpb25TZXRTdGF0dXMSMwoHYW5zd2VycxgGIAEoCzIiLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkFuc3dlclNldBIwCgxyZXF1ZXN0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2Fuc3dlcmVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCK5AQoiUmVjb3JkQ29udmVyc2F0aW9uUXVlc3Rpb25zUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEhcKD3RlYW1fZ2VuZXJhdGlvbhgCIAEoAxIcChRyZXF1ZXN0aW5nX2FnZW50X2tleRgDIAEoCRISCgpyZXF1ZXN0X2lkGAQgASgJEjcKCXF1ZXN0aW9ucxgFIAEoCzIkLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvblF1ZXN0aW9uU2V0ImUKI1JlY29yZENvbnZlcnNhdGlvblF1ZXN0aW9uc1Jlc3BvbnNlEj4KDHF1ZXN0aW9uX3NldBgBIAEoCzIoLmRlZXBuYXZ5LnYxLlRlYW1Db252ZXJzYXRpb25RdWVzdGlvblNldCIuChtMaXN0VGVhbVF1ZXN0aW9uU2V0c1JlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCSJfChxMaXN0VGVhbVF1ZXN0aW9uU2V0c1Jlc3BvbnNlEj8KDXF1ZXN0aW9uX3NldHMYASADKAsyKC5kZWVwbmF2eS52MS5UZWFtQ29udmVyc2F0aW9uUXVlc3Rpb25TZXQigwEKGkFuc3dlclRlYW1RdWVzdGlvbnNSZXF1ZXN0EhcKD3F1ZXN0aW9uX3NldF9pZBgBIAEoCRIzCgdhbnN3ZXJzGAIgASgLMiIuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uQW5zd2VyU2V0EhcKD2lkZW1wb3RlbmN5X2tleRgDIAEoCSKUAQobQW5zd2VyVGVhbVF1ZXN0aW9uc1Jlc3BvbnNlEj4KDHF1ZXN0aW9uX3NldBgBIAEoCzIoLmRlZXBuYXZ5LnYxLlRlYW1Db252ZXJzYXRpb25RdWVzdGlvblNldBI1CgdtZXNzYWdlGAIgASgLMiQuZGVlcG5hdnkudjEuVGVhbUNvbnZlcnNhdGlvbk1lc3NhZ2UitQIKF1RlYW1Db252ZXJzYXRpb25NZXNzYWdlEgoKAmlkGAEgASgJEg8KB3RlYW1faWQYAiABKAkSEAoIc2VxdWVuY2UYAyABKAMSLwoGYXV0aG9yGAQgASgOMh8uZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uQXV0aG9yEgwKBHRleHQYBSABKAkSLgoKY3JlYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASPgoOZGVsaXZlcnlfc3RhdGUYByABKA4yJi5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25EZWxpdmVyeVN0YXRlEhIKCnNhZmVfZXJyb3IYCCABKAkSDwoHcGFydGlhbBgJIAEoCBIXCg9xdWVzdGlvbl9zZXRfaWQYCiABKAkiUAoWU2VuZFRlYW1NZXNzYWdlUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEgwKBHRleHQYAiABKAkSFwoPaWRlbXBvdGVuY3lfa2V5GAMgASgJIlAKF1NlbmRUZWFtTWVzc2FnZVJlc3BvbnNlEjUKB21lc3NhZ2UYASABKAsyJC5kZWVwbmF2eS52MS5UZWFtQ29udmVyc2F0aW9uTWVzc2FnZSJICh1TdHJlYW1UZWFtQ29udmVyc2F0aW9uUmVxdWVzdBIPCgd0ZWFtX2lkGAEgASgJEhYKDmFmdGVyX3NlcXVlbmNlGAIgASgDIlcKHlN0cmVhbVRlYW1Db252ZXJzYXRpb25SZXNwb25zZRI1CgdtZXNzYWdlGAEgASgLMiQuZGVlcG5hdnkudjEuVGVhbUNvbnZlcnNhdGlvbk1lc3NhZ2UitwIKGkNvbnZlcnNhdGlvbkRpc3BhdGNoU3RhdHVzEhMKC2Rpc3BhdGNoX2lkGAEgASgJEjUKBXN0YXRlGAIgASgOMiYuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGVsaXZlcnlTdGF0ZRIPCgdhdHRlbXB0GAMgASgFEkYKDmZhaWx1cmVfcmVhc29uGAQgASgOMi4uZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGlzcGF0Y2hGYWlsdXJlUmVhc29uEhIKCnNhZmVfZXJyb3IYBSABKAkSLgoKdXBkYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMAoMZGVsaXZlcmVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJkChtDb252ZXJzYXRpb25EaXNwYXRjaFBheWxvYWQSDwoHdmVyc2lvbhgBIAEoBRISCgptZXNzYWdlX2lkGAIgASgJEgwKBHRleHQYAyABKAkSEgoKc2Vzc2lvbl9pZBgEIAEoCSKFAgoUQ29udmVyc2F0aW9uRGlzcGF0Y2gSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEg8KB3RlYW1faWQYAyABKAkSFwoPdGVhbV9nZW5lcmF0aW9uGAQgASgDEhcKD3RhcmdldF9hZ2VudF9pZBgFIAEoCRIYChB0YXJnZXRfYWdlbnRfa2V5GAYgASgJEjkKB3BheWxvYWQYByABKAsyKC5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25EaXNwYXRjaFBheWxvYWQSMAoMcmVxdWVzdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKCAQoiTGVhc2VDb252ZXJzYXRpb25EaXNwYXRjaGVzUmVxdWVzdBIRCgl3b3JrZXJfaWQYASABKAkSFgoObWF4X2Rpc3BhdGNoZXMYAiABKAUSMQoObGVhc2VfZHVyYXRpb24YAyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24irQEKGkxlYXNlZENvbnZlcnNhdGlvbkRpc3BhdGNoEjMKCGRpc3BhdGNoGAEgASgLMiEuZGVlcG5hdnkudjEuQ29udmVyc2F0aW9uRGlzcGF0Y2gSEwoLbGVhc2VfdG9rZW4YAiABKAkSNAoQbGVhc2VfZXhwaXJlc19hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDwoHYXR0ZW1wdBgEIAEoBSJiCiNMZWFzZUNvbnZlcnNhdGlvbkRpc3BhdGNoZXNSZXNwb25zZRI7CgpkaXNwYXRjaGVzGAEgAygLMicuZGVlcG5hdnkudjEuTGVhc2VkQ29udmVyc2F0aW9uRGlzcGF0Y2gihAEKJVJlbmV3Q29udmVyc2F0aW9uRGlzcGF0Y2hMZWFzZVJlcXVlc3QSEwoLZGlzcGF0Y2hfaWQYASABKAkSEwoLbGVhc2VfdG9rZW4YAiABKAkSMQoObGVhc2VfZHVyYXRpb24YAyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24iXgomUmVuZXdDb252ZXJzYXRpb25EaXNwYXRjaExlYXNlUmVzcG9uc2USNAoQbGVhc2VfZXhwaXJlc19hdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiqQEKJkFja25vd2xlZGdlQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXF1ZXN0EhMKC2Rpc3BhdGNoX2lkGAEgASgJEhMKC2xlYXNlX3Rva2VuGAIgASgJEhAKCGV2ZW50X2lkGAMgASgJEi8KC29ic2VydmVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgpyZXBseV90ZXh0GAUgASgJIqcBCiRQdWJsaXNoQ29udmVyc2F0aW9uUmVwbHlEcmFmdFJlcXVlc3QSEwoLZGlzcGF0Y2hfaWQYASABKAkSEwoLbGVhc2VfdG9rZW4YAiABKAkSEAoIZXZlbnRfaWQYAyABKAkSLwoLb2JzZXJ2ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCnJlcGx5X3RleHQYBSABKAkiXAolUHVibGlzaENvbnZlcnNhdGlvblJlcGx5RHJhZnRSZXNwb25zZRIzCgVyZXBseRgBIAEoCzIkLmRlZXBuYXZ5LnYxLlRlYW1Db252ZXJzYXRpb25NZXNzYWdlIpkBCidBY2tub3dsZWRnZUNvbnZlcnNhdGlvbkRpc3BhdGNoUmVzcG9uc2USOQoIZGlzcGF0Y2gYASABKAsyJy5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25EaXNwYXRjaFN0YXR1cxIzCgVyZXBseRgCIAEoCzIkLmRlZXBuYXZ5LnYxLlRlYW1Db252ZXJzYXRpb25NZXNzYWdlIvUBCh9GYWlsQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXF1ZXN0EhMKC2Rpc3BhdGNoX2lkGAEgASgJEhMKC2xlYXNlX3Rva2VuGAIgASgJEhAKCGV2ZW50X2lkGAMgASgJEj4KBnJlYXNvbhgEIAEoDjIuLmRlZXBuYXZ5LnYxLkNvbnZlcnNhdGlvbkRpc3BhdGNoRmFpbHVyZVJlYXNvbhISCgpzYWZlX2Vycm9yGAUgASgJEhEKCXJldHJ5YWJsZRgGIAEoCBIvCgtvYnNlcnZlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiXQogRmFpbENvbnZlcnNhdGlvbkRpc3BhdGNoUmVzcG9uc2USOQoIZGlzcGF0Y2gYASABKAsyJy5kZWVwbmF2eS52MS5Db252ZXJzYXRpb25EaXNwYXRjaFN0YXR1cyqkAQoSQ29udmVyc2F0aW9uQXV0aG9yEiMKH0NPTlZFUlNBVElPTl9BVVRIT1JfVU5TUEVDSUZJRUQQABIgChxDT05WRVJTQVRJT05fQVVUSE9SX0NVU1RPTUVSEAESJwojQ09OVkVSU0FUSU9OX0FVVEhPUl9QUk9EVUNUX01BTkFHRVIQAhIeChpDT05WRVJTQVRJT05fQVVUSE9SX1NZU1RFTRADKu8BChlDb252ZXJzYXRpb25EZWxpdmVyeVN0YXRlEisKJ0NPTlZFUlNBVElPTl9ERUxJVkVSWV9TVEFURV9VTlNQRUNJRklFRBAAEiYKIkNPTlZFUlNBVElPTl9ERUxJVkVSWV9TVEFURV9RVUVVRUQQARIqCiZDT05WRVJTQVRJT05fREVMSVZFUllfU1RBVEVfREVMSVZFUklORxACEikKJUNPTlZFUlNBVElPTl9ERUxJVkVSWV9TVEFURV9ERUxJVkVSRUQQAxImCiJDT05WRVJTQVRJT05fREVMSVZFUllfU1RBVEVfRkFJTEVEEAQqzgIKIUNvbnZlcnNhdGlvbkRpc3BhdGNoRmFpbHVyZVJlYXNvbhI0CjBDT05WRVJTQVRJT05fRElTUEFUQ0hfRkFJTFVSRV9SRUFTT05fVU5TUEVDSUZJRUQQABI8CjhDT05WRVJTQVRJT05fRElTUEFUQ0hfRkFJTFVSRV9SRUFTT05fR0FURVdBWV9VTkFWQUlMQUJMRRABEj8KO0NPTlZFUlNBVElPTl9ESVNQQVRDSF9GQUlMVVJFX1JFQVNPTl9QTV9TRVNTSU9OX1VOQVZBSUxBQkxFEAISOgo2Q09OVkVSU0FUSU9OX0RJU1BBVENIX0ZBSUxVUkVfUkVBU09OX0RFTElWRVJZX1JFSkVDVEVEEAMSOAo0Q09OVkVSU0FUSU9OX0RJU1BBVENIX0ZBSUxVUkVfUkVBU09OX1JFVFJZX0VYSEFVU1RFRBAEKskBChhDb252ZXJzYXRpb25RdWVzdGlvbktpbmQSKgomQ09OVkVSU0FUSU9OX1FVRVNUSU9OX0tJTkRfVU5TUEVDSUZJRUQQABIsCihDT05WRVJTQVRJT05fUVVFU1RJT05fS0lORF9TSU5HTEVfQ0hPSUNFEAESLgoqQ09OVkVSU0FUSU9OX1FVRVNUSU9OX0tJTkRfTVVMVElQTEVfQ0hPSUNFEAISIwofQ09OVkVSU0FUSU9OX1FVRVNUSU9OX0tJTkRfVEVYVBADKtwBCh1Db252ZXJzYXRpb25RdWVzdGlvblNldFN0YXR1cxIwCixDT05WRVJTQVRJT05fUVVFU1RJT05fU0VUX1NUQVRVU19VTlNQRUNJRklFRBAAEikKJUNPTlZFUlNBVElPTl9RVUVTVElPTl9TRVRfU1RBVFVTX09QRU4QARItCilDT05WRVJTQVRJT05fUVVFU1RJT05fU0VUX1NUQVRVU19BTlNXRVJFRBACEi8KK0NPTlZFUlNBVElPTl9RVUVTVElPTl9TRVRfU1RBVFVTX1NVUEVSU0VERUQQAzLDAwoXVGVhbUNvbnZlcnNhdGlvblNlcnZpY2USXAoPU2VuZFRlYW1NZXNzYWdlEiMuZGVlcG5hdnkudjEuU2VuZFRlYW1NZXNzYWdlUmVxdWVzdBokLmRlZXBuYXZ5LnYxLlNlbmRUZWFtTWVzc2FnZVJlc3BvbnNlEnMKFlN0cmVhbVRlYW1Db252ZXJzYXRpb24SKi5kZWVwbmF2eS52MS5TdHJlYW1UZWFtQ29udmVyc2F0aW9uUmVxdWVzdBorLmRlZXBuYXZ5LnYxLlN0cmVhbVRlYW1Db252ZXJzYXRpb25SZXNwb25zZTABEmsKFExpc3RUZWFtUXVlc3Rpb25TZXRzEiguZGVlcG5hdnkudjEuTGlzdFRlYW1RdWVzdGlvblNldHNSZXF1ZXN0GikuZGVlcG5hdnkudjEuTGlzdFRlYW1RdWVzdGlvblNldHNSZXNwb25zZRJoChNBbnN3ZXJUZWFtUXVlc3Rpb25zEicuZGVlcG5hdnkudjEuQW5zd2VyVGVhbVF1ZXN0aW9uc1JlcXVlc3QaKC5kZWVwbmF2eS52MS5BbnN3ZXJUZWFtUXVlc3Rpb25zUmVzcG9uc2UywgYKHVRlYW1Db252ZXJzYXRpb25Xb3JrZXJTZXJ2aWNlEoABChtMZWFzZUNvbnZlcnNhdGlvbkRpc3BhdGNoZXMSLy5kZWVwbmF2eS52MS5MZWFzZUNvbnZlcnNhdGlvbkRpc3BhdGNoZXNSZXF1ZXN0GjAuZGVlcG5hdnkudjEuTGVhc2VDb252ZXJzYXRpb25EaXNwYXRjaGVzUmVzcG9uc2USiQEKHlJlbmV3Q29udmVyc2F0aW9uRGlzcGF0Y2hMZWFzZRIyLmRlZXBuYXZ5LnYxLlJlbmV3Q29udmVyc2F0aW9uRGlzcGF0Y2hMZWFzZVJlcXVlc3QaMy5kZWVwbmF2eS52MS5SZW5ld0NvbnZlcnNhdGlvbkRpc3BhdGNoTGVhc2VSZXNwb25zZRKMAQofQWNrbm93bGVkZ2VDb252ZXJzYXRpb25EaXNwYXRjaBIzLmRlZXBuYXZ5LnYxLkFja25vd2xlZGdlQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXF1ZXN0GjQuZGVlcG5hdnkudjEuQWNrbm93bGVkZ2VDb252ZXJzYXRpb25EaXNwYXRjaFJlc3BvbnNlEoYBCh1QdWJsaXNoQ29udmVyc2F0aW9uUmVwbHlEcmFmdBIxLmRlZXBuYXZ5LnYxLlB1Ymxpc2hDb252ZXJzYXRpb25SZXBseURyYWZ0UmVxdWVzdBoyLmRlZXBuYXZ5LnYxLlB1Ymxpc2hDb252ZXJzYXRpb25SZXBseURyYWZ0UmVzcG9uc2USgAEKG1JlY29yZENvbnZlcnNhdGlvblF1ZXN0aW9ucxIvLmRlZXBuYXZ5LnYxLlJlY29yZENvbnZlcnNhdGlvblF1ZXN0aW9uc1JlcXVlc3QaMC5kZWVwbmF2eS52MS5SZWNvcmRDb252ZXJzYXRpb25RdWVzdGlvbnNSZXNwb25zZRJ3ChhGYWlsQ29udmVyc2F0aW9uRGlzcGF0Y2gSLC5kZWVwbmF2eS52MS5GYWlsQ29udmVyc2F0aW9uRGlzcGF0Y2hSZXF1ZXN0Gi0uZGVlcG5hdnkudjEuRmFpbENvbnZlcnNhdGlvbkRpc3BhdGNoUmVzcG9uc2VCRFpCZ2l0aHViLmNvbS9kZWVwLW5hdnkvcGxhdGZvcm0tcHJvdG9zL2dlbi9nby9kZWVwbmF2eS92MTtkZWVwbmF2eXYxYgZwcm90bzM", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
 
 /**
- * TeamConversationMessage is one customer-safe row of a team's conversation
- * with its Product Manager. It never contains a prompt transcript, reasoning,
- * tool input, credential, or raw runtime identifier.
+ * @generated from message deepnavy.v1.ConversationQuestionOption
+ */
+export type ConversationQuestionOption = Message<"deepnavy.v1.ConversationQuestionOption"> & {
+  /**
+   * id is what an answer carries back, so an option can be re-labelled without
+   * invalidating answers already given against it.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string label = 2;
+   */
+  label: string;
+
+  /**
+   * description is an optional clarifying line beneath the label. It exists so
+   * an option can be understood without the agent padding the label until it
+   * stops being scannable.
+   *
+   * @generated from field: string description = 3;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.ConversationQuestionOption.
+ * Use `create(ConversationQuestionOptionSchema)` to create a new message.
+ */
+export const ConversationQuestionOptionSchema: GenMessage<ConversationQuestionOption> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 0);
+
+/**
+ * @generated from message deepnavy.v1.ConversationQuestion
+ */
+export type ConversationQuestion = Message<"deepnavy.v1.ConversationQuestion"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: deepnavy.v1.ConversationQuestionKind kind = 2;
+   */
+  kind: ConversationQuestionKind;
+
+  /**
+   * text is the question itself, in the customer's language. Deliberately not
+   * called a prompt: this is a customer surface, that word means a model's
+   * instructions everywhere else in this system, and the console's leak guard
+   * refuses the word outright in the browser bundle for exactly that reason.
+   *
+   * @generated from field: string text = 3;
+   */
+  text: string;
+
+  /**
+   * options is empty for TEXT and required for both choice kinds.
+   *
+   * @generated from field: repeated deepnavy.v1.ConversationQuestionOption options = 4;
+   */
+  options: ConversationQuestionOption[];
+
+  /**
+   * allow_other lets a choice question take a written answer beside its
+   * options. An agent listing five aesthetics has not thought of the sixth, and
+   * without this the customer's only route is to abandon the form and write
+   * prose — which is the situation these types exist to end.
+   *
+   * @generated from field: bool allow_other = 5;
+   */
+  allowOther: boolean;
+
+  /**
+   * required questions must be answered before the set can be submitted.
+   *
+   * @generated from field: bool required = 6;
+   */
+  required: boolean;
+};
+
+/**
+ * Describes the message deepnavy.v1.ConversationQuestion.
+ * Use `create(ConversationQuestionSchema)` to create a new message.
+ */
+export const ConversationQuestionSchema: GenMessage<ConversationQuestion> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 1);
+
+/**
+ * ConversationQuestionSet is the whole ask attached to one message. It is bounded
+ * on every axis, because it is authored by an agent and rendered to a customer:
+ * a model that decides to ask forty questions with a hundred options each would
+ * otherwise put that on a person's screen.
  *
+ * @generated from message deepnavy.v1.ConversationQuestionSet
+ */
+export type ConversationQuestionSet = Message<"deepnavy.v1.ConversationQuestionSet"> & {
+  /**
+   * @generated from field: repeated deepnavy.v1.ConversationQuestion questions = 1;
+   */
+  questions: ConversationQuestion[];
+};
+
+/**
+ * Describes the message deepnavy.v1.ConversationQuestionSet.
+ * Use `create(ConversationQuestionSetSchema)` to create a new message.
+ */
+export const ConversationQuestionSetSchema: GenMessage<ConversationQuestionSet> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 2);
+
+/**
+ * @generated from message deepnavy.v1.ConversationAnswer
+ */
+export type ConversationAnswer = Message<"deepnavy.v1.ConversationAnswer"> & {
+  /**
+   * @generated from field: string question_id = 1;
+   */
+  questionId: string;
+
+  /**
+   * option_ids is set for the choice kinds. A single-choice answer carries
+   * exactly one.
+   *
+   * @generated from field: repeated string option_ids = 2;
+   */
+  optionIds: string[];
+
+  /**
+   * text is the answer for TEXT, and the written answer for a choice question
+   * whose allow_other was taken. Both at once is legal — a customer may pick
+   * options AND add a note.
+   *
+   * @generated from field: string text = 3;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.ConversationAnswer.
+ * Use `create(ConversationAnswerSchema)` to create a new message.
+ */
+export const ConversationAnswerSchema: GenMessage<ConversationAnswer> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 3);
+
+/**
+ * @generated from message deepnavy.v1.ConversationAnswerSet
+ */
+export type ConversationAnswerSet = Message<"deepnavy.v1.ConversationAnswerSet"> & {
+  /**
+   * message_id is the message whose questions these answer. It is what lets the
+   * console show a set as answered rather than leaving a live form above a reply
+   * that already answered it.
+   *
+   * @generated from field: string message_id = 1;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: repeated deepnavy.v1.ConversationAnswer answers = 2;
+   */
+  answers: ConversationAnswer[];
+};
+
+/**
+ * Describes the message deepnavy.v1.ConversationAnswerSet.
+ * Use `create(ConversationAnswerSetSchema)` to create a new message.
+ */
+export const ConversationAnswerSetSchema: GenMessage<ConversationAnswerSet> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 4);
+
+/**
+ * TeamConversationQuestionSet is one ask from an agent, with its own lifecycle.
+ *
+ * It is a record rather than a field on a message because the agent asks by
+ * calling a tool while its reply text is captured separately from the session
+ * afterwards. The two arrive as unrelated events, so anything that hung
+ * questions off a message would have to guess which reply they belonged to —
+ * and every version of that guess is wrong under a second dispatch, a retried
+ * delivery, or an agent that asks and then says nothing.
+ *
+ * As a record there is nothing to pair: it is raised, it is open, it is
+ * answered. The console renders an open set inside the thread that raised it,
+ * which is where the answer is given.
+ *
+ * @generated from message deepnavy.v1.TeamConversationQuestionSet
+ */
+export type TeamConversationQuestionSet = Message<"deepnavy.v1.TeamConversationQuestionSet"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string team_id = 2;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: string requested_by_agent_key = 3;
+   */
+  requestedByAgentKey: string;
+
+  /**
+   * @generated from field: deepnavy.v1.ConversationQuestionSet questions = 4;
+   */
+  questions?: ConversationQuestionSet | undefined;
+
+  /**
+   * @generated from field: deepnavy.v1.ConversationQuestionSetStatus status = 5;
+   */
+  status: ConversationQuestionSetStatus;
+
+  /**
+   * answers is present only on an ANSWERED set, validated whole against the
+   * questions above before it was stored.
+   *
+   * @generated from field: deepnavy.v1.ConversationAnswerSet answers = 6;
+   */
+  answers?: ConversationAnswerSet | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp requested_at = 7;
+   */
+  requestedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp answered_at = 8;
+   */
+  answeredAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.TeamConversationQuestionSet.
+ * Use `create(TeamConversationQuestionSetSchema)` to create a new message.
+ */
+export const TeamConversationQuestionSetSchema: GenMessage<TeamConversationQuestionSet> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 5);
+
+/**
+ * @generated from message deepnavy.v1.RecordConversationQuestionsRequest
+ */
+export type RecordConversationQuestionsRequest = Message<"deepnavy.v1.RecordConversationQuestionsRequest"> & {
+  /**
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * Must match the team's current generation, so a superseded runtime cannot
+   * raise an ask against the team that replaced it.
+   *
+   * @generated from field: int64 team_generation = 2;
+   */
+  teamGeneration: bigint;
+
+  /**
+   * @generated from field: string requesting_agent_key = 3;
+   */
+  requestingAgentKey: string;
+
+  /**
+   * Deterministic, derived by the caller from its tool call. Replaying it
+   * returns the original set rather than raising a second, which is what makes
+   * a retried tool call safe.
+   *
+   * @generated from field: string request_id = 4;
+   */
+  requestId: string;
+
+  /**
+   * @generated from field: deepnavy.v1.ConversationQuestionSet questions = 5;
+   */
+  questions?: ConversationQuestionSet | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.RecordConversationQuestionsRequest.
+ * Use `create(RecordConversationQuestionsRequestSchema)` to create a new message.
+ */
+export const RecordConversationQuestionsRequestSchema: GenMessage<RecordConversationQuestionsRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 6);
+
+/**
+ * @generated from message deepnavy.v1.RecordConversationQuestionsResponse
+ */
+export type RecordConversationQuestionsResponse = Message<"deepnavy.v1.RecordConversationQuestionsResponse"> & {
+  /**
+   * @generated from field: deepnavy.v1.TeamConversationQuestionSet question_set = 1;
+   */
+  questionSet?: TeamConversationQuestionSet | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.RecordConversationQuestionsResponse.
+ * Use `create(RecordConversationQuestionsResponseSchema)` to create a new message.
+ */
+export const RecordConversationQuestionsResponseSchema: GenMessage<RecordConversationQuestionsResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 7);
+
+/**
+ * @generated from message deepnavy.v1.ListTeamQuestionSetsRequest
+ */
+export type ListTeamQuestionSetsRequest = Message<"deepnavy.v1.ListTeamQuestionSetsRequest"> & {
+  /**
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.ListTeamQuestionSetsRequest.
+ * Use `create(ListTeamQuestionSetsRequestSchema)` to create a new message.
+ */
+export const ListTeamQuestionSetsRequestSchema: GenMessage<ListTeamQuestionSetsRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 8);
+
+/**
+ * @generated from message deepnavy.v1.ListTeamQuestionSetsResponse
+ */
+export type ListTeamQuestionSetsResponse = Message<"deepnavy.v1.ListTeamQuestionSetsResponse"> & {
+  /**
+   * @generated from field: repeated deepnavy.v1.TeamConversationQuestionSet question_sets = 1;
+   */
+  questionSets: TeamConversationQuestionSet[];
+};
+
+/**
+ * Describes the message deepnavy.v1.ListTeamQuestionSetsResponse.
+ * Use `create(ListTeamQuestionSetsResponseSchema)` to create a new message.
+ */
+export const ListTeamQuestionSetsResponseSchema: GenMessage<ListTeamQuestionSetsResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 9);
+
+/**
+ * @generated from message deepnavy.v1.AnswerTeamQuestionsRequest
+ */
+export type AnswerTeamQuestionsRequest = Message<"deepnavy.v1.AnswerTeamQuestionsRequest"> & {
+  /**
+   * @generated from field: string question_set_id = 1;
+   */
+  questionSetId: string;
+
+  /**
+   * @generated from field: deepnavy.v1.ConversationAnswerSet answers = 2;
+   */
+  answers?: ConversationAnswerSet | undefined;
+
+  /**
+   * Scoped to the authenticated principal. Retrying with the same key returns
+   * the already-recorded answer instead of sending a second message.
+   *
+   * @generated from field: string idempotency_key = 3;
+   */
+  idempotencyKey: string;
+};
+
+/**
+ * Describes the message deepnavy.v1.AnswerTeamQuestionsRequest.
+ * Use `create(AnswerTeamQuestionsRequestSchema)` to create a new message.
+ */
+export const AnswerTeamQuestionsRequestSchema: GenMessage<AnswerTeamQuestionsRequest> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 10);
+
+/**
+ * @generated from message deepnavy.v1.AnswerTeamQuestionsResponse
+ */
+export type AnswerTeamQuestionsResponse = Message<"deepnavy.v1.AnswerTeamQuestionsResponse"> & {
+  /**
+   * @generated from field: deepnavy.v1.TeamConversationQuestionSet question_set = 1;
+   */
+  questionSet?: TeamConversationQuestionSet | undefined;
+
+  /**
+   * The message the answers were delivered to the agent as. The thread is a
+   * conversation and has to read like one, so answering also says something.
+   *
+   * @generated from field: deepnavy.v1.TeamConversationMessage message = 2;
+   */
+  message?: TeamConversationMessage | undefined;
+};
+
+/**
+ * Describes the message deepnavy.v1.AnswerTeamQuestionsResponse.
+ * Use `create(AnswerTeamQuestionsResponseSchema)` to create a new message.
+ */
+export const AnswerTeamQuestionsResponseSchema: GenMessage<AnswerTeamQuestionsResponse> = /*@__PURE__*/
+  messageDesc(file_deepnavy_v1_conversations, 11);
+
+/**
  * @generated from message deepnavy.v1.TeamConversationMessage
  */
 export type TeamConversationMessage = Message<"deepnavy.v1.TeamConversationMessage"> & {
@@ -85,6 +471,16 @@ export type TeamConversationMessage = Message<"deepnavy.v1.TeamConversationMessa
    * @generated from field: bool partial = 9;
    */
   partial: boolean;
+
+  /**
+   * question_set_id names the question set this message answers, when it does.
+   * The set itself is a separate record with its own lifecycle — see
+   * TeamConversationQuestionSet — and this is only the thread's link back to it,
+   * so a reader can see which prose settled which ask.
+   *
+   * @generated from field: string question_set_id = 10;
+   */
+  questionSetId: string;
 };
 
 /**
@@ -92,7 +488,7 @@ export type TeamConversationMessage = Message<"deepnavy.v1.TeamConversationMessa
  * Use `create(TeamConversationMessageSchema)` to create a new message.
  */
 export const TeamConversationMessageSchema: GenMessage<TeamConversationMessage> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 0);
+  messageDesc(file_deepnavy_v1_conversations, 12);
 
 /**
  * @generated from message deepnavy.v1.SendTeamMessageRequest
@@ -127,7 +523,7 @@ export type SendTeamMessageRequest = Message<"deepnavy.v1.SendTeamMessageRequest
  * Use `create(SendTeamMessageRequestSchema)` to create a new message.
  */
 export const SendTeamMessageRequestSchema: GenMessage<SendTeamMessageRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 1);
+  messageDesc(file_deepnavy_v1_conversations, 13);
 
 /**
  * @generated from message deepnavy.v1.SendTeamMessageResponse
@@ -144,7 +540,7 @@ export type SendTeamMessageResponse = Message<"deepnavy.v1.SendTeamMessageRespon
  * Use `create(SendTeamMessageResponseSchema)` to create a new message.
  */
 export const SendTeamMessageResponseSchema: GenMessage<SendTeamMessageResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 2);
+  messageDesc(file_deepnavy_v1_conversations, 14);
 
 /**
  * @generated from message deepnavy.v1.StreamTeamConversationRequest
@@ -173,7 +569,7 @@ export type StreamTeamConversationRequest = Message<"deepnavy.v1.StreamTeamConve
  * Use `create(StreamTeamConversationRequestSchema)` to create a new message.
  */
 export const StreamTeamConversationRequestSchema: GenMessage<StreamTeamConversationRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 3);
+  messageDesc(file_deepnavy_v1_conversations, 15);
 
 /**
  * @generated from message deepnavy.v1.StreamTeamConversationResponse
@@ -190,7 +586,7 @@ export type StreamTeamConversationResponse = Message<"deepnavy.v1.StreamTeamConv
  * Use `create(StreamTeamConversationResponseSchema)` to create a new message.
  */
 export const StreamTeamConversationResponseSchema: GenMessage<StreamTeamConversationResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 4);
+  messageDesc(file_deepnavy_v1_conversations, 16);
 
 /**
  * ConversationDispatchStatus is the customer-safe state of one durable
@@ -240,7 +636,7 @@ export type ConversationDispatchStatus = Message<"deepnavy.v1.ConversationDispat
  * Use `create(ConversationDispatchStatusSchema)` to create a new message.
  */
 export const ConversationDispatchStatusSchema: GenMessage<ConversationDispatchStatus> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 5);
+  messageDesc(file_deepnavy_v1_conversations, 17);
 
 /**
  * ConversationDispatchPayload is an immutable, credential-free command. The
@@ -280,7 +676,7 @@ export type ConversationDispatchPayload = Message<"deepnavy.v1.ConversationDispa
  * Use `create(ConversationDispatchPayloadSchema)` to create a new message.
  */
 export const ConversationDispatchPayloadSchema: GenMessage<ConversationDispatchPayload> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 6);
+  messageDesc(file_deepnavy_v1_conversations, 18);
 
 /**
  * @generated from message deepnavy.v1.ConversationDispatch
@@ -332,7 +728,7 @@ export type ConversationDispatch = Message<"deepnavy.v1.ConversationDispatch"> &
  * Use `create(ConversationDispatchSchema)` to create a new message.
  */
 export const ConversationDispatchSchema: GenMessage<ConversationDispatch> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 7);
+  messageDesc(file_deepnavy_v1_conversations, 19);
 
 /**
  * @generated from message deepnavy.v1.LeaseConversationDispatchesRequest
@@ -362,7 +758,7 @@ export type LeaseConversationDispatchesRequest = Message<"deepnavy.v1.LeaseConve
  * Use `create(LeaseConversationDispatchesRequestSchema)` to create a new message.
  */
 export const LeaseConversationDispatchesRequestSchema: GenMessage<LeaseConversationDispatchesRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 8);
+  messageDesc(file_deepnavy_v1_conversations, 20);
 
 /**
  * @generated from message deepnavy.v1.LeasedConversationDispatch
@@ -397,7 +793,7 @@ export type LeasedConversationDispatch = Message<"deepnavy.v1.LeasedConversation
  * Use `create(LeasedConversationDispatchSchema)` to create a new message.
  */
 export const LeasedConversationDispatchSchema: GenMessage<LeasedConversationDispatch> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 9);
+  messageDesc(file_deepnavy_v1_conversations, 21);
 
 /**
  * @generated from message deepnavy.v1.LeaseConversationDispatchesResponse
@@ -414,7 +810,7 @@ export type LeaseConversationDispatchesResponse = Message<"deepnavy.v1.LeaseConv
  * Use `create(LeaseConversationDispatchesResponseSchema)` to create a new message.
  */
 export const LeaseConversationDispatchesResponseSchema: GenMessage<LeaseConversationDispatchesResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 10);
+  messageDesc(file_deepnavy_v1_conversations, 22);
 
 /**
  * @generated from message deepnavy.v1.RenewConversationDispatchLeaseRequest
@@ -441,7 +837,7 @@ export type RenewConversationDispatchLeaseRequest = Message<"deepnavy.v1.RenewCo
  * Use `create(RenewConversationDispatchLeaseRequestSchema)` to create a new message.
  */
 export const RenewConversationDispatchLeaseRequestSchema: GenMessage<RenewConversationDispatchLeaseRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 11);
+  messageDesc(file_deepnavy_v1_conversations, 23);
 
 /**
  * @generated from message deepnavy.v1.RenewConversationDispatchLeaseResponse
@@ -458,7 +854,7 @@ export type RenewConversationDispatchLeaseResponse = Message<"deepnavy.v1.RenewC
  * Use `create(RenewConversationDispatchLeaseResponseSchema)` to create a new message.
  */
 export const RenewConversationDispatchLeaseResponseSchema: GenMessage<RenewConversationDispatchLeaseResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 12);
+  messageDesc(file_deepnavy_v1_conversations, 24);
 
 /**
  * @generated from message deepnavy.v1.AcknowledgeConversationDispatchRequest
@@ -502,7 +898,7 @@ export type AcknowledgeConversationDispatchRequest = Message<"deepnavy.v1.Acknow
  * Use `create(AcknowledgeConversationDispatchRequestSchema)` to create a new message.
  */
 export const AcknowledgeConversationDispatchRequestSchema: GenMessage<AcknowledgeConversationDispatchRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 13);
+  messageDesc(file_deepnavy_v1_conversations, 25);
 
 /**
  * PublishConversationReplyDraftRequest carries the Product Manager's reply as
@@ -550,7 +946,7 @@ export type PublishConversationReplyDraftRequest = Message<"deepnavy.v1.PublishC
  * Use `create(PublishConversationReplyDraftRequestSchema)` to create a new message.
  */
 export const PublishConversationReplyDraftRequestSchema: GenMessage<PublishConversationReplyDraftRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 14);
+  messageDesc(file_deepnavy_v1_conversations, 26);
 
 /**
  * @generated from message deepnavy.v1.PublishConversationReplyDraftResponse
@@ -571,7 +967,7 @@ export type PublishConversationReplyDraftResponse = Message<"deepnavy.v1.Publish
  * Use `create(PublishConversationReplyDraftResponseSchema)` to create a new message.
  */
 export const PublishConversationReplyDraftResponseSchema: GenMessage<PublishConversationReplyDraftResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 15);
+  messageDesc(file_deepnavy_v1_conversations, 27);
 
 /**
  * @generated from message deepnavy.v1.AcknowledgeConversationDispatchResponse
@@ -596,7 +992,7 @@ export type AcknowledgeConversationDispatchResponse = Message<"deepnavy.v1.Ackno
  * Use `create(AcknowledgeConversationDispatchResponseSchema)` to create a new message.
  */
 export const AcknowledgeConversationDispatchResponseSchema: GenMessage<AcknowledgeConversationDispatchResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 16);
+  messageDesc(file_deepnavy_v1_conversations, 28);
 
 /**
  * @generated from message deepnavy.v1.FailConversationDispatchRequest
@@ -645,7 +1041,7 @@ export type FailConversationDispatchRequest = Message<"deepnavy.v1.FailConversat
  * Use `create(FailConversationDispatchRequestSchema)` to create a new message.
  */
 export const FailConversationDispatchRequestSchema: GenMessage<FailConversationDispatchRequest> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 17);
+  messageDesc(file_deepnavy_v1_conversations, 29);
 
 /**
  * @generated from message deepnavy.v1.FailConversationDispatchResponse
@@ -662,7 +1058,7 @@ export type FailConversationDispatchResponse = Message<"deepnavy.v1.FailConversa
  * Use `create(FailConversationDispatchResponseSchema)` to create a new message.
  */
 export const FailConversationDispatchResponseSchema: GenMessage<FailConversationDispatchResponse> = /*@__PURE__*/
-  messageDesc(file_deepnavy_v1_conversations, 18);
+  messageDesc(file_deepnavy_v1_conversations, 30);
 
 /**
  * ConversationAuthor identifies who wrote a team conversation message. The
@@ -782,6 +1178,94 @@ export const ConversationDispatchFailureReasonSchema: GenEnum<ConversationDispat
   enumDesc(file_deepnavy_v1_conversations, 2);
 
 /**
+ * TeamConversationMessage is one customer-safe row of a team's conversation
+ * with its Product Manager. It never contains a prompt transcript, reasoning,
+ * tool input, credential, or raw runtime identifier.
+ * A Product Manager interviewing a customer used to ask in prose — a numbered
+ * markdown list — and read the answer back out of whatever the customer wrote.
+ * That loses the structure on both sides: the customer has to restate options
+ * the agent already listed, and the agent has to infer which answer belongs to
+ * which question before it can act on any of them.
+ *
+ * These types carry the structure instead. The agent states what it is asking
+ * and what the acceptable answers are; the console renders a form; the answer
+ * comes back keyed to the question. The prose stays — a form is not a
+ * conversation — but the part that IS a choice is handled as one.
+ *
+ * @generated from enum deepnavy.v1.ConversationQuestionKind
+ */
+export enum ConversationQuestionKind {
+  /**
+   * @generated from enum value: CONVERSATION_QUESTION_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Exactly one option.
+   *
+   * @generated from enum value: CONVERSATION_QUESTION_KIND_SINGLE_CHOICE = 1;
+   */
+  SINGLE_CHOICE = 1,
+
+  /**
+   * Any number of options, including none when the question is not required.
+   *
+   * @generated from enum value: CONVERSATION_QUESTION_KIND_MULTIPLE_CHOICE = 2;
+   */
+  MULTIPLE_CHOICE = 2,
+
+  /**
+   * Free text. Carries no options.
+   *
+   * @generated from enum value: CONVERSATION_QUESTION_KIND_TEXT = 3;
+   */
+  TEXT = 3,
+}
+
+/**
+ * Describes the enum deepnavy.v1.ConversationQuestionKind.
+ */
+export const ConversationQuestionKindSchema: GenEnum<ConversationQuestionKind> = /*@__PURE__*/
+  enumDesc(file_deepnavy_v1_conversations, 3);
+
+/**
+ * @generated from enum deepnavy.v1.ConversationQuestionSetStatus
+ */
+export enum ConversationQuestionSetStatus {
+  /**
+   * @generated from enum value: CONVERSATION_QUESTION_SET_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Waiting on the customer. Exactly these render as a live form.
+   *
+   * @generated from enum value: CONVERSATION_QUESTION_SET_STATUS_OPEN = 1;
+   */
+  OPEN = 1,
+
+  /**
+   * @generated from enum value: CONVERSATION_QUESTION_SET_STATUS_ANSWERED = 2;
+   */
+  ANSWERED = 2,
+
+  /**
+   * Raised by a runtime generation the team has since replaced. It can never be
+   * answered, and is kept rather than deleted so the thread still explains
+   * itself.
+   *
+   * @generated from enum value: CONVERSATION_QUESTION_SET_STATUS_SUPERSEDED = 3;
+   */
+  SUPERSEDED = 3,
+}
+
+/**
+ * Describes the enum deepnavy.v1.ConversationQuestionSetStatus.
+ */
+export const ConversationQuestionSetStatusSchema: GenEnum<ConversationQuestionSetStatus> = /*@__PURE__*/
+  enumDesc(file_deepnavy_v1_conversations, 4);
+
+/**
  * TeamConversationService is the customer-authenticated console conversation
  * with a team's Product Manager, authorized like ObjectiveService: tenant
  * identity always comes from the verified principal plus a server-checked
@@ -813,6 +1297,30 @@ export const TeamConversationService: GenService<{
     methodKind: "server_streaming";
     input: typeof StreamTeamConversationRequestSchema;
     output: typeof StreamTeamConversationResponseSchema;
+  },
+  /**
+   * ListTeamQuestionSets returns the asks raised in this team's thread. An OPEN
+   * set is what the console renders as a live form.
+   *
+   * @generated from rpc deepnavy.v1.TeamConversationService.ListTeamQuestionSets
+   */
+  listTeamQuestionSets: {
+    methodKind: "unary";
+    input: typeof ListTeamQuestionSetsRequestSchema;
+    output: typeof ListTeamQuestionSetsResponseSchema;
+  },
+  /**
+   * AnswerTeamQuestions records the customer's answers against the set they
+   * answer, validated whole, and delivers them to the agent as a message —
+   * because the thread is a conversation and answering has to say something in
+   * it.
+   *
+   * @generated from rpc deepnavy.v1.TeamConversationService.AnswerTeamQuestions
+   */
+  answerTeamQuestions: {
+    methodKind: "unary";
+    input: typeof AnswerTeamQuestionsRequestSchema;
+    output: typeof AnswerTeamQuestionsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_deepnavy_v1_conversations, 0);
@@ -867,6 +1375,17 @@ export const TeamConversationWorkerService: GenService<{
     methodKind: "unary";
     input: typeof PublishConversationReplyDraftRequestSchema;
     output: typeof PublishConversationReplyDraftResponseSchema;
+  },
+  /**
+   * RecordConversationQuestions raises an ask from an agent. It is on the WORKER
+   * service because only a team runtime may call it, on the internal listener.
+   *
+   * @generated from rpc deepnavy.v1.TeamConversationWorkerService.RecordConversationQuestions
+   */
+  recordConversationQuestions: {
+    methodKind: "unary";
+    input: typeof RecordConversationQuestionsRequestSchema;
+    output: typeof RecordConversationQuestionsResponseSchema;
   },
   /**
    * FailConversationDispatch records a bounded failure. A retryable failure

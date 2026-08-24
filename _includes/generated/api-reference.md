@@ -13,6 +13,7 @@ This reference is generated from the repository's local protobuf descriptors, in
 - [deepnavy/v1/admin.proto](#deepnavy-v1-admin-proto)
   - [Message `deepnavy.v1.AdminErrorDetail`](#deepnavy-v1-adminerrordetail)
   - [Message `deepnavy.v1.AdminProjectionStatus`](#deepnavy-v1-adminprojectionstatus)
+  - [Message `deepnavy.v1.AdminContractedRevenue`](#deepnavy-v1-admincontractedrevenue)
   - [Message `deepnavy.v1.AdminOverview`](#deepnavy-v1-adminoverview)
   - [Message `deepnavy.v1.GetAdminOverviewRequest`](#deepnavy-v1-getadminoverviewrequest)
   - [Message `deepnavy.v1.GetAdminOverviewResponse`](#deepnavy-v1-getadminoverviewresponse)
@@ -52,6 +53,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.AdminAlert`](#deepnavy-v1-adminalert)
   - [Message `deepnavy.v1.ListAdminAlertsRequest`](#deepnavy-v1-listadminalertsrequest)
   - [Message `deepnavy.v1.ListAdminAlertsResponse`](#deepnavy-v1-listadminalertsresponse)
+  - [Message `deepnavy.v1.StreamAdminAuditEventsRequest`](#deepnavy-v1-streamadminauditeventsrequest)
+  - [Message `deepnavy.v1.StreamAdminAuditEventsResponse`](#deepnavy-v1-streamadminauditeventsresponse)
   - [Message `deepnavy.v1.StreamAdminAlertsRequest`](#deepnavy-v1-streamadminalertsrequest)
   - [Message `deepnavy.v1.StreamAdminAlertsResponse`](#deepnavy-v1-streamadminalertsresponse)
   - [Message `deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent)
@@ -60,6 +63,10 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Message `deepnavy.v1.AdminIdentity`](#deepnavy-v1-adminidentity)
   - [Message `deepnavy.v1.GetAdminIdentityRequest`](#deepnavy-v1-getadminidentityrequest)
   - [Message `deepnavy.v1.GetAdminIdentityResponse`](#deepnavy-v1-getadminidentityresponse)
+  - [Message `deepnavy.v1.AdminStripeAccount`](#deepnavy-v1-adminstripeaccount)
+  - [Message `deepnavy.v1.AdminStripeSubscription`](#deepnavy-v1-adminstripesubscription)
+  - [Message `deepnavy.v1.AdminStripePaymentMethod`](#deepnavy-v1-adminstripepaymentmethod)
+  - [Message `deepnavy.v1.AdminStripeInvoice`](#deepnavy-v1-adminstripeinvoice)
   - [Enum `deepnavy.v1.AdminErrorReason`](#deepnavy-v1-adminerrorreason)
   - [Enum `deepnavy.v1.AdminCustomerHealthState`](#deepnavy-v1-admincustomerhealthstate)
   - [Enum `deepnavy.v1.AdminSupportState`](#deepnavy-v1-adminsupportstate)
@@ -167,6 +174,18 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Enum `deepnavy.v1.Environment`](#deepnavy-v1-environment)
   - [Enum `deepnavy.v1.LifecycleState`](#deepnavy-v1-lifecyclestate)
 - [deepnavy/v1/conversations.proto](#deepnavy-v1-conversations-proto)
+  - [Message `deepnavy.v1.ConversationQuestionOption`](#deepnavy-v1-conversationquestionoption)
+  - [Message `deepnavy.v1.ConversationQuestion`](#deepnavy-v1-conversationquestion)
+  - [Message `deepnavy.v1.ConversationQuestionSet`](#deepnavy-v1-conversationquestionset)
+  - [Message `deepnavy.v1.ConversationAnswer`](#deepnavy-v1-conversationanswer)
+  - [Message `deepnavy.v1.ConversationAnswerSet`](#deepnavy-v1-conversationanswerset)
+  - [Message `deepnavy.v1.TeamConversationQuestionSet`](#deepnavy-v1-teamconversationquestionset)
+  - [Message `deepnavy.v1.RecordConversationQuestionsRequest`](#deepnavy-v1-recordconversationquestionsrequest)
+  - [Message `deepnavy.v1.RecordConversationQuestionsResponse`](#deepnavy-v1-recordconversationquestionsresponse)
+  - [Message `deepnavy.v1.ListTeamQuestionSetsRequest`](#deepnavy-v1-listteamquestionsetsrequest)
+  - [Message `deepnavy.v1.ListTeamQuestionSetsResponse`](#deepnavy-v1-listteamquestionsetsresponse)
+  - [Message `deepnavy.v1.AnswerTeamQuestionsRequest`](#deepnavy-v1-answerteamquestionsrequest)
+  - [Message `deepnavy.v1.AnswerTeamQuestionsResponse`](#deepnavy-v1-answerteamquestionsresponse)
   - [Message `deepnavy.v1.TeamConversationMessage`](#deepnavy-v1-teamconversationmessage)
   - [Message `deepnavy.v1.SendTeamMessageRequest`](#deepnavy-v1-sendteammessagerequest)
   - [Message `deepnavy.v1.SendTeamMessageResponse`](#deepnavy-v1-sendteammessageresponse)
@@ -189,6 +208,8 @@ This reference is generated from the repository's local protobuf descriptors, in
   - [Enum `deepnavy.v1.ConversationAuthor`](#deepnavy-v1-conversationauthor)
   - [Enum `deepnavy.v1.ConversationDeliveryState`](#deepnavy-v1-conversationdeliverystate)
   - [Enum `deepnavy.v1.ConversationDispatchFailureReason`](#deepnavy-v1-conversationdispatchfailurereason)
+  - [Enum `deepnavy.v1.ConversationQuestionKind`](#deepnavy-v1-conversationquestionkind)
+  - [Enum `deepnavy.v1.ConversationQuestionSetStatus`](#deepnavy-v1-conversationquestionsetstatus)
   - [Service `deepnavy.v1.TeamConversationService`](#deepnavy-v1-teamconversationservice)
   - [Service `deepnavy.v1.TeamConversationWorkerService`](#deepnavy-v1-teamconversationworkerservice)
 - [deepnavy/v1/economics.proto](#deepnavy-v1-economics-proto)
@@ -472,14 +493,37 @@ AdminErrorDetail is attached to non-OK Connect/gRPC statuses. safe_message
 | `unavailable_fields` | 2 | `string` | repeated | Exact snake_case protobuf field names in the containing message. This list<br> is empty for COMPLETE and must not name identity, period, or generated_at. |
 | `source_observed_at` | 3 | `google.protobuf.Timestamp` | singular | source_observed_at is the oldest observation contributing to the current<br> projection and lets clients communicate freshness without provider data. |
 
-<a id="deepnavy-v1-adminoverview"></a>
-### Message `deepnavy.v1.AdminOverview`
+<a id="deepnavy-v1-admincontractedrevenue"></a>
+### Message `deepnavy.v1.AdminContractedRevenue`
 
 AdminOverview is the top-level founder snapshot. All Money values use one
  ISO-4217 reporting currency; a server must reject mixed-currency aggregation
  unless it applies and audits an explicit conversion policy. Point-in-time
  counts and recurring revenue are measured at reporting_period.ended_at;
  event counts cover the period.
+ AdminContractedRevenue is what the billing provider will actually charge,
+ read live, and it sits BESIDE the platform's own recurring-revenue figure
+ rather than replacing it.
+
+ Two separate numbers, because their disagreement is the finding. The
+ platform's figure sums the subscriptions table, which holds at most one
+ subscription per organization — the column is UNIQUE. The provider has no
+ such rule. So an organization the provider bills twice is recorded once, our
+ revenue is understated by the difference, and every figure derived from it is
+ wrong in the same direction with nothing on the page to say so.
+
+ Reconciling the two into one "correct" number would hide exactly that. A
+ mismatch is a billing defect to fix, not a display problem to smooth over.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `monthly_recurring_revenue` | 1 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | — |
+| `active_subscription_count` | 2 | `int64` | singular | active_subscription_count is the provider's count. Compared against the<br> number of organizations holding a subscription, a difference means at least<br> one organization carries more than one — which the platform cannot record. |
+| `billed_account_count` | 3 | `int64` | singular | — |
+| `observed_at` | 4 | `google.protobuf.Timestamp` | singular | observed_at is when the provider was read. These reads are cached to stay<br> inside the provider's rate limit, so this is not the request time. |
+
+<a id="deepnavy-v1-adminoverview"></a>
+### Message `deepnavy.v1.AdminOverview`
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
@@ -501,6 +545,7 @@ AdminOverview is the top-level founder snapshot. All Money values use one
 | `gross_margin_ratio` | 16 | `double` | optional | Ratios use 1.0 for 100% and may be negative. Absence means revenue was zero<br> or the measurement was not trustworthy for this period. |
 | `customer_churn_ratio` | 17 | `double` | optional | customer_churn_ratio is in [0.0, 1.0]. Absence means there was no starting<br> customer cohort or the measurement was not trustworthy for this period. |
 | `projection_status` | 18 | [`deepnavy.v1.AdminProjectionStatus`](#deepnavy-v1-adminprojectionstatus) | singular | — |
+| `contracted` | 19 | [`deepnavy.v1.AdminContractedRevenue`](#deepnavy-v1-admincontractedrevenue) | singular | contracted is the same money as the provider holds it. Absent when the<br> provider could not be read, which names "contracted" in unavailable_fields;<br> present with a zero amount means the provider was asked and bills nothing. |
 
 <a id="deepnavy-v1-getadminoverviewrequest"></a>
 ### Message `deepnavy.v1.GetAdminOverviewRequest`
@@ -569,6 +614,7 @@ AdminCustomer is the admin projection of a canonical Organization. It never
 | `payment_state` | 16 | [`deepnavy.v1.AdminPaymentState`](#deepnavy-v1-adminpaymentstate) | singular | — |
 | `billing_reconciliation_state` | 17 | [`deepnavy.v1.AdminBillingReconciliationState`](#deepnavy-v1-adminbillingreconciliationstate) | singular | — |
 | `projection_status` | 18 | [`deepnavy.v1.AdminProjectionStatus`](#deepnavy-v1-adminprojectionstatus) | singular | — |
+| `stripe` | 19 | [`deepnavy.v1.AdminStripeAccount`](#deepnavy-v1-adminstripeaccount) | singular | stripe is the account as the billing provider holds it, read live. It is<br> absent both when the organization has no provider record and when the<br> provider could not be read; projection_status tells those apart. Nothing<br> here is ever inferred from the platform's own mirror — a field the provider<br> did not answer for stays empty rather than being filled from our copy of it. |
 
 <a id="deepnavy-v1-listadmincustomersrequest"></a>
 ### Message `deepnavy.v1.ListAdminCustomersRequest`
@@ -1004,6 +1050,25 @@ AdminAlert is a safe, deduplicated operational or commercial alert. It must
 | `unavailable_kinds` | 4 | [`deepnavy.v1.AdminAlertKind`](#deepnavy-v1-adminalertkind) | repeated | An absent kind is not evidence that no such alert exists when it appears<br> here. This makes partial launch-time source coverage explicit. |
 | `resolved_alert_history_available` | 5 | `bool` | singular | False means only current OPEN alerts can be trusted; callers must not infer<br> that resolved-alert history is empty. |
 
+<a id="deepnavy-v1-streamadminauditeventsrequest"></a>
+### Message `deepnavy.v1.StreamAdminAuditEventsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `after_sequence` | 1 | `int64` | singular | Events with sequence greater than after_sequence are emitted. Zero starts<br> from the oldest retained event. Expired cursors return OUT_OF_RANGE. |
+| `organization_id` | 2 | `string` | singular | Only immutable scope filters are allowed, for the same reason the alert<br> stream restricts its own: a filter on something that can change would<br> silently stop delivering an event the moment it changed, and an audit trail<br> that quietly drops records is worse than one that cannot be followed. |
+| `actor_subject` | 3 | `string` | singular | — |
+
+<a id="deepnavy-v1-streamadminauditeventsresponse"></a>
+### Message `deepnavy.v1.StreamAdminAuditEventsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `event` | 1 | [`deepnavy.v1.AdminAuditEvent`](#deepnavy-v1-adminauditevent) | singular | event is present only for UPSERT. An audit record is immutable, so UPSERT<br> is the only change type this stream can ever emit — there is no edit and no<br> delete to report. |
+| `change_type` | 2 | [`deepnavy.v1.AdminStreamChangeType`](#deepnavy-v1-adminstreamchangetype) | singular | — |
+| `resource_id` | 3 | `string` | singular | resource_id is always set and equals event.id on UPSERT. |
+| `sequence` | 4 | `int64` | singular | sequence is the deployment-monotonic cursor for this change and equals<br> event.sequence on UPSERT. |
+
 <a id="deepnavy-v1-streamadminalertsrequest"></a>
 ### Message `deepnavy.v1.StreamAdminAlertsRequest`
 
@@ -1046,6 +1111,7 @@ AdminAuditEvent is one immutable administrative audit record. It exposes deep
 | `request_id` | 9 | `string` | singular | — |
 | `source_ip` | 10 | `string` | singular | — |
 | `user_agent` | 11 | `string` | singular | — |
+| `sequence` | 12 | `int64` | singular | sequence is the server-assigned cursor for this event. It is monotonic per<br> deployment and identifies exactly one event, so a client holding a rendered<br> row can resume the stream from it without re-reading the page. Absent on<br> events written before the cursor existed. |
 
 <a id="deepnavy-v1-listadminauditeventsrequest"></a>
 ### Message `deepnavy.v1.ListAdminAuditEventsRequest`
@@ -1097,6 +1163,110 @@ This message has no fields.
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
 | `identity` | 1 | [`deepnavy.v1.AdminIdentity`](#deepnavy-v1-adminidentity) | singular | — |
+
+<a id="deepnavy-v1-adminstripeaccount"></a>
+### Message `deepnavy.v1.AdminStripeAccount`
+
+AdminStripeAccount is the account as the BILLING PROVIDER holds it right now,
+ read live rather than projected from the platform's own mirror of it.
+
+ It exists because the two can disagree, and every question an operator opens
+ this console to answer — what is this customer actually paying, did their last
+ payment land, is their card about to expire — is a question about the
+ provider's state, not ours. A mirror cannot answer whether it is accurate.
+
+ This is the one admin projection that carries provider identifiers. The rule
+ on AdminCustomer.subscription still stands unchanged: that field holds deep
+ navy resource IDs. These are deliberately separate and explicitly
+ provider-scoped, so an operator can open the same record in the provider's own
+ dashboard without the platform ever having to pretend the two ID spaces are
+ one.
+
+ Presence is a POSITIVE statement: this message exists whenever the provider was
+ successfully read, including for an organization the provider has never heard
+ of — that account gets a message with an empty customer_id and no
+ subscriptions, which says "asked, and there is nothing", not "did not ask".
+
+ That distinction cannot be carried by absence, because absence has a third
+ meaning: a server too old to know this field sends nothing either. A client
+ reading a missing message as "never paid" would then report every paying
+ customer as unbilled the moment it was deployed ahead of the server — wrong
+ about money, with nothing on screen to suggest it. So the three cases are
+ separated by construction:
+
+   present, customer_id set    the provider holds this account
+   present, customer_id empty  the provider was asked and holds nothing
+   absent                      not answered — either the provider could not be
+                               read, which names "stripe" in
+                               unavailable_fields, or the server predates the
+                               field. Both must render as unavailable.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `customer_id` | 1 | `string` | singular | — |
+| `customer_name` | 2 | `string` | singular | — |
+| `delinquent` | 3 | `bool` | singular | delinquent is the provider's own flag: a collection attempt failed and has<br> not since been recovered. It is the provider's judgement, not ours. |
+| `subscriptions` | 4 | [`deepnavy.v1.AdminStripeSubscription`](#deepnavy-v1-adminstripesubscription) | repeated | — |
+| `recurring_total` | 5 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | recurring_total sums every subscription on this account that is currently<br> billing. It is a SUM and not one subscription's amount because an account<br> can hold more than one, and reporting only the first understates what the<br> customer is charged — which is the specific way this page could lie about<br> money while looking correct. |
+| `active_subscription_count` | 6 | `int64` | singular | — |
+| `observed_at` | 7 | `google.protobuf.Timestamp` | singular | observed_at is when the provider was actually read. It is not the request<br> time: these reads are cached to stay inside the provider's rate limits, so a<br> client that wants to say how fresh this is must use this value. |
+
+<a id="deepnavy-v1-adminstripesubscription"></a>
+### Message `deepnavy.v1.AdminStripeSubscription`
+
+AdminStripeSubscription is one subscription exactly as the provider reports
+ it. Its status is the PROVIDER's vocabulary, verbatim and unmapped, because
+ the operator's next step is usually to open the provider dashboard and the two
+ screens must agree word for word.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `team_id` | 2 | `string` | singular | team_id is read from the provider's own metadata on the subscription. It is<br> empty for subscriptions created before that metadata was stamped, and an<br> empty value must be rendered as unknown rather than as "no team". |
+| `plan_id` | 3 | `string` | singular | — |
+| `price_id` | 4 | `string` | singular | — |
+| `price_nickname` | 5 | `string` | singular | — |
+| `status` | 6 | `string` | singular | — |
+| `quantity` | 7 | `int64` | singular | — |
+| `unit_amount` | 8 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | — |
+| `interval` | 9 | `string` | singular | — |
+| `current_period_end` | 10 | `google.protobuf.Timestamp` | singular | — |
+| `cancel_at_period_end` | 11 | `bool` | singular | — |
+| `created_at` | 12 | `google.protobuf.Timestamp` | singular | — |
+| `payment_method` | 13 | [`deepnavy.v1.AdminStripePaymentMethod`](#deepnavy-v1-adminstripepaymentmethod) | singular | — |
+| `latest_invoice` | 14 | [`deepnavy.v1.AdminStripeInvoice`](#deepnavy-v1-adminstripeinvoice) | singular | — |
+
+<a id="deepnavy-v1-adminstripepaymentmethod"></a>
+### Message `deepnavy.v1.AdminStripePaymentMethod`
+
+AdminStripePaymentMethod is the non-sensitive saved-card summary. It never
+ carries a full card number — only the display fields the provider returns.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `brand` | 1 | `string` | singular | — |
+| `last4` | 2 | `string` | singular | — |
+| `exp_month` | 3 | `int64` | singular | — |
+| `exp_year` | 4 | `int64` | singular | — |
+| `expired` | 5 | `bool` | singular | expired and expiring_soon are computed server-side against the same<br> observed_at the projection reports, so that every client colours a card the<br> same way and none of them has to do calendar arithmetic to do it. |
+| `expiring_soon` | 6 | `bool` | singular | — |
+| `from_customer_default` | 7 | `bool` | singular | from_customer_default marks a card inherited from the customer's invoice<br> settings rather than pinned to this subscription. The distinction matters<br> when detaching a card: one subscription's payment can change without that<br> subscription having been touched. |
+
+<a id="deepnavy-v1-adminstripeinvoice"></a>
+### Message `deepnavy.v1.AdminStripeInvoice`
+
+AdminStripeInvoice is the most recent invoice on a subscription — the single
+ best evidence of whether money actually moved.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `number` | 2 | `string` | singular | — |
+| `status` | 3 | `string` | singular | status is the provider's vocabulary, verbatim: draft, open, paid,<br> uncollectible or void. |
+| `total` | 4 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | — |
+| `amount_remaining` | 5 | [`deepnavy.v1.Money`](#deepnavy-v1-money) | singular | amount_remaining is what is still owed. "Nothing is owing" must be tested<br> with this and never with the billed amount, which stays positive on a fully<br> paid invoice. |
+| `created_at` | 6 | `google.protobuf.Timestamp` | singular | — |
+| `hosted_invoice_url` | 7 | `string` | singular | — |
 
 <a id="deepnavy-v1-adminerrorreason"></a>
 ### Enum `deepnavy.v1.AdminErrorReason`
@@ -1336,6 +1506,7 @@ AdminService is a read-only projection over the same versioned API used by
 | `ListAdminBillingReconciliationIssues` | [`deepnavy.v1.ListAdminBillingReconciliationIssuesRequest`](#deepnavy-v1-listadminbillingreconciliationissuesrequest) | [`deepnavy.v1.ListAdminBillingReconciliationIssuesResponse`](#deepnavy-v1-listadminbillingreconciliationissuesresponse) | unary | — |
 | `ListAdminAlerts` | [`deepnavy.v1.ListAdminAlertsRequest`](#deepnavy-v1-listadminalertsrequest) | [`deepnavy.v1.ListAdminAlertsResponse`](#deepnavy-v1-listadminalertsresponse) | unary | — |
 | `StreamAdminAlerts` | [`deepnavy.v1.StreamAdminAlertsRequest`](#deepnavy-v1-streamadminalertsrequest) | [`deepnavy.v1.StreamAdminAlertsResponse`](#deepnavy-v1-streamadminalertsresponse) | server | — |
+| `StreamAdminAuditEvents` | [`deepnavy.v1.StreamAdminAuditEventsRequest`](#deepnavy-v1-streamadminauditeventsrequest) | [`deepnavy.v1.StreamAdminAuditEventsResponse`](#deepnavy-v1-streamadminauditeventsresponse) | server | StreamAdminAuditEvents follows the administrative audit trail. Operators<br> watch who touched a customer's account while it is happening; a page that<br> re-reads itself on a timer is the wrong shape for a log that only ever<br> grows. Cursor semantics match StreamAdminAlerts: events with sequence<br> greater than after_sequence are emitted, zero starts from the oldest<br> retained event, and an expired cursor returns OUT_OF_RANGE. |
 | `ListAdminAuditEvents` | [`deepnavy.v1.ListAdminAuditEventsRequest`](#deepnavy-v1-listadminauditeventsrequest) | [`deepnavy.v1.ListAdminAuditEventsResponse`](#deepnavy-v1-listadminauditeventsresponse) | unary | ListAdminAuditEvents returns the immutable administrative audit trail<br> (admin RPC access and, in future, privileged mutations). |
 | `GetAdminIdentity` | [`deepnavy.v1.GetAdminIdentityRequest`](#deepnavy-v1-getadminidentityrequest) | [`deepnavy.v1.GetAdminIdentityResponse`](#deepnavy-v1-getadminidentityresponse) | unary | GetAdminIdentity answers "who does the server think I am, and until when".<br> It is the operator equivalent of AuthService/GetCurrentUser, and it exists<br> separately because AuthService is guarded by the customer interceptor,<br> which trusts only the customer pool: an operator token presented there is<br> rejected as unauthenticated, and widening that interceptor to accept<br> operator tokens would let an operator credential authenticate against every<br> customer surface. The privilege boundary is the reason for the second RPC.<br><br> It reports only what the server already established while authorizing this<br> request. The three failures a caller must tell apart stay apart:<br> UNAUTHENTICATED means the token was rejected and signing in again is the<br> fix, PERMISSION_DENIED means the operator authenticated but is not<br> permitted and signing in again will not change that, and UNAVAILABLE means<br> the platform could not decide and the call should be retried. |
 
@@ -2338,12 +2509,134 @@ Package: `deepnavy.v1`
 
 Imports: `google/protobuf/duration.proto`, `google/protobuf/timestamp.proto`
 
+<a id="deepnavy-v1-conversationquestionoption"></a>
+### Message `deepnavy.v1.ConversationQuestionOption`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | id is what an answer carries back, so an option can be re-labelled without<br> invalidating answers already given against it. |
+| `label` | 2 | `string` | singular | — |
+| `description` | 3 | `string` | singular | description is an optional clarifying line beneath the label. It exists so<br> an option can be understood without the agent padding the label until it<br> stops being scannable. |
+
+<a id="deepnavy-v1-conversationquestion"></a>
+### Message `deepnavy.v1.ConversationQuestion`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `kind` | 2 | [`deepnavy.v1.ConversationQuestionKind`](#deepnavy-v1-conversationquestionkind) | singular | — |
+| `text` | 3 | `string` | singular | text is the question itself, in the customer's language. Deliberately not<br> called a prompt: this is a customer surface, that word means a model's<br> instructions everywhere else in this system, and the console's leak guard<br> refuses the word outright in the browser bundle for exactly that reason. |
+| `options` | 4 | [`deepnavy.v1.ConversationQuestionOption`](#deepnavy-v1-conversationquestionoption) | repeated | options is empty for TEXT and required for both choice kinds. |
+| `allow_other` | 5 | `bool` | singular | allow_other lets a choice question take a written answer beside its<br> options. An agent listing five aesthetics has not thought of the sixth, and<br> without this the customer's only route is to abandon the form and write<br> prose — which is the situation these types exist to end. |
+| `required` | 6 | `bool` | singular | required questions must be answered before the set can be submitted. |
+
+<a id="deepnavy-v1-conversationquestionset"></a>
+### Message `deepnavy.v1.ConversationQuestionSet`
+
+ConversationQuestionSet is the whole ask attached to one message. It is bounded
+ on every axis, because it is authored by an agent and rendered to a customer:
+ a model that decides to ask forty questions with a hundred options each would
+ otherwise put that on a person's screen.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `questions` | 1 | [`deepnavy.v1.ConversationQuestion`](#deepnavy-v1-conversationquestion) | repeated | — |
+
+<a id="deepnavy-v1-conversationanswer"></a>
+### Message `deepnavy.v1.ConversationAnswer`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `question_id` | 1 | `string` | singular | — |
+| `option_ids` | 2 | `string` | repeated | option_ids is set for the choice kinds. A single-choice answer carries<br> exactly one. |
+| `text` | 3 | `string` | singular | text is the answer for TEXT, and the written answer for a choice question<br> whose allow_other was taken. Both at once is legal — a customer may pick<br> options AND add a note. |
+
+<a id="deepnavy-v1-conversationanswerset"></a>
+### Message `deepnavy.v1.ConversationAnswerSet`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `message_id` | 1 | `string` | singular | message_id is the message whose questions these answer. It is what lets the<br> console show a set as answered rather than leaving a live form above a reply<br> that already answered it. |
+| `answers` | 2 | [`deepnavy.v1.ConversationAnswer`](#deepnavy-v1-conversationanswer) | repeated | — |
+
+<a id="deepnavy-v1-teamconversationquestionset"></a>
+### Message `deepnavy.v1.TeamConversationQuestionSet`
+
+TeamConversationQuestionSet is one ask from an agent, with its own lifecycle.
+
+ It is a record rather than a field on a message because the agent asks by
+ calling a tool while its reply text is captured separately from the session
+ afterwards. The two arrive as unrelated events, so anything that hung
+ questions off a message would have to guess which reply they belonged to —
+ and every version of that guess is wrong under a second dispatch, a retried
+ delivery, or an agent that asks and then says nothing.
+
+ As a record there is nothing to pair: it is raised, it is open, it is
+ answered. The console renders an open set inside the thread that raised it,
+ which is where the answer is given.
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `id` | 1 | `string` | singular | — |
+| `team_id` | 2 | `string` | singular | — |
+| `requested_by_agent_key` | 3 | `string` | singular | — |
+| `questions` | 4 | [`deepnavy.v1.ConversationQuestionSet`](#deepnavy-v1-conversationquestionset) | singular | — |
+| `status` | 5 | [`deepnavy.v1.ConversationQuestionSetStatus`](#deepnavy-v1-conversationquestionsetstatus) | singular | — |
+| `answers` | 6 | [`deepnavy.v1.ConversationAnswerSet`](#deepnavy-v1-conversationanswerset) | singular | answers is present only on an ANSWERED set, validated whole against the<br> questions above before it was stored. |
+| `requested_at` | 7 | `google.protobuf.Timestamp` | singular | — |
+| `answered_at` | 8 | `google.protobuf.Timestamp` | singular | — |
+
+<a id="deepnavy-v1-recordconversationquestionsrequest"></a>
+### Message `deepnavy.v1.RecordConversationQuestionsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team_id` | 1 | `string` | singular | — |
+| `team_generation` | 2 | `int64` | singular | Must match the team's current generation, so a superseded runtime cannot<br> raise an ask against the team that replaced it. |
+| `requesting_agent_key` | 3 | `string` | singular | — |
+| `request_id` | 4 | `string` | singular | Deterministic, derived by the caller from its tool call. Replaying it<br> returns the original set rather than raising a second, which is what makes<br> a retried tool call safe. |
+| `questions` | 5 | [`deepnavy.v1.ConversationQuestionSet`](#deepnavy-v1-conversationquestionset) | singular | — |
+
+<a id="deepnavy-v1-recordconversationquestionsresponse"></a>
+### Message `deepnavy.v1.RecordConversationQuestionsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `question_set` | 1 | [`deepnavy.v1.TeamConversationQuestionSet`](#deepnavy-v1-teamconversationquestionset) | singular | — |
+
+<a id="deepnavy-v1-listteamquestionsetsrequest"></a>
+### Message `deepnavy.v1.ListTeamQuestionSetsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `team_id` | 1 | `string` | singular | — |
+
+<a id="deepnavy-v1-listteamquestionsetsresponse"></a>
+### Message `deepnavy.v1.ListTeamQuestionSetsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `question_sets` | 1 | [`deepnavy.v1.TeamConversationQuestionSet`](#deepnavy-v1-teamconversationquestionset) | repeated | — |
+
+<a id="deepnavy-v1-answerteamquestionsrequest"></a>
+### Message `deepnavy.v1.AnswerTeamQuestionsRequest`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `question_set_id` | 1 | `string` | singular | — |
+| `answers` | 2 | [`deepnavy.v1.ConversationAnswerSet`](#deepnavy-v1-conversationanswerset) | singular | — |
+| `idempotency_key` | 3 | `string` | singular | Scoped to the authenticated principal. Retrying with the same key returns<br> the already-recorded answer instead of sending a second message. |
+
+<a id="deepnavy-v1-answerteamquestionsresponse"></a>
+### Message `deepnavy.v1.AnswerTeamQuestionsResponse`
+
+| Field | Number | Type | Cardinality | Description |
+| --- | ---: | --- | --- | --- |
+| `question_set` | 1 | [`deepnavy.v1.TeamConversationQuestionSet`](#deepnavy-v1-teamconversationquestionset) | singular | — |
+| `message` | 2 | [`deepnavy.v1.TeamConversationMessage`](#deepnavy-v1-teamconversationmessage) | singular | The message the answers were delivered to the agent as. The thread is a<br> conversation and has to read like one, so answering also says something. |
+
 <a id="deepnavy-v1-teamconversationmessage"></a>
 ### Message `deepnavy.v1.TeamConversationMessage`
-
-TeamConversationMessage is one customer-safe row of a team's conversation
- with its Product Manager. It never contains a prompt transcript, reasoning,
- tool input, credential, or raw runtime identifier.
 
 | Field | Number | Type | Cardinality | Description |
 | --- | ---: | --- | --- | --- |
@@ -2356,6 +2649,7 @@ TeamConversationMessage is one customer-safe row of a team's conversation
 | `delivery_state` | 7 | [`deepnavy.v1.ConversationDeliveryState`](#deepnavy-v1-conversationdeliverystate) | singular | delivery_state tracks CUSTOMER-authored rows to the Product Manager<br> session; PRODUCT_MANAGER and SYSTEM rows are always DELIVERED. |
 | `safe_error` | 8 | `string` | singular | safe_error is a bounded customer-safe summary set only when<br> delivery_state is FAILED. |
 | `partial` | 9 | `bool` | singular | partial is true while the Product Manager is still writing this reply.<br> The row keeps its sequence and its text grows, so a client that upserts<br> on sequence shows the answer arriving instead of waiting for all of it.<br> The final observation clears it; a client must never treat a partial row<br> as the finished answer. |
+| `question_set_id` | 10 | `string` | singular | question_set_id names the question set this message answers, when it does.<br> The set itself is a separate record with its own lifecycle — see<br> TeamConversationQuestionSet — and this is only the thread's link back to it,<br> so a reader can see which prose settled which ask. |
 
 <a id="deepnavy-v1-sendteammessagerequest"></a>
 ### Message `deepnavy.v1.SendTeamMessageRequest`
@@ -2583,6 +2877,40 @@ ConversationDispatchFailureReason is intentionally bounded and safe to
 | `CONVERSATION_DISPATCH_FAILURE_REASON_DELIVERY_REJECTED` | 3 | — |
 | `CONVERSATION_DISPATCH_FAILURE_REASON_RETRY_EXHAUSTED` | 4 | — |
 
+<a id="deepnavy-v1-conversationquestionkind"></a>
+### Enum `deepnavy.v1.ConversationQuestionKind`
+
+TeamConversationMessage is one customer-safe row of a team's conversation
+ with its Product Manager. It never contains a prompt transcript, reasoning,
+ tool input, credential, or raw runtime identifier.
+ A Product Manager interviewing a customer used to ask in prose — a numbered
+ markdown list — and read the answer back out of whatever the customer wrote.
+ That loses the structure on both sides: the customer has to restate options
+ the agent already listed, and the agent has to infer which answer belongs to
+ which question before it can act on any of them.
+
+ These types carry the structure instead. The agent states what it is asking
+ and what the acceptable answers are; the console renders a form; the answer
+ comes back keyed to the question. The prose stays — a form is not a
+ conversation — but the part that IS a choice is handled as one.
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `CONVERSATION_QUESTION_KIND_UNSPECIFIED` | 0 | — |
+| `CONVERSATION_QUESTION_KIND_SINGLE_CHOICE` | 1 | Exactly one option. |
+| `CONVERSATION_QUESTION_KIND_MULTIPLE_CHOICE` | 2 | Any number of options, including none when the question is not required. |
+| `CONVERSATION_QUESTION_KIND_TEXT` | 3 | Free text. Carries no options. |
+
+<a id="deepnavy-v1-conversationquestionsetstatus"></a>
+### Enum `deepnavy.v1.ConversationQuestionSetStatus`
+
+| Value | Number | Description |
+| --- | ---: | --- |
+| `CONVERSATION_QUESTION_SET_STATUS_UNSPECIFIED` | 0 | — |
+| `CONVERSATION_QUESTION_SET_STATUS_OPEN` | 1 | Waiting on the customer. Exactly these render as a live form. |
+| `CONVERSATION_QUESTION_SET_STATUS_ANSWERED` | 2 | — |
+| `CONVERSATION_QUESTION_SET_STATUS_SUPERSEDED` | 3 | Raised by a runtime generation the team has since replaced. It can never be<br> answered, and is kept rather than deleted so the thread still explains<br> itself. |
+
 <a id="deepnavy-v1-teamconversationservice"></a>
 ### Service `deepnavy.v1.TeamConversationService`
 
@@ -2595,6 +2923,8 @@ TeamConversationService is the customer-authenticated console conversation
 | --- | --- | --- | --- | --- |
 | `SendTeamMessage` | [`deepnavy.v1.SendTeamMessageRequest`](#deepnavy-v1-sendteammessagerequest) | [`deepnavy.v1.SendTeamMessageResponse`](#deepnavy-v1-sendteammessageresponse) | unary | SendTeamMessage records the customer message and enqueues its durable<br> dispatch to the Product Manager session in one transaction. The server<br> assigns id, sequence, author, and created_at. |
 | `StreamTeamConversation` | [`deepnavy.v1.StreamTeamConversationRequest`](#deepnavy-v1-streamteamconversationrequest) | [`deepnavy.v1.StreamTeamConversationResponse`](#deepnavy-v1-streamteamconversationresponse) | server | StreamTeamConversation replays messages after the cursor and then follows<br> the conversation, re-sending a message's sequence on every delivery-state<br> transition. |
+| `ListTeamQuestionSets` | [`deepnavy.v1.ListTeamQuestionSetsRequest`](#deepnavy-v1-listteamquestionsetsrequest) | [`deepnavy.v1.ListTeamQuestionSetsResponse`](#deepnavy-v1-listteamquestionsetsresponse) | unary | ListTeamQuestionSets returns the asks raised in this team's thread. An OPEN<br> set is what the console renders as a live form. |
+| `AnswerTeamQuestions` | [`deepnavy.v1.AnswerTeamQuestionsRequest`](#deepnavy-v1-answerteamquestionsrequest) | [`deepnavy.v1.AnswerTeamQuestionsResponse`](#deepnavy-v1-answerteamquestionsresponse) | unary | AnswerTeamQuestions records the customer's answers against the set they<br> answer, validated whole, and delivers them to the agent as a message —<br> because the thread is a conversation and answering has to say something in<br> it. |
 
 <a id="deepnavy-v1-teamconversationworkerservice"></a>
 ### Service `deepnavy.v1.TeamConversationWorkerService`
@@ -2609,6 +2939,7 @@ TeamConversationWorkerService is internal and provisioning-worker
 | `RenewConversationDispatchLease` | [`deepnavy.v1.RenewConversationDispatchLeaseRequest`](#deepnavy-v1-renewconversationdispatchleaserequest) | [`deepnavy.v1.RenewConversationDispatchLeaseResponse`](#deepnavy-v1-renewconversationdispatchleaseresponse) | unary | — |
 | `AcknowledgeConversationDispatch` | [`deepnavy.v1.AcknowledgeConversationDispatchRequest`](#deepnavy-v1-acknowledgeconversationdispatchrequest) | [`deepnavy.v1.AcknowledgeConversationDispatchResponse`](#deepnavy-v1-acknowledgeconversationdispatchresponse) | unary | AcknowledgeConversationDispatch marks the customer message DELIVERED and,<br> when reply_text is present, records the Product Manager reply atomically. |
 | `PublishConversationReplyDraft` | [`deepnavy.v1.PublishConversationReplyDraftRequest`](#deepnavy-v1-publishconversationreplydraftrequest) | [`deepnavy.v1.PublishConversationReplyDraftResponse`](#deepnavy-v1-publishconversationreplydraftresponse) | unary | PublishConversationReplyDraft records the reply captured so far as a<br> PRODUCT_MANAGER row marked partial, allocating its sequence on the first<br> call and reusing it thereafter. AcknowledgeConversationDispatch finishes<br> that same row rather than adding a second one. |
+| `RecordConversationQuestions` | [`deepnavy.v1.RecordConversationQuestionsRequest`](#deepnavy-v1-recordconversationquestionsrequest) | [`deepnavy.v1.RecordConversationQuestionsResponse`](#deepnavy-v1-recordconversationquestionsresponse) | unary | RecordConversationQuestions raises an ask from an agent. It is on the WORKER<br> service because only a team runtime may call it, on the internal listener. |
 | `FailConversationDispatch` | [`deepnavy.v1.FailConversationDispatchRequest`](#deepnavy-v1-failconversationdispatchrequest) | [`deepnavy.v1.FailConversationDispatchResponse`](#deepnavy-v1-failconversationdispatchresponse) | unary | FailConversationDispatch records a bounded failure. A retryable failure<br> requeues the dispatch until attempts are exhausted; a terminal one marks<br> the customer message FAILED with its customer-safe error. |
 
 

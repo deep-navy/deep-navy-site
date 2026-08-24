@@ -195,6 +195,7 @@
     conversationBriefingLabel: document.querySelector("[data-conversation-briefing-label]"),
     conversationBriefingBody: document.querySelector("[data-conversation-briefing-body]"),
     conversationThread: document.querySelector("[data-conversation-thread]"),
+    conversationQuestions: document.querySelector("[data-conversation-questions]"),
     conversationTyping: document.querySelector("[data-conversation-typing]"),
     conversationTypingCopy: document.querySelector("[data-conversation-typing-copy]"),
     conversationForm: document.querySelector("[data-conversation-form]"),
@@ -495,6 +496,12 @@
     conversationReconnectTimer: null,
     conversationStreamLive: false,
     conversationMessages: [],
+    // Question sets raised by the Product Manager. An OPEN one renders as a
+    // form at the end of the thread; the rest are history the thread already
+    // shows as prose.
+    conversationQuestionSets: [],
+    questionDraft: new Map(),
+    questionSubmitting: "",
     conversationById: new Map(),
     lastConversationSequence: 0n,
     conversationSending: false,
@@ -760,7 +767,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "43051f3f56c6c2d35ef82eb2a94ade15590b4870" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "0674a18bffc7092403c48f93295c4793ba28f977" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -5568,10 +5575,278 @@
     if (ordered.length === 0) renderConversationStage();
     if (ordered.length && nearBottom) thread.scrollTop = thread.scrollHeight;
     renderConversationTyping();
+    renderQuestionSets();
     // The composer's gate depends on what the stream has delivered (the
     // Product Manager's first row is what opens it), so every render
     // re-evaluates it.
     syncConversationComposer();
+  }
+
+  /* The interview.
+   *
+   * A question set is a record with its own lifecycle, not a message, so it is
+   * rendered after the thread rather than inside it: it is the thing the
+   * conversation is currently waiting on. Answering sends the answers AND a
+   * message, so the thread reads as a conversation afterwards and this form
+   * disappears with the set that raised it.
+   *
+   * Only an OPEN set renders. An answered one is already in the thread as the
+   * prose it produced, and rendering it again as a filled-in form would offer a
+   * customer controls that no longer do anything. */
+  function openQuestionSets() {
+    return session.conversationQuestionSets.filter((set) => set.status === "open");
+  }
+
+  function questionDraftKey(setId, questionId) {
+    return `${setId}::${questionId}`;
+  }
+
+  function readQuestionDraft(setId, questionId) {
+    return session.questionDraft.get(questionDraftKey(setId, questionId)) || { optionIds: [], text: "" };
+  }
+
+  function writeQuestionDraft(setId, questionId, value) {
+    session.questionDraft.set(questionDraftKey(setId, questionId), value);
+  }
+
+  // A set is answerable once every REQUIRED question has something in it. The
+  // server enforces this too; doing it here is what lets the button say so
+  // before a customer presses it and gets a refusal they cannot act on.
+  function questionSetAnswerable(set) {
+    return (set.questions || []).every((question) => {
+      if (!question.required) return true;
+      const draft = readQuestionDraft(set.id, question.id);
+      return draft.optionIds.length > 0 || draft.text !== "";
+    });
+  }
+
+  function renderQuestionOption(set, question, option, index) {
+    const single = question.kind === "single_choice";
+    const label = document.createElement("label");
+    label.className = single ? "dn-check dn-check--radio cs-ask-option" : "dn-check cs-ask-option";
+    const input = document.createElement("input");
+    input.type = single ? "radio" : "checkbox";
+    input.name = `${set.id}-${question.id}`;
+    input.value = option.id;
+    const draft = readQuestionDraft(set.id, question.id);
+    input.checked = draft.optionIds.includes(option.id);
+    input.addEventListener("change", () => {
+      const current = readQuestionDraft(set.id, question.id);
+      const optionIds = single
+        ? [option.id]
+        : input.checked
+          ? [...current.optionIds.filter((id) => id !== option.id), option.id]
+          : current.optionIds.filter((id) => id !== option.id);
+      writeQuestionDraft(set.id, question.id, { ...current, optionIds });
+      renderQuestionSets();
+    });
+    const box = document.createElement("span");
+    box.className = "dn-check__box";
+    const text = document.createElement("span");
+    text.className = "dn-check__text";
+    const name = document.createElement("span");
+    name.textContent = option.label;
+    text.append(name);
+    // The trade-off the option implies. It is why a customer can decide without
+    // asking the agent what the choice means, so it is rendered whenever the
+    // agent bothered to write one.
+    if (option.description) {
+      const description = document.createElement("span");
+      description.className = "dn-check__desc";
+      description.textContent = option.description;
+      text.append(description);
+    }
+    label.append(input, box, text);
+    label.dataset.optionIndex = String(index);
+    return label;
+  }
+
+  function renderQuestion(set, question, position, total) {
+    const block = document.createElement("div");
+    block.className = "cs-ask-question";
+
+    const head = document.createElement("div");
+    head.className = "cs-ask-head";
+    const counter = document.createElement("span");
+    counter.className = "dn-eyebrow";
+    counter.textContent = `Question ${position} of ${total}`;
+    head.append(counter);
+    if (question.required) {
+      const required = document.createElement("span");
+      required.className = "cs-ask-required";
+      required.textContent = "needed";
+      head.append(required);
+    }
+
+    const ask = document.createElement("p");
+    ask.className = "cs-ask-text";
+    ask.textContent = question.text;
+    block.append(head, ask);
+
+    if (question.kind === "text") {
+      const input = document.createElement("textarea");
+      input.className = "dn-field__input cs-ask-text";
+      input.rows = 2;
+      input.value = readQuestionDraft(set.id, question.id).text;
+      input.addEventListener("input", () => {
+        const current = readQuestionDraft(set.id, question.id);
+        writeQuestionDraft(set.id, question.id, { ...current, text: input.value });
+        syncQuestionSubmit(set);
+      });
+      block.append(input);
+      return block;
+    }
+
+    const options = document.createElement("div");
+    options.className = "cs-ask-options";
+    (question.options || []).forEach((option, index) => {
+      options.append(renderQuestionOption(set, question, option, index));
+    });
+    block.append(options);
+
+    // allow_other is the agent admitting its list may not be exhaustive. Without
+    // it the customer's only escape is to abandon the form and write prose,
+    // which is the situation this whole surface exists to end.
+    if (question.allowOther) {
+      const other = document.createElement("input");
+      other.type = "text";
+      other.className = "dn-field__input cs-ask-other";
+      other.placeholder = "Something else";
+      other.value = readQuestionDraft(set.id, question.id).text;
+      other.addEventListener("input", () => {
+        const current = readQuestionDraft(set.id, question.id);
+        writeQuestionDraft(set.id, question.id, { ...current, text: other.value });
+        syncQuestionSubmit(set);
+      });
+      block.append(other);
+    }
+    return block;
+  }
+
+  function syncQuestionSubmit(set) {
+    const button = document.querySelector(`[data-question-submit="${set.id}"]`);
+    if (!button) return;
+    button.disabled = session.questionSubmitting === set.id || !questionSetAnswerable(set);
+  }
+
+  function renderQuestionSets() {
+    const host = ui.conversationQuestions;
+    if (!host) return;
+    const open = openQuestionSets();
+    host.replaceChildren();
+    host.hidden = open.length === 0;
+    open.forEach((set) => {
+      const card = document.createElement("section");
+      card.className = "dn-card cs-ask";
+      const head = document.createElement("div");
+      head.className = "cs-ask-title";
+      const who = document.createElement("span");
+      who.className = "dn-eyebrow";
+      who.textContent = `${productManagerName()} is asking`;
+      head.append(who);
+      card.append(head);
+
+      const total = (set.questions || []).length;
+      (set.questions || []).forEach((question, index) => {
+        card.append(renderQuestion(set, question, index + 1, total));
+      });
+
+      const foot = document.createElement("div");
+      foot.className = "cs-ask-foot";
+      const submit = document.createElement("button");
+      submit.type = "button";
+      submit.className = "dn-btn dn-btn--primary dn-btn--sm";
+      submit.dataset.questionSubmit = set.id;
+      submit.textContent = session.questionSubmitting === set.id ? "Sending…" : "Send answers";
+      submit.disabled = session.questionSubmitting === set.id || !questionSetAnswerable(set);
+      submit.addEventListener("click", () => { void submitQuestionSet(set); });
+      foot.append(submit);
+
+      const error = document.createElement("p");
+      error.className = "form-error";
+      error.dataset.questionError = set.id;
+      error.hidden = true;
+      foot.append(error);
+      card.append(foot);
+      host.append(card);
+    });
+  }
+
+  async function submitQuestionSet(set) {
+    if (session.questionSubmitting) return;
+    const answers = (set.questions || []).map((question) => {
+      const draft = readQuestionDraft(set.id, question.id);
+      return { questionId: question.id, optionIds: draft.optionIds, text: draft.text };
+    }).filter((answer) => answer.optionIds.length > 0 || answer.text !== "");
+    if (answers.length === 0) return;
+    session.questionSubmitting = set.id;
+    renderQuestionSets();
+    const errorNode = document.querySelector(`[data-question-error="${set.id}"]`);
+    try {
+      await platformRequest("answer_team_questions", {
+        questionSetId: set.id,
+        idempotencyKey: `answer-${set.id}`,
+        answers
+      });
+      // The server answered the set and sent the message in one transaction, so
+      // reloading is what makes the form disappear and the prose appear
+      // together rather than one before the other.
+      await loadQuestionSets();
+    } catch (error) {
+      if (errorNode) {
+        errorNode.hidden = false;
+        errorNode.textContent = platformErrorMessage(error, "The answers were not accepted.");
+      }
+    } finally {
+      session.questionSubmitting = "";
+      renderQuestionSets();
+    }
+  }
+
+  async function loadQuestionSets() {
+    const team = selectedTeam();
+    if (!team) {
+      session.conversationQuestionSets = [];
+      renderQuestionSets();
+      return;
+    }
+    try {
+      const response = await platformRequest("list_team_question_sets", { teamId: team.id });
+      session.conversationQuestionSets = normalizeQuestionSets(response);
+    } catch {
+      // An unreadable list is not an empty one: leaving what is already on
+      // screen is better than removing a form a customer may be mid-way through.
+    }
+    renderQuestionSets();
+  }
+
+  // The wire shape, reduced to what the form needs and nothing else.
+  function normalizeQuestionSets(response) {
+    const sets = Array.isArray(response?.questionSets) ? response.questionSets : [];
+    return sets.map((set) => ({
+      id: stringValue(set?.id),
+      status: questionSetStatusName(set?.status),
+      questions: Array.isArray(set?.questions?.questions) ? set.questions.questions.map((question) => ({
+        id: stringValue(question?.id),
+        kind: questionKindName(question?.kind),
+        text: stringValue(question?.text),
+        required: Boolean(question?.required),
+        allowOther: Boolean(question?.allowOther),
+        options: Array.isArray(question?.options) ? question.options.map((option) => ({
+          id: stringValue(option?.id),
+          label: stringValue(option?.label),
+          description: stringValue(option?.description)
+        })) : []
+      })) : []
+    })).filter((set) => set.id && set.questions.length > 0);
+  }
+
+  function questionSetStatusName(value) {
+    return ({ 1: "open", 2: "answered", 3: "superseded" })[Number(value)] || "";
+  }
+
+  function questionKindName(value) {
+    return ({ 1: "single_choice", 2: "multiple_choice", 3: "text" })[Number(value)] || "";
   }
 
   // Before the first visible message, the SYSTEM rows already on the stream
