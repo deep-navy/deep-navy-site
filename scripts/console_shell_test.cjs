@@ -84,6 +84,26 @@ test("the rail opens with the account card, then the two named scopes", () => {
   }
 });
 
+test("the rail keeps its height when the crew arrives", () => {
+  // .cs-rail-nav is a flex column, so its children are flex ITEMS. .dn-nav sets
+  // height:32px, which reads like a floor and is not one — the default
+  // flex-shrink:1 compresses a flex item below its own height as soon as the
+  // column overflows. And the column overflows at a specific, guaranteed moment:
+  // when the team finishes provisioning and the six-strong crew roster appears
+  // at the foot of the rail. Every door above it lost height exactly when the
+  // customer's team came alive.
+  //
+  // The guarantee is written against the container, not a list of components, so
+  // a door added tomorrow inherits it rather than re-opening the bug.
+  assert.match(console_, /\.cs-rail-nav > \* \{ flex: none; \}/,
+    "every rail child must be unshrinkable");
+
+  // The nav must actually be able to scroll, or refusing to shrink just clips.
+  const nav = console_.slice(console_.indexOf(".cs-rail-nav {"), console_.indexOf("}", console_.indexOf(".cs-rail-nav {")));
+  assert.match(nav, /overflow-y:\s*auto/, "the rail scrolls rather than clipping");
+  assert.match(nav, /min-height:\s*0/, "a flex child needs min-height:0 before it can scroll");
+});
+
 test("the team crumb appears on team screens and nowhere else", () => {
   // An organization screen is not inside a team, so it does not get the team
   // crumb. Everything else does — including the two inline records, which

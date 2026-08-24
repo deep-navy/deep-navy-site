@@ -767,3 +767,20 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
    grid, where it spans columns 2..-1; here it sits inside a plain <li>, so the
    grid placement has to be undone or it collapses to nothing. */
 .economics-share { grid-column: auto; width: 100%; margin: var(--space-15) 0 var(--space-1); }
+
+/* ---- the rail does not compress ----
+   .cs-rail-nav is a flex column, so every child is a flex ITEM, and a flex item
+   shrinks below its own height by default. .dn-nav sets height:32px, which reads
+   like a floor and is not one: flex-shrink:1 overrides it the moment the column
+   runs out of room. The column runs out of room at a predictable moment — when
+   the team finishes provisioning and the six-strong crew roster appears at the
+   bottom of the rail — so every door above it silently lost height exactly when
+   the customer's team came alive.
+
+   Making every direct child unshrinkable is the fix, and it is deliberately
+   written against the container rather than against a list of components: a door
+   added to the rail tomorrow inherits the guarantee instead of re-opening the
+   bug. The nav already carries overflow-y:auto, so the correct overflow
+   behaviour was always available — it was just never reached, because the
+   children gave way first. */
+.cs-rail-nav > * { flex: none; }

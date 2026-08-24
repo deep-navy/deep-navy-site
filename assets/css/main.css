@@ -1917,3 +1917,20 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
   .settings-list dd { text-align: left; }
   .settings-actions .button { width: 100%; }
 }
+
+/* ---- scroll containers do not compress their contents ----
+   Both of these are flex columns with overflow-y:auto, which means their
+   children are flex items and shrink below their own height before the
+   container ever scrolls. The overflow rule was written, and never reached.
+
+   .console-thread is the worse of the two because it fails progressively: it is
+   capped at 56vh, so a conversation squashes every message a little more with
+   each reply the Product Manager sends. The surface the product exists to
+   deliver degrades in proportion to how well the product is working.
+
+   .mobile-menu nav carries the same 32px-tall doors as the rail, on the
+   viewport least able to spare the room.
+
+   Written against the containers so anything added inside them inherits it. */
+.mobile-menu nav > * { flex: none; }
+.console-thread > * { flex: none; }
