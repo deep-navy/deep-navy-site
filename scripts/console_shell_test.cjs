@@ -314,3 +314,26 @@ test("the rail ends with the team's crew and the person reading it", () => {
   assert.doesNotMatch(app, /ui\.userName\.textContent =/,
     "a single-element write would leave one of the two surfaces stale");
 });
+
+/* The floor's two columns.
+ *
+ * The conversation is the centre column and the crew is the rail beside it,
+ * because talking to the team is the work a customer does here — the crew, the
+ * stream and the repositories are context they glance at. This was the other way
+ * round, and a chat squeezed into a 380px rail reads as a side feature of its own
+ * product. */
+test("the conversation is the centre column and the crew is the rail", () => {
+  const floor = shell.slice(shell.indexOf('data-view="overview"'), shell.indexOf('data-view="agent"'));
+  const centre = floor.slice(floor.indexOf('class="cs-main"'), floor.indexOf('class="cs-side"'));
+  const rail = floor.slice(floor.indexOf('class="cs-side"'));
+
+  assert.match(centre, /aria-labelledby="console-title"/, "the conversation must be the centre column");
+  assert.doesNotMatch(rail, /aria-labelledby="console-title"/, "the conversation must not sit in the rail");
+  assert.match(rail, /aria-labelledby="agents-title"/, "the crew must be the rail");
+  assert.doesNotMatch(centre, /aria-labelledby="agents-title"/, "the crew must not sit in the centre");
+
+  // The decision a thread raised is answered in that thread, so the sign-off
+  // panel travels with the conversation rather than being stranded across the
+  // page from the message that raised it.
+  assert.match(centre, /aria-labelledby="signoff-title"/, "sign-off must stay beside the thread that raises it");
+});

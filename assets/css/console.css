@@ -446,7 +446,9 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
   border-left: var(--hairline) solid var(--border-subtle);
 }
 
-/* Two columns: the work, and the person you talk to about it. */
+/* Two columns: the person you talk to, and the team you are talking about.
+   The conversation is the centre because it is where a customer actually works
+   — the crew, the stream and the repositories are context they glance at. */
 .cs-cols {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -515,7 +517,10 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
 .cs-console-body {
   flex: 1;
   min-height: 0;
-  max-height: 560px;
+  /* The thread is the centre column now, so it gets the height that implies —
+     bounded by the viewport rather than a fixed figure, so a long conversation
+     fills a tall screen instead of scrolling inside a short box on all of them. */
+  max-height: min(64vh, 760px);
   overflow-y: auto;
   padding: var(--space-4);
   display: grid;

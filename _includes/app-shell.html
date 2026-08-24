@@ -561,13 +561,46 @@
               <!-- The crew, in the system's agent-card grammar. The rail lists
                    who is on the team; this says what each of them is doing
                    right now, which is the reason to keep this page open. -->
-              <section class="cs-panel" data-crew-panel aria-labelledby="agents-title">
-                <div class="cs-panel-head">
-                  <span class="dn-eyebrow" id="agents-title">The crew</span>
-                  <span class="cs-panel-meta" data-agents-state></span>
+              <section class="dn-card cs-console" aria-labelledby="console-title">
+                <div class="cs-console-head">
+                  <span class="dn-avatar dn-avatar--sm" data-console-plate data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" aria-hidden="true">PM</span>
+                  <span class="cs-console-id">
+                    <span class="cs-console-title" id="console-title" data-console-title>Your Product Manager</span>
+                    <span class="cs-console-meta" data-conversation-state>Waiting for a team</span>
+                  </span>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-format aria-pressed="false">Markdown</button>
+                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-retry hidden>Reconnect</button>
                 </div>
-                <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
-                <div class="cs-crew dn-stagger" data-agent-list aria-live="polite" hidden></div>
+                <div class="cs-console-body">
+                  <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p>
+                    <div class="console-briefing" data-conversation-briefing hidden><span class="console-briefing-label" data-conversation-briefing-label></span><div class="console-briefing-body" data-conversation-briefing-body></div></div></div>
+                  <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
+                  <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
+                  <!-- The decision, opened in the thread it was raised in.
+                       The queue keeps the full list; this card carries the one
+                       the customer walked in to answer, rendered from the same
+                       validated approval objects by the same render pass — so
+                       the two surfaces can never disagree. -->
+                  <section class="signoff" data-signoff-card hidden aria-labelledby="signoff-title">
+                    <div class="signoff-head">
+                      <h4 id="signoff-title">Needs you</h4>
+                    </div>
+                    <ol class="signoff-list" data-signoff-list></ol>
+                    <p class="signoff-locking dn-livebar" data-signoff-locking hidden><span class="signoff-chip" data-tone="signed"><span class="signoff-tick" aria-hidden="true">✓</span>&nbsp;Signed</span><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
+                  </section>
+                </div>
+                <form class="cs-console-form" data-conversation-form>
+                  <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
+                  <div class="objective-field console-field">
+                    <textarea class="dn-input dn-textarea" id="conversation-text" name="conversationText" maxlength="4000" rows="2" placeholder="Tell your Product Manager what matters next." required disabled></textarea>
+                    <div class="objective-foot">
+                      <span class="objective-key" aria-hidden="true">⌘↵</span>
+                      <button class="dn-btn dn-btn--primary dn-btn--sm" type="submit" disabled>Send</button>
+                    </div>
+                  </div>
+                  <p class="dn-field__hint" data-conversation-hint>The conversation opens when your team finishes setting up.</p>
+                  <p class="form-error" data-conversation-error role="alert" hidden></p>
+                </form>
               </section>
 
               <!-- Initiatives under this objective. One row per initiative in
@@ -633,52 +666,24 @@
               </section>
             </div>
 
-            <aside class="cs-side" aria-label="The Product Manager and the stream">
+            <aside class="cs-side" aria-label="The crew and the stream">
               <!-- The Product Manager's channel, and the decision that needs
                    you inside it. A decision does not get a screen of its own:
                    it is answered where it was raised, in the thread that
                    raised it, which is why the Decisions surface sends you back
-                   here rather than opening a second inbox. -->
-              <section class="dn-card cs-console" aria-labelledby="console-title">
-                <div class="cs-console-head">
-                  <span class="dn-avatar dn-avatar--sm" data-console-plate data-role-key="AGENT_ROLE_TECHNICAL_PRODUCT_MANAGER" aria-hidden="true">PM</span>
-                  <span class="cs-console-id">
-                    <span class="cs-console-title" id="console-title" data-console-title>Your Product Manager</span>
-                    <span class="cs-console-meta" data-conversation-state>Waiting for a team</span>
-                  </span>
-                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-format aria-pressed="false">Markdown</button>
-                  <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-conversation-retry hidden>Reconnect</button>
+                   here rather than opening a second inbox.
+
+                   This is the centre column because talking to the team is the
+                   work. The crew, the stream and the repositories sit in the
+                   rail beside it: they are what you glance at, not what you
+                   do. -->
+              <section class="cs-panel" data-crew-panel aria-labelledby="agents-title">
+                <div class="cs-panel-head">
+                  <span class="dn-eyebrow" id="agents-title">The crew</span>
+                  <span class="cs-panel-meta" data-agents-state></span>
                 </div>
-                <div class="cs-console-body">
-                  <div class="empty-state" data-conversation-empty><strong>Your team is assembling</strong><p>Your Product Manager will open the conversation when the team is ready.</p>
-                    <div class="console-briefing" data-conversation-briefing hidden><span class="console-briefing-label" data-conversation-briefing-label></span><div class="console-briefing-body" data-conversation-briefing-body></div></div></div>
-                  <ol class="console-thread" data-conversation-thread aria-live="polite" aria-relevant="additions" hidden></ol>
-                  <p class="console-typing" data-conversation-typing hidden><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span data-conversation-typing-copy>Your Product Manager is replying…</span></p>
-                  <!-- The decision, opened in the thread it was raised in.
-                       The queue keeps the full list; this card carries the one
-                       the customer walked in to answer, rendered from the same
-                       validated approval objects by the same render pass — so
-                       the two surfaces can never disagree. -->
-                  <section class="signoff" data-signoff-card hidden aria-labelledby="signoff-title">
-                    <div class="signoff-head">
-                      <h4 id="signoff-title">Needs you</h4>
-                    </div>
-                    <ol class="signoff-list" data-signoff-list></ol>
-                    <p class="signoff-locking dn-livebar" data-signoff-locking hidden><span class="signoff-chip" data-tone="signed"><span class="signoff-tick" aria-hidden="true">✓</span>&nbsp;Signed</span><span class="console-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Locking the discussion as the signed record…</span></p>
-                  </section>
-                </div>
-                <form class="cs-console-form" data-conversation-form>
-                  <label class="visually-hidden" for="conversation-text">Message your Product Manager</label>
-                  <div class="objective-field console-field">
-                    <textarea class="dn-input dn-textarea" id="conversation-text" name="conversationText" maxlength="4000" rows="2" placeholder="Tell your Product Manager what matters next." required disabled></textarea>
-                    <div class="objective-foot">
-                      <span class="objective-key" aria-hidden="true">⌘↵</span>
-                      <button class="dn-btn dn-btn--primary dn-btn--sm" type="submit" disabled>Send</button>
-                    </div>
-                  </div>
-                  <p class="dn-field__hint" data-conversation-hint>The conversation opens when your team finishes setting up.</p>
-                  <p class="form-error" data-conversation-error role="alert" hidden></p>
-                </form>
+                <div class="empty-state" data-agents-empty><strong>No crew yet</strong><p>Your roster appears the moment setup finishes.</p></div>
+                <div class="cs-crew dn-stagger" data-agent-list aria-live="polite" hidden></div>
               </section>
 
               <!-- The stream, beside the work it narrates. Rows are the
