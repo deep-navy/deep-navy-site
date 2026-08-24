@@ -3457,6 +3457,12 @@
     resetConversationView("Connecting to the conversation with your Product Manager.", "Connecting", "loading", "Your Product Manager is getting set up");
     startActivityStream(team.id, generation);
     startConversationStream(team.id, generation);
+    // The interview is a list rather than a stream: a question set changes when
+    // an agent asks or a customer answers, and both of those already reload it.
+    // Opening the team is the third case, and the only one nothing else covers.
+    session.conversationQuestionSets = [];
+    session.questionDraft.clear();
+    void loadQuestionSets();
     // Money moves whenever agents work, which is the whole time the team is
     // selected — so the ledger stream opens with the team, like activity, and
     // unlike provisioning, which only follows an operation still in flight.
@@ -6006,6 +6012,11 @@
     session.conversationSending = false;
     ui.conversationThread.replaceChildren();
     ui.conversationThread.hidden = true;
+    // A form belongs to the team that raised it. Left behind on a switch it
+    // would ask the new team's customer the old team's questions.
+    session.conversationQuestionSets = [];
+    session.questionDraft.clear();
+    renderQuestionSets();
     ui.conversationTyping.hidden = true;
     ui.conversationEmpty.hidden = false;
     setEmptyState(ui.conversationEmpty, title, message);

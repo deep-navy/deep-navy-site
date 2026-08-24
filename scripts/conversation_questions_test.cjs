@@ -100,3 +100,15 @@ test("the customer surface never says prompt", () => {
   assert.doesNotMatch(app, /prompt/i);
   assert.match(app, /text: stringValue\(question\?\.text\)/);
 });
+
+test("the interview loads when the team opens and clears when it closes", () => {
+  // Nothing streams a question set: an agent asking and a customer answering
+  // both reload it, and opening a team is the third case nothing else covers.
+  assert.match(app, /void loadQuestionSets\(\)/,
+    "the form is never loaded, so it would never appear");
+  const reset = body("function resetConversationView");
+  assert.match(reset, /session\.conversationQuestionSets = \[\]/,
+    "a form left behind on a team switch asks the new team's customer the old team's questions");
+  assert.match(reset, /session\.questionDraft\.clear\(\)/,
+    "a draft left behind carries one customer's half-made choices into another team");
+});
