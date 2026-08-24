@@ -237,6 +237,7 @@
     // The Activity, Runs, People and Billing screens. Every hook below is a
     // container a render fills; none of them holds a value the markup shipped,
     // so a screen can never show a figure no response confirmed.
+    activityFullRecord: document.querySelector("[data-activity-full-record]"),
     activityScreenState: document.querySelector("[data-activity-screen-state]"),
     activityScreenRetry: document.querySelector("[data-activity-screen-retry]"),
     activityScreenCount: document.querySelector("[data-activity-screen-count]"),
@@ -6979,12 +6980,17 @@
   }
 
   /* ── Activity ───────────────────────────────────────────────────────────
-     The same buffer the floor's log renders, at full width. This screen holds
-     no data and opens no stream: renderActivityLedger sorts and filters once
-     and hands the result here, so a count, a filter and a row can never
-     disagree between the two surfaces. Its own chrome — the stream's state
-     word and the reconnect door — is mirrored from what that render already
-     wrote, the way app-views.js mirrors the rail's scope headings. */
+     The whole record, at full width, filtered. The floor shows the newest turns
+     of the same buffer and nothing else — this is the surface that holds every
+     one of them, the filters, and the controls that page further back.
+
+     It holds no data and opens no stream: renderActivityLedger sorts and filters
+     once and hands the result here, so a count, a filter and a row can never
+     disagree between the two surfaces. Its own chrome — the stream's state word
+     and the reconnect door — is mirrored from what that render already wrote,
+     the way app-views.js mirrors the rail's scope headings. The stream state is
+     a property of the connection rather than of either surface, which is why one
+     can be read off the other. */
   function renderActivityScreen(shown, entries, allEntries, arrived) {
     if (!ui.activityScreenList || !ui.activityScreenEmpty) return;
     if (ui.activityScreenState && ui.activityState) {
@@ -7110,9 +7116,13 @@
     const oldest = times.length ? new Date(Math.min(...times)) : null;
     host.replaceChildren(calloutCard({
       title: oldest ? `Back to ${relativeTime(oldest)}` : "As far back as your team goes",
+      // The controls beside this panel reach further back into sessions, code
+      // and delivery, so this can no longer say "nothing older to load" flatly:
+      // the STREAM has nothing older, and the merged sources do. Saying only the
+      // first half next to four "Older ..." buttons would read as a contradiction.
       body: oldest
-        ? `Everything this team has done since it was set up is on this screen — the platform replays the whole record when the stream opens, so there is no older page to load. What is not here has not happened yet.`
-        : `The platform replays this team's whole record when the stream opens, so when there is something to show, all of it is here at once. There is no older page to load.`
+        ? `The activity stream replays this team's whole record when it opens, so nothing older is waiting behind it. Sessions, code changes and delivery are merged in from their own histories, and the controls above reach further into those.`
+        : `The activity stream replays this team's whole record when it opens, so when there is something to show, all of it arrives at once.`
     }));
   }
 
@@ -11972,6 +11982,31 @@
     return item;
   }
 
+  /* The floor and the full record show ONE buffer at two depths, and the split
+     is what makes each of them worth opening.
+
+     The floor sits beside the crew and the conversation, where the question is
+     "what is happening now". So it takes the newest turns, unfiltered, and
+     offers a door instead of controls. The Activity screen answers "what has
+     this team done", which needs the whole record, the filters, and the paging
+     that loads more of it — which is why the "older" controls live there now.
+
+     Before this they rendered the same array. Identical rows on two routes, one
+     of them copying the other's status text out of the DOM: not redundancy a
+     reader benefits from, just a second place to look that never held anything
+     the first did not. */
+  const FLOOR_ACTIVITY_TURNS = 20;
+
+  // One row per agent turn. Tool calls belong to the turn that made them, so
+  // they fold in as evidence rather than listing as peers of the work they
+  // served.
+  function activityTurnRows(entries) {
+    return groupActivityTurns(entries).map((turn) => {
+      const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
+      return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
+    });
+  }
+
   function renderActivityLedger() {
     renderActivityFilters();
     refreshCrewActivity();
@@ -11980,41 +12015,49 @@
     // repaint on the same beat the ledger does.
     renderDashboardCharts();
     const allEntries = allActivityEntries();
+    // The filter belongs to the full record alone. The floor is never filtered:
+    // it is the tail of everything, so a category chosen on the other screen can
+    // never leave the floor looking idle while the team is working.
     const entries = session.activityFilter === "all" ? allEntries : allEntries.filter((entry) => entry.category === session.activityFilter);
-    ui.activityList.replaceChildren();
-    // One entry per agent turn. Tool calls belong to the turn that made them,
-    // so they are folded in as evidence rather than listed as peers of the
-    // work they served.
-    const turns = groupActivityTurns(entries);
-    const shown = turns.map((turn) => {
-      const lead = turn.entries.find((entry) => entry.category !== "tools") || turn.entries[0];
-      return { entry: lead, evidence: turn.speaker ? toolEvidence(turn.entries) : "" };
-    });
-    // Both surfaces paint the same rows, so the arrival marks are read from
-    // one snapshot taken before either does: the floor consumes them below,
-    // and the Activity screen is handed the copy, so the row that just landed
-    // rises on whichever of the two the reader is actually looking at.
+    const record = activityTurnRows(entries);
+    const allTurns = activityTurnRows(allEntries);
+    const tail = allTurns.slice(0, FLOOR_ACTIVITY_TURNS);
+
+    // Both surfaces paint from one snapshot of the arrival marks, taken before
+    // either renders, so the row that just landed rises on whichever of the two
+    // the reader is actually looking at.
     const arrived = new Set(session.freshActivityIds);
-    shown.forEach(({ entry, evidence }) => {
+    ui.activityList.replaceChildren();
+    tail.forEach(({ entry, evidence }) => {
       const item = activityLedgerItem(entry, evidence);
       // A row the stream just delivered rises and flashes once (.dn-in-log).
-      // The mark is consumed here, on its first paint, so re-renders — a
-      // filter change, a projection refresh — can never replay the motion.
       if (session.freshActivityIds.has(entry.id)) {
         item.classList.add("dn-in-log");
         session.freshActivityIds.delete(entry.id);
       }
       ui.activityList.append(item);
     });
-    ui.activityEmpty.hidden = entries.length > 0;
-    ui.activityList.hidden = entries.length === 0;
-    if (!entries.length && allEntries.length) {
-      const filterLabel = ui.activityFilterButtons.find((button) => button.dataset.activityFilter === session.activityFilter)?.childNodes[0]?.textContent?.trim() || "selected";
-      setEmptyState(ui.activityEmpty, `Nothing under ${filterLabel.toLowerCase()} yet`, "Your team has not produced anything in this category. Try All to see everything they have done.");
-    } else if (!entries.length) {
+    // Marks for rows that fell outside the tail are consumed here rather than
+    // left behind. The floor no longer paints every row, so a burst larger than
+    // the tail would otherwise keep those ids alive and replay their motion on
+    // the full record at every later render.
+    session.freshActivityIds.clear();
+
+    ui.activityEmpty.hidden = tail.length > 0;
+    ui.activityList.hidden = tail.length === 0;
+    if (!tail.length) {
       setEmptyState(ui.activityEmpty, "No activity yet", "The selected team has no customer-safe events or source snapshots yet.");
     }
-    renderActivityScreen(shown, entries, allEntries, arrived);
+    // The door appears only when it leads somewhere the floor is not already
+    // showing, and says how much more is through it.
+    if (ui.activityFullRecord) {
+      const older = allTurns.length - tail.length;
+      ui.activityFullRecord.hidden = older <= 0;
+      ui.activityFullRecord.textContent = older > 0
+        ? `Open full record · ${new Intl.NumberFormat().format(older)} older`
+        : "Open full record";
+    }
+    renderActivityScreen(record, entries, allEntries, arrived);
   }
 
   // Setup states are enum names - "succeeded", "waiting for gateway" - and the

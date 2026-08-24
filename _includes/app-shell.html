@@ -690,29 +690,12 @@
                   <span class="cs-panel-meta cs-stream" data-activity-state>Waiting for a team</span>
                   <button class="dn-btn dn-btn--ghost dn-btn--sm cs-panel-door" type="button" data-activity-retry hidden>Reconnect</button>
                 </div>
-                <div class="dn-seg cs-filters" data-activity-filters role="toolbar" aria-label="Filter team activity">
-                  <button class="dn-seg__item" type="button" data-activity-filter="all" aria-pressed="true">All <span data-activity-filter-count="all">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="conversations" aria-pressed="false">Agent to agent <span data-activity-filter-count="conversations">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="sessions" aria-pressed="false">Sessions <span data-activity-filter-count="sessions">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="tools" aria-pressed="false">Tools <span data-activity-filter-count="tools">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="workspace" aria-pressed="false">Code <span data-activity-filter-count="workspace">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="delivery" aria-pressed="false">Issues and PRs <span data-activity-filter-count="delivery">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="approvals" aria-pressed="false">Approvals <span data-activity-filter-count="approvals">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="provisioning" aria-pressed="false">Setup <span data-activity-filter-count="provisioning">0</span></button>
-                  <button class="dn-seg__item" type="button" data-activity-filter="cost" aria-pressed="false">Cost <span data-activity-filter-count="cost">0</span></button>
-                </div>
+                
                 <div class="activity-workspace">
                   <div class="empty-state" data-activity-empty><strong>Nothing yet</strong><p>Every plan, code change, review and pull request appears here as it happens. It starts when you tell your Product Manager what matters.</p><a class="dn-btn dn-btn--secondary dn-btn--sm" href="#workspace-overview" data-view-link="overview" data-activity-console-link hidden>Talk to your Product Manager</a></div>
                   <ol class="dn-card dn-livebar customer-activity-list" data-activity-list aria-live="polite" aria-relevant="additions" hidden></ol>
-                  <div class="activity-more" aria-label="Load older activity">
-                    <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
-                    <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
-                    <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
-                    <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
-                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-sessions-more hidden>Older sessions</button>
-                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-workspace-more hidden>Older code changes</button>
-                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-issues-more hidden>Older issues</button>
-                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-pull-requests-more hidden>Older pull requests</button>
+                  <div class="activity-more">
+                    <a class="dn-btn dn-btn--ghost dn-btn--sm" href="#workspace-activity" data-view-link="activity" data-activity-full-record hidden>Open full record</a>
                   </div>
                 </div>
               </section>
@@ -1150,6 +1133,16 @@
                 <div class="activity-workspace">
                   <div data-activity-screen-empty></div>
                   <ol class="dn-card dn-livebar customer-activity-list cs-ledger" data-activity-screen-list aria-live="polite" aria-relevant="additions" hidden></ol>
+                  <div class="activity-more" aria-label="Load older activity">
+                    <span class="visually-hidden" data-session-history-state>Waiting for a team</span>
+                    <span class="visually-hidden" data-workspace-history-state>Waiting for a team</span>
+                    <span class="visually-hidden" data-delivery-history-state>Waiting for a team</span>
+                    <label class="visually-hidden"><span>Delivery repository</span><select data-delivery-repository aria-label="Delivery repository" disabled><option value="">No selected repository</option></select></label>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-sessions-more hidden>Older sessions</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-workspace-more hidden>Older code changes</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-issues-more hidden>Older issues</button>
+                    <button class="dn-btn dn-btn--ghost dn-btn--sm" type="button" data-pull-requests-more hidden>Older pull requests</button>
+                  </div>
                 </div>
               </section>
             </div>

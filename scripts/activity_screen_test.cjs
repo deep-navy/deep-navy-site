@@ -44,14 +44,32 @@ test("the screen renders the team stream, which is the only activity a browser c
   assert.doesNotMatch(client, /activity\.list/i);
   assert.doesNotMatch(screen(), /data-activity-screen-more|Load \d+ more/);
   const reach = renderer("renderActivityReach", "calloutCard");
-  assert.match(reach, /no older page to load/);
+  assert.match(reach, /nothing older is waiting behind it/);
 });
 
-test("one buffer paints both surfaces, and the arrival mark is shared not stolen", () => {
+test("one buffer paints both surfaces at DIFFERENT depths, and the arrival mark is shared not stolen", () => {
   const ledger = app.slice(app.indexOf("function renderActivityLedger()"), app.indexOf("const SETUP_SENTENCE"));
   assert.match(ledger, /const arrived = new Set\(session\.freshActivityIds\)/,
     "the mark must be snapshotted before the floor consumes it");
-  assert.match(ledger, /renderActivityScreen\(shown, entries, allEntries, arrived\)/);
+  assert.match(ledger, /renderActivityScreen\(record, entries, allEntries, arrived\)/);
+
+  /* The split is the reason both surfaces exist. The floor takes the newest
+     turns of EVERYTHING; the screen takes the whole filtered record. If the
+     floor ever renders the filtered set again, the two collapse back into the
+     same rows on two routes — which is what this page was before. */
+  assert.match(ledger, /const tail = allTurns\.slice\(0, FLOOR_ACTIVITY_TURNS\)/,
+    "the floor must render a bounded tail, not the whole record");
+  assert.match(ledger, /const allTurns = activityTurnRows\(allEntries\)/,
+    "the floor's tail must come from ALL entries, never the filtered set");
+  const floorPaint = ledger.slice(ledger.indexOf("ui.activityList.replaceChildren()"), ledger.indexOf("ui.activityEmpty.hidden"));
+  assert.match(floorPaint, /tail\.forEach/, "the floor must paint the tail");
+  assert.doesNotMatch(floorPaint, /(?:entries|record)\.forEach/,
+    "the floor must not paint the filtered set: a filter chosen on the other screen would blank the floor");
+
+  // A burst larger than the tail leaves marks the floor never painted. Left
+  // alive they replay their motion on the full record at every later render.
+  assert.match(ledger, /session\.freshActivityIds\.clear\(\)/,
+    "marks outside the tail must be consumed, not abandoned");
   const marks = ledger.indexOf('classList.add("dn-in-log")');
   const consumes = ledger.indexOf("freshActivityIds.delete");
   assert.ok(marks !== -1 && consumes !== -1 && marks < consumes);
@@ -64,12 +82,24 @@ test("one buffer paints both surfaces, and the arrival mark is shared not stolen
   assert.doesNotMatch(screenRender, /innerHTML|outerHTML|insertAdjacentHTML/);
 });
 
-test("one filter state drives both toolbars, through one delegated listener", () => {
+test("the filters belong to the full record alone, and the floor carries a door instead", () => {
+  /* Filtering is what the full record is FOR. The floor answers "what is
+     happening now", which a category filter cannot improve — and a filter left
+     on the floor would let a choice made on the other screen leave the floor
+     reading idle while the team was working. So there is exactly one toolbar,
+     and the floor offers a way through to it. */
   const markup = shell;
-  assert.equal(markup.match(/data-activity-filters/g).length, 2);
+  assert.equal(markup.match(/data-activity-filters/g).length, 1, "the filters must live on exactly one surface");
+  const floor = markup.slice(markup.indexOf('data-view="overview"'), markup.indexOf('data-view="agent"'));
+  const record = markup.slice(markup.indexOf('data-view="activity"'), markup.indexOf("<!-- ===== RUNS"));
+  assert.doesNotMatch(floor, /data-activity-filters/, "the floor must not carry the filters");
+  assert.match(record, /data-activity-filters/, "the full record must carry the filters");
+  assert.match(floor, /data-activity-full-record/, "the floor must offer a door to the full record");
+  assert.match(record, /data-sessions-more/, "the controls that page further back belong with the full record");
+  assert.doesNotMatch(floor, /data-sessions-more/, "a live tail has nothing to page");
   for (const category of ["all", "conversations", "sessions", "tools", "workspace", "delivery", "approvals", "provisioning", "cost"]) {
-    assert.equal(markup.match(new RegExp(`data-activity-filter="${category}"`, "g")).length, 2,
-      `${category} must exist on both toolbars`);
+    assert.equal(markup.match(new RegExp(`data-activity-filter="${category}"`, "g")).length, 1,
+      `${category} must exist on exactly one toolbar`);
   }
   assert.match(app, /document\.addEventListener\("click", changeActivityFilter\)/);
   assert.match(app, /const button = event\.target instanceof Element \? event\.target\.closest\("\[data-activity-filter\]"\) : null/,

@@ -190,12 +190,13 @@ test("the four new screens ship containers, never a figure the markup invented",
     const close = rest.indexOf("<", open);
     assert.equal(rest.slice(open + 1, close).trim(), "", `${hook} ships content the markup invented`);
   }
-  // The floor's log and the Activity screen carry the same filter names, so
-  // one filter state drives both and the two can never disagree.
-  assert.equal(shell.match(/data-activity-filters/g).length, 2);
+  // Filtering belongs to the full record; the floor is an unfiltered live tail
+  // with a door through to it. One toolbar, so there is no second filter state
+  // to disagree with the first.
+  assert.equal(shell.match(/data-activity-filters/g).length, 1);
   for (const category of ["all", "sessions", "workspace", "delivery", "cost"]) {
-    assert.equal(shell.match(new RegExp(`data-activity-filter="${category}"`, "g")).length, 2,
-      `${category} must be a chip on both surfaces`);
+    assert.equal(shell.match(new RegExp(`data-activity-filter="${category}"`, "g")).length, 1,
+      `${category} must be a chip on the full record, and only there`);
   }
 });
 
