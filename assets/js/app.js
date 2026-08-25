@@ -500,6 +500,9 @@
     // form at the end of the thread; the rest are history the thread already
     // shows as prose.
     conversationQuestionSets: [],
+    // The team whose question list is currently being polled. Compared by the
+    // poll on every tick so a team switch retires the old loop.
+    questionSetPollTeamId: "",
     questionDraft: new Map(),
     questionSubmitting: "",
     conversationById: new Map(),
@@ -3457,12 +3460,21 @@
     resetConversationView("Connecting to the conversation with your Product Manager.", "Connecting", "loading", "Your Product Manager is getting set up");
     startActivityStream(team.id, generation);
     startConversationStream(team.id, generation);
-    // The interview is a list rather than a stream: a question set changes when
-    // an agent asks or a customer answers, and both of those already reload it.
-    // Opening the team is the third case, and the only one nothing else covers.
+    // The interview is a list, not a stream, and recording a question set
+    // publishes no event - so unlike everything else on this screen it does not
+    // arrive on its own. Three things fetch it: opening the team (here), a
+    // conversation message arriving, and the customer answering a set.
+    //
+    // None of those fire when an agent asks and says nothing alongside it, which
+    // is exactly what the Product Manager is told to do - ask, then end the
+    // turn. So the list is also polled while the team is open. A poll is against
+    // the grain of this console, which subscribes to everything else; it is here
+    // because the alternative is a customer sitting in front of a thread with a
+    // form waiting behind it and no way to learn that.
     session.conversationQuestionSets = [];
     session.questionDraft.clear();
     void loadQuestionSets();
+    startQuestionSetPoll(team.id);
     // Money moves whenever agents work, which is the whole time the team is
     // selected — so the ledger stream opens with the team, like activity, and
     // unlike provisioning, which only follows an operation still in flight.
@@ -5806,6 +5818,25 @@
     } finally {
       session.questionSubmitting = "";
       renderQuestionSets();
+    }
+  }
+
+  // Slow on purpose. This exists to catch an ask that arrived with nothing said
+  // alongside it, and the customer is reading a thread rather than waiting on a
+  // spinner - a message arriving already refreshes the list immediately.
+  const QUESTION_SET_POLL_MS = 20000;
+
+  // startQuestionSetPoll follows the selected team the way the streams do: it
+  // exits as soon as the selection moves, so switching teams cannot leave a
+  // second one running against a team nobody is looking at.
+  async function startQuestionSetPoll(teamId) {
+    session.questionSetPollTeamId = teamId;
+    while (true) {
+      await new Promise((resolve) => window.setTimeout(resolve, QUESTION_SET_POLL_MS));
+      if (session.questionSetPollTeamId !== teamId) return;
+      if (selectedTeam()?.id !== teamId) return;
+      if (document.hidden) continue;
+      await loadQuestionSets();
     }
   }
 
@@ -11657,6 +11688,19 @@
         session.conversationStreamLive = true;
         renderConversation();
         setSourceState(ui.conversationState, "Live", "success");
+        // Recording a question set publishes nothing on this stream - it is
+        // stored and returned to the agent - so an open console had no way to
+        // learn a form was waiting. It appeared only on the next team open,
+        // which for a customer already watching the thread is never: the
+        // Product Manager asked, the page showed the turn around the ask, and
+        // the form itself stayed invisible.
+        //
+        // An agent that asks almost always says something in the same turn, so
+        // a message arriving is the signal available today. It is a proxy, not
+        // the event: an ask with nothing said alongside it still waits for the
+        // poll below. The honest fix is a question-set event on this stream,
+        // which is a proto change and a pin bump in three consumers.
+        void loadQuestionSets();
       }
       if (!controller.signal.aborted && generation === session.workspaceGeneration) {
         session.conversationStreamLive = false;

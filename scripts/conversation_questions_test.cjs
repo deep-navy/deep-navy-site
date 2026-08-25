@@ -112,3 +112,36 @@ test("the interview loads when the team opens and clears when it closes", () => 
   assert.match(reset, /session\.questionDraft\.clear\(\)/,
     "a draft left behind carries one customer's half-made choices into another team");
 });
+
+// A question set arrives with no event of its own: recording one stores it and
+// returns it to the agent, publishing nothing on the conversation stream. So
+// the console has to go and look, and for a long time it only looked when a
+// team was opened - which for a customer already watching the thread never
+// happens again. The Product Manager asked, the page showed the turn, and the
+// form stayed invisible behind it.
+test("the console refetches question sets without being told one was asked", () => {
+  const source = app;
+
+  // A message arriving is the immediate signal - an agent that asks almost
+  // always says something in the same turn.
+  const acceptIndex = source.indexOf("acceptConversationMessage(message);");
+  assert.ok(acceptIndex > 0, "the conversation stream must accept messages");
+  const streamHandler = source.slice(acceptIndex, acceptIndex + 1400);
+  assert.ok(
+    streamHandler.includes("loadQuestionSets()"),
+    "a conversation message must refetch the question list, or a form asked mid-thread never appears",
+  );
+
+  // And a poll for the ask that says nothing, which is what the Product
+  // Manager's mission actually instructs: ask, then end the turn.
+  assert.ok(source.includes("startQuestionSetPoll(team.id)"), "opening a team must start the question poll");
+  assert.match(source, /const QUESTION_SET_POLL_MS = \d+;/, "the poll interval must be a named constant");
+
+  // The poll must retire when the selection moves, or switching teams leaves
+  // one running against a team nobody is looking at.
+  const poll = source.slice(source.indexOf("async function startQuestionSetPoll"));
+  const body = poll.slice(0, poll.indexOf("\n  async function loadQuestionSets"));
+  assert.ok(body.includes("session.questionSetPollTeamId !== teamId"), "the poll must stop when another team starts polling");
+  assert.ok(body.includes("selectedTeam()?.id !== teamId"), "the poll must stop when the selection moves");
+  assert.ok(body.includes("document.hidden"), "a hidden tab should not poll");
+});
