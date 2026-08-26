@@ -151,3 +151,20 @@ test("agent notes render and unknown event types skip instead of killing the str
   assert.doesNotMatch(source, /took \$\{record\.attempt\} attempts/);
   assert.doesNotMatch(source, /`attempt \$\{record\.attempt\}`/);
 });
+
+// Day one on a real team read "10,000 credits used ($100.00)" seconds after it
+// was created, with no hint of where that came from. It is correct: a team's
+// monthly runtime is levied once at provisioning - $75 of cost, 10,000 credits,
+// $100 to the customer at the plan's margin - and it is the whole number until
+// the agents have done anything. Left unexplained it is the biggest figure on
+// the screen and reads as work nobody can account for.
+test("the credits line says why a new team has already spent", () => {
+  const detail = app.slice(app.indexOf('id: `cost:${teamId}`'));
+  const block = detail.slice(0, detail.indexOf("occurredAt"));
+  assert.match(block, /monthly runtime is charged once when it starts/,
+    "the customer must be told where a new team's spend comes from");
+  assert.match(block, /rather than work its agents have done/,
+    "and told plainly that it is not agent work");
+  // The staleness caveat earned its place separately; do not lose it.
+  assert.match(block, /Measured at a point in time/);
+});

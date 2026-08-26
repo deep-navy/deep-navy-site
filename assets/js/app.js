@@ -9310,7 +9310,14 @@
       // Saying what this is beats saying what it is not. The old line denied
       // being a live feed, which answers a question nobody asked and leaves the
       // real one - how current is this number? - unanswered.
-      detail: "A measurement taken at a point in time, so the newest work may not be counted yet.",
+      //
+      // It also has to answer the question a customer actually asks on day one:
+      // why does a team that has done nothing show $100 spent? Because a team's
+      // monthly runtime is levied once at provisioning (controller.go,
+      // idempotency key team-runtime:<org>:<team>:<rate>) - 10,000 credits of
+      // the organization's pool. Without that sentence the biggest number on
+      // the screen reads as agent work the customer cannot account for.
+      detail: "A team's monthly runtime is charged once when it starts, so a new team's total is mostly that rather than work its agents have done. Measured at a point in time, so the newest work may not be counted yet.",
       status: "measured",
       sequenceLabel: "Snapshot",
       occurredAt: economics.measuredAt
