@@ -770,7 +770,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "0674a18bffc7092403c48f93295c4793ba28f977" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "d0a67e786db8ad76667bcaec97e64db72c42878b" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
