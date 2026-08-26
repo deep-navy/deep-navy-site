@@ -186,3 +186,40 @@ test("a failed question fetch is reported rather than swallowed", () => {
   assert.match(body, /console\.error/, "and it must reach the browser console");
   assert.match(app, /Questions unavailable/, "the view must say so instead of rendering nothing");
 });
+
+// A customer typing an answer had the field lose focus and the page jump. The
+// 20-second poll called renderQuestionSets, which calls replaceChildren, which
+// destroys the element being typed into - every twenty seconds, and again on
+// every message the Product Manager sent. Clicking an option rebuilt the whole
+// form too. The drafts survived in session; the DOM they were typed into did
+// not, which is the part a person actually experiences.
+test("polling does not rebuild the form a customer is typing into", () => {
+  const source = app;
+
+  // A render whose inputs have not changed must do nothing at all.
+  assert.match(source, /function questionRenderSignature\(/);
+  assert.match(source, /if \(!force && signature === session\.questionRenderSignature/,
+    "an unchanged signature must return before replaceChildren");
+
+  // The signature must NOT include the drafts, or every keystroke rebuilds the
+  // field being typed into - the exact bug, arrived at from the other side.
+  const sig = source.slice(source.indexOf("function questionRenderSignature("));
+  const sigBody = sig.slice(0, sig.indexOf("\n  }"));
+  assert.doesNotMatch(sigBody, /questionDraft|readQuestionDraft/,
+    "keystrokes must not invalidate the render signature");
+
+  // Clicking an option paints natively; only the submit button depends on it.
+  const optionHandler = source.slice(source.indexOf('input.addEventListener("change"'));
+  // Fixed window rather than the first "});" - the option list is built with a
+  // nested ternary whose closing brace arrives before the handler's own.
+  const handlerBody = optionHandler.slice(0, optionHandler.indexOf("writeQuestionDraft") + 600);
+  assert.doesNotMatch(handlerBody, /renderQuestionSets\(/,
+    "an option click must not rebuild the form");
+  assert.match(handlerBody, /syncQuestionSubmit\(set\)/);
+
+  // When a rebuild is genuinely required, put the customer back where they were.
+  assert.match(source, /data-question-field/, "fields need stable ids to restore focus to");
+  assert.match(source, /restored\.focus\(\)/);
+  assert.match(source, /setSelectionRange\(selectionStart, selectionStart\)/,
+    "and the caret goes back where it was, not to the end");
+});

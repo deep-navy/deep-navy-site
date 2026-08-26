@@ -505,6 +505,8 @@
     questionSetPollTeamId: "",
     // Last failure from list_team_question_sets, rendered rather than swallowed.
     questionSetsError: "",
+    // What the form was last built from, so an unchanged poll rebuilds nothing.
+    questionRenderSignature: "",
     questionDraft: new Map(),
     questionSubmitting: "",
     conversationById: new Map(),
@@ -5662,6 +5664,7 @@
     input.type = single ? "radio" : "checkbox";
     input.name = `${set.id}-${question.id}`;
     input.value = option.id;
+    input.setAttribute("data-question-field", `${set.id}::${question.id}::${option.id}`);
     const draft = readQuestionDraft(set.id, question.id);
     input.checked = draft.optionIds.includes(option.id);
     input.addEventListener("change", () => {
@@ -5672,7 +5675,10 @@
           ? [...current.optionIds.filter((id) => id !== option.id), option.id]
           : current.optionIds.filter((id) => id !== option.id);
       writeQuestionDraft(set.id, question.id, { ...current, optionIds });
-      renderQuestionSets();
+      // NOT a re-render. The browser has already painted the control, and
+      // rebuilding the form on every click is what made the screen jump and
+      // threw away focus. Only the submit button depends on the draft.
+      syncQuestionSubmit(set);
     });
     const box = document.createElement("span");
     box.className = "dn-check__box";
@@ -5721,6 +5727,7 @@
       const input = document.createElement("textarea");
       input.className = "dn-field__input cs-ask-text";
       input.rows = 2;
+      input.setAttribute("data-question-field", `${set.id}::${question.id}::text`);
       input.value = readQuestionDraft(set.id, question.id).text;
       input.addEventListener("input", () => {
         const current = readQuestionDraft(set.id, question.id);
@@ -5763,10 +5770,33 @@
     button.disabled = session.questionSubmitting === set.id || !questionSetAnswerable(set);
   }
 
-  function renderQuestionSets() {
+  // What the rendered form is made of. If this has not changed there is nothing
+  // to rebuild, and rebuilding anyway is actively harmful: replaceChildren
+  // destroys every field, so a customer typing an answer when the 20-second
+  // poll fires loses focus mid-word and the page jumps. The drafts survive in
+  // session; the DOM they were being typed into does not.
+  //
+  // Deliberately NOT derived from the drafts. Keystrokes must not rebuild the
+  // thing being typed into.
+  function questionRenderSignature(open) {
+    return JSON.stringify([
+      open.map((set) => [set.id, set.status, (set.questions || []).map((q) => q.id)]),
+      session.questionSubmitting,
+      session.questionSetsError,
+    ]);
+  }
+
+  function renderQuestionSets({ force = false } = {}) {
     const host = ui.conversationQuestions;
     if (!host) return;
     const open = openQuestionSets();
+    const signature = questionRenderSignature(open);
+    if (!force && signature === session.questionRenderSignature && host.childElementCount > 0) return;
+    session.questionRenderSignature = signature;
+    // A rebuild is sometimes unavoidable - a new set arrived, or one was
+    // answered. Put the customer back where they were rather than at the top.
+    const activeId = document.activeElement?.getAttribute?.("data-question-field") || "";
+    const selectionStart = document.activeElement?.selectionStart ?? null;
     host.replaceChildren();
     if (open.length === 0 && session.questionSetsError) {
       // Say so. Silence here reads as "the Product Manager has not asked
@@ -5785,6 +5815,15 @@
       return;
     }
     host.hidden = open.length === 0;
+    queueMicrotask(() => {
+      if (!activeId) return;
+      const restored = host.querySelector(`[data-question-field="${activeId}"]`);
+      if (!restored) return;
+      restored.focus();
+      if (selectionStart !== null && typeof restored.setSelectionRange === "function") {
+        try { restored.setSelectionRange(selectionStart, selectionStart); } catch { /* not a text field */ }
+      }
+    });
     open.forEach((set) => {
       const card = document.createElement("section");
       card.className = "dn-card cs-ask";
@@ -5830,7 +5869,7 @@
     }).filter((answer) => answer.optionIds.length > 0 || answer.text !== "");
     if (answers.length === 0) return;
     session.questionSubmitting = set.id;
-    renderQuestionSets();
+    renderQuestionSets({ force: true });
     const errorNode = document.querySelector(`[data-question-error="${set.id}"]`);
     try {
       await apiRequest("answer_team_questions", {
@@ -5849,7 +5888,7 @@
       }
     } finally {
       session.questionSubmitting = "";
-      renderQuestionSets();
+      renderQuestionSets({ force: true });
     }
   }
 
