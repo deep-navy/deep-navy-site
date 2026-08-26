@@ -1970,10 +1970,19 @@
     });
   }
 
-  // The plan's recurring price, with the published figure as the fallback the
-  // create screen needs before the plan has come back. It licenses the
-  // ORGANIZATION, not a team: the name says "unit amount" because that is what
-  // the catalog calls it, and nothing may multiply it by a team count.
+  // The plan's recurring price, as the server read it from Stripe. It licenses
+  // the ORGANIZATION, not a team: the name says "unit amount" because that is
+  // what the catalog calls it, and nothing may multiply it by a team count.
+  //
+  // Returns null when the plan has not arrived. It used to fall back to a
+  // hardcoded $199.00 a month, described in the code as the "founding
+  // organization default" - a real price for a real plan, and the WRONG one for
+  // this organization. The catalog carries two: founding-team at $599 a month
+  // and team at $199, and the live subscription here is the founding one. So
+  // the fallback quoted a customer $199 against a $599 subscription,
+  // confidently, with nothing to distinguish it from a figure actually read.
+  //
+  // A price nobody has read is not a price. Callers say so rather than pick one.
   function teamUnitAmountCents() {
     const money = session.billingPlan?.recurringPrice;
     const units = signedInt64Value(money?.units);
@@ -1982,7 +1991,7 @@
       const cents = units * 100n + BigInt(Math.round(nanos / 10_000_000));
       if (cents > 0n) return cents;
     }
-    return 19900n; // $199.00/month founding-organization default
+    return null;
   }
 
   function formatCents(cents) {
@@ -2037,6 +2046,11 @@
   // ("… + 2 × $199 engineers = $597/mo") and the server no longer bills it.
   function pricingBreakdown(pricing) {
     if (!pricing.includesBase) return "Covered by your subscription — no extra charge";
+    // Never quote a price that was not read. Silence about the amount is
+    // recoverable; a confident wrong number on a pay button is not.
+    if (pricing.baseCents === null || pricing.baseCents === undefined) {
+      return "Loading your plan's price…";
+    }
     return `${formatCents(pricing.baseCents)} a month for your organization, and every team after this one is covered by it`;
   }
 

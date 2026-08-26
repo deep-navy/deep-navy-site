@@ -277,7 +277,18 @@ test("Settings surface renders the account, billing, and Customer Portal", () =>
   assert.match(shell, /data-settings-billing-manage/);
   assert.match(app, /function renderSettingsBilling/);
   assert.match(app, /teamUnitAmountCents/);
-  assert.match(app, /19900n; \/\/ \$199\.00\/month founding-organization default/);
+  // This line used to REQUIRE the hardcoded fallback it is now forbidding.
+  // 19900n was a real price for a real plan and the wrong one for this
+  // organization: the catalog carries founding-team at $599 and team at $199,
+  // and the live subscription is the founding one - so the fallback quoted
+  // $199 against a $599 subscription, indistinguishable from a figure that had
+  // actually been read. A price nobody has read is not a price.
+  assert.doesNotMatch(app, /19900n/, "the plan's price must come from Stripe, never a literal");
+  assert.doesNotMatch(app, /59900n/, "and not the other plan's literal either");
+  assert.match(app, /return null;\s*\n\s*}\s*\n\s*function formatCents/,
+    "teamUnitAmountCents returns null when the plan has not arrived");
+  assert.match(app, /Loading your plan's price/,
+    "and the breakdown says so rather than quoting a number nobody read");
   assert.doesNotMatch(app, /59900n/, "the per-team base went with the unlimited-teams plan");
   assert.match(app, /paymentMethodSummary\(session\.subscription\?\.defaultPaymentMethod\)/);
 });
