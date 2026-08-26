@@ -503,6 +503,8 @@
     // The team whose question list is currently being polled. Compared by the
     // poll on every tick so a team switch retires the old loop.
     questionSetPollTeamId: "",
+    // Last failure from list_team_question_sets, rendered rather than swallowed.
+    questionSetsError: "",
     questionDraft: new Map(),
     questionSubmitting: "",
     conversationById: new Map(),
@@ -5752,6 +5754,22 @@
     if (!host) return;
     const open = openQuestionSets();
     host.replaceChildren();
+    if (open.length === 0 && session.questionSetsError) {
+      // Say so. Silence here reads as "the Product Manager has not asked
+      // anything", which is a different fact and the wrong one to imply.
+      host.hidden = false;
+      const notice = document.createElement("section");
+      notice.className = "dn-card cs-ask";
+      const title = document.createElement("span");
+      title.className = "dn-eyebrow";
+      title.textContent = "Questions unavailable";
+      const body = document.createElement("p");
+      body.className = "dn-body";
+      body.textContent = session.questionSetsError;
+      notice.append(title, body);
+      host.append(notice);
+      return;
+    }
     host.hidden = open.length === 0;
     open.forEach((set) => {
       const card = document.createElement("section");
@@ -5801,7 +5819,7 @@
     renderQuestionSets();
     const errorNode = document.querySelector(`[data-question-error="${set.id}"]`);
     try {
-      await platformRequest("answer_team_questions", {
+      await apiRequest("answer_team_questions", {
         questionSetId: set.id,
         idempotencyKey: `answer-${set.id}`,
         answers
@@ -5848,11 +5866,22 @@
       return;
     }
     try {
-      const response = await platformRequest("list_team_question_sets", { teamId: team.id });
+      const response = await apiRequest("list_team_question_sets", { teamId: team.id });
       session.conversationQuestionSets = normalizeQuestionSets(response);
-    } catch {
+      session.questionSetsError = "";
+    } catch (error) {
       // An unreadable list is not an empty one: leaving what is already on
       // screen is better than removing a form a customer may be mid-way through.
+      //
+      // But it must not be SILENT. This catch swallowed every failure for a
+      // full day while a customer sat in front of a thread with a form waiting
+      // behind it: the request never reached the server, nothing was logged
+      // anywhere, and the screen was indistinguishable from "no questions".
+      // A caught error that leaves no trace is how a broken feature looks
+      // exactly like a working one with nothing to show.
+      session.questionSetsError = platformErrorMessage(error, "The interview questions could not be loaded.");
+      // eslint-disable-next-line no-console
+      console.error("deep.navy: list_team_question_sets failed", error);
     }
     renderQuestionSets();
   }

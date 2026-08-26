@@ -145,3 +145,44 @@ test("the console refetches question sets without being told one was asked", () 
   assert.ok(body.includes("selectedTeam()?.id !== teamId"), "the poll must stop when the selection moves");
   assert.ok(body.includes("document.hidden"), "a hidden tab should not poll");
 });
+
+// The interview form did not render for a full day because both of its calls
+// went through `platformRequest(...)`, a helper that does not exist. Every call
+// threw ReferenceError, the catch around it swallowed the error, and the screen
+// was indistinguishable from "the Product Manager has not asked anything".
+// Nothing failed loudly anywhere: no request left the browser, so no server log
+// existed to be missing.
+test("every RPC in the console goes through a helper that exists", () => {
+  const source = app;
+
+  // The helper is apiRequest. Any other name is a typo that only shows up at
+  // runtime, inside a catch, on a screen that looks merely empty.
+  const callers = [...source.matchAll(/await ([A-Za-z_$][\w$]*)\(\s*"([a-z_]+)"/g)];
+  assert.ok(callers.length > 5, "expected to find the console's RPC call sites");
+
+  const defined = new Set(
+    [...source.matchAll(/(?:async function|function|const)\s+([A-Za-z_$][\w$]*)\s*(?:\(|=)/g)].map((m) => m[1]),
+  );
+  for (const [, helper, procedure] of callers) {
+    assert.ok(
+      defined.has(helper),
+      `${helper}("${procedure}") calls a helper that is never defined in app.js - it will throw ReferenceError at runtime`,
+    );
+  }
+
+  // And the two question calls specifically, since they are what broke.
+  assert.match(source, /await apiRequest\("list_team_question_sets"/);
+  assert.match(source, /await apiRequest\("answer_team_questions"/);
+  assert.doesNotMatch(source, /platformRequest/, "platformRequest has never existed; do not reintroduce it");
+});
+
+// A caught error that leaves no trace is how a broken feature looks exactly
+// like a working one with nothing to show.
+test("a failed question fetch is reported rather than swallowed", () => {
+  const load = app.slice(app.indexOf("async function loadQuestionSets"));
+  const body = load.slice(0, load.indexOf("\n  function ", 10));
+  assert.match(body, /catch \(error\)/, "the catch must bind the error, not discard it");
+  assert.match(body, /session\.questionSetsError/, "the failure must be recorded for the view");
+  assert.match(body, /console\.error/, "and it must reach the browser console");
+  assert.match(app, /Questions unavailable/, "the view must say so instead of rendering nothing");
+});
