@@ -12099,6 +12099,90 @@
     };
   }
 
+  // ── Event-driven refetch ─────────────────────────────────────────────
+  // The console subscribes to four streams, but the surfaces beside them -
+  // the crew's states, pending decisions, objectives and initiatives, open
+  // work - are fetched once at team selection and then trusted forever. A
+  // customer watched "Agents active 0/6 - waiting for work" under a Product
+  // Manager mid-interview, and a sign-off card that only appeared on reload.
+  // The activity stream already announces every change those surfaces can
+  // undergo, so arrival is the refresh signal: each accepted RECENT event
+  // (the same recency discriminator the arrival flash uses - a replayed
+  // history must not refetch) marks the surfaces its kind can move, and one
+  // trailing timer refetches the union through the same validated loaders
+  // and renderers team selection used. A quiet team costs nothing, which is
+  // why this is not a poll.
+  const surfaceRefetch = { timer: 0, surfaces: new Set() };
+
+  function surfacesMovedBy(entry) {
+    // sessions: an agent started or stopped working - the crew's states.
+    // tools: a deep_navy_* or PRD tool ran - decisions, objectives,
+    // initiatives can all have moved, and the roster's "working on" line.
+    // delivery: an issue or pull request changed - open work.
+    if (entry.category === "sessions") return ["agents"];
+    if (entry.category === "tools") return ["agents", "approvals", "objectives"];
+    if (entry.category === "delivery") return ["work"];
+    return [];
+  }
+
+  function scheduleEventDrivenRefetch(entry) {
+    const occurredMs = timestampDate(entry.occurredAt)?.getTime();
+    if (!Number.isFinite(occurredMs) || Date.now() - occurredMs > 120 * 1000) return;
+    for (const surface of surfacesMovedBy(entry)) surfaceRefetch.surfaces.add(surface);
+    if (!surfaceRefetch.surfaces.size || surfaceRefetch.timer) return;
+    surfaceRefetch.timer = window.setTimeout(() => {
+      surfaceRefetch.timer = 0;
+      const surfaces = [...surfaceRefetch.surfaces];
+      surfaceRefetch.surfaces.clear();
+      void refetchSurfaces(surfaces, session.selectedTeamId, session.workspaceGeneration);
+    }, 3000);
+  }
+
+  // Background refresh must never blank a working surface: a rejected read
+  // keeps the last good render (unlike team selection, where an error is the
+  // honest first state), and every apply re-checks that the team and
+  // generation are still the ones the refetch was scheduled for.
+  async function refetchSurfaces(surfaces, teamId, generation) {
+    if (!teamId || generation !== session.workspaceGeneration || teamId !== session.selectedTeamId) return;
+    const current = () => generation === session.workspaceGeneration && teamId === session.selectedTeamId;
+    const tasks = [];
+    if (surfaces.includes("agents")) {
+      tasks.push(apiRequest("agents", { teamId, page: { pageSize: 50 } }).then((value) => {
+        if (current()) renderAgentsResult({ status: "fulfilled", value }, teamId);
+      }, () => {}));
+    }
+    if (surfaces.includes("approvals")) {
+      tasks.push(apiRequest("approvals", { teamId, page: { pageSize: 100 } }).then((value) => {
+        if (current()) renderApprovalsResult({ status: "fulfilled", value }, teamId);
+      }, () => {}));
+    }
+    if (surfaces.includes("objectives")) {
+      tasks.push(listAllObjectives(teamId).then((value) => {
+        if (current()) renderObjectivesResult({ status: "fulfilled", value }, teamId, generation);
+      }, () => {}));
+      tasks.push(apiRequest("initiatives", { teamId, page: { pageSize: 100 } }).then((value) => {
+        if (!current() || !Array.isArray(value?.initiatives)) return;
+        session.teamInitiatives = value.initiatives;
+        renderTeamInitiatives();
+      }, () => {}));
+    }
+    if (surfaces.includes("work")) {
+      const githubRepositoryId = session.deliveryRepositoryId || "0";
+      const scope = currentDeliveryRepository();
+      if (scope) {
+        tasks.push(Promise.allSettled([
+          apiRequest("github_issues", { organizationId: session.organizationId, teamId, githubRepositoryId, page: { pageSize: 100 } }),
+          apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId, page: { pageSize: 100 } })
+        ]).then(([issuesResult, pullRequestsResult]) => {
+          if (!current() || githubRepositoryId !== (session.deliveryRepositoryId || "0")) return;
+          if (issuesResult.status === "fulfilled") renderGitHubIssuesResult(issuesResult, teamId, scope, "", false);
+          if (pullRequestsResult.status === "fulfilled") renderGitHubPullRequestsResult(pullRequestsResult, teamId, scope, "", false);
+        }));
+      }
+    }
+    await Promise.allSettled(tasks);
+  }
+
   function appendActivityEvent(event) {
     const entry = normalizedRuntimeActivity(event);
     if (entry === null) {
@@ -12113,6 +12197,7 @@
     session.lastActivitySequence = entry.sequence;
     session.activityEventIds.add(entry.id);
     session.activityEvents.push(entry);
+    scheduleEventDrivenRefetch(entry);
     // The append path is the only place a row earns arrival motion, and the
     // flash claims "this just happened" — so a replayed history (the stream
     // replays recorded events through this same loop on every connect) must
