@@ -517,6 +517,7 @@
     lastConversationSequence: 0n,
     conversationSending: false,
     conversationFormat: "markdown",
+    signoffComposerRequested: false,
     provisioningAbort: null,
     provisioningReconnectTimer: null,
     provisioningStreamLive: false,
@@ -778,7 +779,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "8e3579f96d4906bfe8832f9494ec7359825e2272" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "962f30542e17332b34a4bb88b73ed7c06cfc6f29" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -4568,6 +4569,15 @@
     loadInitiatives(objective, generation);
   }
 
+  // BusinessObjective.origin (objectives.proto): a DISPATCH row is the
+  // platform routing a GitHub event to an agent, and its description is
+  // written FOR the agent - tool names, delivery markers. One rendered on the
+  // console floor as "On now: Triage: …#1 - __node_id_probe__". No customer
+  // surface shows dispatch rows: the work they produce reaches this console
+  // as the issues and pull requests they open. UNSPECIFIED (an older server)
+  // and CUSTOMER both render.
+  const OBJECTIVE_ORIGIN_DISPATCH = 2;
+
   async function listAllObjectives(teamId) {
     const objectives = [];
     const seenIds = new Set();
@@ -4581,6 +4591,11 @@
         const id = stringValue(objective?.id);
         if (!id || stringValue(objective?.teamId) !== stringValue(teamId) || seenIds.has(id) || !validObjectiveDispatch(objective?.dispatch) || !validObjectiveKpis(objective?.kpis)) throw new ApiError("ObjectiveService returned an invalid or duplicate team objective", 0, "invalid_response", "");
         seenIds.add(id);
+        // Filtered at the single ingestion point, after validation and
+        // dedupe, so every consumer of objectiveListsByTeam - the floor's
+        // "On now" card, the objectives view, the stat strip - agrees
+        // without eleven separate filters.
+        if (Number(objective?.origin) === OBJECTIVE_ORIGIN_DISPATCH) continue;
         objectives.push(objective);
       }
       const next = stringValue(response.page?.nextPageToken);
@@ -6166,8 +6181,21 @@
   // true. A Product Manager row (even one still being written) is the proof.
   // If the introduction terminally fails, the composer opens anyway: a
   // broken wake-up must never lock the customer out of their own console.
+  // While a PRD sign-off is waiting, the decision is the only text entry on
+  // screen. The card's decision note and the composer both said "type here"
+  // about the same moment, and the second box dilutes the one choice the
+  // customer walked in to make. The composer comes back the instant they
+  // choose "Request changes in the chat" - that button reveals it and moves
+  // focus into it - or the sign-off resolves.
+  function awaitingPrdSignoff() {
+    return session.approvals.some((approval) =>
+      stringValue(approval.actionType) === "prd_signoff" && !stringValue(approval.voidedReason));
+  }
+
   function syncConversationComposer() {
     if (!ui.conversationForm) return;
+    if (!awaitingPrdSignoff()) session.signoffComposerRequested = false;
+    ui.conversationForm.hidden = awaitingPrdSignoff() && !session.signoffComposerRequested;
     const team = selectedTeam();
     const active = Boolean(team) && lifecycleLabel(team.state) === "active";
     const pmReady = session.conversationMessages.some((entry) => entry.author === "product_manager");
@@ -9761,13 +9789,17 @@
         converse.textContent = "Request changes in the chat";
         converse.disabled = pending;
         converse.addEventListener("click", () => {
+          // Reveal before focus: while the sign-off is waiting the composer
+          // is hidden, and a hidden input cannot take focus.
+          session.signoffComposerRequested = true;
+          syncConversationComposer();
           ui.conversationInput?.focus();
           ui.conversationInput?.scrollIntoView({ block: "center", behavior: "smooth" });
         });
         actions.append(approve, converse);
         const twoPaths = document.createElement("small");
         twoPaths.className = "signoff-two-paths";
-        twoPaths.textContent = "Accepting locks this PRD as the signed record. Nothing is locked until you accept — to change anything, just reply to your Product Manager below.";
+        twoPaths.textContent = "Accepting locks this PRD as the signed record. Nothing is locked until you accept — to change anything, request changes in the chat and tell your Product Manager.";
         form.append(reasonLabel, reason, help, error, actions, twoPaths);
       } else {
         const deny = document.createElement("button");
@@ -9796,6 +9828,10 @@
     const locking = signoffLockingActive();
     if (ui.signoffLocking) ui.signoffLocking.hidden = !locking;
     ui.signoffCard.hidden = !signoffs.length && !locking;
+    // The composer yields to a waiting sign-off and returns when it resolves,
+    // so every render of this card re-decides the composer's visibility from
+    // the same approvals it just drew.
+    syncConversationComposer();
   }
 
   function renderApprovalQueue() {

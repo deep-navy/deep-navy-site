@@ -60,6 +60,35 @@ test("the PRD decision is an accept button plus the conversation, and only for p
   assert.doesNotMatch(consoleBlock, /approvalDecision = "deny"/, "the console sign-off card offers conversation, not Deny");
 });
 
+test("while a sign-off waits, the decision is the only text entry on screen", () => {
+  // A live screen showed two open inputs - the decision note and the chat
+  // composer - both saying "type here" about the same moment. The composer
+  // yields while a PRD sign-off is undecided and returns when the customer
+  // chooses "Request changes in the chat" or the sign-off resolves.
+  assert.match(app, /function awaitingPrdSignoff/);
+  assert.match(app, /=== "prd_signoff" && !stringValue\(approval\.voidedReason\)/);
+  assert.match(app, /ui\.conversationForm\.hidden = awaitingPrdSignoff\(\) && !session\.signoffComposerRequested;/);
+  // The flag never outlives the sign-off it was granted for.
+  assert.match(app, /if \(!awaitingPrdSignoff\(\)\) session\.signoffComposerRequested = false;/);
+  assert.match(app, /signoffComposerRequested: false,/);
+  // Reveal happens BEFORE focus - a hidden input cannot take focus - and the
+  // sign-off card render re-decides composer visibility from the approvals
+  // it just drew.
+  const converseStart = app.indexOf('converse.addEventListener("click"');
+  const converseBlock = app.slice(converseStart, app.indexOf("});", converseStart));
+  const revealAt = converseBlock.indexOf("session.signoffComposerRequested = true");
+  const syncAt = converseBlock.indexOf("syncConversationComposer()");
+  const focusAt = converseBlock.indexOf("ui.conversationInput?.focus()");
+  assert.ok(revealAt >= 0 && syncAt > revealAt && focusAt > syncAt, "converse must reveal, sync, then focus");
+  const signoffRenderStart = app.indexOf("function renderSignoffCard");
+  const signoffRenderBlock = app.slice(signoffRenderStart, app.indexOf("function renderApprovalQueue"));
+  assert.match(signoffRenderBlock, /syncConversationComposer\(\);/);
+  // The two-paths copy no longer points "below" at a composer that is hidden
+  // while the decision waits.
+  assert.doesNotMatch(app, /just reply to your Product Manager below/);
+  assert.match(app, /request changes in the chat and tell your Product Manager/);
+});
+
 test("the generated client surfaces the sign-off reference and voided reason", async () => {
   const api = generated.createPlatformApi({
     baseUrl: "https://dev.api.deep.navy",
