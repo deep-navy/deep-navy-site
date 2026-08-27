@@ -3688,6 +3688,22 @@
   // A team whose last provisioning command died. A failed DELETE is excluded on
   // purpose: the team is still there, its remedy is "retry deletion" rather
   // than "retry setup", and the deletion surfaces already own that sentence.
+  // A pending team whose build is actually underway. `pending` is one
+  // lifecycle wearing two different facts - "payment has not settled" and
+  // "settled, being built" - and three surfaces read it as only the first: the
+  // phase ladder called an assembling team "halted", the sysbar told its owner
+  // it was "waiting on a confirmed payment", and the tile chip said "Awaiting
+  // payment" - all on the same screen as the live provisioning progress bar,
+  // which knew better. The discriminator was on the client the whole time: a
+  // provisioning record that exists, has not failed, and is not terminal is a
+  // build in flight, and a build in flight is not a stopped team.
+  function teamProvisioningInProgress(team) {
+    const status = team?.provisioning;
+    if (!status) return false;
+    if (teamProvisioningFailed(team)) return false;
+    return launchContract?.provisioningTerminal?.(status) !== true;
+  }
+
   function teamProvisioningFailed(team) {
     const status = team?.provisioning;
     if (!status) return false;
@@ -3797,6 +3813,12 @@
     // and "failed" is not the same fact as "stopped": stopped is a state
     // somebody chose, and this one nobody did.
     if (lifecycle === "failed" || teamProvisioningFailed(team)) return "failed";
+    // A pending team with a build in flight is ASSEMBLING, not halted. Calling
+    // it halted put a red "not working / waiting on payment" banner and a
+    // STOPPED chip on a team whose provisioning progress bar was advancing on
+    // the same screen. Pending with no build record stays halted: that is the
+    // genuinely-awaiting-payment case, and its copy is true there.
+    if (lifecycle === "pending" && teamProvisioningInProgress(team)) return "assembling";
     if (["suspended", "suspending", "pending"].includes(lifecycle)) return "halted";
     // Out of credits stops work as surely as a suspension does, and the
     // customer experiences it the same way: the crew is not running.
@@ -3854,6 +3876,10 @@
 
   const TEAM_PHASE_BADGE = Object.freeze({
     running: { label: "Running", className: "dn-badge dn-badge--live", live: true },
+    // A build in flight. The bare badge on purpose - neutral: assembling is
+    // the expected road to running, not an attention state, and the
+    // provisioning progress bar beside it already narrates the detail.
+    assembling: { label: "Setting up", className: "dn-badge", live: false },
     interviewing: { label: "Interviewing", className: "dn-badge dn-badge--attention", live: false },
     met: { label: "Met · idle", className: "dn-badge dn-badge--success", live: false },
     halted: { label: "Stopped", className: "dn-badge dn-badge--danger", live: false },
@@ -4180,18 +4206,23 @@
     // on the team they already have, so that is the remedy named here.
     const stopped = !deleting && teamProvisioningFailed(team);
     const name = stringValue(team.name) || "This team";
+    const assembling = !deleting && !stopped && teamProvisioningInProgress(team);
     const headline = deleting
       ? "This team is being removed. Its workspace data is no longer available."
       : stopped
         ? "Not available: this team's setup stopped before it finished."
-        : "Available after payment completes and your team is provisioned.";
-    const label = deleting ? "Removing" : stopped ? "Setup failed" : "Pending";
+        : assembling
+          ? "Available in a few minutes, once your team finishes setting up."
+          : "Available after payment completes and your team is provisioned.";
+    const label = deleting ? "Removing" : stopped ? "Setup failed" : assembling ? "Setting up" : "Pending";
     // What happened, what it means, what happens next — in that order.
     ui.dashboardState.textContent = deleting
       ? `${name} is being removed.`
       : stopped
         ? `${name}'s setup stopped before it finished, so the team never started running. Retry setup below to run the same build again — you do not need to delete it or create another one.`
-        : `${name} is awaiting payment confirmation. If you closed checkout before paying, delete this team and create it again — the roster, objective, and economics unlock the moment payment settles.`;
+        : assembling
+          ? `${name} is being set up. The crew, the conversation and the economics unlock the moment it finishes - usually a few minutes.`
+          : `${name} is awaiting payment confirmation. If you closed checkout before paying, delete this team and create it again — the roster, objective, and economics unlock the moment payment settles.`;
     resetAgentView(deleting ? headline : stopped ? "No agents were ever started for this team, because its setup did not finish." : "Your Product Manager, Engineering Manager, Designer, and engineers appear here once the team is provisioned.", label);
     resetEconomicsView(headline, label);
     resetCreditBalanceView(headline, label);
@@ -6912,6 +6943,10 @@
       if (provisioning.failed) return { tone: "error", word: "Needs attention" };
       if (lifecycle === "deleting") return { tone: "idle", word: "Removing" };
       if (lifecycle === "suspended") return { tone: "idle", word: "Paused" };
+      // Same lifecycle, two facts: a pending team with a build in flight is
+      // setting up, and only a pending team with no build record is actually
+      // waiting on money. The chip used to say "Awaiting payment" for both.
+      if (lifecycle === "pending" && teamProvisioningInProgress(team)) return { tone: "idle", word: "Setting up" };
       if (lifecycle === "pending") return { tone: "attention", word: "Awaiting payment" };
       return { tone: "idle", word: "Setting up" };
     }

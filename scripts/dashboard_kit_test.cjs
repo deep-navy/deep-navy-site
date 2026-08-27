@@ -92,10 +92,18 @@ test("the tile chip speaks lifecycle first, the human queue second, proof third"
   const lifecycleLabel = (value) => (typeof value === "string" ? value : "");
   const launchContract = { provisioningPresentation: (provisioning) => provisioning || {} };
   const objectiveAcceptanceState = (objective) => objective.state;
+  // The in-progress predicate is a stub with the real one's contract: a
+  // provisioning record that exists and has not failed is a build in flight.
+  const teamProvisioningInProgress = (team) => Boolean(team?.provisioning) && team.provisioning.failed !== true;
   const chip = new Function(
-    "lifecycleLabel", "launchContract", "objectiveAcceptanceState",
+    "lifecycleLabel", "launchContract", "objectiveAcceptanceState", "teamProvisioningInProgress",
     `${source}; return teamTileChip;`
-  )(lifecycleLabel, launchContract, objectiveAcceptanceState);
+  )(lifecycleLabel, launchContract, objectiveAcceptanceState, teamProvisioningInProgress);
+
+  // The same lifecycle carries two facts, and the chip now tells them apart: a
+  // pending team with a live build is setting up, and only a pending team with
+  // no build record is actually waiting on money.
+  assert.deepEqual(chip({ state: "pending", provisioning: { provisioningState: 1 } }, undefined, undefined), { tone: "idle", word: "Setting up" });
 
   assert.deepEqual(chip({ state: "pending" }, undefined, undefined), { tone: "attention", word: "Awaiting payment" });
   assert.deepEqual(chip({ state: "created", provisioning: { failed: true } }, undefined, undefined), { tone: "error", word: "Needs attention" });

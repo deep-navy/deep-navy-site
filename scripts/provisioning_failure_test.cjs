@@ -119,7 +119,10 @@ test("severity is defined in exactly one place, and its glyphs resolve", () => {
 // the real launch contract, so this is a behavioural claim about a failed team
 // rather than a pattern match on the text that produces it.
 function loadTeamPhase() {
-  const failedPredicate = between("function teamProvisioningFailed(team) {", "\n  // The objective the floor is about");
+  // The slice starts at the in-progress predicate so it carries BOTH helpers:
+  // teamPhase's assembling branch calls teamProvisioningInProgress, and a
+  // harness that omitted it announced the phase change with "not defined".
+  const failedPredicate = between("function teamProvisioningInProgress(team) {", "\n  // The objective the floor is about");
   const phase = between("function teamPhase(team) {", "\n  // The measure the team exists for");
   const factory = new Function(
     "launchContract", "lifecycleLabel", "signedInt64Value", "stringValue", "objectiveAcceptanceState", "session",
@@ -193,9 +196,9 @@ test("a paid-but-failed team is never told to delete and re-create it", () => {
   // the three facts that decide it.
   const expression = guidance.match(/ui\.dashboardState\.textContent = ([\s\S]*?);\n {4}resetAgentView/);
   assert.ok(expression, "the guidance line is still a single expression this test can evaluate");
-  const sentence = new Function("deleting", "stopped", "name", `return ${expression[1]};`);
+  const sentence = new Function("deleting", "stopped", "assembling", "name", `return ${expression[1]};`);
 
-  const failed = sentence(false, true, "Atlas");
+  const failed = sentence(false, true, false, "Atlas");
   // The expensive advice is gone from the failed path: a customer who has paid
   // must never be invited to delete and pay again over a fault that was ours.
   // Deletion may still be MENTIONED — "you do not need to delete it" is the
@@ -213,12 +216,12 @@ test("a paid-but-failed team is never told to delete and re-create it", () => {
 
   // And the genuinely-abandoned-checkout case keeps its own correct advice,
   // because that advice was never wrong — only misapplied.
-  const pending = sentence(false, false, "Atlas");
+  const pending = sentence(false, false, false, "Atlas");
   assert.match(pending, /awaiting payment confirmation/);
   assert.match(pending, /delete this team and create it again/);
 
   // A removal in flight still reads as a removal.
-  assert.match(sentence(true, false, "Atlas"), /being removed/);
+  assert.match(sentence(true, false, false, "Atlas"), /being removed/);
 });
 
 // ── Defect 4 ───────────────────────────────────────────────────────────────
@@ -333,4 +336,36 @@ test("the failure is a Notice — an event elsewhere — and not a Callout", () 
     "the non-destructive remedy comes first");
   assert.match(notice, /if \(controls\.includes\("delete"\)\) \{/);
   assert.doesNotMatch(notice, /innerHTML|insertAdjacentHTML/);
+});
+
+// ── Defect 4: the assembling window wore the awaiting-payment costume ──────
+// A team whose build was actively running - progress bar advancing, gateway
+// minutes away - showed a red "is not working / waiting on a confirmed
+// payment" banner, a STOPPED chip and "Awaiting payment" on its tile, because
+// three surfaces read lifecycle `pending` as one fact when it carries two.
+// Screenshotted live by the founder while the same screen's provisioning
+// stream contradicted every word of it.
+test("a pending team with a build in flight is assembling, never halted", () => {
+  const teamPhase = loadTeamPhase();
+  const badges = loadPhaseBadges();
+
+  // A build actively running or queued is the assembling phase.
+  for (const state of [STATE.QUEUED, STATE.RUNNING, STATE.RETRYING]) {
+    assert.equal(
+      teamPhase({ id: "t1", state: "pending", provisioning: { provisioningState: state } }),
+      "assembling",
+      `provisioningState ${state} must read as assembling`,
+    );
+  }
+  // No build record at all IS the awaiting-payment case; its copy stays.
+  assert.equal(teamPhase({ id: "t1", state: "pending" }), "halted");
+  // A failed build outranks assembling - "failed" is its own fact.
+  assert.equal(teamPhase({ id: "t1", state: "pending", provisioning: failedAtGateway }), "failed");
+  // Suspension is a decision, not a build; it stays halted regardless.
+  assert.equal(teamPhase({ id: "t1", state: "suspended", provisioning: { provisioningState: STATE.RUNNING } }), "halted");
+
+  // The badge is neutral: assembling is the road to running, not an alarm.
+  assert.equal(badges.assembling.label, "Setting up");
+  assert.equal(badges.assembling.live, false);
+  assert.doesNotMatch(badges.assembling.className, /danger|attention/);
 });
