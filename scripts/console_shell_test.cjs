@@ -337,3 +337,28 @@ test("the conversation is the centre column and the crew is the rail", () => {
   // page from the message that raised it.
   assert.match(centre, /aria-labelledby="signoff-title"/, "sign-off must stay beside the thread that raises it");
 });
+
+// The Product Manager's floor has ONE scroller. It used to have three nested:
+// the thread capped at 56vh scrolling inside .cs-console-body capped at 64vh
+// scrolling inside .cs-scroll - and a customer answering a form had to work
+// out which scrollbar they were in. The thread and the console body grow with
+// their content; .cs-scroll (or the document, on narrow layouts) does all the
+// scrolling; and follow-the-conversation is measured on that one scroller.
+test("the conversation floor has exactly one scroller", () => {
+  const main = readFileSync("assets/css/main.css", "utf8");
+  const consoleCss = readFileSync("assets/css/console.css", "utf8");
+  const app = readFileSync("assets/js/app.js", "utf8");
+
+  const threadRule = main.slice(main.indexOf(".console-thread {"), main.indexOf("}", main.indexOf(".console-thread {")));
+  assert.doesNotMatch(threadRule, /overflow-y|max-height/, "the thread must not scroll on its own");
+
+  const bodyRule = consoleCss.slice(consoleCss.indexOf(".cs-console-body {"), consoleCss.indexOf("}", consoleCss.indexOf(".cs-console-body {")));
+  assert.doesNotMatch(bodyRule, /overflow-y|max-height/, "the console body must not scroll on its own");
+
+  // And the follow-to-bottom behavior rides the real scroller, not the thread
+  // it used to ride - a no-op scrollTop on a non-scrolling element is how
+  // "new messages arrive off screen" would come back silently.
+  assert.match(app, /function conversationScroller\(/);
+  assert.match(app, /scroller\.scrollTop = scroller\.scrollHeight/);
+  assert.doesNotMatch(app, /thread\.scrollTop = thread\.scrollHeight/);
+});

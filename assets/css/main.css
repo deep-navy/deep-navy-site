@@ -864,7 +864,12 @@ pre { overflow-x: auto; padding: 1.2rem; border: 1px solid var(--line); border-r
 .console { padding: 0 0 1.5rem; border-bottom: 1px solid var(--line); }
 .console-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .7rem; }
 .console-head h3 { margin: 0; font-size: var(--t-lg); }
-.console-thread { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .9rem; min-height: 220px; max-height: 56vh; overflow-y: auto; overscroll-behavior: contain; }
+/* Deliberately NOT a scroll container. It used to cap at 56vh with its own
+   overflow, inside .cs-console-body's 64vh scroll, inside .cs-scroll — three
+   nested scrollbars on the one surface a customer reads most, and answering a
+   form meant fighting two of them. The thread grows to its content and
+   .cs-scroll is the single scroller for the whole floor. */
+.console-thread { list-style: none; margin: 0 0 .8rem; padding: 0; display: flex; flex-direction: column; gap: .9rem; min-height: 220px; }
 .msg { display: grid; gap: .25rem; justify-items: start; max-width: 62ch; }
 /* Your messages sit on the right, the Product Manager's on the left —
    the one convention every chat reader already carries. */

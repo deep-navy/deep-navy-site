@@ -517,11 +517,11 @@ body:has([data-shell][data-shell-mode="workspace"]) #app-main { display: block; 
 .cs-console-body {
   flex: 1;
   min-height: 0;
-  /* The thread is the centre column now, so it gets the height that implies —
-     bounded by the viewport rather than a fixed figure, so a long conversation
-     fills a tall screen instead of scrolling inside a short box on all of them. */
-  max-height: min(64vh, 760px);
-  overflow-y: auto;
+  /* No height cap and no overflow of its own. This used to scroll at
+     min(64vh, 760px) with the thread scrolling AGAIN inside it, all inside
+     .cs-scroll — a scrollbar within a scrollbar within the page's, and the
+     customer had to find the right one to reach an answer form. The card now
+     grows with the conversation and .cs-scroll is the one scroller. */
   padding: var(--space-4);
   display: grid;
   gap: var(--space-3);

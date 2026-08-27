@@ -5536,6 +5536,18 @@
     ui.conversationFormat.textContent = raw ? "Show formatted" : "Show Markdown source";
   }
 
+  // The one element that actually scrolls the floor. The workspace shell pins
+  // itself to the viewport and .cs-scroll carries the page; on narrow layouts
+  // the shell is height:auto and the document scrolls instead. Whichever it
+  // is, it is the ONLY scroller — the thread and the console body used to
+  // scroll on their own inside it, and that nesting is exactly what this
+  // helper exists to keep dead.
+  function conversationScroller() {
+    const scroll = ui.conversationThread?.closest?.(".cs-scroll");
+    if (scroll && scroll.scrollHeight > scroll.clientHeight) return scroll;
+    return document.scrollingElement || document.documentElement;
+  }
+
   function renderConversation() {
     if (!ui.conversationThread) return;
     // SYSTEM rows are wake plumbing between the dispatcher and the runtime;
@@ -5545,7 +5557,14 @@
     const local = visible.filter((entry) => entry.sequence === null);
     const ordered = [...sequenced, ...local];
     const thread = ui.conversationThread;
-    const nearBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 48;
+    // The thread no longer scrolls itself — the floor has ONE scroller
+    // (.cs-scroll, or the document on layouts where the shell is height:auto),
+    // so "follow the conversation" is measured and applied on whichever of
+    // those actually scrolls. Same behavior as before: stick to the bottom
+    // only when the customer was already there, never yank them off something
+    // they scrolled up to read.
+    const scroller = conversationScroller();
+    const nearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 160;
     thread.replaceChildren();
     ordered.forEach((entry) => {
       const item = document.createElement("li");
@@ -5609,7 +5628,7 @@
     ui.conversationEmpty.hidden = ordered.length > 0;
     thread.hidden = ordered.length === 0;
     if (ordered.length === 0) renderConversationStage();
-    if (ordered.length && nearBottom) thread.scrollTop = thread.scrollHeight;
+    if (ordered.length && nearBottom) scroller.scrollTop = scroller.scrollHeight;
     renderConversationTyping();
     renderQuestionSets();
     // The composer's gate depends on what the stream has delivered (the
