@@ -507,6 +507,10 @@
     questionSetsError: "",
     // What the form was last built from, so an unchanged poll rebuilds nothing.
     questionRenderSignature: "",
+    // Debounce state for replay bursts: one thread rebuild per frame, one
+    // question fetch per burst.
+    conversationRenderScheduled: false,
+    questionRefreshTimer: null,
     questionDraft: new Map(),
     questionSubmitting: "",
     conversationById: new Map(),
@@ -5536,6 +5540,30 @@
     ui.conversationFormat.textContent = raw ? "Show formatted" : "Show Markdown source";
   }
 
+  // scheduleConversationRender coalesces thread rebuilds to one per animation
+  // frame. renderConversation replaces the whole thread, which is fine once
+  // and pathological once-per-replayed-message; the stream loop calls this
+  // instead of rendering directly, so a burst of history costs one rebuild.
+  function scheduleConversationRender() {
+    if (session.conversationRenderScheduled) return;
+    session.conversationRenderScheduled = true;
+    window.requestAnimationFrame(() => {
+      session.conversationRenderScheduled = false;
+      renderConversation();
+    });
+  }
+
+  // scheduleQuestionSetRefresh coalesces the message-arrival question fetch:
+  // a replay of N messages becomes one fetch shortly after the burst ends,
+  // instead of N identical calls racing each other at team open.
+  function scheduleQuestionSetRefresh() {
+    if (session.questionRefreshTimer) window.clearTimeout(session.questionRefreshTimer);
+    session.questionRefreshTimer = window.setTimeout(() => {
+      session.questionRefreshTimer = null;
+      void loadQuestionSets();
+    }, 250);
+  }
+
   // The one element that actually scrolls the floor. The workspace shell pins
   // itself to the viewport and .cs-scroll carries the page; on narrow layouts
   // the shell is height:auto and the document scrolls instead. Whichever it
@@ -9681,19 +9709,43 @@
       approve.type = "submit";
       approve.value = "approve";
       approve.dataset.approvalDecision = "approve";
-      approve.textContent = pending ? "Saving…" : (prdSignoff ? "Sign off" : "Approve");
+      approve.textContent = pending ? "Saving…" : (prdSignoff ? "Accept the PRD" : "Approve");
       approve.disabled = pending;
-      approve.setAttribute("aria-label", prdSignoff ? "Sign off on the PRD" : `Approve ${actionType.replaceAll("_", " ")}`);
-      const deny = document.createElement("button");
-      deny.className = "button button-quiet button-small approval-deny";
-      deny.type = "submit";
-      deny.value = "deny";
-      deny.dataset.approvalDecision = "deny";
-      deny.textContent = "Deny";
-      deny.disabled = pending;
-      deny.setAttribute("aria-label", `Deny ${actionType.replaceAll("_", " ")}`);
-      actions.append(approve, deny);
-      form.append(reasonLabel, reason, help, error, actions);
+      approve.setAttribute("aria-label", prdSignoff ? "Accept the PRD as written and lock it as the signed record" : `Approve ${actionType.replaceAll("_", " ")}`);
+      if (consoleCard && prdSignoff) {
+        // The console card offers the two paths a customer actually has:
+        // accept the PRD as written, or keep talking. A formal Deny lives on
+        // the Decisions queue for the customer who wants a recorded decline —
+        // here, "request changes" is a conversation, not a verdict, so the
+        // second control walks them to the composer instead of asking them to
+        // pass judgment with a required reason.
+        const converse = document.createElement("button");
+        converse.className = "button button-quiet button-small";
+        converse.type = "button";
+        converse.dataset.signoffConverse = "";
+        converse.textContent = "Request changes in the chat";
+        converse.disabled = pending;
+        converse.addEventListener("click", () => {
+          ui.conversationInput?.focus();
+          ui.conversationInput?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+        actions.append(approve, converse);
+        const twoPaths = document.createElement("small");
+        twoPaths.className = "signoff-two-paths";
+        twoPaths.textContent = "Accepting locks this PRD as the signed record. Nothing is locked until you accept — to change anything, just reply to your Product Manager below.";
+        form.append(reasonLabel, reason, help, error, actions, twoPaths);
+      } else {
+        const deny = document.createElement("button");
+        deny.className = "button button-quiet button-small approval-deny";
+        deny.type = "submit";
+        deny.value = "deny";
+        deny.dataset.approvalDecision = "deny";
+        deny.textContent = "Deny";
+        deny.disabled = pending;
+        deny.setAttribute("aria-label", `Deny ${actionType.replaceAll("_", " ")}`);
+        actions.append(approve, deny);
+        form.append(reasonLabel, reason, help, error, actions);
+      }
       item.append(form);
       list.append(item);
   }
@@ -9841,7 +9893,7 @@
       session.approvalDecisionIds.delete(id);
       form.removeAttribute("aria-busy");
       form.querySelectorAll("button, textarea").forEach((control) => { control.disabled = false; });
-      submitter.textContent = approved ? (actionType === "prd_signoff" ? "Sign off" : "Approve") : "Deny";
+      submitter.textContent = approved ? (actionType === "prd_signoff" ? "Accept the PRD" : "Approve") : "Deny";
       setFieldError(error, apiErrorMessage(caught, "The decision was not recorded. It is safe to retry."));
       setSourceState(ui.approvalsState, `${session.approvals.length} pending`, "error");
     }
@@ -11794,21 +11846,24 @@
         markStreamEstablished();
         acceptConversationMessage(message);
         session.conversationStreamLive = true;
-        renderConversation();
+        // COALESCED, not per-message. The stream REPLAYS the whole recorded
+        // conversation on open, and this loop used to rebuild the entire
+        // thread and fetch the question list once per replayed message - a
+        // thirty-message history meant thirty full DOM rebuilds and thirty
+        // list_team_question_sets calls before the page settled, which is
+        // what "the page takes a long time to update when loading" was.
+        // One frame of replayed messages renders once; the question fetch
+        // trails the last message by a beat. Live messages behave as before -
+        // they arrive alone, so the debounce adds one frame, not a delay a
+        // person can see.
+        scheduleConversationRender();
         setSourceState(ui.conversationState, "Live", "success");
         // Recording a question set publishes nothing on this stream - it is
         // stored and returned to the agent - so an open console had no way to
-        // learn a form was waiting. It appeared only on the next team open,
-        // which for a customer already watching the thread is never: the
-        // Product Manager asked, the page showed the turn around the ask, and
-        // the form itself stayed invisible.
-        //
-        // An agent that asks almost always says something in the same turn, so
-        // a message arriving is the signal available today. It is a proxy, not
-        // the event: an ask with nothing said alongside it still waits for the
-        // poll below. The honest fix is a question-set event on this stream,
-        // which is a proto change and a pin bump in three consumers.
-        void loadQuestionSets();
+        // learn a form was waiting. A message arriving is the proxy signal;
+        // the honest fix is a question-set event on this stream, which is a
+        // proto change and a pin bump in three consumers.
+        scheduleQuestionSetRefresh();
       }
       if (!controller.signal.aborted && generation === session.workspaceGeneration) {
         session.conversationStreamLive = false;

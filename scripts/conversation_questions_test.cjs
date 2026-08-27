@@ -127,9 +127,17 @@ test("the console refetches question sets without being told one was asked", () 
   const acceptIndex = source.indexOf("acceptConversationMessage(message);");
   assert.ok(acceptIndex > 0, "the conversation stream must accept messages");
   const streamHandler = source.slice(acceptIndex, acceptIndex + 1400);
+  // Coalesced now: the stream replays the whole history at open, and a fetch
+  // per replayed message was thirty identical calls racing each other. The
+  // handler schedules; the scheduler is what must end in the real fetch.
   assert.ok(
-    streamHandler.includes("loadQuestionSets()"),
-    "a conversation message must refetch the question list, or a form asked mid-thread never appears",
+    streamHandler.includes("scheduleQuestionSetRefresh()"),
+    "a conversation message must schedule a question refetch, or a form asked mid-thread never appears",
+  );
+  const scheduler = source.slice(source.indexOf("function scheduleQuestionSetRefresh("));
+  assert.ok(
+    scheduler.slice(0, scheduler.indexOf("\n  }")).includes("loadQuestionSets()"),
+    "the scheduled refresh must actually fetch",
   );
 
   // And a poll for the ask that says nothing, which is what the Product

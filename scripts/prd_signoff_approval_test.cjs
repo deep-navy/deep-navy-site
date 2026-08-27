@@ -42,11 +42,22 @@ test("a voided sign-off renders the reason instead of a decision", () => {
   assert.ok(voidedBlock.includes("return;"), "the voided card must finish before the decision controls are built");
 });
 
-test("the sign-off keeps its name through the flow, and only for prd_signoff", () => {
+test("the PRD decision is an accept button plus the conversation, and only for prd_signoff", () => {
   assert.match(app, /const prdSignoff = actionType === "prd_signoff";/);
-  assert.match(app, /pending \? "Saving…" : \(prdSignoff \? "Sign off" : "Approve"\)/);
+  // The customer asked for exactly this shape: accept the PRD as written with
+  // one button, or keep talking to the Product Manager - not a verdict with a
+  // required reason. The flow underneath is still the sign-off (the platform
+  // locks the discussion as the signed record); only the words changed.
+  assert.match(app, /pending \? "Saving…" : \(prdSignoff \? "Accept the PRD" : "Approve"\)/);
   assert.match(app, /"Sign-off recorded\. The PRD is being locked as the signed record\."/);
-  assert.match(app, /approved \? \(actionType === "prd_signoff" \? "Sign off" : "Approve"\) : "Deny"/);
+  assert.match(app, /approved \? \(actionType === "prd_signoff" \? "Accept the PRD" : "Approve"\) : "Deny"/);
+  // On the console card the second control is a walk to the composer, not a
+  // formal Deny - a recorded decline still exists on the Decisions queue.
+  assert.match(app, /Request changes in the chat/);
+  assert.match(app, /Nothing is locked until you accept/);
+  const branchStart = app.indexOf("if (consoleCard && prdSignoff) {");
+  const consoleBlock = app.slice(branchStart, app.indexOf("} else {", branchStart));
+  assert.doesNotMatch(consoleBlock, /approvalDecision = "deny"/, "the console sign-off card offers conversation, not Deny");
 });
 
 test("the generated client surfaces the sign-off reference and voided reason", async () => {
