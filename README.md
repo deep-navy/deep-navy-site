@@ -6,7 +6,7 @@ app client with OAuth 2.0 authorization code + PKCE, then calls the configured
 ConnectRPC API for server-confirmed onboarding state.
 
 The onboarding client targets the additive launch contract finalized by
-`platform-protos` revision `d0a67e786db8ad76667bcaec97e64db72c42878b`.
+`platform-protos` revision `8e3579f96d4906bfe8832f9494ec7359825e2272`.
 Only the generated Protobuf-ES descriptors required by this site are vendored
 under `vendor/platform-protos`; `REVISION` and `MANIFEST.sha256` pin and verify
 their source. The browser bundle uses the generated service descriptors with
