@@ -61,12 +61,32 @@ test("a recent event arms one trailing timer; a replayed history arms none", () 
   assert.deepEqual([...surfaceRefetch.surfaces].sort(), ["agents", "approvals", "objectives", "work"]);
 });
 
-test("the refetch is quiet and guarded: no loading resets, rejections keep the last render, every apply re-checks the team", () => {
+test("the refetch is quiet and guarded: rejections keep the last render, every apply re-checks the team", () => {
   const refetch = between("async function refetchSurfaces", "function appendActivityEvent");
-  assert.doesNotMatch(refetch, /resetDeliveryRecords|resetAgentView|resetApprovalView|resetObjectiveView/, "background refresh must never blank a working surface");
+  assert.doesNotMatch(refetch, /resetAgentView|resetApprovalView|resetObjectiveView/, "background refresh must never blank a working surface");
   assert.match(refetch, /, \(\) => \{\}\)/, "rejected background reads are dropped, keeping the last good render");
   const applies = refetch.match(/current\(\)/g) || [];
   assert.ok(applies.length >= 4, `every surface apply re-checks team and generation (found ${applies.length})`);
+});
+
+test("the work refetch resets delivery state only after BOTH reads succeed, then renders in the same tick", () => {
+  // The delivery renderers validate page 1 against the ids and sort cursor
+  // already in session state - they are written to run after a reset - so a
+  // refetch that re-renders page 1 over loaded state throws "returned a
+  // duplicate issue" and the catch wipes the surface. The first review of
+  // this code proved that on every routine delivery event. Reset must
+  // therefore happen: (1) only in the work branch, (2) only after both
+  // results are fulfilled, (3) synchronously before the renders.
+  const refetch = between("async function refetchSurfaces", "function appendActivityEvent");
+  const guardAt = refetch.indexOf('issuesResult.status !== "fulfilled" || pullRequestsResult.status !== "fulfilled"');
+  const resetAt = refetch.indexOf("resetDeliveryRecords(");
+  const issuesRenderAt = refetch.indexOf("renderGitHubIssuesResult(issuesResult");
+  const pullsRenderAt = refetch.indexOf("renderGitHubPullRequestsResult(pullRequestsResult");
+  assert.ok(guardAt >= 0 && resetAt > guardAt && issuesRenderAt > resetAt && pullsRenderAt > issuesRenderAt,
+    "order must be: both-fulfilled guard, then reset, then both renders");
+  const betweenResetAndRender = refetch.slice(resetAt, pullsRenderAt);
+  assert.doesNotMatch(betweenResetAndRender, /await/, "the reset-to-render gap must stay synchronous");
+  assert.equal((refetch.match(/resetDeliveryRecords\(/g) || []).length, 1, "reset appears exactly once, in the work branch");
 });
 
 test("every accepted activity event feeds the scheduler", () => {

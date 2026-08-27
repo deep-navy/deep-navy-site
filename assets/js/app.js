@@ -12175,8 +12175,19 @@
           apiRequest("github_pull_requests", { organizationId: session.organizationId, teamId, githubRepositoryId, page: { pageSize: 100 } })
         ]).then(([issuesResult, pullRequestsResult]) => {
           if (!current() || githubRepositoryId !== (session.deliveryRepositoryId || "0")) return;
-          if (issuesResult.status === "fulfilled") renderGitHubIssuesResult(issuesResult, teamId, scope, "", false);
-          if (pullRequestsResult.status === "fulfilled") renderGitHubPullRequestsResult(pullRequestsResult, teamId, scope, "", false);
+          // Fetch first, reset second, render in the same tick. The delivery
+          // renderers validate page 1 against the ids and sort cursor already
+          // in session state - they are written to run after a reset - so
+          // re-rendering a refetched page 1 over the loaded state throws
+          // "returned a duplicate issue" and the catch WIPES the surface,
+          // which the first review of this code proved on every routine
+          // delivery event. Resetting only once BOTH reads have succeeded
+          // keeps the never-blank guarantee: a failed read changes nothing,
+          // and the reset-to-render gap is synchronous.
+          if (issuesResult.status !== "fulfilled" || pullRequestsResult.status !== "fulfilled") return;
+          resetDeliveryRecords("Refreshed after new delivery activity.", "Loading", "loading");
+          renderGitHubIssuesResult(issuesResult, teamId, scope, "", false);
+          renderGitHubPullRequestsResult(pullRequestsResult, teamId, scope, "", false);
         }));
       }
     }
