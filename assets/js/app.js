@@ -186,6 +186,8 @@
     statDelivery: document.querySelector("[data-stat-delivery]"),
     statDeliveryNote: document.querySelector("[data-stat-delivery-note]"),
     statAgents: document.querySelector("[data-stat-agents]"),
+    statStorage: document.querySelector("[data-stat-storage]"),
+    statStorageNote: document.querySelector("[data-stat-storage-note]"),
     statAgentsNote: document.querySelector("[data-stat-agents-note]"),
     conversationState: document.querySelector("[data-conversation-state]"),
     conversationEmpty: document.querySelector("[data-conversation-empty]"),
@@ -779,7 +781,7 @@
   }
 
   function createPlatformApi() {
-    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "962f30542e17332b34a4bb88b73ed7c06cfc6f29" || typeof generatedClient.createPlatformApi !== "function") return null;
+    if (!apiBaseUrl || generatedClient?.PLATFORM_PROTOS_REVISION !== "ee74ecd10c336cca1b5d5b2821d35182d2d7e5c8" || typeof generatedClient.createPlatformApi !== "function") return null;
     try {
       return generatedClient.createPlatformApi({ baseUrl: apiBaseUrl, defaultTimeoutMs: 16000 });
     } catch {
@@ -6816,6 +6818,36 @@
       setStatValue(ui.statAgents, "—");
       ui.statAgentsNote.textContent = "no roster loaded";
     }
+
+    // Measured workspace storage, streamed on the provisioning channel. A
+    // daily SNAPSHOT WITH LATENCY, so the note dates it - and absence is
+    // PENDING (the first inventory report has not landed), never zero.
+    const storage = selectedTeam()?.workspaceStorage;
+    if (storage) {
+      setStatValue(ui.statStorage, formatWorkspaceBytes(storage.currentBytes));
+      const measured = timestampDate(storage.measuredAt);
+      ui.statStorageNote.textContent = measured ? `measured ${relativeTime(measured)}` : "measured";
+    } else {
+      setStatValue(ui.statStorage, "—");
+      ui.statStorageNote.textContent = "first measurement pending";
+    }
+  }
+
+  // Bytes for the storage tile: binary units, one decimal, honest zero. The
+  // measurement is int64 bytes on the wire (arrives as bigint or number).
+  function formatWorkspaceBytes(value) {
+    const bytes = typeof value === "bigint" ? Number(value) : Number(value || 0);
+    if (!Number.isFinite(bytes) || bytes < 0) return "—";
+    if (bytes < 1024) return `${bytes} B`;
+    const units = ["KiB", "MiB", "GiB", "TiB"];
+    let scaled = bytes;
+    let unit = "B";
+    for (const next of units) {
+      if (scaled < 1024) break;
+      scaled /= 1024;
+      unit = next;
+    }
+    return `${scaled >= 100 ? Math.round(scaled) : scaled.toFixed(1)} ${unit}`;
   }
 
   // The check plate's own state: the acceptance classification, except that
@@ -13100,6 +13132,12 @@
           renderTeamList();
           renderTeamHeadline();
         }
+        // Storage rides the same stream on the same emit-on-change contract.
+        const workspaceStorage = response?.workspaceStorage;
+        if (workspaceStorage && team) {
+          team.workspaceStorage = workspaceStorage;
+          renderStatStrip();
+        }
         if (status && team) {
           team.provisioning = status;
           team._pollingMessage = "";
@@ -13302,6 +13340,7 @@
       }
       if (status) team.provisioning = status;
       if (runtimeHealth) applyTeamRuntimeHealth(team, runtimeHealth);
+      if (response.workspaceStorage) team.workspaceStorage = response.workspaceStorage;
       team._pollingMessage = "";
       renderTeamList();
       if (teamId === session.selectedTeamId) {
