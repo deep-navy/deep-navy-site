@@ -155,16 +155,22 @@ test("agent notes render and unknown event types skip instead of killing the str
 // Day one on a real team read "10,000 credits used ($100.00)" seconds after it
 // was created, with no hint of where that came from. It is correct: a team's
 // monthly runtime is levied once at provisioning - $75 of cost, 10,000 credits,
-// $100 to the customer at the plan's margin - and it is the whole number until
-// the agents have done anything. Left unexplained it is the biggest figure on
-// the screen and reads as work nobody can account for.
-test("the credits line says why a new team has already spent", () => {
+// The credits line states the pool's contract: the subscription includes the
+// organization's monthly credits, teams are unlimited and free to create (the
+// flat team-runtime charge was retired 2026-08-28), and credits are spent only
+// as agents work. The old copy explained a per-team charge that no longer
+// exists; asserting its absence keeps it from returning.
+test("the credits line states the subscription-pool contract", () => {
   const detail = app.slice(app.indexOf('id: `cost:${teamId}`'));
   const block = detail.slice(0, detail.indexOf("occurredAt"));
-  assert.match(block, /monthly runtime is charged once when it starts/,
-    "the customer must be told where a new team's spend comes from");
-  assert.match(block, /rather than work its agents have done/,
-    "and told plainly that it is not agent work");
+  assert.match(block, /subscription includes your organization's monthly credits/,
+    "the customer must be told where the pool comes from");
+  assert.match(block, /Teams are unlimited and cost nothing to create/,
+    "and that creating teams is free");
+  assert.match(block, /spent only as your agents work/,
+    "and that credits leave the pool through agent work alone");
+  assert.doesNotMatch(block, /monthly runtime is charged once/,
+    "the retired per-team charge explanation must not return");
   // The staleness caveat earned its place separately; do not lose it.
   assert.match(block, /Measured at a point in time/);
 });

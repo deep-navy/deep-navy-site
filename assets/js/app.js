@@ -9474,13 +9474,12 @@
       // being a live feed, which answers a question nobody asked and leaves the
       // real one - how current is this number? - unanswered.
       //
-      // It also has to answer the question a customer actually asks on day one:
-      // why does a team that has done nothing show $100 spent? Because a team's
-      // monthly runtime is levied once at provisioning (controller.go,
-      // idempotency key team-runtime:<org>:<team>:<rate>) - 10,000 credits of
-      // the organization's pool. Without that sentence the biggest number on
-      // the screen reads as agent work the customer cannot account for.
-      detail: "A team's monthly runtime is charged once when it starts, so a new team's total is mostly that rather than work its agents have done. Measured at a point in time, so the newest work may not be counted yet.",
+      // It also states the pool's contract plainly: the subscription includes
+      // the organization's monthly credits, teams are unlimited and levy no
+      // charge at creation (the flat team-runtime month was retired
+      // 2026-08-28), and credits leave the pool only as agents work. More
+      // teams means faster draw, never a fee.
+      detail: "Your subscription includes your organization's monthly credits. Teams are unlimited and cost nothing to create; credits are spent only as your agents work, from the one shared pool. Measured at a point in time, so the newest work may not be counted yet.",
       status: "measured",
       sequenceLabel: "Snapshot",
       occurredAt: economics.measuredAt
