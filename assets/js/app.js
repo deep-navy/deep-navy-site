@@ -1824,7 +1824,7 @@
     ui.planName.textContent = stringValue(session.billingPlan.name) || stringValue(session.billingPlan.id);
     ui.planPrice.textContent = formatMoney(session.billingPlan.recurringPrice, session.billingPlan.interval);
     ui.planCredits.textContent = formatCredits(session.billingPlan.includedCreditMicros);
-    ui.planSlots.textContent = "One organization licence · as many teams as you run";
+    ui.planSlots.textContent = "Billed per team · as many teams as you run";
     ui.planSummary.hidden = false;
   }
 
@@ -1894,11 +1894,11 @@
         session.paidTeamSlots = paid;
         session.usedTeamSlots = used;
         session.availableTeamSlots = available;
-        // The three slot fields are legacy: under an unlimited plan the server
-        // reports "the teams you have, one more you can always add, and their
-        // sum". Reading them back out as paid capacity would put a ceiling in
-        // front of a customer who does not have one.
-        ui.planSlots.textContent = `${used.toString()} ${used === 1n ? "team" : "teams"} running · one licence · no limit`;
+        // The three slot fields are legacy: the server reports "the teams you
+        // have, one more you can always add, and their sum". Reading them back
+        // out as paid capacity would put a ceiling in front of a customer who
+        // does not have one — a new team is never blocked, it just bills.
+        ui.planSlots.textContent = `${used.toString()} ${used === 1n ? "team" : "teams"} running · billed per team · no team limit`;
       }
       renderSettingsBilling(status === "active" && !validCapacity
         ? "The billing service did not return a consistent paid team-slot balance. Manage billing in the Stripe portal."
@@ -1979,9 +1979,11 @@
     });
   }
 
-  // The plan's recurring price, as the server read it from Stripe. It licenses
-  // the ORGANIZATION, not a team: the name says "unit amount" because that is
-  // what the catalog calls it, and nothing may multiply it by a team count.
+  // The plan's recurring price, as the server read it from Stripe. It is the
+  // PER-TEAM unit price: the one organization subscription bills it once for
+  // every provisioned team, but the multiplication is the server's to do —
+  // nothing HERE multiplies it by a team count, because the only figure that
+  // is authoritatively your bill is an invoice.
   //
   // Returns null when the plan has not arrived. It used to fall back to a
   // hardcoded $199.00 a month, described in the code as the "founding
@@ -2025,49 +2027,57 @@
     return Math.min(ENGINEER_MAX, Math.max(ENGINEER_FLOOR, parsed));
   }
 
-  // What creating THIS team costs. The base is charged once, by the team that
-  // starts the organization's subscription; every team after it is covered by
-  // that same licence and costs nothing. Charging the base again is exactly the
-  // bug the unlimited-teams plan was shipped to end.
+  // What creating THIS team costs: the base, every time. A team is the
+  // billable unit — the organization's one subscription bills the base once
+  // for every provisioned team, so a second team is a second monthly charge,
+  // not a covered one. What differs is only how it is settled: the first team
+  // pays through Stripe checkout (it starts the subscription), a later team is
+  // added to the existing subscription with proration.
   //
   // The engineer count is not part of it. It used to add a per-seat charge, and
   // that number went onto the pay button - so leaving it here would quote a
   // customer a total the server will not bill.
   function teamPricingFor(engineerCount) {
-    const includeBase = !session.subscriptionActive;
-    if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents(), includeBase });
+    const startsSubscription = !session.subscriptionActive;
+    if (launchContract) return launchContract.teamPricing({ engineerCount, baseCents: teamUnitAmountCents(), startsSubscription });
     return {
       engineerCount: normalizeEngineerCount(engineerCount),
       engineerFloor: ENGINEER_FLOOR,
-      includesBase: includeBase,
+      startsSubscription,
       baseCents: teamUnitAmountCents(),
-      totalCents: includeBase ? teamUnitAmountCents() : 0n
+      totalCents: teamUnitAmountCents()
     };
   }
 
   // What this team adds to the bill, in the customer's own arithmetic:
   //
-  //   first team    "$199 a month for your organization, and every team after
-  //                  this one is covered by it"
-  //   later team    "Covered by your subscription — no extra charge"
+  //   first team    "$199 a month for this team — it starts your
+  //                  organization's subscription"
+  //   later team    "$199 a month for this team, added to your subscription
+  //                  with proration"
   //
-  // There is no third case any more. The engineer count used to open one
+  // There is no free case and no third case. The old later-team line promised
+  // no extra charge — true under the retired unlimited-teams plan and a false
+  // promise now; the engineer count used to open a per-seat case
   // ("… + 2 × $199 engineers = $597/mo") and the server no longer bills it.
   function pricingBreakdown(pricing) {
-    if (!pricing.includesBase) return "Covered by your subscription — no extra charge";
     // Never quote a price that was not read. Silence about the amount is
     // recoverable; a confident wrong number on a pay button is not.
     if (pricing.baseCents === null || pricing.baseCents === undefined) {
       return "Loading your plan's price…";
     }
-    return `${formatCents(pricing.baseCents)} a month for your organization, and every team after this one is covered by it`;
+    return pricing.startsSubscription
+      ? `${formatCents(pricing.baseCents)} a month for this team — it starts your organization's subscription, and each team you add bills the same way`
+      : `${formatCents(pricing.baseCents)} a month for this team, added to your subscription with proration`;
   }
 
-  // True only when the server will actually charge the saved card off-session:
-  // a LIVE subscription plus a card on file. A canceled/incomplete subscription
-  // row re-opens checkout server-side (Stripe: canceled subscriptions cannot be
-  // reactivated), so the CTA must not promise a saved-card charge then.
-  function savedCardChargeExpected() {
+  // True only when the server will settle this team against the existing
+  // subscription off-session — a LIVE subscription plus a card on file — so no
+  // checkout opens and the prorated charge lands on the next invoice. A
+  // canceled/incomplete subscription row re-opens checkout server-side
+  // (Stripe: canceled subscriptions cannot be reactivated), so the CTA must
+  // not promise a no-checkout path then.
+  function settlesOnExistingSubscription() {
     const status = subscriptionStatusLabel(session.subscription);
     return ["active", "trialing"].includes(status) && Boolean(session.subscription?.defaultPaymentMethod);
   }
@@ -2079,17 +2089,19 @@
   function updateTeamSubmitLabel() {
     if (!ui.teamSubmit || ui.teamSubmit.dataset.busy === "1") return;
     const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
-    const total = `${formatCents(pricing.totalCents)}/month`;
-    // A team the subscription already covers charges nothing, and the button
-    // has to say so: "Continue to payment — $199/month" in front of a free
-    // second team is the paywall the unlimited plan removed.
-    if (pricing.totalCents === 0n) {
-      ui.teamSubmit.textContent = "Create team — covered by your subscription";
+    // Never put a price that was not read on a pay button.
+    if (pricing.totalCents === null || pricing.totalCents === undefined) {
+      ui.teamSubmit.textContent = "Continue to payment";
       return;
     }
-    ui.teamSubmit.textContent = savedCardChargeExpected()
-      ? `Create team — ${total} on your saved card`
-      : `Continue to payment — ${total}`;
+    const total = `${formatCents(pricing.totalCents)}/month`;
+    // Every team bills the base; only the settlement differs. A later team is
+    // added to the existing subscription with proration — no second checkout,
+    // and no immediate charge at the click — so the button says what it adds
+    // rather than promising a card charge that does not happen here.
+    ui.teamSubmit.textContent = pricing.startsSubscription
+      ? `Continue to payment — ${total}`
+      : `Create team — adds ${total} to your subscription`;
   }
 
   // Live price for the name-your-team screen. The screen asks one question,
@@ -2099,10 +2111,11 @@
     const pricing = teamPricingFor(ui.engineerInput ? ui.engineerInput.value : ENGINEER_FLOOR);
     if (ui.teamPriceAmount) {
       ui.teamPriceAmount.replaceChildren();
-      if (pricing.totalCents === 0n) {
-        // Not a zero standing in for a price: it IS the price, and the word is
-        // what says so. A "$0.00" here reads as a reading that failed.
-        ui.teamPriceAmount.append(document.createTextNode("Included"));
+      if (pricing.totalCents === null || pricing.totalCents === undefined) {
+        // Not a price that failed to load rendered as "$0.00" — the words say
+        // what is actually known. Every team bills, so there is no "Included"
+        // case left to render.
+        ui.teamPriceAmount.append(document.createTextNode("Priced at checkout"));
       } else {
         ui.teamPriceAmount.append(document.createTextNode(formatCents(pricing.totalCents)));
         const per = document.createElement("small");
@@ -2139,18 +2152,18 @@
 
   function renderSettingsBilling(errorMessage = "", tone = "") {
     if (!ui.settingsBillingState) return;
-    // Every team the one licence covers, which is every team that exists — a
-    // team still provisioning is covered too. This is the same count the
+    // Every team the one subscription bills, which is every team that exists —
+    // a team still provisioning is billed too. This is the same count the
     // Billing screen's roster shows, read from the same held teams, so the
     // two surfaces cannot disagree about how many there are.
     const covered = session.teams.filter((team) => lifecycleLabel(team?.state) !== "deleted").length;
     const count = Number.isSafeInteger(covered) && covered >= 0 ? covered : 0;
-    // Unlimited teams: the subscription licenses the ORGANIZATION and its
-    // Stripe quantity is pinned at one, so the team count beside it is a
-    // roster and never a multiplier. Multiplying was correct while a team was
-    // a licensed unit; the day the licence moved to the organization it
-    // started reading "$199 × your team count" and overstated the bill of
-    // every customer with more than one team.
+    // A team is the billable unit: the one subscription's monthly total is
+    // the per-team price times this count, but the multiplication is the
+    // server's — done on the subscription itself, with proration, in both
+    // directions. Nothing here computes a product to show as your bill,
+    // because a client-side total drifts the moment a team is mid-add or
+    // mid-delete; the amount you were actually charged is an invoice.
     ui.settingsTeamCount.textContent = String(count);
     ui.settingsBillingAmount.textContent = organizationSubscriptionLabel();
     const includedCredits = int64Value(session.billingPlan?.includedCreditMicros);
@@ -2909,8 +2922,8 @@
     const ready = missing.length === 0 && !checkoutOpening;
     if (missing.length === 0) {
       const existing = session.teams.length ? `${session.teams.length} engineering ${session.teams.length === 1 ? "team is" : "teams are"} active. ` : "";
-      setStep("team", "action", "Ready", `${existing}${savedCardChargeExpected()
-        ? "Name your team and pick its repositories — the card on file is charged, and your Product Manager opens the conversation when the team is ready."
+      setStep("team", "action", "Ready", `${existing}${settlesOnExistingSubscription()
+        ? "Name your team and pick its repositories — it is added to your subscription with proration, and your Product Manager opens the conversation when the team is ready."
         : "Name your team and pick its repositories — payment opens in secure Stripe checkout, and your Product Manager opens the conversation when the team is ready."}`);
     } else {
       const requirements = missing.join(missing.length > 2 ? ", " : " and ").replace(/, ([^,]+)$/, ", and $1");
@@ -2919,10 +2932,10 @@
     ui.teamInput.disabled = !ready;
     ui.teamSubmit.disabled = !ready;
     ui.repositoryList.querySelectorAll("input").forEach((checkbox) => { checkbox.disabled = !ready; });
-    // The whole price block, not just the button. Whether this team costs
-    // anything depends on the subscription, which lands after the first paint:
-    // repainting only the button left the figure above it still charging for a
-    // team the licence already covers.
+    // The whole price block, not just the button. How this team settles —
+    // checkout, or a prorated add to the existing subscription — depends on
+    // the subscription, which lands after the first paint: repainting only
+    // the button left the sentence above it describing the wrong settlement.
     renderTeamSetupPricing();
   }
 
@@ -8084,11 +8097,12 @@
   }
 
   /* ── Billing ────────────────────────────────────────────────────────────
-     Organization scope. The subscription licenses the ORGANIZATION and its
-     quantity is pinned at one, so nothing on this screen multiplies a price
-     by a team count: the teams table is a roster of what the one licence
-     already covers, not a bill. The only figure that is authoritatively what
-     you paid is an invoice, and the invoices are on the same screen.
+     Organization scope. A team is the billable unit: the one subscription's
+     monthly total is the per-team price times the provisioned team count,
+     reconciled server-side with proration in both directions. Nothing on
+     this screen computes that product: the teams table is the roster the
+     subscription bills, not a bill, and the only figure that is
+     authoritatively what you paid is an invoice, on the same screen.
 
      The credit reading is the organization's own measured summary, because
      that is the only credit figure that is organization-scoped. The per-team
@@ -8110,7 +8124,7 @@
 
   function organizationSubscriptionLabel() {
     const cents = organizationSubscriptionCents();
-    return cents === null ? "Shown at checkout" : `${formatCents(cents)}/month`;
+    return cents === null ? "Shown at checkout" : `${formatCents(cents)}/month per team`;
   }
 
   // ── Automatic credit top-up ───────────────────────────────────────────────
@@ -8670,15 +8684,15 @@
       host.hidden = true;
       return;
     }
-    // Every team the licence covers, which is every team that exists: a team
-    // still provisioning is covered too, and counting only the active ones
-    // made this stat disagree with the roster directly below it.
+    // Every team the subscription bills, which is every team that exists: a
+    // team still provisioning is billed too, and counting only the active
+    // ones made this stat disagree with the roster directly below it.
     const covered = session.teams.filter((team) => lifecycleLabel(team?.state) !== "deleted").length;
     const periodEnds = timestampDate(session.subscription?.currentPeriodEndsAt);
     const included = int64Value(plan.includedCreditMicros);
     host.replaceChildren(
-      billingStat("Subscription", organizationSubscriptionCents() === null ? "At checkout" : formatCents(organizationSubscriptionCents()), organizationSubscriptionCents() === null ? "" : session.billingPlan?.interval === 2 || session.billingPlan?.interval === "BILLING_INTERVAL_YEAR" ? "/ year" : "/ month"),
-      billingStat("Teams it covers", new Intl.NumberFormat().format(covered), "· no limit"),
+      billingStat("Per team", organizationSubscriptionCents() === null ? "At checkout" : formatCents(organizationSubscriptionCents()), organizationSubscriptionCents() === null ? "" : session.billingPlan?.interval === 2 || session.billingPlan?.interval === "BILLING_INTERVAL_YEAR" ? "/ year" : "/ month"),
+      billingStat("Teams billed", new Intl.NumberFormat().format(covered), "· no limit"),
       billingStat("Credits included", included !== null && included > 0n ? formatCreditMicros(included) : "Shown at checkout", included !== null && included > 0n ? "· each period" : ""),
       billingStat(session.subscription?.cancelAtPeriodEnd ? "Ends" : "Renews", periodEnds ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(periodEnds) : "Not reported")
     );
@@ -8723,9 +8737,9 @@
     const rows = [
       ["Plan", stringValue(session.billingPlan?.name) || stringValue(session.billingPlan?.id) || "Not reported"],
       ["State", status === "active" ? "Active" : capitalize(status)],
-      ["Base licence", organizationSubscriptionCents() === null
+      ["Per team", organizationSubscriptionCents() === null
         ? "The billing service did not report the plan price, so it is not shown here. Your invoice below carries what you were charged."
-        : `${formatCents(organizationSubscriptionCents())} a month for this organization · as many teams as you need`],
+        : `${formatCents(organizationSubscriptionCents())} a month for each team you run · added and removed with proration`],
       ["Engineers", seats
         ? `${seats} above the floor of ${ENGINEER_FLOOR} across your teams, at no per-seat charge`
         : `Every team is at the floor of ${ENGINEER_FLOOR}. Engineers are not charged per seat either way`],
@@ -8764,7 +8778,7 @@
     }
     if (!teams.length) {
       if (meta) meta.hidden = true;
-      setDataState(host, "pending", "There are no teams on this licence yet. The subscription covers as many as you want to run, so the first one costs no more than the second.", {
+      setDataState(host, "pending", "There are no teams on this subscription yet. Run as many as you want — each is billed at the plan's per-team rate, added and removed with proration.", {
         action: { label: "Create a team", view: "dashboard" }
       });
       return;
@@ -8790,7 +8804,7 @@
     ], rows);
     if (meta) {
       meta.hidden = false;
-      meta.textContent = `${teams.length} ${teams.length === 1 ? "team" : "teams"} · all covered by the one licence`;
+      meta.textContent = `${teams.length} ${teams.length === 1 ? "team" : "teams"} · each billed on the one subscription`;
     }
   }
 
@@ -9507,11 +9521,11 @@
       // real one - how current is this number? - unanswered.
       //
       // It also states the pool's contract plainly: the subscription includes
-      // the organization's monthly credits, teams are unlimited and levy no
-      // charge at creation (the flat team-runtime month was retired
-      // 2026-08-28), and credits leave the pool only as agents work. More
-      // teams means faster draw, never a fee.
-      detail: "Your subscription includes your organization's monthly credits. Teams are unlimited and cost nothing to create; credits are spent only as your agents work, from the one shared pool. Measured at a point in time, so the newest work may not be counted yet.",
+      // the organization's monthly credits as one pool every team shares, and
+      // credits leave the pool only as agents work — model usage and the
+      // compute and storage teams use all draw from it. The subscription
+      // itself bills per team; the pool does not.
+      detail: "Your subscription includes your organization's monthly credits, one pool every team shares. Credits are spent only as your agents work — model usage and the compute and storage your teams use all draw from it. Measured at a point in time, so the newest work may not be counted yet.",
       status: "measured",
       sequenceLabel: "Snapshot",
       occurredAt: economics.measuredAt
@@ -13830,7 +13844,7 @@
     ui.teamInput.disabled = true;
     ui.teamSubmit.disabled = true;
     ui.teamSubmit.dataset.busy = "1";
-    ui.teamSubmit.textContent = savedCardChargeExpected() ? "Creating your team…" : "Opening secure payment…";
+    ui.teamSubmit.textContent = settlesOnExistingSubscription() ? "Creating your team…" : "Opening secure payment…";
     try {
       const fingerprint = `${session.organizationId}:${name.toLowerCase()}:${engineerCount}:${repositoryIds.join(",")}:${objective}`;
       const result = await apiRequest("request_team", {

@@ -166,7 +166,15 @@ test("the mobile nav is the kit's full-height sheet", () => {
 
 /* ---- pricing: the kit's plans and FAQ over the real numbers ---------------- */
 test("pricing restyles the contracted numbers — it invents none", () => {
-  assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per organization · month<\/span><\/span>/);
+  /* CHANGED DELIBERATELY: this pinned "$199 per organization · month" with
+   * unlimited teams. The server bills per TEAM now — the one subscription's
+   * quantity is the organization's live team count — so "unlimited teams" was
+   * advertising free capacity the server charges for. The card now states the
+   * per-team rate, and the unlimited-teams promise must not return. */
+  assert.match(pricing, /<span class="lp-plan-price">\$199 <span class="lp-plan-per">per team · month<\/span><\/span>/);
+  assert.doesNotMatch(pricing, /per organization · month/, "the per-organization price was retired for per-team billing");
+  assert.doesNotMatch(pricing, /[Uu]nlimited teams/, "teams are unmetered in number but each one bills");
+  assert.doesNotMatch(pricing, /second team costs nothing|charges nothing/, "a second team is another $199/month");
   /* CHANGED DELIBERATELY: this pinned "$199 per engineer · month". The server
    * deleted the per-seat add-on, so that card was quoting a charge that no
    * longer exists. The card stays — three cards is the grid — and now states

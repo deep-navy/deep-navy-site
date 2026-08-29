@@ -459,12 +459,15 @@
     ].filter(Boolean);
   }
 
-  // Pricing mirrors the server: the subscription licenses the ORGANIZATION and
-  // covers as many teams as it runs.
-  //
-  // The base was a per-team charge until the licence moved to the organization.
-  // A second team is now free, so the base is charged once — which is why
-  // teamPricing takes includeBase rather than always adding it.
+  // Pricing mirrors the server: a TEAM is the billable unit. One subscription
+  // per organization carries the charge, and its monthly total tracks the
+  // organization's live provisioned team count — so every team bills the base,
+  // the first through Stripe checkout (it starts the subscription) and every
+  // later one as a prorated raise on the subscription that already exists,
+  // settled without a second checkout. Deleting a team lowers the bill the
+  // same way. teamPricing takes startsSubscription only so the copy can say
+  // which of those two things the pay button is about to do; it never changes
+  // the total, because a covered-for-free team no longer exists.
   //
   // ENGINEER SEATS ARE NOT PRICED. There used to be a $199/month per-seat
   // add-on for every engineer above the floor; the server deleted it, seats are
@@ -476,7 +479,7 @@
   // constant but a live over-charge quoted to their face.
   const ENGINEER_FLOOR = 3;
   const ENGINEER_MAX = 50;
-  const ORGANIZATION_BASE_CENTS = 19900n;
+  const TEAM_BASE_CENTS = 19900n;
 
   function normalizeEngineerCount(value, { floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
     const parsed = typeof value === "number"
@@ -494,25 +497,25 @@
     return null;
   }
 
-  // Pure price calculation: the base, and only if this team starts the
-  // subscription. The base can be overridden (e.g. from the signed billing
-  // plan) but defaults to the founding-organization figure.
+  // Pure price calculation: every team bills the base, whether it starts the
+  // subscription or joins one that exists. The base can be overridden (e.g.
+  // from the signed billing plan) but defaults to the per-team figure.
   //
-  // includeBase is the whole difference between the first team and the second.
-  // The first starts the organization's subscription and costs the base; every
-  // team after it is covered by that same licence and costs nothing.
+  // startsSubscription changes what the charge looks like, never what it is:
+  // the first team pays through checkout, a later team is added to the
+  // existing subscription with proration. Both cost the base every month.
   //
   // engineerCount is still normalised and reported, because the floor and the
   // ceiling are real. It is deliberately NOT an input to the total.
-  function teamPricing({ engineerCount, baseCents, includeBase = true, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
+  function teamPricing({ engineerCount, baseCents, startsSubscription = true, floor = ENGINEER_FLOOR, max = ENGINEER_MAX } = {}) {
     const count = normalizeEngineerCount(engineerCount, { floor, max });
-    const base = toCents(baseCents) ?? ORGANIZATION_BASE_CENTS;
+    const base = toCents(baseCents) ?? TEAM_BASE_CENTS;
     return Object.freeze({
       engineerCount: count,
       engineerFloor: floor,
-      includesBase: includeBase,
+      startsSubscription: Boolean(startsSubscription),
       baseCents: base,
-      totalCents: includeBase ? base : 0n
+      totalCents: base
     });
   }
 
@@ -579,7 +582,7 @@
     LaunchContractError,
     PROVISIONING_STATE,
     REPOSITORY_SELECTION_MODE,
-    ORGANIZATION_BASE_CENTS,
+    TEAM_BASE_CENTS,
     accessibleRepositories,
     buildRepositorySelectionRequest,
     createMutationKeys,

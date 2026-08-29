@@ -156,21 +156,24 @@ test("agent notes render and unknown event types skip instead of killing the str
 // was created, with no hint of where that came from. It is correct: a team's
 // monthly runtime is levied once at provisioning - $75 of cost, 10,000 credits,
 // The credits line states the pool's contract: the subscription includes the
-// organization's monthly credits, teams are unlimited and free to create (the
-// flat team-runtime charge was retired 2026-08-28), and credits are spent only
-// as agents work. The old copy explained a per-team charge that no longer
-// exists; asserting its absence keeps it from returning.
+// organization's monthly credits as one pool every team shares, and credits
+// are spent only as agents work — model usage plus the compute and storage
+// teams use. Teams themselves bill on the subscription (per team, monthly),
+// not against the pool, so the credits line must claim neither that a team
+// draws credits at creation nor that creating one is free.
 test("the credits line states the subscription-pool contract", () => {
   const detail = app.slice(app.indexOf('id: `cost:${teamId}`'));
   const block = detail.slice(0, detail.indexOf("occurredAt"));
   assert.match(block, /subscription includes your organization's monthly credits/,
     "the customer must be told where the pool comes from");
-  assert.match(block, /Teams are unlimited and cost nothing to create/,
-    "and that creating teams is free");
+  assert.match(block, /one pool every team shares/,
+    "and that the pool is shared organization-wide");
   assert.match(block, /spent only as your agents work/,
     "and that credits leave the pool through agent work alone");
   assert.doesNotMatch(block, /monthly runtime is charged once/,
     "the retired per-team charge explanation must not return");
+  assert.doesNotMatch(block, /cost nothing to create|unlimited/i,
+    "the retired free-teams promise must not return either");
   // The staleness caveat earned its place separately; do not lose it.
   assert.match(block, /Measured at a point in time/);
 });

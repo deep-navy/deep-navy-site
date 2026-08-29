@@ -2,12 +2,14 @@
 
 // The Billing screen — organization scope.
 //
-// Pricing is $199 a month for the ORGANIZATION, unlimited teams, 10,000
-// credits included per billing period. The base Stripe item licenses the
-// organization and its quantity is pinned at one, so nothing on this screen
-// multiplies a price by a team count: the teams table is a roster of what the
-// one licence already covers, and the only figure that is authoritatively
-// what you paid is an invoice — which is on the same screen.
+// Pricing is $199 a month PER TEAM on one subscription per organization,
+// 10,000 credits included per billing period organization-wide. The base
+// Stripe item's quantity is the organization's live provisioned team count,
+// reconciled server-side with proration in both directions — but that
+// multiplication is the server's to do, so nothing on this screen computes a
+// price times a team count: the teams table is the roster the subscription
+// bills, and the only figure that is authoritatively what you paid is an
+// invoice — which is on the same screen.
 //
 // The credit reading is the organization's own measured summary, because that
 // is the only credit figure that is organization-scoped. The per-team
@@ -34,13 +36,15 @@ const screen = () => {
 };
 
 test("nothing multiplies a price by a team count", () => {
-  // The bug this screen exists to end: unit × teams read as "$199 × your team
-  // count" the moment the plan became an organization licence.
+  // The server multiplies — the subscription's quantity is the live team
+  // count — but a client-side product drifts the moment a team is mid-add or
+  // mid-delete, so the browser states the per-team rate and lets the invoice
+  // carry the total.
   assert.doesNotMatch(app, /unitCents \* BigInt\(count\)/);
   assert.doesNotMatch(app, /organizationSubscriptionCents\(\) \* BigInt/);
   const subscription = renderer("renderBillingSubscription", "renderBillingTeams");
   assert.doesNotMatch(subscription, /\* BigInt\(/);
-  assert.match(subscription, /a month for this organization · as many teams as you need/);
+  assert.match(subscription, /a month for each team you run · added and removed with proration/);
   assert.match(subscription, /The amount you were actually charged is an invoice/);
 });
 
@@ -76,14 +80,16 @@ test("every figure that is missing says which kind of missing it is", () => {
   assert.match(stats, /if \(!plan\) \{\s*\n\s*host\.hidden = true;/);
 });
 
-test("the licence covers every team it has, and the stat agrees with the roster", () => {
+test("the subscription bills every team it has, and the stat agrees with the roster", () => {
   const stats = renderer("renderBillingStats", "engineerSeatsAboveFloor");
   assert.match(stats, /lifecycleLabel\(team\?\.state\) !== "deleted"/,
-    "a team still provisioning is covered too");
-  assert.match(stats, /billingStat\("Teams it covers", new Intl\.NumberFormat\(\)\.format\(covered\), "· no limit"\)/);
+    "a team still provisioning is billed too");
+  assert.match(stats, /billingStat\("Teams billed", new Intl\.NumberFormat\(\)\.format\(covered\), "· no limit"\)/);
   const teams = renderer("renderBillingTeams", "renderBillingCredits");
   assert.match(teams, /!\["deleted"\]\.includes\(lifecycleLabel\(team\?\.state\)\)/);
-  assert.match(teams, /all covered by the one licence/);
+  assert.match(teams, /each billed on the one subscription/);
+  // The retired unlimited-teams promise must not return to this screen.
+  assert.doesNotMatch(teams, /all covered by the one licence/);
 });
 
 /* CHANGED DELIBERATELY. This used to be "what still bills per seat is an

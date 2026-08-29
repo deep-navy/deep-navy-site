@@ -68,7 +68,9 @@ test("no card is collected during sign-in or onboarding, only at team creation",
   // price plainly and asks for no payment detail; the app collects it once, in
   // Stripe checkout, when a team is created.
   assert.doesNotMatch(home, /card|payment|billing/i);
-  assert.match(home, /\$199 a month for your organization/);
+  assert.match(home, /\$199 a month per team/);
+  assert.doesNotMatch(home, /a month for your organization|unlimited teams/i,
+    "the retired per-organization plan must not be advertised");
   // Onboarding never mounts checkout; only the paid team path and credit packs do.
   assert.doesNotMatch(shell, /name=["'](?:card|cardNumber|cvc|expiry)/i);
 });
@@ -101,15 +103,18 @@ test("the first-run screen is name + repositories: the name is the hero, the pic
   const priceIndex = teamForm[0].indexOf("data-team-price-amount");
   assert.ok(nameIndex < pickerIndex && pickerIndex < priceIndex, "the picker sits under the name and above the price");
   // The $199/month line sits with the field, and the price still renders live
-  // from the plan against the included-engineer floor. It is the ORGANIZATION's
-  // licence, bought once — a second team is covered by it, which is what
-  // teamPricingFor's includeBase decides and what the button then says.
+  // from the plan against the included-engineer floor. A TEAM is the billable
+  // unit: every team bills the base, and teamPricingFor's startsSubscription
+  // decides only how the button describes the settlement — checkout for the
+  // first team, a prorated add to the existing subscription for a later one.
   assert.match(teamForm[0], /data-team-price-amount/);
   assert.match(teamForm[0], /data-team-price-breakdown/);
   assert.match(teamForm[0], /\$199/);
-  assert.doesNotMatch(teamForm[0], /\$599/, "the per-team charge was removed with the unlimited-teams plan");
-  assert.match(app, /const includeBase = !session\.subscriptionActive/);
-  assert.match(app, /ui\.teamSubmit\.textContent = "Create team — covered by your subscription"/);
+  assert.doesNotMatch(teamForm[0], /\$599/, "the founding-team figure must never be quoted as this plan's price");
+  assert.match(app, /const startsSubscription = !session\.subscriptionActive/);
+  assert.match(app, /`Create team — adds \$\{total\} to your subscription`/);
+  assert.doesNotMatch(app, /covered by your subscription/i,
+    "a later team is not covered for free — it bills the base with proration");
   assert.match(app, /function renderTeamSetupPricing/);
   assert.match(app, /teamPricingFor\(/);
   assert.match(app, /function pricingBreakdown/);

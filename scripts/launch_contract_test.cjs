@@ -52,7 +52,7 @@ test("engineer count is floored at three, capped at fifty, and defaults to the f
 test("the engineer count is not an input to the price, anywhere in its range", () => {
   const floor = teamPricing({ engineerCount: 3 });
   assert.equal(floor.totalCents, 19900n);
-  assert.equal(floor.includesBase, true);
+  assert.equal(floor.startsSubscription, true);
 
   for (const count of [3, 4, 5, 12, 49, 50]) {
     assert.equal(teamPricing({ engineerCount: count }).totalCents, 19900n,
@@ -73,18 +73,25 @@ test("the engineer count is not an input to the price, anywhere in its range", (
   assert.equal(teamPricing({ engineerCount: 9 }).engineerCount, 9);
 });
 
-// Unlimited teams: the licence belongs to the ORGANIZATION and is bought once.
-// A second team is covered by it and costs nothing — now with no exception,
-// because the per-seat item that used to be the exception is deleted.
-test("a team the subscription already covers charges nothing at all", () => {
-  const covered = teamPricing({ engineerCount: 3, includeBase: false });
-  assert.equal(covered.totalCents, 0n, "a second team at the floor is free");
-  assert.equal(covered.includesBase, false);
-  assert.equal(covered.baseCents, 19900n, "the licence's price is still reported, it is just not charged again");
+/* CHANGED DELIBERATELY. This pinned "a team the subscription already covers
+ * charges nothing at all" — true under the retired unlimited-teams plan and
+ * false now. A TEAM is the billable unit: the one subscription's quantity is
+ * the organization's live team count, so a later team bills the base too, as
+ * a prorated raise on the subscription that already exists. What
+ * startsSubscription changes is only the settlement story on the pay button
+ * (checkout vs. prorated add), never the total — pinned so a free second team
+ * cannot quietly return. */
+test("a later team bills the base too — startsSubscription never changes the total", () => {
+  const later = teamPricing({ engineerCount: 3, startsSubscription: false });
+  assert.equal(later.totalCents, 19900n, "a second team is another $199/month, not a free one");
+  assert.equal(later.startsSubscription, false);
+  assert.equal(later.baseCents, 19900n);
 
-  const coveredWithMoreEngineers = teamPricing({ engineerCount: 50, includeBase: false });
-  assert.equal(coveredWithMoreEngineers.totalCents, 0n,
-    "a covered team is free at any roster size — there is no per-seat item left to charge");
+  const laterWithMoreEngineers = teamPricing({ engineerCount: 50, startsSubscription: false });
+  assert.equal(laterWithMoreEngineers.totalCents, 19900n,
+    "a later team bills the base at any roster size — there is still no per-seat item");
+  assert.equal(teamPricing({ engineerCount: 3, startsSubscription: false, baseCents: 60000n }).totalCents, 60000n,
+    "the signed billing plan's base is what a later team bills as well");
 });
 
 test("the roster a count implies is PM + EM + Designer + the chosen engineers", () => {

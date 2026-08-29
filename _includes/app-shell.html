@@ -178,7 +178,7 @@
             <div class="team-price">
               <div>
                 <div class="team-price-amt" data-team-price-amount>$199<small> / month</small></div>
-                <p class="team-price-breakdown" data-team-price-breakdown>$199 a month for your organization (includes 3 engineers, and every team after this one)</p>
+                <p class="team-price-breakdown" data-team-price-breakdown>$199 a month for this team (includes 3 engineers — the engineer count never changes the price)</p>
               </div>
               <p class="form-help form-help-neutral" id="team-name-help">Charged when you confirm. Cancel anytime in Settings.</p>
             </div>
@@ -1039,7 +1039,7 @@
                   <div><dt>Plan</dt><dd class="settings-fact" data-plan-name></dd></div>
                   <div><dt>Price</dt><dd class="settings-fig" data-plan-price></dd></div>
                   <div><dt>Included</dt><dd class="settings-fig" data-plan-credits></dd></div>
-                  <div><dt>Capacity</dt><dd data-plan-slots>One organization licence · as many teams as you run</dd></div>
+                  <div><dt>Capacity</dt><dd data-plan-slots>Billed per team · as many teams as you run</dd></div>
                 </dl>
                 <p class="settings-billing-note" data-settings-billing-note>One subscription covers this organization and every team in it. A card is collected the first time you create a team; billing opens in the Stripe Customer Portal.</p>
                 <!-- The one action here is a door to Stripe's portal — a
@@ -1277,10 +1277,12 @@
         </section>
         <!-- ===== BILLING =====
              Organization scope: the one subscription, the credits it includes,
-             and the invoices behind both. The subscription is $199 a month for
-             the organization with unlimited teams, so nothing on this screen
-             multiplies a price by a team count — the teams table is a roster
-             of what the licence covers, not a bill.
+             and the invoices behind both. The subscription bills per team —
+             its monthly total is the plan price times the provisioned team
+             count, reconciled server-side — but nothing on this screen
+             computes that product: the only figure that is authoritatively
+             what you paid is an invoice, and the invoices are on this screen.
+             The teams table is the roster the subscription bills, not a bill.
 
              The credit reading is the organization's own economics summary,
              which is the only credit figure that is organization-scoped. The
@@ -1364,7 +1366,7 @@
               </section>
               <section class="cs-panel" aria-labelledby="billing-teams-title">
                 <div class="cs-panel-head">
-                  <span class="dn-eyebrow" id="billing-teams-title">Teams on this licence</span>
+                  <span class="dn-eyebrow" id="billing-teams-title">Teams on this subscription</span>
                   <span class="cs-panel-meta" data-billing-teams-meta hidden></span>
                 </div>
                 <div class="cs-tablewrap" data-billing-teams></div>
@@ -1393,8 +1395,8 @@
                 <div class="dn-callout">
                   <span class="dn-callout__icon"><svg class="dn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="#i-info"></use></svg></span>
                   <div class="dn-callout__copy">
-                    <div class="dn-callout__title">One subscription, as many teams as you need</div>
-                    <div class="dn-callout__body">The subscription licenses the organization, not a team, so a second team costs nothing and a third costs nothing. Engineers are not a per-seat charge: a team runs from three engineers to fifty at no difference to your invoice, and the floor of three is there so every shipped change gets two peer reviews.</div>
+                    <div class="dn-callout__title">One subscription, billed per team</div>
+                    <div class="dn-callout__body">The subscription belongs to the organization, and each provisioned team is billed on it at the plan's monthly rate — a second team adds a second monthly charge, prorated from the day it arrives, and deleting a team removes its charge the same way. Engineers are not a per-seat charge: a team runs from three engineers to fifty at no difference to your invoice, and the floor of three is there so every shipped change gets two peer reviews.</div>
                   </div>
                 </div>
               </section>
