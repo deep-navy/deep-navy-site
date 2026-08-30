@@ -742,9 +742,15 @@
                the plan state, the measures, the proposals under it, and the
                acceptance evidence line — proven, regressed and never-run are
                three different facts and render as three different states.
-               Nothing here asks for anything: objectives are set in
-               conversation with the Product Manager on the floor, and this
-               screen is where their delivery is inspected. -->
+               This screen carries the one place an objective is RECORDED. The
+               floor deliberately keeps a single ask (the conversation), and a
+               2026-08-15 change removed the objective form from it on the
+               promise that objectives would be "set in conversation" - but no
+               machinery ever turned conversation into an objective record, so
+               a team could interview, sign a PRD, and still hold zero
+               objectives: no initiatives, no proofs, a console stuck on
+               "Interviewing". Until the conversational capture exists, the
+               form lives here, off the floor, where delivery is inspected. -->
           <div class="agent-return">
             <a class="button button-quiet button-small" data-view-link="overview" href="#workspace-overview">Back to the floor</a>
             <span class="data-source-badge" data-objectives-view-state>Waiting</span>
@@ -752,7 +758,28 @@
           <div class="wview-head">
             <div><h2 id="workspace-objectives-title">Objectives</h2><p>What you asked for, and the evidence it is delivered. Every objective is proven by tagged acceptance scenarios running on the default branch, and a proof that stops holding is shown as regressed — not folded back into unproven.</p></div>
           </div>
-          <div class="empty-state" data-objectives-view-empty><strong>No objectives yet</strong><p>Each objective appears here with its measures, its initiatives, and the acceptance evidence that proves it on the default branch. Yours are set in conversation: tell your Product Manager what matters, and it becomes a record on this screen.</p></div>
+          <div class="empty-state" data-objectives-view-empty><strong>No objectives yet</strong><p>Each objective appears here with its measures, its initiatives, and the acceptance evidence that proves it on the default branch. Record your first one below — one or two sentences describing the outcome — and your Product Manager picks it up from there.</p></div>
+          <section class="onnow dn-card dn-card--pad-sm" aria-labelledby="objectives-record-title">
+            <div class="ask-head">
+              <h3 id="objectives-record-title">Record an objective</h3>
+              <span hidden data-objective-state></span>
+            </div>
+            <div class="empty-state" data-objective-empty hidden><strong>Describe the outcome</strong><p>Your Product Manager turns it into issues; the engineers build it.</p></div>
+            <form class="objective-form" data-objective-form hidden>
+              <label class="visually-hidden" for="objective-description">What should your team work on?</label>
+              <input type="hidden" id="objective-title" name="objectiveTitle">
+              <div class="objective-field">
+                <textarea id="objective-description" name="objectiveDescription" minlength="10" maxlength="2000" rows="3" placeholder="Describe it the way you would tell a colleague." required disabled></textarea>
+                <div class="objective-foot">
+                  <span class="objective-key" aria-hidden="true">⌘↵</span>
+                  <!-- Secondary on purpose: the floor's Send stays the
+                       console's one primary action. -->
+                  <button class="button button-secondary" type="submit" disabled>Start the work</button>
+                </div>
+              </div>
+              <p class="form-error" data-objective-error role="alert" hidden></p>
+            </form>
+          </section>
           <ol class="objectives-list" data-objectives-view-list hidden></ol>
         </section>
 

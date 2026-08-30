@@ -216,17 +216,25 @@ test("every surface speaks the dispatch row with one vocabulary", () => {
   assert.match(poll, /refreshObjectiveCardDispatch\(objectives\)/);
 });
 
-test("the negative pins hold: this screen asks for nothing", () => {
-  // Objectives are created in conversation with the Product Manager. The
-  // form, its headline and its example chips stay gone, and the new view
-  // ships no input of its own.
-  assert.doesNotMatch(shell, /data-objective-form/);
+test("the negative pins hold: the floor asks for nothing, the record lives here", () => {
+  // The floor keeps one ask - the conversation. The 2026-08-15 removal of the
+  // objective form pinned that by removing the form from the WHOLE shell, on
+  // the promise that objectives would be "set in conversation"; no machinery
+  // ever fulfilled it, and a team could sign a PRD while holding zero
+  // objectives. The sharpened pin: the form exists exactly once, inside the
+  // objectives view, and the floor still carries no form. The headline and
+  // example chips stay gone everywhere.
+  const objectivesView = shell.slice(shell.indexOf('data-view="objectives"'), shell.indexOf('data-view="agent"'));
+  const floor = shell.slice(shell.indexOf('data-view="overview"'), shell.indexOf('data-view="objectives"'));
+  assert.doesNotMatch(floor, /data-objective-form/);
+  assert.match(objectivesView, /data-objective-form/);
+  assert.strictEqual(shell.split("data-objective-form").length - 1, 1, "the form exists exactly once in the shell");
   assert.doesNotMatch(shell, /Tracked objectives/);
   assert.doesNotMatch(shell, /What do you want built\?/);
   assert.doesNotMatch(shell, /data-objective-examples/);
   assert.doesNotMatch(app, /data-objective-examples/);
-  const section = shell.slice(shell.indexOf('data-view="objectives"'), shell.indexOf('data-view="agent"'));
-  assert.doesNotMatch(section, /<form|<input|<textarea|button-primary/);
+  // The form stays secondary even in its own view: no primary button.
+  assert.doesNotMatch(objectivesView, /button-primary/);
 });
 
 test("the drill-in reuses the history contract: objective filters, shared builders, fail-closed scope", () => {

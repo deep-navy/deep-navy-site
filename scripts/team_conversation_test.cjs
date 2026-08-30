@@ -135,16 +135,17 @@ test("the composing shimmer borrows the crew tile's liveness instead of inventin
 });
 
 test("the objective form no longer renders as the primary ask", () => {
-  // The console leads the floor; the tracked-objective form ships demoted and
-  // app.js no longer promotes it back when the board empties.
-  // There is no second ask at all any more: the objective FORM left the shell
-  // entirely (the pipeline and the "On now" record remain). A returning form
-  // would mean two places to say the same thing - the exact confusion the
-  // console exists to end.
-  assert.doesNotMatch(shell, /data-objective-form/);
+  // The console leads the floor; the conversation is its one primary ask.
+  // The form's 2026-08-15 total removal over-reached: "set in conversation"
+  // had no machinery behind it, so nothing could ever record an objective
+  // and the whole objective->initiative->proof loop starved. The form is
+  // back - but OFF the floor, in the objectives view, as a secondary
+  // control. This pin now guards the sharp claim rather than the broad one.
+  const floor = shell.slice(shell.indexOf('data-view="overview"'), shell.indexOf('data-view="objectives"'));
+  assert.doesNotMatch(floor, /data-objective-form/);
   assert.doesNotMatch(shell, /Tracked objectives/);
   assert.doesNotMatch(shell, /What do you want built\?/);
-  // The example chips went with the form's primacy.
+  // The example chips went with the form's primacy, and stay gone.
   assert.doesNotMatch(shell, /data-objective-examples/);
   assert.doesNotMatch(app, /data-objective-examples/);
   const descent = between("function renderDescent()", "function descentWho");
